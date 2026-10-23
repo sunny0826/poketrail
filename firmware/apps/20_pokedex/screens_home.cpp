@@ -1,6 +1,9 @@
 #include "screens.hpp"
 #include "board.hpp"
 #include "encounter_catalog.hpp"
+#include "sprites_generated.hpp"
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 namespace pokedex { namespace ui {
 using namespace adventure;
@@ -40,7 +43,7 @@ void Screens::menu(const ScreenState& s, const Engine& e, int top) {
   }
   for (unsigned i = 0; i < menuCount(s, e); ++i) item(s, i, labels[i], top);
 }
-void Screens::home(const ScreenState& s, const Engine& e) {
+void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
   const auto& v = e.view();
   char text[100];
   switch (s.page) {
@@ -108,14 +111,31 @@ void Screens::home(const ScreenState& s, const Engine& e) {
       line(speciesName(v.encounter.species), 90, TFT_CYAN);
       if (v.result == Result::Captured && v.recentSize) {
         const auto& c = v.recent[v.recentSize - 1];
-        stamp(c.at, 124);
-        line(routeName(c.route), 246, TFT_CYAN);
-        badges(c.achievementMask, 278);
+        const bool first = v.captureCounts[v.encounter.species - 1] == 1;
+        if (first) {
+          const auto& sp = data::kSprites[v.encounter.species - 1];
+          const int radius = std::max(sp.width, sp.height) + 12;
+          for (unsigned k = 0; k < 12; ++k) {
+            const float a = 6.2831853f * (float(now % 8000) / 8000.0f) + float(k) * 0.5235988f;
+            M5.Display.fillCircle(233 + int(radius * std::cos(a)), 172 + int(radius * std::sin(a)), 2, kGold);
+          }
+        }
+        sprite(v.encounter.species, now, resultPlayback_, 172);
+        if (first) line("✦ 首次捕获 ✦", 238, kGold);
+        if (c.at.timeKnown) {
+          calendar::CivilTime local;
+          if (calendar::fromUtc(c.at.utcSeconds, c.at.offsetMinutes, local)) {
+            snprintf(text, sizeof(text), "%04d-%02d-%02d %02d:%02d", local.year, local.month, local.day, local.hour, local.minute);
+            line(text, 262, TFT_DARKGREY);
+          }
+        }
+        line(routeName(c.route), 290, TFT_CYAN);
+        badges(c.achievementMask, 312);
       } else if (v.result == Result::MigrationRetired) {
         line("升级已退回 500 探索步", 145, TFT_YELLOW);
         line("升级后每 1000 步获得一球", 180);
       } else line("伙伴仍在，继续步行探索", 155);
-      menu(s, e, 355); return;
+      menu(s, e, v.result == Result::Captured ? 372 : 355); return;
     case Page::Records:
       line("捕捉与步行记录", 66, TFT_WHITE, true);
       snprintf(text, sizeof(text), "每日最高 %llu 步", static_cast<unsigned long long>(v.bestDaySteps));

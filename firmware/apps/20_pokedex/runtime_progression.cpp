@@ -63,11 +63,38 @@ void Runtime::activateProgression(unsigned item, uint32_t at) {
   screen_.evolution.rosterRevision = view.revision;
   navigate(Page::EvolutionConfirm);
 }
+void Runtime::tickCapture(uint32_t now) {
+  if (screen_.charging && !engine_.throwView().active) screen_.charging = false;
+  if (!screen_.capture.active) { lastCaptureCue_ = 0; return; }
+  const auto cue = uint8_t(captureCueAt(screen_.capture, now));
+  if (cue != lastCaptureCue_) {
+    lastCaptureCue_ = cue;
+    switch (CaptureCue(cue)) {
+      case CaptureCue::Land1: case CaptureCue::Land2: feedback(10); break;
+      case CaptureCue::Wiggle1: case CaptureCue::Wiggle2: case CaptureCue::Wiggle3:
+        feedback(15); break;
+      case CaptureCue::BreakOut: feedback(25); break;
+      case CaptureCue::Success1: case CaptureCue::Success2: case CaptureCue::Success3:
+        feedback(30); break;
+      default: break;
+    }
+    dirty_ = true;
+  }
+  if (captureFrameAt(screen_.capture, now).stage == CaptureStage::Done) {
+    screen_.capture = CaptureAnim();
+    dirty_ = true;
+  }
+}
 void Runtime::handleThrow(const Input& input) {
+  if (screen_.capture.active) {
+    if (input.any()) { captureSkip(screen_.capture, input.at); waitForRelease(); }
+    return;
+  }
   if (engine_.throwView().active) {
-    if (input.right || input.touch) {
-      engine_.pressThrow(engine_.throwView().key, input.at, readingAt(input.at));
-      waitForRelease();
+    if ((input.right || input.touch) && !screen_.charging) {
+      screen_.charging = true;
+      screen_.chargeStartMs = input.at;
+      feedback(20);
     }
     return;
   }

@@ -46,6 +46,7 @@ void Runtime::syncPage() {
     notifiedEncounter_ = v.encounter.id; feedback(35);
   }
   if (screen_.page == Page::Viewer) return;
+  if (screen_.page == Page::Throw && screen_.capture.active) return;
   if (engine_.savePending() || !engine_.ready()) { if (screen_.page != Page::Error) navigate(Page::Error); return; }
   if ((!v.starter && !dateSkipped_ && !v.clock.calibrated) || (v.clock.pending.active && !pendingClockWrite_ && !dateSkipped_)) {
     if (screen_.page != Page::Clock && screen_.page != Page::DateWelcome) navigate(Page::DateWelcome);
@@ -127,6 +128,7 @@ void Runtime::loop() {
     else if (!practice_.view().active) { screen_.practice = false; navigate(Page::Home); }
   }
   if (engine_.ready() && !engine_.savePending()) engine_.tick(platform_.now(), readingAt(platform_.now()));
+  tickCapture(platform_.now());
   syncPage();
   if (safe() && !engine_.savePending() && clockDeferred_ && engine_.ready()) pollClock(platform_.now());
   const bool timedPage = screen_.page == Page::Battle || screen_.page == Page::Practice || screen_.page == Page::Throw;
@@ -135,6 +137,8 @@ void Runtime::loop() {
   if (!dimmed() && graphicsReady_) {
     const uint32_t now = platform_.now();
     if (screen_.page == Page::Home) dirty_ |= screens_.advanceHome(engine_.view().partner, now);
+    if (screen_.page == Page::Result && engine_.view().result == Result::Captured)
+      dirty_ |= screens_.advanceResult(engine_.view().encounter.species, now);
     if (screen_.page == Page::Viewer && waking) {
       if (!viewer_screen::redraw(now)) { drawGraphicsError(screen_.battery); ++metrics_.displayErrors; }
     } else if (screen_.page == Page::Viewer && !releaseGate_ && !blockedInput) {

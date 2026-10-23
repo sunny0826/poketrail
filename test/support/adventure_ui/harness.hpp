@@ -117,6 +117,7 @@ void screenshot(const char* name) {
   }
   std::fclose(file); check(inside, "all published pixels inside safe round screen");
 }
+void snapCurrent(Runtime&, const char* name) { screenshot(name); }
 void published(Runtime& r, const char* name) {
   M5.Display.beginObservation(); frame(r, 500); M5.Display.endObservation();
   const auto& frames = M5.Display.publishedFrames();
@@ -151,5 +152,14 @@ void win(Runtime& r, TestPlatform& p) {
   }
   check(r.engine().view().phase == Phase::ThrowReady, "public rhythm inputs win and persist victory");
   check(!r.engine().throwView().active, "winning input does not start throw");
+}
+void throwAt(Runtime& r, TestPlatform& p, uint32_t at) {
+  while (int32_t(at - 120 - host_time_ms) > 20) frame(r);
+  p.next.right = p.next.held = true;
+  frame(r, at - 120 - host_time_ms);
+  while (int32_t(at - host_time_ms) > 20) { p.next.rightDown = p.next.held = true; frame(r); }
+  p.next.rightDown = p.next.held = true;
+  frame(r, at - host_time_ms);
+  frame(r, 0);
 }
 }

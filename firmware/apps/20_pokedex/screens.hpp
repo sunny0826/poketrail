@@ -1,6 +1,7 @@
 #pragma once
 #include "adventure.hpp"
 #include "calendar.hpp"
+#include "capture_anim.hpp"
 #include "game.hpp"
 #include "menu_layout.hpp"
 #include "board_power.hpp"
@@ -24,6 +25,9 @@ struct ScreenState {
   calendar::CivilTime civil = {2026, 1, 1, 12, 0, 0};
   int offset = 480;
   adventure::ClockChangeMode clockMode = adventure::ClockChangeMode::Normal;
+  CaptureAnim capture;
+  uint32_t chargeStartMs = 0;
+  bool charging = false;
 };
 const char* routeName(adventure::Route);
 const char* speciesName(uint16_t id);
@@ -36,15 +40,18 @@ class Screens {
   bool begin();
   void invalidate();
   bool advanceHome(uint16_t partner, uint32_t now);
+  bool advanceResult(uint16_t species, uint32_t now);
   bool draw(const ScreenState&, const adventure::Engine&,
             const adventure::BattleView& practice, uint32_t now);
  private:
   struct Playback { viewer::State state; uint16_t species = 0; };
   bool exploration(const adventure::Engine&, uint32_t now);
-  void home(const ScreenState&, const adventure::Engine&);
+  void home(const ScreenState&, const adventure::Engine&, uint32_t now);
   void progression(const ScreenState&, const adventure::Engine&);
   void battle(const ScreenState&, const adventure::Engine&,
               const adventure::BattleView&, uint32_t);
+  void capture(const ScreenState&, const adventure::Engine&, uint32_t now);
+  void ballAt(int x, int y, float angle = 0);
   void records(const ScreenState&, const adventure::Engine&);
   void clock(const ScreenState&);
   void menu(const ScreenState&, const adventure::Engine&, int top = menu_layout::kTop);
@@ -56,10 +63,10 @@ class Screens {
   void stamp(const adventure::Stamp&, int top);
   void badges(uint8_t mask, int top);
   bool sprite(uint16_t id, uint32_t now);
-  bool sprite(uint16_t id, uint32_t now, Playback&);
+  bool sprite(uint16_t id, uint32_t now, Playback&, int cy = 233);
   bool advance(Playback&, uint16_t id, uint32_t now);
   uint16_t* pixels_ = nullptr;
-  Playback homePlayback_, battlePlayback_;
-  uint16_t decodedId_ = 0, decodedFrame_ = UINT16_MAX;
+  Playback homePlayback_, battlePlayback_, resultPlayback_;
+  uint16_t decodedId_ = 0, decodedFrame_ = UINT16_MAX, decodedScale_ = 0;
 };
 } }

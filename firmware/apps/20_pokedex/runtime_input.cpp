@@ -30,7 +30,30 @@ void Runtime::handle(const Input& raw) {
       input.right = action == MenuAction::Next || action == MenuAction::Confirm;
     }
   }
-  if (!input.any()) return;
+  if (!input.any()) {
+    if (screen_.page == Page::Throw && screen_.charging && engine_.throwView().active &&
+        !input.held && !input.rightDown) {
+      screen_.charging = false;
+      const auto result = engine_.pressThrow(engine_.throwView().key, input.at, readingAt(input.at));
+      if (result == CommandResult::Applied) {
+        const auto& key = engine_.throwView().key;
+        const auto& a = engine_.view().encounter.attempts[key.attemptIndex - 1];
+        CaptureAnim anim;
+        anim.active = true;
+        anim.startMs = input.at;
+        anim.timing = a.timing;
+        anim.captured = a.captured;
+        anim.wiggleBreak = a.captured ? 0 : uint8_t(1 + a.roll % 3);
+        screen_.capture = anim;
+        lastCaptureCue_ = 0;
+        feedback(a.timing == Timing::Perfect ? 40 : 20);
+      } else {
+        screen_.command = result;
+      }
+      dirty_ = true;
+    }
+    return;
+  }
   dirty_ = true;
   if (screen_.page == Page::Viewer) {
     if (input.back) goBack();
@@ -68,7 +91,9 @@ void Runtime::handle(const Input& raw) {
     screen_.selected = (screen_.selected + (input.x < 233 ? count - 1 : 1)) % count; return;
   }
   if (input.touch) {
-    const int top = screen_.page == Page::Result ? 355 : menu_layout::kTop;
+    const int top = screen_.page == Page::Result
+                        ? (engine_.view().result == Result::Captured ? 372 : 355)
+                        : menu_layout::kTop;
     const int row = menu_layout::rowAt(input.x, input.y, top);
     if (row >= 0) {
       const unsigned selected = menu_layout::first(screen_.selected) + unsigned(row);

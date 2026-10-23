@@ -1,0 +1,71 @@
+#include "screens.hpp"
+#include "board.hpp"
+#include "icons_generated.hpp"
+namespace pokedex { namespace ui {
+using namespace adventure;
+void Screens::ballAt(int x, int y, float angle) {
+  const auto& icon = data::kPokeBallIcon;
+  M5.Display.pushImageRotateZoom(float(x), float(y), icon.width / 2.0f, icon.height / 2.0f,
+                                 angle, 1.0f, 1.0f, icon.width, icon.height, icon.pixels, kTransparentKey);
+}
+namespace {
+void star(int x, int y, int r, uint16_t color) {
+  M5.Display.drawFastHLine(x - r, y, 2 * r + 1, color);
+  M5.Display.drawFastVLine(x, y - r, 2 * r + 1, color);
+}
+}
+void Screens::capture(const ScreenState& s, const Engine& e, uint32_t now) {
+  const auto& anim = s.capture;
+  const uint16_t species = e.view().encounter.species;
+  const auto f = captureFrameAt(anim, now);
+  switch (f.stage) {
+    case CaptureStage::Flight: {
+      sprite(species, now);
+      int x, y;
+      captureFlightPos(f.t, x, y);
+      const unsigned trail = anim.timing == Timing::Perfect ? 3 : anim.timing == Timing::Nice ? 2 : 0;
+      for (unsigned i = 1; i <= trail; ++i) {
+        int tx, ty;
+        captureFlightPos(f.t - 0.06f * i, tx, ty);
+        M5.Display.fillCircle(tx, ty, 6 - int(i), anim.timing == Timing::Perfect ? kGold : TFT_WHITE);
+      }
+      ballAt(x, y, 720.0f * f.t);
+      break;
+    }
+    case CaptureStage::Flash: {
+      const int r = int(90.0f * f.t);
+      if (r > 2) {
+        M5.Display.drawCircle(233, 233, r, TFT_WHITE);
+        M5.Display.drawCircle(233, 233, r / 2, TFT_WHITE);
+      }
+      break;
+    }
+    case CaptureStage::Drop:
+      ballAt(kBallX, captureDropY(f.t));
+      break;
+    case CaptureStage::Wiggle: {
+      ballAt(kBallX, kGroundY, captureWiggleAngle(f.t));
+      const int side = f.wiggle % 2 ? 1 : -1;
+      star(233 + side * 40, 285, 5, kGold);
+      break;
+    }
+    case CaptureStage::Reveal:
+      if (anim.captured) {
+        for (unsigned i = 0; i < 6; ++i) {
+          int x, y;
+          captureStarPos(i, f.t, x, y);
+          star(x, y, 7, i % 2 ? kGold : TFT_WHITE);
+        }
+        M5.Display.drawCircle(233, kGroundY, 26, kGold);
+        ballAt(kBallX, kGroundY);
+      } else {
+        const int r = int(90.0f * f.t);
+        if (r > 2) M5.Display.drawCircle(233, 233, r, TFT_WHITE);
+        sprite(species, now);
+        ballAt(kBallX, 330);
+      }
+      break;
+    case CaptureStage::Done: break;
+  }
+}
+} }

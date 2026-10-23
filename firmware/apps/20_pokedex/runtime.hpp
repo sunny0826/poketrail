@@ -64,6 +64,7 @@ class Runtime {
   void activate(unsigned item, uint32_t at);
   void activateProgression(unsigned item, uint32_t at);
   void handleThrow(const Input&);
+  void tickCapture(uint32_t now);
   void openPartner(uint16_t species);
   void resumeSavedProgression();
   static const char* collectionLabel(uint16_t species, void* context);
@@ -97,6 +98,7 @@ class Runtime {
   uint32_t lastClock_ = 0, lastCheckpoint_ = 0, lastRender_ = 0, lastActivity_ = 0;
   uint64_t batchId_ = 0, notifiedEncounter_ = 0, pendingClockWrite_ = 0;
   uint64_t deferredThrow_ = 0;
+  uint8_t lastCaptureCue_ = 0;
   enum class PendingRoster : uint8_t { None, Select, Evolve };
   PendingRoster pendingRoster_ = PendingRoster::None;
   bool hasSample_ = false, gapReported_ = false, wasVibrating_ = false;

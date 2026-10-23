@@ -156,28 +156,42 @@ void pauseAndResume(bool practice) {
   release(r); edge(r, false, true); chord(r, true); release(r);
   check(r.screen().page == (practice ? Page::Home : Page::Result), "staggered retreat confirms the selected pause item");
 }
-void winBattle(Runtime& r) {
-  for (unsigned i = 0; i < 14 && r.screen().page == Page::Battle; ++i) {
-    auto view = r.engine().battleView();
-    buttons(view.expected == Action::Dodge, view.expected == Action::Attack);
-    frame(r, view.targetMs - host_time_ms); release(r); idle(r, 200);
-  }
-  check(r.screen().page == Page::Throw, "real button rhythm inputs reach throw menu");
-}
 void throwTimingAndRelease() {
-  MemoryStore store; seedEncounter(store); HostPlatform platform; Runtime r(store, platform); start(r);
-  openMenu(r); select(r, 0); select(r, 0); winBattle(r);
-  buttons(false, true); frame(r);
+  MemoryStore store; Save save;
+  save.bootGeneration = 1; save.starter = save.partner = 1; setOwned(save, 1); setRegistered(save, 1);
+  save.rosterRevision = 1; save.totalSteps = save.undatedSteps = 5000; save.nextEncounterId = 2;
+  save.phase = Phase::ThrowReady; save.result = Result::Won;
+  save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1;
+  while (throwRoll(save.encounter, 1) < captureProbability(catalogEntry(1)->rare, Timing::Perfect)) ++save.encounter.seed;
+  check(validate(save) && store.commit(save) == CommitStatus::Committed, "throw timing fixture validates and encodes");
+  HostPlatform platform; Runtime r(store, platform); start(r);
+  edge(r, false, true);
   check(r.engine().throwView().active && r.engine().view().encounter.usedBalls == 0,
         "throw menu prepares immediately on right press");
   idle(r, 100); check(r.engine().view().encounter.usedBalls == 0, "held prepare does not throw");
-  release(r);
   const auto target = r.engine().throwView().targetMs;
-  buttons(false, true); frame(r, target - host_time_ms);
-  check(r.engine().view().encounter.usedBalls == 1 &&
-        r.engine().view().encounter.attempts[0].timing == Timing::Perfect,
-        "throw scores at original right press timestamp before release");
-  release(r);
+  buttons(false, true); frame(r, target - 300 - host_time_ms);
+  check(r.screen().charging && r.engine().view().encounter.usedBalls == 0,
+        "charging holds the ball without spending it");
+  buttons(false, false); frame(r, 300);
+  const auto& first = r.engine().view().encounter.attempts[0];
+  check(r.engine().view().encounter.usedBalls == 1 && first.used && first.timing == Timing::Perfect,
+        "throw scores Perfect at the release timestamp");
+  check(r.screen().capture.active && r.screen().page == Page::Throw,
+        "committed throw plays the capture animation before leaving the page");
+  edge(r, false, true); edge(r, false, true); frame(r);
+  check(!r.screen().capture.active && r.screen().page == Page::Throw,
+        "skipped failed animation returns to the throw menu");
+  edge(r, false, true);
+  check(r.engine().throwView().active, "second attempt prepares after the failed first ball");
+  buttons(false, true); frame(r);
+  idle(r, 2000);
+  check(r.engine().view().encounter.usedBalls == 2 &&
+        r.engine().view().encounter.attempts[1].timing == Timing::Miss && !r.screen().charging,
+        "holding past the deadline still times out as Miss");
+  buttons(false, false); frame(r);
+  check(r.engine().view().result == Result::Escaped && r.screen().page == Page::Result,
+        "second Miss ends the encounter on the result page");
 }
 void samplerPauseEdges() {
   m5::Button_Class left, right; ButtonInput sampler;

@@ -61,10 +61,10 @@ def main():
               str(app / "sprites_generated.cpp"), str(app / "battery_screen.cpp")]
     adventure_sources = [
         "runtime.cpp", "runtime_clock.cpp", "runtime_input.cpp", "runtime_progression.cpp", "runtime_power.cpp", "screens.cpp",
-        "screens_home.cpp", "screens_exploration.cpp", "screens_battle.cpp", "screens_records.cpp", "screens_clock.cpp", "screens_progression.cpp",
+        "screens_home.cpp", "screens_exploration.cpp", "screens_battle.cpp", "screens_capture.cpp", "screens_records.cpp", "screens_clock.cpp", "screens_progression.cpp",
         "viewer_screen.cpp", "adventure.cpp", "adventure_steps.cpp", "adventure_clock.cpp",
         "adventure_capture.cpp", "adventure_model.cpp", "adventure_progression.cpp", "adventure_migration.cpp",
-        "battle.cpp", "encounter_catalog.cpp", "icons_generated.cpp",
+        "battle.cpp", "capture_anim.cpp", "encounter_catalog.cpp", "icons_generated.cpp",
         "save_codec.cpp", "motion.cpp", "calendar.cpp",
     ]
     output = Path(os.environ.get("MYM5_VERIFICATION_DIR", str(

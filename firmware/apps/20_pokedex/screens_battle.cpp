@@ -9,13 +9,20 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     char text[60];
     ballCount(availableBalls(v), 43);
     line(speciesName(v.encounter.species), 80, TFT_CYAN);
-    if (e.throwView().active) {
+    if (s.capture.active) {
+      capture(s, e, now);
+    } else if (e.throwView().active) {
       sprite(v.encounter.species, now);
       const int32_t remaining = int32_t(e.throwView().targetMs - now);
       const int radius = remaining > 1500 ? 130 : remaining > 0 ? 24 + remaining * 106 / 1500 : 24;
-      M5.Display.drawCircle(233, 233, radius, TFT_CYAN);
-      M5.Display.drawCircle(233, 233, 24, TFT_YELLOW);
-      line("圈到中心 · 右键投球", 391, TFT_CYAN);
+      const bool perfect = remaining <= 70 && remaining >= -70;
+      M5.Display.drawCircle(233, 233, radius, remaining < 400 ? TFT_YELLOW : TFT_CYAN);
+      M5.Display.drawCircle(233, 233, 24, perfect && (now / 100) % 2 ? kGold : TFT_YELLOW);
+      const uint8_t charge = s.charging ? captureChargeLevel(now - s.chargeStartMs) : 0;
+      if (charge == 1) M5.Display.drawCircle(233, kHandY, 27, kGold);
+      else if (charge == 2) M5.Display.drawCircle(233, kHandY, (now / 200) % 2 ? 34 : 30, kGold);
+      ballAt(233, kHandY);
+      line("按住蓄力 · 松手投球", 391, TFT_CYAN);
       line("未投出也会消耗本球", 419, TFT_DARKGREY);
     } else {
       thumbnail(v.encounter.species, 233, 127, 2);

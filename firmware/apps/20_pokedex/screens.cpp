@@ -55,7 +55,7 @@ bool Screens::begin() {
   pixels_ = static_cast<uint16_t*>(malloc(size_t(kMaxDisplayWidth) * kMaxDisplayHeight * 2));
   return pixels_ != nullptr;
 }
-void Screens::invalidate() { battlePlayback_.species = decodedId_ = 0; decodedFrame_ = UINT16_MAX; }
+void Screens::invalidate() { battlePlayback_.species = resultPlayback_.species = decodedId_ = 0; decodedFrame_ = UINT16_MAX; }
 void Screens::line(const char* t, int y, uint16_t color, bool large) {
   M5.Display.setTextDatum(middle_center);
   M5.Display.setFont(large ? &fonts::efontCN_24 : &fonts::efontCN_16);
@@ -114,17 +114,19 @@ bool Screens::advance(Playback& playback, uint16_t id, uint32_t now) {
   return viewer::update(playback.state, data::kSprites[id - 1], now) || changed;
 }
 bool Screens::advanceHome(uint16_t partner, uint32_t now) { return advance(homePlayback_, partner, now); }
+bool Screens::advanceResult(uint16_t species, uint32_t now) { return advance(resultPlayback_, species, now); }
 bool Screens::sprite(uint16_t id, uint32_t now) { return sprite(id, now, battlePlayback_); }
-bool Screens::sprite(uint16_t id, uint32_t now, Playback& playback) {
+bool Screens::sprite(uint16_t id, uint32_t now, Playback& playback, int cy) {
   if (!id || id > data::kSpriteCount || !pixels_) return false;
   advance(playback, id, now);
   const auto& s = data::kSprites[id - 1];
-  const auto scale = displayScale(s);
-  if (decodedId_ != id || decodedFrame_ != playback.state.frame_index) {
+  auto scale = displayScale(s);
+  if (cy != 233 && scale > 2) scale = 2;
+  if (decodedId_ != id || decodedFrame_ != playback.state.frame_index || decodedScale_ != scale) {
     if (!decodeFrame(s, playback.state.frame_index, scale, pixels_, size_t(kMaxDisplayWidth) * kMaxDisplayHeight)) return false;
-    decodedId_ = id; decodedFrame_ = playback.state.frame_index;
+    decodedId_ = id; decodedFrame_ = playback.state.frame_index; decodedScale_ = scale;
   }
-  M5.Display.pushImage(233 - s.width * scale / 2, 233 - s.height * scale / 2,
+  M5.Display.pushImage(233 - s.width * scale / 2, cy - s.height * scale / 2,
                        s.width * scale, s.height * scale, pixels_, kTransparentKey);
   return true;
 }
@@ -141,7 +143,7 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     case Page::Clock: clock(s); break;
     case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
       progression(s, e); break;
-    default: home(s, e); break;
+    default: home(s, e, now); break;
   }
   const bool listPage = s.page == Page::Menu || s.page == Page::Clock || s.page == Page::Partners ||
                         s.page == Page::PartnerDetail || s.page == Page::Records;
