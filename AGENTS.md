@@ -1,6 +1,6 @@
 # 项目协作约定
 
-本项目为 M5Stack StopWatch（C152）开发离线宝可梦步行探险固件，使用 ESP32-S3、Arduino、M5Unified 和 M5GFX。
+PokeTrail（宝可旅途）是面向 M5Stack StopWatch（C152）的离线宝可梦步行探险固件，使用 ESP32-S3、Arduino、M5Unified 和 M5GFX。
 
 先阅读 [README](README.md) 了解操作和开发入口。涉及培养、进化或存档迁移时，阅读[玩法契约](docs/design/walking-progression.md)与[验证说明](docs/verification.md)。
 
