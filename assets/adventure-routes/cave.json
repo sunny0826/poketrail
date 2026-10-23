@@ -1,0 +1,421 @@
+{
+  "species": [
+    {
+      "id": 27,
+      "name": "穿山鼠",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 28,
+      "name": "穿山王",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 35,
+      "name": "皮皮",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 36,
+      "name": "皮可西",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 41,
+      "name": "超音蝠",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 42,
+      "name": "大嘴蝠",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 50,
+      "name": "地鼠",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 51,
+      "name": "三地鼠",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 66,
+      "name": "腕力",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 67,
+      "name": "豪力",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 68,
+      "name": "怪力",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 74,
+      "name": "小拳石",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 75,
+      "name": "隆隆石",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 76,
+      "name": "隆隆岩",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 81,
+      "name": "小磁怪",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 82,
+      "name": "三合一磁怪",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 88,
+      "name": "臭泥",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 89,
+      "name": "臭臭泥",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 92,
+      "name": "鬼斯",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 93,
+      "name": "鬼斯通",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 94,
+      "name": "耿鬼",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 95,
+      "name": "大岩蛇",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 100,
+      "name": "霹雳电球",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 101,
+      "name": "顽皮雷弹",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 104,
+      "name": "卡拉卡拉",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 105,
+      "name": "嘎啦嘎啦",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 106,
+      "name": "飞腿郎",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 107,
+      "name": "快拳郎",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 109,
+      "name": "瓦斯弹",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 110,
+      "name": "双弹瓦斯",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 111,
+      "name": "独角犀牛",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 112,
+      "name": "钻角犀兽",
+      "routes": [
+        "Cave"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 124,
+      "name": "迷唇姐",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 125,
+      "name": "电击兽",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 126,
+      "name": "鸭嘴火兽",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 132,
+      "name": "百变怪",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 137,
+      "name": "多边兽",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 138,
+      "name": "菊石兽",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 139,
+      "name": "多刺菊石兽",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 140,
+      "name": "化石盔",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 141,
+      "name": "镰刀盔",
+      "routes": [
+        "Cave",
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 142,
+      "name": "化石翼龙",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 145,
+      "name": "闪电鸟",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 146,
+      "name": "火焰鸟",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 150,
+      "name": "超梦",
+      "routes": [
+        "Cave"
+      ],
+      "rare": true,
+      "weight": 2
+    }
+  ]
+}

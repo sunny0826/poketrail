@@ -1,0 +1,347 @@
+{
+  "species": [
+    {
+      "id": 7,
+      "name": "杰尼龟",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 8,
+      "name": "卡咪龟",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 9,
+      "name": "水箭龟",
+      "routes": [
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 25,
+      "name": "皮卡丘",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 26,
+      "name": "雷丘",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 54,
+      "name": "可达鸭",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 55,
+      "name": "哥达鸭",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 60,
+      "name": "蚊香蝌蚪",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 61,
+      "name": "蚊香君",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 62,
+      "name": "蚊香泳士",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 72,
+      "name": "玛瑙水母",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 73,
+      "name": "毒刺水母",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 79,
+      "name": "呆呆兽",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 80,
+      "name": "呆壳兽",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 86,
+      "name": "小海狮",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 87,
+      "name": "白海狮",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 90,
+      "name": "大舌贝",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 91,
+      "name": "刺甲贝",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 98,
+      "name": "大钳蟹",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 99,
+      "name": "巨钳蟹",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 116,
+      "name": "墨海马",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 117,
+      "name": "海刺龙",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 118,
+      "name": "角金鱼",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 119,
+      "name": "金鱼王",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 120,
+      "name": "海星星",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 121,
+      "name": "宝石海星",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 129,
+      "name": "鲤鱼王",
+      "routes": [
+        "Coast"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 130,
+      "name": "暴鲤龙",
+      "routes": [
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 131,
+      "name": "拉普拉斯",
+      "routes": [
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 133,
+      "name": "伊布",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 134,
+      "name": "水伊布",
+      "routes": [
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 143,
+      "name": "卡比兽",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 144,
+      "name": "急冻鸟",
+      "routes": [
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 147,
+      "name": "迷你龙",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 148,
+      "name": "哈克龙",
+      "routes": [
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 149,
+      "name": "快龙",
+      "routes": [
+        "Coast"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 151,
+      "name": "梦幻",
+      "routes": [
+        "Coast",
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    }
+  ]
+}

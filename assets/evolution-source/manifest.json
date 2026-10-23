@@ -1,0 +1,20 @@
+{
+  "revision": "f38eb24b70f8462976154f534e79bf2bdd7af847",
+  "sources": {
+    "pokemon_species.csv": {
+      "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/f38eb24b70f8462976154f534e79bf2bdd7af847/data/v2/csv/pokemon_species.csv",
+      "sha256": "e66e2eeb25fd3836b0ebab6bf87bbf01960aa3c0555e2bac495fa8393c5e0c45",
+      "bytes": 56884
+    },
+    "pokemon_evolution.csv": {
+      "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/f38eb24b70f8462976154f534e79bf2bdd7af847/data/v2/csv/pokemon_evolution.csv",
+      "sha256": "a35ceefa30851ab29faf90d7425a2773a43db5f4e9e3f3be4f0abcd51f67282a",
+      "bytes": 30020
+    },
+    "evolution_triggers.csv": {
+      "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/f38eb24b70f8462976154f534e79bf2bdd7af847/data/v2/csv/evolution_triggers.csv",
+      "sha256": "fb4b055fdb022eab3110147de669ae243c5497559257ad1f370c929ab6309a8c",
+      "bytes": 304
+    }
+  }
+}

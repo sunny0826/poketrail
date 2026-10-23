@@ -1,0 +1,9 @@
+{
+  "ruleVersion": 1,
+  "note": "本游戏手工配置的虚构探索地图与稀有度；不是官方栖息地或捕捉率，不按属性自动推导。普通权重10，稀有2，未拥有权重乘3。",
+  "speciesFiles": [
+    "adventure-routes/forest.json",
+    "adventure-routes/coast.json",
+    "adventure-routes/cave.json"
+  ]
+}

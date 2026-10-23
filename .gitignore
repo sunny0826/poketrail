@@ -1,0 +1,25 @@
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# 构建产物
+build/
+compile_commands.json
+
+# 原始素材缓存（由 sprites / icons-download 任务获取）
+assets/sprites/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 设备备份
+backups/
+
+# 报告（不属于固件）
+report.html
+stopwatch-contact-sheet.png
+
+# macOS
+.DS_Store

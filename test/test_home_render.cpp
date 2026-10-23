@@ -1,0 +1,263 @@
+#include "support/home_ui/pixel_checks.hpp"
+
+namespace {
+void ignoredTouches() {
+  MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+  home(runtime); const auto bytes = store.bytes; const unsigned commits = store.commits;
+  for (int y : {30, 228, 276, 324, 372, 422}) for (int x : {90, 233, 375}) {
+    tap(runtime, x, y); frame(runtime); home(runtime);
+    check(runtime.engine().view().partner == 1 && runtime.engine().view().route == Route::Forest,
+          "old touch targets cannot change partner or route");
+  }
+  auto& touch = M5.Touch.detail;
+  touch.base_x = touch.x = 233; touch.base_y = touch.y = 233; touch.pressed = true;
+  frame(runtime); buttons(true, false); frame(runtime); buttons(true, true); frame(runtime);
+  idle(runtime, 240); home(runtime);
+  touch.pressed = false; touch.released = touch.clicked = true; frame(runtime); touch = {};
+  buttons(false, true); frame(runtime); home(runtime); settle(runtime);
+  check(store.bytes == bytes && store.commits == commits, "ignored touches perform no save transaction");
+  openMenu(runtime, true); select(runtime, 8); settle(runtime); home(runtime);
+}
+void openingGestures() {
+  for (unsigned gesture = 0; gesture < 4; ++gesture) {
+    MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+    const bool left = gesture != 1, right = gesture == 1 || gesture == 2;
+    buttons(left, right); frame(runtime);
+    check(runtime.screen().page == Page::Menu && runtime.screen().selected == 0,
+          "left, right and dual presses open menu immediately at zero");
+    idle(runtime, 900); buttons(true, true); frame(runtime); idle(runtime, 120);
+    buttons(false, true); frame(runtime); buttons(true, true); frame(runtime);
+    buttons(true, false); frame(runtime); idle(runtime, 100);
+    check(runtime.screen().page == Page::Menu && runtime.screen().selected == 0,
+          "long hold, overlap and partial releases consume the complete opening gesture");
+    settle(runtime); edge(runtime, false, true);
+    check(runtime.screen().page == Page::Menu && runtime.screen().selected == 1,
+          "a new released single key navigates after full release");
+    select(runtime, 8); settle(runtime); home(runtime);
+  }
+}
+void ninthItem() {
+  MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+  openMenu(runtime); check(menuCount(runtime.screen(), runtime.engine()) == 9, "menu has nine entries");
+  edge(runtime, true, false);
+  check(runtime.screen().selected == 8, "left from first item wraps to return on page three");
+  const auto bytes = store.bytes;
+  for (int y : {276, 324, 372}) {
+    tap(runtime, 233, y); frame(runtime);
+    check(runtime.screen().page == Page::Menu && runtime.screen().selected == 8 && store.bytes == bytes,
+          "third-page blank rows neither activate nor change selection or save");
+  }
+  screenshot(runtime, "home-menu-third-page");
+  tap(runtime, 233, 422); frame(runtime); check(runtime.screen().selected == 0, "page control wraps to first page");
+  tap(runtime, 233, 422); frame(runtime); check(runtime.screen().selected == 4, "page control reaches second page");
+  tap(runtime, 233, 422); frame(runtime); check(runtime.screen().selected == 8, "page control reaches third page");
+  tap(runtime, 233, 228); settle(runtime); home(runtime);
+  openMenu(runtime, true); select(runtime, 8); settle(runtime); home(runtime);
+}
+void routesAndPartner() {
+  MemoryStore store; legacyOwned(store, {1, 4, 7}); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+  uint16_t colors[3] = {};
+  for (unsigned route = 0; route < 3; ++route) {
+    openMenu(runtime); select(runtime, 1); select(runtime, route); settle(runtime); home(runtime);
+    check(runtime.engine().view().route == Route(route), "real route menu updates the displayed route");
+    check(glyph(routeName(Route(route)), 82, TFT_DARKGREY), "home labels the actual current scene");
+    colors[route] = M5.Display.readPixel(233, 110);
+    char name[40]; std::snprintf(name, sizeof(name), "home-scene-%u", route); screenshot(runtime, name);
+    Save loaded; check(store.load(loaded).status == LoadStatus::Loaded && loaded.route == Route(route),
+                       "route selection survives production codec reload");
+  }
+  check(colors[0] != colors[1] && colors[1] != colors[2] && colors[0] != colors[2], "three scenes have distinct visible backgrounds");
+  openMenu(runtime); select(runtime, 2); select(runtime, 1);
+  check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 4, "partner list opens Charmander detail");
+  select(runtime, 0); settle(runtime); check(runtime.engine().view().partner == 4, "carry action selects Charmander");
+  select(runtime, menuCount(runtime.screen(), runtime.engine()) - 1); select(runtime, 3); settle(runtime); home(runtime);
+  check(textLine(speciesName(4), 54, TFT_WHITE, 240), "home name follows the current carried partner");
+  screenshot(runtime, "home-partner-switched");
+  Save loaded; check(store.load(loaded).status == LoadStatus::Loaded && loaded.partner == 4, "carried partner is durable");
+}
+void animationContinuity() {
+  MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+  const uint32_t origin = host_time_ms; const auto& sprite = data::kSprites[0];
+  spritePixels(1, origin, true);
+  if (sprite.frames[0].duration_ms > 1) frame(runtime, sprite.frames[0].duration_ms - 1);
+  spritePixels(1, origin, true);
+  M5.Display.beginObservation(); frame(runtime, 1); M5.Display.endObservation();
+  check(M5.Display.publishedFrames().size() == 1, "original frame deadline publishes without waiting 500ms");
+  spritePixels(1, origin, true);
+  for (unsigned i = 1; i < std::min<unsigned>(sprite.frame_count, 24); ++i) {
+    frame(runtime, sprite.frames[i].duration_ms); spritePixels(1, origin, true);
+  }
+  openMenu(runtime); idle(runtime, 380); select(runtime, 8); frame(runtime); home(runtime); spritePixels(1, origin, true);
+  openMenu(runtime); select(runtime, 1); select(runtime, 1); frame(runtime); home(runtime); spritePixels(1, origin);
+  openMenu(runtime); select(runtime, 3); frame(runtime); idle(runtime, 240); tap(runtime, 233, 30); frame(runtime);
+  home(runtime); spritePixels(1, origin);
+  openMenu(runtime); select(runtime, 6); frame(runtime);
+  check(runtime.screen().page == Page::Practice, "real menu starts practice");
+  idle(runtime, 2500); tap(runtime, 233, 30);
+  for (unsigned i = 0; runtime.screen().page == Page::Practice && i < 200; ++i) frame(runtime);
+  check(runtime.screen().page == Page::Pause && runtime.screen().practice, "practice pauses through actual touch input");
+  select(runtime, 1); frame(runtime); home(runtime); spritePixels(1, origin);
+  screenshot(runtime, "home-after-practice"); spritePixels(1, origin);
+}
+class ClockPlatform : public HostPlatform {
+ public:
+  int64_t utc = 1792713598LL;
+  uint32_t setAt = host_time_ms;
+  bool valid = true;
+  device_clock::Reading readClock() override {
+    device_clock::Reading r = {}; r.valid = valid; r.utcSeconds = utc + (now() - setAt) / 1000; return r;
+  }
+  c152::DisplayTransition displaySleep(bool sleeping) override { return {true, uint16_t(sleeping ? 0 : 150)}; }
+};
+void calibrated(MemoryStore& store, ClockPlatform& platform) {
+  ready(store); Engine engine(store); check(engine.begin() == CommandResult::Applied, "dated fixture reloads");
+  ClockReading target; target.trusted = true; target.utcSeconds = platform.utc;
+  target.dayKey = 20261022; target.bootGeneration = engine.view().bootGeneration; target.monotonicMs = host_time_ms;
+  check(engine.beginClockChange(1, ClockChangeMode::Normal, target) == CommandResult::Applied &&
+        engine.finishClockChange(1, target) == CommandResult::Applied, "clock fixture uses public calibration transaction");
+}
+void todayLine(Runtime& runtime) {
+  const auto& today = runtime.engine().view().today; char text[96];
+  std::snprintf(text, sizeof(text), "%s %llu 步", today.complete ? "今日" : "今日已记录",
+                static_cast<unsigned long long>(today.steps));
+  check(textLine(text, 393, TFT_CYAN), "visible today line equals live Engine bucket including completeness");
+}
+void datesAndLiveSteps() {
+  {
+    MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+    check(textLine("今日 --", 393, TFT_CYAN), "unknown RTC displays no fabricated daily number");
+    screenshot(runtime, "home-today-unknown");
+  }
+  MemoryStore store; ClockPlatform platform; calibrated(store, platform);
+  Runtime runtime(store, platform); start(runtime);
+  check(runtime.engine().view().clock.trusted && !runtime.engine().view().today.complete,
+        "calibration partway through a day is explicitly incomplete");
+  todayLine(runtime); screenshot(runtime, "home-today-partial");
+  idle(runtime, 2400);
+  check(runtime.engine().view().today.dayKey == 20261023 && runtime.engine().view().today.complete,
+        "trusted midnight starts a complete new daily bucket");
+  const unsigned commits = store.commits; walk(runtime, platform, 4);
+  check(runtime.engine().view().today.steps > 0, "real detector produces dated steps on home");
+  Save loaded; check(store.load(loaded).status == LoadStatus::Loaded &&
+                     loaded.today.steps < runtime.engine().view().today.steps && store.commits == commits,
+                     "home shows live steps before a durable checkpoint");
+  todayLine(runtime); screenshot(runtime, "home-today-complete-live");
+  platform.valid = false; idle(runtime, 1100);
+  check(!runtime.engine().view().clock.trusted && runtime.engine().view().today.steps > 0,
+        "RTC loss retains old bucket for the stale-number regression");
+  check(textLine("今日 --", 393, TFT_CYAN), "stale trusted-day bucket is hidden after RTC loss");
+  screenshot(runtime, "home-today-stale-hidden");
+  platform.valid = true; idle(runtime, 1100); todayLine(runtime);
+  check(!runtime.engine().view().today.complete, "recovered same day remains explicitly partial");
+  platform.utc -= 300; idle(runtime, 1100);
+  check(runtime.engine().view().clock.anomaly && textLine("今日 --", 393, TFT_CYAN),
+        "backward RTC anomaly cannot relabel the retained bucket as today");
+}
+void maximumToday() {
+  MemoryStore store; ClockPlatform platform; platform.utc = 1792670400LL; calibrated(store, platform);
+  Save save; check(store.load(save).status == LoadStatus::Loaded, "extreme-date fixture loads genuine calibrated bytes");
+  save.totalSteps = save.explorationCredit = save.rewardBaseSteps = UINT64_MAX;
+  save.today.steps = save.bestDaySteps = save.progress[0].walked = UINT64_MAX;
+  save.today.complete = true;
+  const uint64_t daily[] = {1000, 3000, 5000}, lifetime[] = {10000, 50000, 100000};
+  for (unsigned i = 0; i < 3; ++i) {
+    Achievement dailyAward; dailyAward.reached = true;
+    auto& stamp = dailyAward.first; stamp.timeKnown = true; stamp.dayComplete = true;
+    stamp.utcSeconds = platform.utc; stamp.dayKey = 20261022; stamp.bootGeneration = save.bootGeneration;
+    stamp.calibrationEpoch = save.clock.calibrationEpoch; stamp.totalSteps = stamp.dailySteps = daily[i];
+    save.today.milestones[i] = save.dailyFirst[i] = dailyAward;
+    Achievement lifeAward = dailyAward; lifeAward.first.totalSteps = lifeAward.first.dailySteps = lifetime[i];
+    save.lifetime[i] = lifeAward;
+  }
+  check(validate(save) && store.commit(save) == CommitStatus::Committed,
+        "UINT64_MAX fixture passes real semantic validation and encoder");
+  Runtime runtime(store, platform); start(runtime); home(runtime); todayLine(runtime); roundPixels();
+  check(runtime.engine().view().today.steps == UINT64_MAX, "maximum daily number survives startup without truncation");
+  screenshot(runtime, "home-today-uint64-max"); todayLine(runtime);
+}
+void sleepContinuity() {
+  MemoryStore store; ready(store); ClockPlatform platform; platform.valid = false;
+  Runtime runtime(store, platform); start(runtime); const uint32_t origin = host_time_ms;
+  idle(runtime, 30020); check(runtime.dimmed(), "animation is not user activity and home sleeps after thirty seconds");
+  buttons(true, false); frame(runtime); buttons(true, true); frame(runtime); idle(runtime, 160);
+  home(runtime); check(!runtime.dimmed(), "wake settles without opening menu");
+  buttons(false, true); frame(runtime); home(runtime); settle(runtime); spritePixels(1, origin, true);
+  screenshot(runtime, "home-after-wake"); spritePixels(1, origin, true);
+  openMenu(runtime); select(runtime, 8); frame(runtime); home(runtime);
+}
+void saveFailure() {
+  MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+  openMenu(runtime); select(runtime, 1); const auto bytes = store.bytes;
+  store.fail = true; select(runtime, 1); frame(runtime);
+  check(runtime.screen().page == Page::Error && runtime.engine().savePending() &&
+        runtime.engine().view().route == Route::Forest && store.bytes == bytes,
+        "failed route save exposes error and does not publish the uncommitted scene");
+  store.fail = false; const unsigned commits = store.commits; select(runtime, 0); frame(runtime); home(runtime);
+  check(runtime.engine().view().route == Route::Coast && store.commits == commits + 1,
+        "explicit retry commits the original route change once");
+  Engine restarted(store); check(restarted.begin() == CommandResult::Applied && restarted.view().route == Route::Coast,
+                                "route survives real Engine restart and codec reload");
+}
+void clockPendingRestart() {
+  MemoryStore store; ClockPlatform platform; calibrated(store, platform);
+  {
+    Engine engine(store); check(engine.begin() == CommandResult::Applied, "pending fixture reloads calibrated state");
+    ClockReading target; target.trusted = true; target.utcSeconds = platform.utc;
+    target.dayKey = 20261022; target.bootGeneration = engine.view().bootGeneration;
+    target.calibrationEpoch = engine.view().clock.calibrationEpoch; target.monotonicMs = host_time_ms;
+    check(engine.beginClockChange(2, ClockChangeMode::Normal, target) == CommandResult::Applied,
+          "pending clock transaction is durably started through Engine");
+  }
+  Runtime runtime(store, platform); start(runtime);
+  check(runtime.screen().page == Page::DateWelcome && runtime.engine().view().clock.pending.active,
+        "pending clock restoration retains setup priority over home");
+  select(runtime, 1); frame(runtime); home(runtime);
+  check(textLine("今日 --", 393, TFT_CYAN), "explicit skip with pending clock never displays retained bucket");
+  screenshot(runtime, "home-clock-pending-skipped");
+}
+void battleContinuity() {
+  MemoryStore store; ready(store);
+  { Engine engine(store); engine.begin(); step(engine, 1, 5000); engine.checkpoint(); }
+  HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+  const uint32_t origin = host_time_ms;
+  check(runtime.engine().view().phase == Phase::EncounterReady, "saved encounter starts on exploration");
+  check(glyph("发现宝可梦 · 按键查看", 422, TFT_YELLOW), "home exposes pending encounter without opening it");
+  openMenu(runtime); select(runtime, 0); select(runtime, 0); frame(runtime);
+  check(runtime.screen().page == Page::Battle, "real encounter starts formal battle");
+  idle(runtime, 180); tap(runtime, 233, 30);
+  for (unsigned i = 0; runtime.screen().page == Page::Battle && i < 150; ++i) frame(runtime);
+  check(runtime.screen().page == Page::Pause && !runtime.screen().practice, "formal battle pauses at a safe cue boundary");
+  select(runtime, 1); frame(runtime);
+  check(runtime.screen().page == Page::Result, "formal retreat preserves result-page priority");
+  select(runtime, 0); frame(runtime); home(runtime); spritePixels(1, origin, true);
+  screenshot(runtime, "home-after-battle"); spritePixels(1, origin, true);
+}
+void animationWraparound() {
+  host_time_ms = UINT32_MAX - 400;
+  MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+  const uint32_t origin = host_time_ms;
+  idle(runtime, 700); home(runtime);
+  check(host_time_ms < 1000, "home animation crosses millis wrap"); spritePixels(1, origin, true);
+  openMenu(runtime); select(runtime, 8); frame(runtime); home(runtime); spritePixels(1, origin, true);
+}
+void allPartners() {
+  const std::vector<uint16_t> representatives = {1, 4, 7, 6, 42, 122, 139, 149};
+  for (uint16_t id = 1; id <= 151; ++id) {
+    MemoryStore store; legacyOwned(store, {id}, id); HostPlatform platform;
+    Runtime runtime(store, platform); start(runtime); const uint32_t origin = host_time_ms;
+    home(runtime); check(runtime.engine().view().partner == id, "legal versioned collection restores requested partner");
+    spritePixels(id, origin, id == 1); roundPixels();
+    if (std::find(representatives.begin(), representatives.end(), id) != representatives.end()) {
+      char name[40]; std::snprintf(name, sizeof(name), "home-partner-%03u", unsigned(id)); screenshot(runtime, name);
+      spritePixels(id, origin, id == 1);
+    }
+  }
+}
+}
+int main() {
+  c152::begin("HOME TEST");
+  ignoredTouches(); openingGestures(); ninthItem(); routesAndPartner(); animationContinuity();
+  datesAndLiveSteps(); maximumToday(); sleepContinuity(); saveFailure(); clockPendingRestart();
+  battleContinuity(); allPartners(); animationWraparound();
+  std::printf("%u home Runtime/Button_Class/M5GFX checks, 0 failures\n", checks);
+}

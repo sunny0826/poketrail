@@ -1,0 +1,1214 @@
+{
+  "source": "https://dex.pokemon.cn/play/pokedex/api/v1",
+  "note": "Recovered without changes from existing generated first-generation sprite metadata on 2026-10-22; upstream TLS certificate expired.",
+  "pokemons": [
+    {
+      "zukan_id": "1",
+      "zukan_sub_id": 0,
+      "pokemon_name": "妙蛙种子",
+      "pokemon_type_name": "草,毒",
+      "height": "0.7 m",
+      "weight": "6.9 kg"
+    },
+    {
+      "zukan_id": "2",
+      "zukan_sub_id": 0,
+      "pokemon_name": "妙蛙草",
+      "pokemon_type_name": "草,毒",
+      "height": "1.0 m",
+      "weight": "13.0 kg"
+    },
+    {
+      "zukan_id": "3",
+      "zukan_sub_id": 0,
+      "pokemon_name": "妙蛙花",
+      "pokemon_type_name": "草,毒",
+      "height": "2.0 m",
+      "weight": "100.0 kg"
+    },
+    {
+      "zukan_id": "4",
+      "zukan_sub_id": 0,
+      "pokemon_name": "小火龙",
+      "pokemon_type_name": "火",
+      "height": "0.6 m",
+      "weight": "8.5 kg"
+    },
+    {
+      "zukan_id": "5",
+      "zukan_sub_id": 0,
+      "pokemon_name": "火恐龙",
+      "pokemon_type_name": "火",
+      "height": "1.1 m",
+      "weight": "19.0 kg"
+    },
+    {
+      "zukan_id": "6",
+      "zukan_sub_id": 0,
+      "pokemon_name": "喷火龙",
+      "pokemon_type_name": "火,飞行",
+      "height": "1.7 m",
+      "weight": "90.5 kg"
+    },
+    {
+      "zukan_id": "7",
+      "zukan_sub_id": 0,
+      "pokemon_name": "杰尼龟",
+      "pokemon_type_name": "水",
+      "height": "0.5 m",
+      "weight": "9.0 kg"
+    },
+    {
+      "zukan_id": "8",
+      "zukan_sub_id": 0,
+      "pokemon_name": "卡咪龟",
+      "pokemon_type_name": "水",
+      "height": "1.0 m",
+      "weight": "22.5 kg"
+    },
+    {
+      "zukan_id": "9",
+      "zukan_sub_id": 0,
+      "pokemon_name": "水箭龟",
+      "pokemon_type_name": "水",
+      "height": "1.6 m",
+      "weight": "85.5 kg"
+    },
+    {
+      "zukan_id": "10",
+      "zukan_sub_id": 0,
+      "pokemon_name": "绿毛虫",
+      "pokemon_type_name": "虫",
+      "height": "0.3 m",
+      "weight": "2.9 kg"
+    },
+    {
+      "zukan_id": "11",
+      "zukan_sub_id": 0,
+      "pokemon_name": "铁甲蛹",
+      "pokemon_type_name": "虫",
+      "height": "0.7 m",
+      "weight": "9.9 kg"
+    },
+    {
+      "zukan_id": "12",
+      "zukan_sub_id": 0,
+      "pokemon_name": "巴大蝶",
+      "pokemon_type_name": "虫,飞行",
+      "height": "1.1 m",
+      "weight": "32.0 kg"
+    },
+    {
+      "zukan_id": "13",
+      "zukan_sub_id": 0,
+      "pokemon_name": "独角虫",
+      "pokemon_type_name": "虫,毒",
+      "height": "0.3 m",
+      "weight": "3.2 kg"
+    },
+    {
+      "zukan_id": "14",
+      "zukan_sub_id": 0,
+      "pokemon_name": "铁壳蛹",
+      "pokemon_type_name": "虫,毒",
+      "height": "0.6 m",
+      "weight": "10.0 kg"
+    },
+    {
+      "zukan_id": "15",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大针蜂",
+      "pokemon_type_name": "虫,毒",
+      "height": "1.0 m",
+      "weight": "29.5 kg"
+    },
+    {
+      "zukan_id": "16",
+      "zukan_sub_id": 0,
+      "pokemon_name": "波波",
+      "pokemon_type_name": "一般,飞行",
+      "height": "0.3 m",
+      "weight": "1.8 kg"
+    },
+    {
+      "zukan_id": "17",
+      "zukan_sub_id": 0,
+      "pokemon_name": "比比鸟",
+      "pokemon_type_name": "一般,飞行",
+      "height": "1.1 m",
+      "weight": "30.0 kg"
+    },
+    {
+      "zukan_id": "18",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大比鸟",
+      "pokemon_type_name": "一般,飞行",
+      "height": "1.5 m",
+      "weight": "39.5 kg"
+    },
+    {
+      "zukan_id": "19",
+      "zukan_sub_id": 0,
+      "pokemon_name": "小拉达",
+      "pokemon_type_name": "一般",
+      "height": "0.3 m",
+      "weight": "3.5 kg"
+    },
+    {
+      "zukan_id": "20",
+      "zukan_sub_id": 0,
+      "pokemon_name": "拉达",
+      "pokemon_type_name": "一般",
+      "height": "0.7 m",
+      "weight": "18.5 kg"
+    },
+    {
+      "zukan_id": "21",
+      "zukan_sub_id": 0,
+      "pokemon_name": "烈雀",
+      "pokemon_type_name": "一般,飞行",
+      "height": "0.3 m",
+      "weight": "2.0 kg"
+    },
+    {
+      "zukan_id": "22",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大嘴雀",
+      "pokemon_type_name": "一般,飞行",
+      "height": "1.2 m",
+      "weight": "38.0 kg"
+    },
+    {
+      "zukan_id": "23",
+      "zukan_sub_id": 0,
+      "pokemon_name": "阿柏蛇",
+      "pokemon_type_name": "毒",
+      "height": "2.0 m",
+      "weight": "6.9 kg"
+    },
+    {
+      "zukan_id": "24",
+      "zukan_sub_id": 0,
+      "pokemon_name": "阿柏怪",
+      "pokemon_type_name": "毒",
+      "height": "3.5 m",
+      "weight": "65.0 kg"
+    },
+    {
+      "zukan_id": "25",
+      "zukan_sub_id": 0,
+      "pokemon_name": "皮卡丘",
+      "pokemon_type_name": "电",
+      "height": "0.4 m",
+      "weight": "6.0 kg"
+    },
+    {
+      "zukan_id": "26",
+      "zukan_sub_id": 0,
+      "pokemon_name": "雷丘",
+      "pokemon_type_name": "电",
+      "height": "0.8 m",
+      "weight": "30.0 kg"
+    },
+    {
+      "zukan_id": "27",
+      "zukan_sub_id": 0,
+      "pokemon_name": "穿山鼠",
+      "pokemon_type_name": "地面",
+      "height": "0.6 m",
+      "weight": "12.0 kg"
+    },
+    {
+      "zukan_id": "28",
+      "zukan_sub_id": 0,
+      "pokemon_name": "穿山王",
+      "pokemon_type_name": "地面",
+      "height": "1.0 m",
+      "weight": "29.5 kg"
+    },
+    {
+      "zukan_id": "29",
+      "zukan_sub_id": 0,
+      "pokemon_name": "尼多兰",
+      "pokemon_type_name": "毒",
+      "height": "0.4 m",
+      "weight": "7.0 kg"
+    },
+    {
+      "zukan_id": "30",
+      "zukan_sub_id": 0,
+      "pokemon_name": "尼多娜",
+      "pokemon_type_name": "毒",
+      "height": "0.8 m",
+      "weight": "20.0 kg"
+    },
+    {
+      "zukan_id": "31",
+      "zukan_sub_id": 0,
+      "pokemon_name": "尼多后",
+      "pokemon_type_name": "毒,地面",
+      "height": "1.3 m",
+      "weight": "60.0 kg"
+    },
+    {
+      "zukan_id": "32",
+      "zukan_sub_id": 0,
+      "pokemon_name": "尼多朗",
+      "pokemon_type_name": "毒",
+      "height": "0.5 m",
+      "weight": "9.0 kg"
+    },
+    {
+      "zukan_id": "33",
+      "zukan_sub_id": 0,
+      "pokemon_name": "尼多力诺",
+      "pokemon_type_name": "毒",
+      "height": "0.9 m",
+      "weight": "19.5 kg"
+    },
+    {
+      "zukan_id": "34",
+      "zukan_sub_id": 0,
+      "pokemon_name": "尼多王",
+      "pokemon_type_name": "毒,地面",
+      "height": "1.4 m",
+      "weight": "62.0 kg"
+    },
+    {
+      "zukan_id": "35",
+      "zukan_sub_id": 0,
+      "pokemon_name": "皮皮",
+      "pokemon_type_name": "妖精",
+      "height": "0.6 m",
+      "weight": "7.5 kg"
+    },
+    {
+      "zukan_id": "36",
+      "zukan_sub_id": 0,
+      "pokemon_name": "皮可西",
+      "pokemon_type_name": "妖精",
+      "height": "1.3 m",
+      "weight": "40.0 kg"
+    },
+    {
+      "zukan_id": "37",
+      "zukan_sub_id": 0,
+      "pokemon_name": "六尾",
+      "pokemon_type_name": "火",
+      "height": "0.6 m",
+      "weight": "9.9 kg"
+    },
+    {
+      "zukan_id": "38",
+      "zukan_sub_id": 0,
+      "pokemon_name": "九尾",
+      "pokemon_type_name": "火",
+      "height": "1.1 m",
+      "weight": "19.9 kg"
+    },
+    {
+      "zukan_id": "39",
+      "zukan_sub_id": 0,
+      "pokemon_name": "胖丁",
+      "pokemon_type_name": "一般,妖精",
+      "height": "0.5 m",
+      "weight": "5.5 kg"
+    },
+    {
+      "zukan_id": "40",
+      "zukan_sub_id": 0,
+      "pokemon_name": "胖可丁",
+      "pokemon_type_name": "一般,妖精",
+      "height": "1.0 m",
+      "weight": "12.0 kg"
+    },
+    {
+      "zukan_id": "41",
+      "zukan_sub_id": 0,
+      "pokemon_name": "超音蝠",
+      "pokemon_type_name": "毒,飞行",
+      "height": "0.8 m",
+      "weight": "7.5 kg"
+    },
+    {
+      "zukan_id": "42",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大嘴蝠",
+      "pokemon_type_name": "毒,飞行",
+      "height": "1.6 m",
+      "weight": "55.0 kg"
+    },
+    {
+      "zukan_id": "43",
+      "zukan_sub_id": 0,
+      "pokemon_name": "走路草",
+      "pokemon_type_name": "草,毒",
+      "height": "0.5 m",
+      "weight": "5.4 kg"
+    },
+    {
+      "zukan_id": "44",
+      "zukan_sub_id": 0,
+      "pokemon_name": "臭臭花",
+      "pokemon_type_name": "草,毒",
+      "height": "0.8 m",
+      "weight": "8.6 kg"
+    },
+    {
+      "zukan_id": "45",
+      "zukan_sub_id": 0,
+      "pokemon_name": "霸王花",
+      "pokemon_type_name": "草,毒",
+      "height": "1.2 m",
+      "weight": "18.6 kg"
+    },
+    {
+      "zukan_id": "46",
+      "zukan_sub_id": 0,
+      "pokemon_name": "派拉斯",
+      "pokemon_type_name": "虫,草",
+      "height": "0.3 m",
+      "weight": "5.4 kg"
+    },
+    {
+      "zukan_id": "47",
+      "zukan_sub_id": 0,
+      "pokemon_name": "派拉斯特",
+      "pokemon_type_name": "虫,草",
+      "height": "1.0 m",
+      "weight": "29.5 kg"
+    },
+    {
+      "zukan_id": "48",
+      "zukan_sub_id": 0,
+      "pokemon_name": "毛球",
+      "pokemon_type_name": "虫,毒",
+      "height": "1.0 m",
+      "weight": "30.0 kg"
+    },
+    {
+      "zukan_id": "49",
+      "zukan_sub_id": 0,
+      "pokemon_name": "摩鲁蛾",
+      "pokemon_type_name": "虫,毒",
+      "height": "1.5 m",
+      "weight": "12.5 kg"
+    },
+    {
+      "zukan_id": "50",
+      "zukan_sub_id": 0,
+      "pokemon_name": "地鼠",
+      "pokemon_type_name": "地面",
+      "height": "0.2 m",
+      "weight": "0.8 kg"
+    },
+    {
+      "zukan_id": "51",
+      "zukan_sub_id": 0,
+      "pokemon_name": "三地鼠",
+      "pokemon_type_name": "地面",
+      "height": "0.7 m",
+      "weight": "33.3 kg"
+    },
+    {
+      "zukan_id": "52",
+      "zukan_sub_id": 0,
+      "pokemon_name": "喵喵",
+      "pokemon_type_name": "一般",
+      "height": "0.4 m",
+      "weight": "4.2 kg"
+    },
+    {
+      "zukan_id": "53",
+      "zukan_sub_id": 0,
+      "pokemon_name": "猫老大",
+      "pokemon_type_name": "一般",
+      "height": "1.0 m",
+      "weight": "32.0 kg"
+    },
+    {
+      "zukan_id": "54",
+      "zukan_sub_id": 0,
+      "pokemon_name": "可达鸭",
+      "pokemon_type_name": "水",
+      "height": "0.8 m",
+      "weight": "19.6 kg"
+    },
+    {
+      "zukan_id": "55",
+      "zukan_sub_id": 0,
+      "pokemon_name": "哥达鸭",
+      "pokemon_type_name": "水",
+      "height": "1.7 m",
+      "weight": "76.6 kg"
+    },
+    {
+      "zukan_id": "56",
+      "zukan_sub_id": 0,
+      "pokemon_name": "猴怪",
+      "pokemon_type_name": "格斗",
+      "height": "0.5 m",
+      "weight": "28.0 kg"
+    },
+    {
+      "zukan_id": "57",
+      "zukan_sub_id": 0,
+      "pokemon_name": "火暴猴",
+      "pokemon_type_name": "格斗",
+      "height": "1.0 m",
+      "weight": "32.0 kg"
+    },
+    {
+      "zukan_id": "58",
+      "zukan_sub_id": 0,
+      "pokemon_name": "卡蒂狗",
+      "pokemon_type_name": "火",
+      "height": "0.7 m",
+      "weight": "19.0 kg"
+    },
+    {
+      "zukan_id": "59",
+      "zukan_sub_id": 0,
+      "pokemon_name": "风速狗",
+      "pokemon_type_name": "火",
+      "height": "1.9 m",
+      "weight": "155.0 kg"
+    },
+    {
+      "zukan_id": "60",
+      "zukan_sub_id": 0,
+      "pokemon_name": "蚊香蝌蚪",
+      "pokemon_type_name": "水",
+      "height": "0.6 m",
+      "weight": "12.4 kg"
+    },
+    {
+      "zukan_id": "61",
+      "zukan_sub_id": 0,
+      "pokemon_name": "蚊香君",
+      "pokemon_type_name": "水",
+      "height": "1.0 m",
+      "weight": "20.0 kg"
+    },
+    {
+      "zukan_id": "62",
+      "zukan_sub_id": 0,
+      "pokemon_name": "蚊香泳士",
+      "pokemon_type_name": "水,格斗",
+      "height": "1.3 m",
+      "weight": "54.0 kg"
+    },
+    {
+      "zukan_id": "63",
+      "zukan_sub_id": 0,
+      "pokemon_name": "凯西",
+      "pokemon_type_name": "超能力",
+      "height": "0.9 m",
+      "weight": "19.5 kg"
+    },
+    {
+      "zukan_id": "64",
+      "zukan_sub_id": 0,
+      "pokemon_name": "勇基拉",
+      "pokemon_type_name": "超能力",
+      "height": "1.3 m",
+      "weight": "56.5 kg"
+    },
+    {
+      "zukan_id": "65",
+      "zukan_sub_id": 0,
+      "pokemon_name": "胡地",
+      "pokemon_type_name": "超能力",
+      "height": "1.5 m",
+      "weight": "48.0 kg"
+    },
+    {
+      "zukan_id": "66",
+      "zukan_sub_id": 0,
+      "pokemon_name": "腕力",
+      "pokemon_type_name": "格斗",
+      "height": "0.8 m",
+      "weight": "19.5 kg"
+    },
+    {
+      "zukan_id": "67",
+      "zukan_sub_id": 0,
+      "pokemon_name": "豪力",
+      "pokemon_type_name": "格斗",
+      "height": "1.5 m",
+      "weight": "70.5 kg"
+    },
+    {
+      "zukan_id": "68",
+      "zukan_sub_id": 0,
+      "pokemon_name": "怪力",
+      "pokemon_type_name": "格斗",
+      "height": "1.6 m",
+      "weight": "130.0 kg"
+    },
+    {
+      "zukan_id": "69",
+      "zukan_sub_id": 0,
+      "pokemon_name": "喇叭芽",
+      "pokemon_type_name": "草,毒",
+      "height": "0.7 m",
+      "weight": "4.0 kg"
+    },
+    {
+      "zukan_id": "70",
+      "zukan_sub_id": 0,
+      "pokemon_name": "口呆花",
+      "pokemon_type_name": "草,毒",
+      "height": "1.0 m",
+      "weight": "6.4 kg"
+    },
+    {
+      "zukan_id": "71",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大食花",
+      "pokemon_type_name": "草,毒",
+      "height": "1.7 m",
+      "weight": "15.5 kg"
+    },
+    {
+      "zukan_id": "72",
+      "zukan_sub_id": 0,
+      "pokemon_name": "玛瑙水母",
+      "pokemon_type_name": "水,毒",
+      "height": "0.9 m",
+      "weight": "45.5 kg"
+    },
+    {
+      "zukan_id": "73",
+      "zukan_sub_id": 0,
+      "pokemon_name": "毒刺水母",
+      "pokemon_type_name": "水,毒",
+      "height": "1.6 m",
+      "weight": "55.0 kg"
+    },
+    {
+      "zukan_id": "74",
+      "zukan_sub_id": 0,
+      "pokemon_name": "小拳石",
+      "pokemon_type_name": "岩石,地面",
+      "height": "0.4 m",
+      "weight": "20.0 kg"
+    },
+    {
+      "zukan_id": "75",
+      "zukan_sub_id": 0,
+      "pokemon_name": "隆隆石",
+      "pokemon_type_name": "岩石,地面",
+      "height": "1.0 m",
+      "weight": "105.0 kg"
+    },
+    {
+      "zukan_id": "76",
+      "zukan_sub_id": 0,
+      "pokemon_name": "隆隆岩",
+      "pokemon_type_name": "岩石,地面",
+      "height": "1.4 m",
+      "weight": "300.0 kg"
+    },
+    {
+      "zukan_id": "77",
+      "zukan_sub_id": 0,
+      "pokemon_name": "小火马",
+      "pokemon_type_name": "火",
+      "height": "1.0 m",
+      "weight": "30.0 kg"
+    },
+    {
+      "zukan_id": "78",
+      "zukan_sub_id": 0,
+      "pokemon_name": "烈焰马",
+      "pokemon_type_name": "火",
+      "height": "1.7 m",
+      "weight": "95.0 kg"
+    },
+    {
+      "zukan_id": "79",
+      "zukan_sub_id": 0,
+      "pokemon_name": "呆呆兽",
+      "pokemon_type_name": "水,超能力",
+      "height": "1.2 m",
+      "weight": "36.0 kg"
+    },
+    {
+      "zukan_id": "80",
+      "zukan_sub_id": 0,
+      "pokemon_name": "呆壳兽",
+      "pokemon_type_name": "水,超能力",
+      "height": "1.6 m",
+      "weight": "78.5 kg"
+    },
+    {
+      "zukan_id": "81",
+      "zukan_sub_id": 0,
+      "pokemon_name": "小磁怪",
+      "pokemon_type_name": "电,钢",
+      "height": "0.3 m",
+      "weight": "6.0 kg"
+    },
+    {
+      "zukan_id": "82",
+      "zukan_sub_id": 0,
+      "pokemon_name": "三合一磁怪",
+      "pokemon_type_name": "电,钢",
+      "height": "1.0 m",
+      "weight": "60.0 kg"
+    },
+    {
+      "zukan_id": "83",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大葱鸭",
+      "pokemon_type_name": "一般,飞行",
+      "height": "0.8 m",
+      "weight": "15.0 kg"
+    },
+    {
+      "zukan_id": "84",
+      "zukan_sub_id": 0,
+      "pokemon_name": "嘟嘟",
+      "pokemon_type_name": "一般,飞行",
+      "height": "1.4 m",
+      "weight": "39.2 kg"
+    },
+    {
+      "zukan_id": "85",
+      "zukan_sub_id": 0,
+      "pokemon_name": "嘟嘟利",
+      "pokemon_type_name": "一般,飞行",
+      "height": "1.8 m",
+      "weight": "85.2 kg"
+    },
+    {
+      "zukan_id": "86",
+      "zukan_sub_id": 0,
+      "pokemon_name": "小海狮",
+      "pokemon_type_name": "水",
+      "height": "1.1 m",
+      "weight": "90.0 kg"
+    },
+    {
+      "zukan_id": "87",
+      "zukan_sub_id": 0,
+      "pokemon_name": "白海狮",
+      "pokemon_type_name": "水,冰",
+      "height": "1.7 m",
+      "weight": "120.0 kg"
+    },
+    {
+      "zukan_id": "88",
+      "zukan_sub_id": 0,
+      "pokemon_name": "臭泥",
+      "pokemon_type_name": "毒",
+      "height": "0.9 m",
+      "weight": "30.0 kg"
+    },
+    {
+      "zukan_id": "89",
+      "zukan_sub_id": 0,
+      "pokemon_name": "臭臭泥",
+      "pokemon_type_name": "毒",
+      "height": "1.2 m",
+      "weight": "30.0 kg"
+    },
+    {
+      "zukan_id": "90",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大舌贝",
+      "pokemon_type_name": "水",
+      "height": "0.3 m",
+      "weight": "4.0 kg"
+    },
+    {
+      "zukan_id": "91",
+      "zukan_sub_id": 0,
+      "pokemon_name": "刺甲贝",
+      "pokemon_type_name": "水,冰",
+      "height": "1.5 m",
+      "weight": "132.5 kg"
+    },
+    {
+      "zukan_id": "92",
+      "zukan_sub_id": 0,
+      "pokemon_name": "鬼斯",
+      "pokemon_type_name": "幽灵,毒",
+      "height": "1.3 m",
+      "weight": "0.1 kg"
+    },
+    {
+      "zukan_id": "93",
+      "zukan_sub_id": 0,
+      "pokemon_name": "鬼斯通",
+      "pokemon_type_name": "幽灵,毒",
+      "height": "1.6 m",
+      "weight": "0.1 kg"
+    },
+    {
+      "zukan_id": "94",
+      "zukan_sub_id": 0,
+      "pokemon_name": "耿鬼",
+      "pokemon_type_name": "幽灵,毒",
+      "height": "1.5 m",
+      "weight": "40.5 kg"
+    },
+    {
+      "zukan_id": "95",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大岩蛇",
+      "pokemon_type_name": "岩石,地面",
+      "height": "8.8 m",
+      "weight": "210.0 kg"
+    },
+    {
+      "zukan_id": "96",
+      "zukan_sub_id": 0,
+      "pokemon_name": "催眠貘",
+      "pokemon_type_name": "超能力",
+      "height": "1.0 m",
+      "weight": "32.4 kg"
+    },
+    {
+      "zukan_id": "97",
+      "zukan_sub_id": 0,
+      "pokemon_name": "引梦貘人",
+      "pokemon_type_name": "超能力",
+      "height": "1.6 m",
+      "weight": "75.6 kg"
+    },
+    {
+      "zukan_id": "98",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大钳蟹",
+      "pokemon_type_name": "水",
+      "height": "0.4 m",
+      "weight": "6.5 kg"
+    },
+    {
+      "zukan_id": "99",
+      "zukan_sub_id": 0,
+      "pokemon_name": "巨钳蟹",
+      "pokemon_type_name": "水",
+      "height": "1.3 m",
+      "weight": "60.0 kg"
+    },
+    {
+      "zukan_id": "100",
+      "zukan_sub_id": 0,
+      "pokemon_name": "霹雳电球",
+      "pokemon_type_name": "电",
+      "height": "0.5 m",
+      "weight": "10.4 kg"
+    },
+    {
+      "zukan_id": "101",
+      "zukan_sub_id": 0,
+      "pokemon_name": "顽皮雷弹",
+      "pokemon_type_name": "电",
+      "height": "1.2 m",
+      "weight": "66.6 kg"
+    },
+    {
+      "zukan_id": "102",
+      "zukan_sub_id": 0,
+      "pokemon_name": "蛋蛋",
+      "pokemon_type_name": "草,超能力",
+      "height": "0.4 m",
+      "weight": "2.5 kg"
+    },
+    {
+      "zukan_id": "103",
+      "zukan_sub_id": 0,
+      "pokemon_name": "椰蛋树",
+      "pokemon_type_name": "草,超能力",
+      "height": "2.0 m",
+      "weight": "120.0 kg"
+    },
+    {
+      "zukan_id": "104",
+      "zukan_sub_id": 0,
+      "pokemon_name": "卡拉卡拉",
+      "pokemon_type_name": "地面",
+      "height": "0.4 m",
+      "weight": "6.5 kg"
+    },
+    {
+      "zukan_id": "105",
+      "zukan_sub_id": 0,
+      "pokemon_name": "嘎啦嘎啦",
+      "pokemon_type_name": "地面",
+      "height": "1.0 m",
+      "weight": "45.0 kg"
+    },
+    {
+      "zukan_id": "106",
+      "zukan_sub_id": 0,
+      "pokemon_name": "飞腿郎",
+      "pokemon_type_name": "格斗",
+      "height": "1.5 m",
+      "weight": "49.8 kg"
+    },
+    {
+      "zukan_id": "107",
+      "zukan_sub_id": 0,
+      "pokemon_name": "快拳郎",
+      "pokemon_type_name": "格斗",
+      "height": "1.4 m",
+      "weight": "50.2 kg"
+    },
+    {
+      "zukan_id": "108",
+      "zukan_sub_id": 0,
+      "pokemon_name": "大舌头",
+      "pokemon_type_name": "一般",
+      "height": "1.2 m",
+      "weight": "65.5 kg"
+    },
+    {
+      "zukan_id": "109",
+      "zukan_sub_id": 0,
+      "pokemon_name": "瓦斯弹",
+      "pokemon_type_name": "毒",
+      "height": "0.6 m",
+      "weight": "1.0 kg"
+    },
+    {
+      "zukan_id": "110",
+      "zukan_sub_id": 0,
+      "pokemon_name": "双弹瓦斯",
+      "pokemon_type_name": "毒",
+      "height": "1.2 m",
+      "weight": "9.5 kg"
+    },
+    {
+      "zukan_id": "111",
+      "zukan_sub_id": 0,
+      "pokemon_name": "独角犀牛",
+      "pokemon_type_name": "地面,岩石",
+      "height": "1.0 m",
+      "weight": "115.0 kg"
+    },
+    {
+      "zukan_id": "112",
+      "zukan_sub_id": 0,
+      "pokemon_name": "钻角犀兽",
+      "pokemon_type_name": "地面,岩石",
+      "height": "1.9 m",
+      "weight": "120.0 kg"
+    },
+    {
+      "zukan_id": "113",
+      "zukan_sub_id": 0,
+      "pokemon_name": "吉利蛋",
+      "pokemon_type_name": "一般",
+      "height": "1.1 m",
+      "weight": "34.6 kg"
+    },
+    {
+      "zukan_id": "114",
+      "zukan_sub_id": 0,
+      "pokemon_name": "蔓藤怪",
+      "pokemon_type_name": "草",
+      "height": "1.0 m",
+      "weight": "35.0 kg"
+    },
+    {
+      "zukan_id": "115",
+      "zukan_sub_id": 0,
+      "pokemon_name": "袋兽",
+      "pokemon_type_name": "一般",
+      "height": "2.2 m",
+      "weight": "80.0 kg"
+    },
+    {
+      "zukan_id": "116",
+      "zukan_sub_id": 0,
+      "pokemon_name": "墨海马",
+      "pokemon_type_name": "水",
+      "height": "0.4 m",
+      "weight": "8.0 kg"
+    },
+    {
+      "zukan_id": "117",
+      "zukan_sub_id": 0,
+      "pokemon_name": "海刺龙",
+      "pokemon_type_name": "水",
+      "height": "1.2 m",
+      "weight": "25.0 kg"
+    },
+    {
+      "zukan_id": "118",
+      "zukan_sub_id": 0,
+      "pokemon_name": "角金鱼",
+      "pokemon_type_name": "水",
+      "height": "0.6 m",
+      "weight": "15.0 kg"
+    },
+    {
+      "zukan_id": "119",
+      "zukan_sub_id": 0,
+      "pokemon_name": "金鱼王",
+      "pokemon_type_name": "水",
+      "height": "1.3 m",
+      "weight": "39.0 kg"
+    },
+    {
+      "zukan_id": "120",
+      "zukan_sub_id": 0,
+      "pokemon_name": "海星星",
+      "pokemon_type_name": "水",
+      "height": "0.8 m",
+      "weight": "34.5 kg"
+    },
+    {
+      "zukan_id": "121",
+      "zukan_sub_id": 0,
+      "pokemon_name": "宝石海星",
+      "pokemon_type_name": "水,超能力",
+      "height": "1.1 m",
+      "weight": "80.0 kg"
+    },
+    {
+      "zukan_id": "122",
+      "zukan_sub_id": 0,
+      "pokemon_name": "魔墙人偶",
+      "pokemon_type_name": "超能力,妖精",
+      "height": "1.3 m",
+      "weight": "54.5 kg"
+    },
+    {
+      "zukan_id": "123",
+      "zukan_sub_id": 0,
+      "pokemon_name": "飞天螳螂",
+      "pokemon_type_name": "虫,飞行",
+      "height": "1.5 m",
+      "weight": "56.0 kg"
+    },
+    {
+      "zukan_id": "124",
+      "zukan_sub_id": 0,
+      "pokemon_name": "迷唇姐",
+      "pokemon_type_name": "冰,超能力",
+      "height": "1.4 m",
+      "weight": "40.6 kg"
+    },
+    {
+      "zukan_id": "125",
+      "zukan_sub_id": 0,
+      "pokemon_name": "电击兽",
+      "pokemon_type_name": "电",
+      "height": "1.1 m",
+      "weight": "30.0 kg"
+    },
+    {
+      "zukan_id": "126",
+      "zukan_sub_id": 0,
+      "pokemon_name": "鸭嘴火兽",
+      "pokemon_type_name": "火",
+      "height": "1.3 m",
+      "weight": "44.5 kg"
+    },
+    {
+      "zukan_id": "127",
+      "zukan_sub_id": 0,
+      "pokemon_name": "凯罗斯",
+      "pokemon_type_name": "虫",
+      "height": "1.5 m",
+      "weight": "55.0 kg"
+    },
+    {
+      "zukan_id": "128",
+      "zukan_sub_id": 0,
+      "pokemon_name": "肯泰罗",
+      "pokemon_type_name": "一般",
+      "height": "1.4 m",
+      "weight": "88.4 kg"
+    },
+    {
+      "zukan_id": "129",
+      "zukan_sub_id": 0,
+      "pokemon_name": "鲤鱼王",
+      "pokemon_type_name": "水",
+      "height": "0.9 m",
+      "weight": "10.0 kg"
+    },
+    {
+      "zukan_id": "130",
+      "zukan_sub_id": 0,
+      "pokemon_name": "暴鲤龙",
+      "pokemon_type_name": "水,飞行",
+      "height": "6.5 m",
+      "weight": "235.0 kg"
+    },
+    {
+      "zukan_id": "131",
+      "zukan_sub_id": 0,
+      "pokemon_name": "拉普拉斯",
+      "pokemon_type_name": "水,冰",
+      "height": "2.5 m",
+      "weight": "220.0 kg"
+    },
+    {
+      "zukan_id": "132",
+      "zukan_sub_id": 0,
+      "pokemon_name": "百变怪",
+      "pokemon_type_name": "一般",
+      "height": "0.3 m",
+      "weight": "4.0 kg"
+    },
+    {
+      "zukan_id": "133",
+      "zukan_sub_id": 0,
+      "pokemon_name": "伊布",
+      "pokemon_type_name": "一般",
+      "height": "0.3 m",
+      "weight": "6.5 kg"
+    },
+    {
+      "zukan_id": "134",
+      "zukan_sub_id": 0,
+      "pokemon_name": "水伊布",
+      "pokemon_type_name": "水",
+      "height": "1.0 m",
+      "weight": "29.0 kg"
+    },
+    {
+      "zukan_id": "135",
+      "zukan_sub_id": 0,
+      "pokemon_name": "雷伊布",
+      "pokemon_type_name": "电",
+      "height": "0.8 m",
+      "weight": "24.5 kg"
+    },
+    {
+      "zukan_id": "136",
+      "zukan_sub_id": 0,
+      "pokemon_name": "火伊布",
+      "pokemon_type_name": "火",
+      "height": "0.9 m",
+      "weight": "25.0 kg"
+    },
+    {
+      "zukan_id": "137",
+      "zukan_sub_id": 0,
+      "pokemon_name": "多边兽",
+      "pokemon_type_name": "一般",
+      "height": "0.8 m",
+      "weight": "36.5 kg"
+    },
+    {
+      "zukan_id": "138",
+      "zukan_sub_id": 0,
+      "pokemon_name": "菊石兽",
+      "pokemon_type_name": "岩石,水",
+      "height": "0.4 m",
+      "weight": "7.5 kg"
+    },
+    {
+      "zukan_id": "139",
+      "zukan_sub_id": 0,
+      "pokemon_name": "多刺菊石兽",
+      "pokemon_type_name": "岩石,水",
+      "height": "1.0 m",
+      "weight": "35.0 kg"
+    },
+    {
+      "zukan_id": "140",
+      "zukan_sub_id": 0,
+      "pokemon_name": "化石盔",
+      "pokemon_type_name": "岩石,水",
+      "height": "0.5 m",
+      "weight": "11.5 kg"
+    },
+    {
+      "zukan_id": "141",
+      "zukan_sub_id": 0,
+      "pokemon_name": "镰刀盔",
+      "pokemon_type_name": "岩石,水",
+      "height": "1.3 m",
+      "weight": "40.5 kg"
+    },
+    {
+      "zukan_id": "142",
+      "zukan_sub_id": 0,
+      "pokemon_name": "化石翼龙",
+      "pokemon_type_name": "岩石,飞行",
+      "height": "1.8 m",
+      "weight": "59.0 kg"
+    },
+    {
+      "zukan_id": "143",
+      "zukan_sub_id": 0,
+      "pokemon_name": "卡比兽",
+      "pokemon_type_name": "一般",
+      "height": "2.1 m",
+      "weight": "460.0 kg"
+    },
+    {
+      "zukan_id": "144",
+      "zukan_sub_id": 0,
+      "pokemon_name": "急冻鸟",
+      "pokemon_type_name": "冰,飞行",
+      "height": "1.7 m",
+      "weight": "55.4 kg"
+    },
+    {
+      "zukan_id": "145",
+      "zukan_sub_id": 0,
+      "pokemon_name": "闪电鸟",
+      "pokemon_type_name": "电,飞行",
+      "height": "1.6 m",
+      "weight": "52.6 kg"
+    },
+    {
+      "zukan_id": "146",
+      "zukan_sub_id": 0,
+      "pokemon_name": "火焰鸟",
+      "pokemon_type_name": "火,飞行",
+      "height": "2.0 m",
+      "weight": "60.0 kg"
+    },
+    {
+      "zukan_id": "147",
+      "zukan_sub_id": 0,
+      "pokemon_name": "迷你龙",
+      "pokemon_type_name": "龙",
+      "height": "1.8 m",
+      "weight": "3.3 kg"
+    },
+    {
+      "zukan_id": "148",
+      "zukan_sub_id": 0,
+      "pokemon_name": "哈克龙",
+      "pokemon_type_name": "龙",
+      "height": "4.0 m",
+      "weight": "16.5 kg"
+    },
+    {
+      "zukan_id": "149",
+      "zukan_sub_id": 0,
+      "pokemon_name": "快龙",
+      "pokemon_type_name": "龙,飞行",
+      "height": "2.2 m",
+      "weight": "210.0 kg"
+    },
+    {
+      "zukan_id": "150",
+      "zukan_sub_id": 0,
+      "pokemon_name": "超梦",
+      "pokemon_type_name": "超能力",
+      "height": "2.0 m",
+      "weight": "122.0 kg"
+    },
+    {
+      "zukan_id": "151",
+      "zukan_sub_id": 0,
+      "pokemon_name": "梦幻",
+      "pokemon_type_name": "超能力",
+      "height": "0.4 m",
+      "weight": "4.0 kg"
+    }
+  ]
+}

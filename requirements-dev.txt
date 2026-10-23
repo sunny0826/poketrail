@@ -1,0 +1,4 @@
+# 由 mise 管理的 Python 安装；设备工具使用 esptool 5 的原生 USB 支持。
+esptool==5.6.0
+# 构建期合成 GIF 动画，固件无需 Pillow 或 GIF 解码依赖。
+Pillow==12.1.0

@@ -1,0 +1,625 @@
+{
+  "species": [
+    {
+      "id": 1,
+      "name": "妙蛙种子",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 2,
+      "name": "妙蛙草",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 3,
+      "name": "妙蛙花",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 4,
+      "name": "小火龙",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 5,
+      "name": "火恐龙",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 6,
+      "name": "喷火龙",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 10,
+      "name": "绿毛虫",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 11,
+      "name": "铁甲蛹",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 12,
+      "name": "巴大蝶",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 13,
+      "name": "独角虫",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 14,
+      "name": "铁壳蛹",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 15,
+      "name": "大针蜂",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 16,
+      "name": "波波",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 17,
+      "name": "比比鸟",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 18,
+      "name": "大比鸟",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 19,
+      "name": "小拉达",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 20,
+      "name": "拉达",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 21,
+      "name": "烈雀",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 22,
+      "name": "大嘴雀",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 23,
+      "name": "阿柏蛇",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 24,
+      "name": "阿柏怪",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 29,
+      "name": "尼多兰",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 30,
+      "name": "尼多娜",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 31,
+      "name": "尼多后",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 32,
+      "name": "尼多朗",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 33,
+      "name": "尼多力诺",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 34,
+      "name": "尼多王",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 37,
+      "name": "六尾",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 38,
+      "name": "九尾",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 39,
+      "name": "胖丁",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 40,
+      "name": "胖可丁",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 43,
+      "name": "走路草",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 44,
+      "name": "臭臭花",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 45,
+      "name": "霸王花",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 46,
+      "name": "派拉斯",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 47,
+      "name": "派拉斯特",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 48,
+      "name": "毛球",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 49,
+      "name": "摩鲁蛾",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 52,
+      "name": "喵喵",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 53,
+      "name": "猫老大",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 56,
+      "name": "猴怪",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 57,
+      "name": "火暴猴",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 58,
+      "name": "卡蒂狗",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 59,
+      "name": "风速狗",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 63,
+      "name": "凯西",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 64,
+      "name": "勇基拉",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 65,
+      "name": "胡地",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 69,
+      "name": "喇叭芽",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 70,
+      "name": "口呆花",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 71,
+      "name": "大食花",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 77,
+      "name": "小火马",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 78,
+      "name": "烈焰马",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 83,
+      "name": "大葱鸭",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 84,
+      "name": "嘟嘟",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 85,
+      "name": "嘟嘟利",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 96,
+      "name": "催眠貘",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 97,
+      "name": "引梦貘人",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 102,
+      "name": "蛋蛋",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 103,
+      "name": "椰蛋树",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 108,
+      "name": "大舌头",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 113,
+      "name": "吉利蛋",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 114,
+      "name": "蔓藤怪",
+      "routes": [
+        "Forest"
+      ],
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 115,
+      "name": "袋兽",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 122,
+      "name": "魔墙人偶",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 123,
+      "name": "飞天螳螂",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 127,
+      "name": "凯罗斯",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 128,
+      "name": "肯泰罗",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 135,
+      "name": "雷伊布",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 136,
+      "name": "火伊布",
+      "routes": [
+        "Forest"
+      ],
+      "rare": true,
+      "weight": 2
+    }
+  ]
+}

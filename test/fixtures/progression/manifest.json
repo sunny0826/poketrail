@@ -1,0 +1,26 @@
+{
+  "generator": "test/support/progression/legacy-fixtures.cpp",
+  "generator_sha256": "d2d0eb09223076f420ddb61d9af4e29547d3a250c10c140e5d42df5870edddca",
+  "encoder_source": "frozen pre-edit worktree (identical to task baseline)",
+  "source_sha256": {
+    "firmware/apps/20_pokedex/encounter_catalog.hpp": "79e210377486c70821c0f5fa34c7e438cc0f9ab4ea90f3cd84df2e5eafeb3b16",
+    "firmware/apps/20_pokedex/save_codec.cpp": "167ef0c2c306d08a16a85eccd5c766b7622f2619a945caadd83bb7cfbf28a146",
+    "firmware/apps/20_pokedex/adventure_model.cpp": "7b5355751530cff0949b9aa80836cbf33b721270e3cbc271562ab325f141b4c6",
+    "firmware/apps/20_pokedex/calendar.cpp": "0f24dbebddcf73918a2cfbdfeb62c29736825043e90259612d5b7f5dccf5d834",
+    "firmware/apps/20_pokedex/save_codec.hpp": "33da7d12429121a35beb7543fa8f7af4b4abbc0f1bb9fe71d4646b77a9549593",
+    "firmware/apps/20_pokedex/adventure_model.hpp": "ccb7da0be1ec6a833f2c92201bf9547af60bd24b0a9dd89e754c72edbde4c1ef",
+    "firmware/apps/20_pokedex/calendar.hpp": "21a768acd9af252d40e4f637c4373768c1c5c594487bbf09a485c1c7f56b95dc",
+    "firmware/apps/20_pokedex/encounter_catalog.cpp": "3cc4687b126125bc23f2b3bcbf7ca09e7be5b00876d3a8717f0917679acaadd3"
+  },
+  "fixtures": {
+    "test/fixtures/progression/v1-8.bin": "ea91eac3319494c2dd5d5aae211afb4696d08bd038cb705d37ee880906a74e82",
+    "test/fixtures/progression/v1-7.bin": "4232cea10f896c9054f7b96a9b15387640b0b7ce9ab1d3afc8de9bc635e32cbe",
+    "test/fixtures/progression/v1-6.bin": "ba550a9cc1aed735ca23f5f8532588627b816adeb2d9055e1101f0c726bdcf36",
+    "test/fixtures/progression/v1-4.bin": "57a4adb415ec147baff2328afbc0a17960614a9fa7911bfc8090aef4d2f8b731",
+    "test/fixtures/progression/v1-5.bin": "7ebad3f979a006a06d3c3dc4030cc83504228d00ed9dcff00e0196eebe4e6669",
+    "test/fixtures/progression/v1-1.bin": "02823544c241ba8bfafdf6ee04869cc906a0d0e702a1d2ff369acf31465a2cc5",
+    "test/fixtures/progression/v1-0.bin": "21344316e0635360847d0c91a959d78d95ed35e32678ee05d0b563139816f3a4",
+    "test/fixtures/progression/v1-2.bin": "c2faf6d46d830897a5389c780c4f317d8b623ab904e890f58f51e1e822df1b0f",
+    "test/fixtures/progression/v1-3.bin": "cbb45fb9e72290fc9a17056cd34d177ffa69b1c78aabc4417480dd5bc0faa30c"
+  }
+}

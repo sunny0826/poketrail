@@ -1,0 +1,88 @@
+# M5Stack StopWatch 宝可梦步行探险
+#
+# 工具版本策略：
+# - Python 由 mise 统一管理，供素材管线与 PlatformIO 使用
+# - PlatformIO 通过 pipx 后端安装（mise registry 无 platformio 条目）
+# - esptool 由 requirements-dev.txt 固定，安装在 mise 的 Python 环境
+# - ESP32 工具链与 Arduino 框架由 platformio.ini 固定的平台管理
+
+[tools]
+node = "24.22.1"
+python = "3.14.2"
+pipx = "1.18.4"
+"pipx:platformio" = "6.2.0"
+
+[env]
+# PlatformIO 需要自己管理 ESP32 工具链，不让 mise 的 python 环境干扰
+PLATFORMIO_CORE_DIR = "{{ env.HOME }}/.platformio"
+
+[settings]
+experimental = true
+
+[tasks.build]
+description = "构建 20_pokedex 固件"
+run = "pio run -e 20_pokedex"
+
+[tasks.check-startup-stack]
+description = "检查目标ELF的Engine启动局部栈帧（先构建）"
+run = "python3 scripts/check_startup_stack.py"
+
+[tasks.test]
+description = "运行动画时序、展示交互与解码器测试"
+run = "./scripts/run_game_tests.sh"
+
+[tasks.test-render]
+description = "运行 M5GFX 离屏像素回归（需要 SDL2 原生库）"
+run = "python3 scripts/run_render_tests.py"
+
+[tasks.test-adventure]
+description = "验证步数账户、对战投球、日期事务与存档编码"
+run = "bash scripts/run_adventure_tests.sh"
+
+[tasks.test-motion]
+description = "验证计步合成信号、日期转换与RTC故障边界"
+run = "bash scripts/run_motion_calendar_tests.sh"
+
+[tasks.test-rtc]
+description = "验证真实RX8130驱动的寄存器故障与校时恢复"
+run = "bash scripts/run_rtc_register_tests.sh"
+
+[tasks.test-storage]
+description = "验证双槽存档与设备文件系统故障恢复"
+run = "bash scripts/run_file_store_tests.sh"
+
+[tasks.check-adventure-catalog]
+description = "核对151种遭遇目录与生成物"
+run = ["python3 tools/build_adventure_catalog.py --check", "python3 tools/build_evolution_rules.py --check", "python3 -m unittest test/test_adventure_catalog.py test/test_progression_catalog.py"]
+
+[tasks.icons]
+description = "生成固定来源的宝可梦与精灵球缩略图"
+run = "python3 tools/build_icons.py"
+
+[tasks.icons-download]
+description = "下载并校验固定版本缩略图缓存，生成缩略图"
+run = "python3 tools/build_icons.py --download"
+
+[tasks.test-icons]
+description = "核对缩略图来源哈希、透明像素与生成数组"
+run = ["python3 tools/build_icons.py --check", "python3 -m unittest test/test_icons.py"]
+
+[tasks.test-sprites]
+description = "校验151只动画及固件解码与原GIF逐帧一致性"
+run = "python3 -m unittest test/test_sprites.py"
+
+[tasks.flash]
+description = "烧录固件到连接的设备"
+run = "./scripts/flash.sh"
+
+[tasks.backup]
+description = "备份设备当前 Flash（16MB 全片）"
+run = "./scripts/backup.sh"
+
+[tasks.sprites]
+description = "生成151只动画；缺少缓存时下载并核对固定来源"
+run = "python3 tools/build_sprites.py --generation 1"
+
+[tasks.monitor]
+description = "打开串口监视器"
+run = "pio device monitor"
