@@ -186,23 +186,23 @@ void batteryStates() {
     platform.battery.percent = level; edge(runtime, false, true); idle(runtime, 5000);
     check(runtime.screen().battery.percent == (level >= 0 && level <= 100 ? level : -1),
           "zero is valid while invalid battery estimates remain unknown");
-    check(M5.Display.readPixel(198, 16) == (level >= 0 && level <= 20 ? TFT_RED : TFT_WHITE),
+    check(M5.Display.readPixel(198, 16) == (level >= 0 && level <= 20 ? theme::kRed : theme::kText),
           "battery outline changes only at low-battery threshold");
   }
   screenshot(runtime, "battery-unknown");
   platform.battery.percent = 9; platform.battery.charge = c152::ChargeState::Charging;
   edge(runtime, false, true); idle(runtime, 5000); screenshot(runtime, "battery-low-charging");
-  check(M5.Display.readPixel(209, 16) == TFT_YELLOW, "charging symbol is visible independently of percentage");
+  check(M5.Display.readPixel(209, 16) == theme::kGold, "charging symbol is visible independently of percentage");
   platform.battery.percent = -1; edge(runtime, false, true); idle(runtime, 5000);
   screenshot(runtime, "battery-unknown-charging");
-  check(M5.Display.readPixel(209, 16) == TFT_YELLOW, "unknown percentage preserves valid charging state");
+  check(M5.Display.readPixel(209, 16) == theme::kGold, "unknown percentage preserves valid charging state");
   platform.battery.percent = 0; platform.battery.charge = c152::ChargeState::Unknown;
   edge(runtime, false, true); idle(runtime, 5000); screenshot(runtime, "battery-zero");
-  check(M5.Display.readPixel(209, 16) == TFT_BLACK, "charging symbol clears when status becomes unknown");
+  check(M5.Display.readPixel(209, 16) == theme::kBackground, "charging symbol clears when status becomes unknown");
   select(runtime, 3); frame(runtime);
   platform.battery.percent = 100; idle(runtime, 5000); screenshot(runtime, "battery-viewer-full");
   platform.battery.percent = 9; idle(runtime, 5000); screenshot(runtime, "battery-viewer-low");
-  check(M5.Display.readPixel(198, 16) == TFT_RED, "viewer receives battery updates without species changes");
+  check(M5.Display.readPixel(198, 16) == theme::kRed, "viewer receives battery updates without species changes");
 }
 void failedCommandsAndSave() {
   MemoryStore store; ready(store); PowerPlatform platform; platform.failSleep = true;
@@ -232,7 +232,7 @@ void viewerErrorWake() {
   openMenu(runtime); select(runtime, 3); frame(runtime); idle(runtime, 30020);
   viewer_screen::g_ready = false;
   observeWake(platform); wake(runtime); endWake(platform);
-  check(runtime.metrics().displayErrors == 1 && glyph("画面不可用，请重启", 233, TFT_RED),
+  check(runtime.metrics().displayErrors == 1 && glyph("画面不可用，请重启", 290, theme::kRed),
         "viewer render failure redraws an error before lighting the display");
   viewer_screen::g_ready = true;
 }

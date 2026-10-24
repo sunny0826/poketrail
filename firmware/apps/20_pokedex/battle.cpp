@@ -18,8 +18,10 @@ void Battle::begin(uint32_t now, uint32_t seed) {
   view_ = BattleView();
   view_.active = true;
   view_.targetMs = now + kBeatIntervalMs + seed % 301;
+  view_.settledMs = now - kBeatIntervalMs;
 }
-void Battle::settle(Timing timing) {
+void Battle::settle(Timing timing, uint32_t now) {
+  view_.settledMs = now;
   view_.consumed = true;
   view_.lastTiming = timing;
   if (view_.expected == Action::Attack && timing != Timing::Miss) {
@@ -48,7 +50,7 @@ void Battle::advance() {
 bool Battle::tick(uint32_t now) {
   bool changed = false;
   while (view_.active && !view_.paused && timeAfter(now, view_.targetMs + 180)) {
-    if (!view_.consumed) settle(Timing::Miss);
+    if (!view_.consumed) settle(Timing::Miss, now);
     if (view_.active) advance();
     changed = true;
   }
@@ -58,7 +60,7 @@ bool Battle::press(Action action, uint32_t now) {
   const uint8_t previous = view_.cueIndex;
   tick(now);
   if (!view_.active || view_.paused || view_.consumed || previous != view_.cueIndex) return false;
-  settle(action == view_.expected ? battleTiming(now, view_.targetMs) : Timing::Miss);
+  settle(action == view_.expected ? battleTiming(now, view_.targetMs) : Timing::Miss, now);
   return true;
 }
 bool Battle::requestPause() {
@@ -70,6 +72,7 @@ bool Battle::resume(uint32_t now) {
   if (!view_.active || !view_.paused) return false;
   view_.paused = false;
   view_.targetMs = now + kBeatIntervalMs;
+  view_.settledMs = now - kBeatIntervalMs;
   return true;
 }
 } }

@@ -1,4 +1,5 @@
 #include "support/adventure_ui/harness.hpp"
+#include "battle_presentation.hpp"
 
 namespace {
 void savedVictory(MemoryStore& store, Save& s, bool captured) {
@@ -42,9 +43,13 @@ void winPractice(Runtime& r, TestPlatform& p) {
     p.next.right = b.expected == Action::Attack;
     p.next.held = true;
     frame(r, b.targetMs - host_time_ms); frame(r);
-    if (r.screen().page == Page::Practice) idle(r, 200);
+    if (r.screen().page == Page::Practice && b.active) idle(r, 200);
   }
-  check(r.screen().page == Page::PracticeThrow, "practice victory reaches the throw page");
+  const auto result = r.practiceView();
+  if (r.screen().page == Page::Practice && !result.active)
+    idle(r, result.settledMs + kBattleEffectMs - host_time_ms);
+  check(r.screen().page == Page::PracticeThrow, "practice victory reaches the throw page after its final action");
+  frame(r);
 }
 void practicePerfectRelease(Runtime& r, TestPlatform& p) {
   edge(r, p, false, true);
@@ -151,7 +156,7 @@ void captureAnimation() {
   check(r.screen().charging, "holding the throw key charges the ball");
   for (unsigned held = 0; held < 920; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
   p.next.rightDown = p.next.held = true; frame(r);
-  check(M5.Display.readPixel(267, 344) == kGold || M5.Display.readPixel(263, 344) == kGold,
+  check(M5.Display.readPixel(267, 344) == theme::kGold || M5.Display.readPixel(263, 344) == theme::kGold,
         "full charge shows a pulsing gold ring around the held ball");
   snapCurrent(r, "capture-charge");
   while (int32_t(target - host_time_ms) > 20) { p.next.rightDown = p.next.held = true; frame(r); }
@@ -180,7 +185,7 @@ void captureAnimation() {
   snapCurrent(r, "capture-reveal");
   unsigned gold = 0;
   for (int y = 60; y < 400; ++y) for (int x = 60; x < 400; ++x)
-    if (M5.Display.readPixel(x, y) == kGold) ++gold;
+    if (M5.Display.readPixel(x, y) == theme::kGold) ++gold;
   check(gold > 8, "successful capture bursts gold stars");
   while (r.screen().capture.active) frame(r);
   check(r.screen().page == Page::Result && !r.screen().capture.active,
@@ -190,7 +195,7 @@ void captureAnimation() {
   snapCurrent(r, "capture-result-first");
   unsigned halo = 0;
   for (int y = 60; y < 290; ++y) for (int x = 80; x < 390; ++x)
-    if (M5.Display.readPixel(x, y) == kGold) ++halo;
+    if (M5.Display.readPixel(x, y) == theme::kGold) ++halo;
   check(halo > 8, "first capture shows the rotating halo and tag on the result page");
   select(r, p, 0);
   check(r.screen().page == Page::Home, "result acknowledgement still returns home");

@@ -1,7 +1,17 @@
 #include "support/adventure_ui/harness.hpp"
 #include "support/adventure_ui/clock_cases.hpp"
+#include "support/adventure_ui/capture_cases.hpp"
+#include "scene_backgrounds_generated.hpp"
 
 namespace {
+void frozenScene(Route route) {
+  unsigned matched = 0;
+  for (unsigned y = 180; y < 190; ++y) for (unsigned x = 70; x < 80; ++x) {
+    const unsigned index = ((y - 92) / 2) * data::kSceneWidth + (x - 5) / 2;
+    matched += M5.Display.readPixel(x, y) == data::kRouteScenesDim[uint8_t(route)].pixels[index];
+  }
+  check(matched == 100, "encounter background retains its saved route after selecting another route");
+}
 void bootAndCapture() {
   MemoryStore store; TestPlatform p; Runtime r(store, p); start(r);
   published(r, "first-boot");
@@ -21,7 +31,10 @@ void bootAndCapture() {
   edge(r, p, false, true);
   check(!r.dimmed() && r.screen().page == beforePage && r.screen().selected == 0, "wake press does not navigate");
   check(p.feedbacks == 1, "one vibration per saved encounter");
-  openMenu(r, p); select(r, p, 0); published(r, "encounter");
+  openMenu(r, p); select(r, p, 1); select(r, p, 2);
+  check(r.engine().view().route == Route::Cave && r.engine().view().encounter.route == Route::Coast,
+        "route selection preserves the existing encounter");
+  openMenu(r, p); select(r, p, 0); published(r, "encounter"); frozenScene(Route::Coast);
   select(r, p, 1); check(r.screen().page == Page::Practice, "encounter offers free practice");
   tap(r, p, 233, 30); idle(r, 1800);
   check(r.screen().page == Page::Pause, "practice pauses after current cue");
@@ -34,7 +47,9 @@ void bootAndCapture() {
   edge(r, p, false, true);
   check(!r.dimmed() && r.screen().page == Page::Pause, "wake preserves paused battle");
   select(r, p, 0); check(r.screen().page == Page::Battle, "pause resumes");
-  win(r, p); published(r, "throw-ready-1");
+  win(r, p);
+  check(r.screen().page == Page::Battle, "committed victory keeps the final action visible before the throw menu");
+  published(r, "throw-ready-1"); frozenScene(Route::Coast); frame(r);
   edge(r, p, false, true); check(r.engine().throwView().active && r.engine().view().encounter.usedBalls == 0, "prepare first ball consumes no ball");
   published(r, "throw-active");
   idle(r, 1800);
@@ -122,7 +137,7 @@ void viewerWakeAndPractice() {
   check(r.screen().page == Page::Viewer, "visible menu touch enters real viewer");
   M5.Touch.detail.pressed = false; M5.Touch.detail.released = M5.Touch.detail.clicked = true; frame(r);
   M5.Touch.detail = HostTouchDetail(); idle(r, 240);
-  check(p.feedbacks == 0 && M5.Display.readPixel(415, 200) == TFT_BLACK, "entry touch release cannot trigger viewer reaction");
+  check(p.feedbacks == 0 && M5.Display.readPixel(410, 154) == theme::kViewerBackground, "entry touch release cannot trigger viewer reaction");
   idle(r, 30000); check(r.dimmed(), "viewer also dims without stopping runtime");
   M5.Touch.detail.base_x = M5.Touch.detail.x = 233;
   M5.Touch.detail.base_y = M5.Touch.detail.y = 233;
@@ -161,6 +176,6 @@ void viewerWakeAndPractice() {
 int main() {
   c152::begin("ADVENTURE TEST");
   bootAndCapture(); clockAndErrors(); midnightAndSampling(); practiceMidnightAchievement();
-  fullRecordRestart(); viewerWakeAndPractice();
+  fullRecordRestart(); viewerWakeAndPractice(); firstBallSuccess(); captureAnimation(); captureEscape();
   std::printf("%u adventure UI checks, 0 failures\n", checks);
 }

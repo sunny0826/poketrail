@@ -1,5 +1,6 @@
 #include "runtime.hpp"
 #include "viewer_screen.hpp"
+#include "battle_presentation.hpp"
 #include <algorithm>
 namespace pokedex { namespace ui {
 using namespace adventure;
@@ -60,6 +61,8 @@ void Runtime::syncPage() {
   }
   if (screen_.page == Page::Practice || screen_.page == Page::PracticeThrow ||
       screen_.page == Page::PracticeResult || (screen_.page == Page::Pause && screen_.practice)) return;
+  if (screen_.page == Page::Battle && !engine_.battleView().active &&
+      battleEffectActive(engine_.battleView(), platform_.now())) return;
   if (deferredThrow_ && (v.phase != Phase::ThrowReady || deferredThrow_ != v.encounter.id)) deferredThrow_ = 0;
   if (v.phase == Phase::ThrowReady) {
     if (deferredThrow_ != v.encounter.id && screen_.page != Page::Throw && screen_.page != Page::ReleaseConfirm)

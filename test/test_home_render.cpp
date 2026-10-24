@@ -1,4 +1,5 @@
 #include "support/home_ui/pixel_checks.hpp"
+#include <cstring>
 
 namespace {
 void ignoredTouches() {
@@ -58,9 +59,11 @@ void routesAndPartner() {
   MemoryStore store; legacyOwned(store, {1, 4, 7}); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   uint16_t colors[3] = {};
   for (unsigned route = 0; route < 3; ++route) {
-    openMenu(runtime); select(runtime, 1); select(runtime, route); settle(runtime); home(runtime);
+    openMenu(runtime); select(runtime, 1);
+    if (route == 0) screenshot(runtime, "routes-menu");
+    select(runtime, route); settle(runtime); home(runtime);
     check(runtime.engine().view().route == Route(route), "real route menu updates the displayed route");
-    check(glyph(routeName(Route(route)), 82, TFT_DARKGREY), "home labels the actual current scene");
+    check(glyph(routeName(Route(route)), 81, theme::routeColor(Route(route)), 107, true), "home labels the actual current scene");
     colors[route] = M5.Display.readPixel(233, 110);
     char name[40]; std::snprintf(name, sizeof(name), "home-scene-%u", route); screenshot(runtime, name);
     Save loaded; check(store.load(loaded).status == LoadStatus::Loaded && loaded.route == Route(route),
@@ -71,8 +74,8 @@ void routesAndPartner() {
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 4, "partner list opens Charmander detail");
   select(runtime, 0); settle(runtime); check(runtime.engine().view().partner == 4, "carry action selects Charmander");
   select(runtime, menuCount(runtime.screen(), runtime.engine()) - 1); select(runtime, 3); settle(runtime); home(runtime);
-  check(textLine(speciesName(4), 54, TFT_WHITE, 240), "home name follows the current carried partner");
   screenshot(runtime, "home-partner-switched");
+  check(textLine(speciesName(4), 52, theme::kText, 240), "home name follows the current carried partner");
   Save loaded; check(store.load(loaded).status == LoadStatus::Loaded && loaded.partner == 4, "carried partner is durable");
 }
 void animationContinuity() {
@@ -117,15 +120,36 @@ void calibrated(MemoryStore& store, ClockPlatform& platform) {
         engine.finishClockChange(1, target) == CommandResult::Applied, "clock fixture uses public calibration transaction");
 }
 void todayLine(Runtime& runtime) {
-  const auto& today = runtime.engine().view().today; char text[96];
-  std::snprintf(text, sizeof(text), "%s %llu 步", today.complete ? "今日" : "今日已记录",
-                static_cast<unsigned long long>(today.steps));
-  check(textLine(text, 393, TFT_CYAN), "visible today line equals live Engine bucket including completeness");
+  const auto& today = runtime.engine().view().today;
+  char digits[24], text[32];
+  std::snprintf(digits, sizeof(digits), "%llu", static_cast<unsigned long long>(today.steps));
+  const int length = strlen(digits);
+  int groups = (length - 1) / 3, out = 0;
+  for (int index = 0; index < length; ++index) {
+    text[out++] = digits[index];
+    if (groups && index == length - groups * 3 - 1) { text[out++] = ','; --groups; }
+  }
+  text[out] = '\0';
+  M5.Display.setFont(&fonts::Font4);
+  const int width = M5.Display.textWidth(text);
+  if (width > 180) {
+    check(glyph(today.complete ? "今日 · 步" : "今日已记录 · 步", 380, theme::kMuted),
+          "long today values keep their unit above the number");
+    const lgfx::IFont* numberFont = width > 280 ? static_cast<const lgfx::IFont*>(&fonts::Font0)
+                                                : static_cast<const lgfx::IFont*>(&fonts::Font2);
+    check(fontLine(text, 407, theme::kText, numberFont),
+          "long today values use a complete second line");
+  } else {
+    check(numberLine(text, 393, theme::kText, today.complete ? 237 : 250),
+          "visible today number equals live Engine bucket");
+    check(glyph(today.complete ? "今日" : "今日已记录", 396, theme::kMuted, today.complete ? 158 : 139),
+          "today label includes record completeness");
+  }
 }
 void datesAndLiveSteps() {
   {
     MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-    check(textLine("今日 --", 393, TFT_CYAN), "unknown RTC displays no fabricated daily number");
+    check(textLine("今日 --", 393, theme::kText), "unknown RTC displays no fabricated daily number");
     screenshot(runtime, "home-today-unknown");
   }
   MemoryStore store; ClockPlatform platform; calibrated(store, platform);
@@ -145,12 +169,12 @@ void datesAndLiveSteps() {
   platform.valid = false; idle(runtime, 1100);
   check(!runtime.engine().view().clock.trusted && runtime.engine().view().today.steps > 0,
         "RTC loss retains old bucket for the stale-number regression");
-  check(textLine("今日 --", 393, TFT_CYAN), "stale trusted-day bucket is hidden after RTC loss");
+  check(textLine("今日 --", 393, theme::kText), "stale trusted-day bucket is hidden after RTC loss");
   screenshot(runtime, "home-today-stale-hidden");
   platform.valid = true; idle(runtime, 1100); todayLine(runtime);
   check(!runtime.engine().view().today.complete, "recovered same day remains explicitly partial");
   platform.utc -= 300; idle(runtime, 1100);
-  check(runtime.engine().view().clock.anomaly && textLine("今日 --", 393, TFT_CYAN),
+  check(runtime.engine().view().clock.anomaly && textLine("今日 --", 393, theme::kText),
         "backward RTC anomaly cannot relabel the retained bucket as today");
 }
 void maximumToday() {
@@ -174,6 +198,13 @@ void maximumToday() {
   Runtime runtime(store, platform); start(runtime); home(runtime); todayLine(runtime); roundPixels();
   check(runtime.engine().view().today.steps == UINT64_MAX, "maximum daily number survives startup without truncation");
   screenshot(runtime, "home-today-uint64-max"); todayLine(runtime);
+  openMenu(runtime); screenshot(runtime, "menu-uint64-max");
+  check(glyph("18446744073709551615 / 7500 步", 156, theme::kText),
+        "maximum cultivation balance remains fully readable on its own line");
+  select(runtime, 2); select(runtime, 0); screenshot(runtime, "partner-uint64-max");
+  check(glyph("陪伴 18446744073709551615 步", 80, theme::kMint) &&
+        glyph("可用 18446744073709551615 步", 165, theme::kMint),
+        "maximum partner counters remain fully readable without overlapping the preview");
 }
 void sleepContinuity() {
   MemoryStore store; ready(store); ClockPlatform platform; platform.valid = false;
@@ -212,7 +243,7 @@ void clockPendingRestart() {
   check(runtime.screen().page == Page::DateWelcome && runtime.engine().view().clock.pending.active,
         "pending clock restoration retains setup priority over home");
   select(runtime, 1); frame(runtime); home(runtime);
-  check(textLine("今日 --", 393, TFT_CYAN), "explicit skip with pending clock never displays retained bucket");
+  check(textLine("今日 --", 393, theme::kText), "explicit skip with pending clock never displays retained bucket");
   screenshot(runtime, "home-clock-pending-skipped");
 }
 void battleContinuity() {
@@ -221,7 +252,7 @@ void battleContinuity() {
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   const uint32_t origin = host_time_ms;
   check(runtime.engine().view().phase == Phase::EncounterReady, "saved encounter starts on exploration");
-  check(glyph("发现宝可梦 · 按键查看", 422, TFT_YELLOW), "home exposes pending encounter without opening it");
+  check(glyph("发现宝可梦 · 侧键打开菜单", 428, theme::kGold), "home exposes pending encounter without opening it");
   openMenu(runtime); select(runtime, 0); select(runtime, 0); frame(runtime);
   check(runtime.screen().page == Page::Battle, "real encounter starts formal battle");
   idle(runtime, 180); tap(runtime, 233, 30);
@@ -247,6 +278,23 @@ void allPartners() {
     Runtime runtime(store, platform); start(runtime); const uint32_t origin = host_time_ms;
     home(runtime); check(runtime.engine().view().partner == id, "legal versioned collection restores requested partner");
     spritePixels(id, origin, id == 1); roundPixels();
+    const uint16_t contact = theme::rgb(0x6C, 0x68, 0x48);
+    lgfx::LGFX_Sprite shadow;
+    shadow.setColorDepth(16);
+    check(shadow.createSprite(468, 468), "allocate fixed ground shadow reference");
+    shadow.fillEllipse(233, 305, 40, 6, contact);
+    for (int y = 299; y <= 311; ++y) for (int x = 193; x <= 273; ++x)
+      if (shadow.readPixel(x, y) == contact) {
+        const uint16_t actual = M5.Display.readPixel(x, y);
+        check(actual == contact || actual != kTransparentKey,
+              "the actor moves down while the ground shadow stays fixed");
+      }
+    shadow.deleteSprite();
+    if (id == 1) {
+      check(M5.Display.readPixel(223, 310) == contact &&
+            M5.Display.readPixel(265, 308) == contact,
+            "Bulbasaur front and rear feet touch the shared contact shadow");
+    }
     if (std::find(representatives.begin(), representatives.end(), id) != representatives.end()) {
       char name[40]; std::snprintf(name, sizeof(name), "home-partner-%03u", unsigned(id)); screenshot(runtime, name);
       spritePixels(id, origin, id == 1);

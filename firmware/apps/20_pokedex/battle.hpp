@@ -13,6 +13,7 @@ struct BattleView {
   uint8_t enemyHp = 3;
   uint8_t cueIndex = 0;
   uint32_t targetMs = 0;
+  uint32_t settledMs = 0;
   Action expected = Action::Attack;
   Timing lastTiming = Timing::Miss;
   Result result = Result::None;
@@ -26,7 +27,7 @@ class Battle {
   bool resume(uint32_t nowMs);
   const BattleView& view() const { return view_; }
  private:
-  void settle(Timing);
+  void settle(Timing, uint32_t nowMs);
   void advance();
   BattleView view_;
 };

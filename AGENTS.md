@@ -49,6 +49,7 @@ PokeTrail（宝可旅途）是面向 M5Stack StopWatch（C152）的离线宝可�
 | 双槽存档与文件系统 | `rtk proxy mise run test-storage` |
 | 遭遇目录与进化规则 | `rtk proxy mise run check-adventure-catalog` |
 | 动画素材 | `rtk proxy mise run test-sprites` |
+| 路线场景与生成物 | `rtk proxy mise run test-scenes` |
 | 页面与绘制 | `rtk proxy mise run test-render` |
 | 固件构建 | `rtk proxy mise run build` |
 | 构建后的启动局部栈帧 | `rtk proxy mise run check-startup-stack` |

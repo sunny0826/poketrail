@@ -1,5 +1,6 @@
 #include "runtime.hpp"
 #include "menu_layout.hpp"
+#include "battle_presentation.hpp"
 namespace pokedex { namespace ui {
 using namespace adventure;
 const char* Runtime::collectionLabel(uint16_t species, void* context) {
@@ -86,6 +87,8 @@ void Runtime::tickCapture(uint32_t now) {
   if (captureFrameAt(screen_.capture, now).stage == CaptureStage::Done) {
     screen_.capture = CaptureAnim();
     dirty_ = true;
+    if (screen_.page == Page::PracticeThrow && practiceCapture_.stage() == PracticeStage::ThrowReady)
+      waitForRelease();
   }
 }
 void Runtime::handleThrow(const Input& input) {  if (screen_.capture.active) {
@@ -166,9 +169,13 @@ void Runtime::syncPracticePage() {
     } else if (screen_.page != Page::Practice) navigate(Page::Practice);
     return;
   }
+  if (screen_.page == Page::Practice && battleEffectActive(practiceCapture_.battleView(), platform_.now())) return;
   if (stage == PracticeStage::Result) {
     if (screen_.capture.active) return;
-    if (screen_.page != Page::PracticeResult) navigate(Page::PracticeResult);
+    if (screen_.page != Page::PracticeResult) {
+      navigate(Page::PracticeResult);
+      waitForRelease();
+    }
     return;
   }
   if (screen_.page != Page::PracticeThrow) navigate(Page::PracticeThrow);

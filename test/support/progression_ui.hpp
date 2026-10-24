@@ -136,13 +136,13 @@ void legacyOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t 
   check(validate(save), "legacy collection fixture validates before migration");
   check(store.commit(save) == CommitStatus::Committed, "legacy collection has authentic versioned bytes");
 }
-bool glyph(const char* text, int y, uint16_t color) {
+bool glyph(const char* text, int y, uint16_t color, int x = 233, bool left = false) {
   lgfx::LGFX_Sprite expected;
   expected.setColorDepth(16);
   if (!expected.createSprite(468, 28)) return false;
-  expected.fillScreen(TFT_BLACK); expected.setTextDatum(middle_center);
-  expected.setFont(&fonts::efontCN_16); expected.setTextColor(color, TFT_BLACK);
-  expected.drawString(text, 233, 14);
+  expected.fillScreen(TFT_BLACK); expected.setTextDatum(left ? middle_left : middle_center);
+  expected.setFont(&fonts::efontCN_16); expected.setTextColor(color);
+  expected.drawString(text, x, 14);
   unsigned ink = 0, missed = 0;
   for (int row = 0; row < 28; ++row) for (int x = 0; x < 468; ++x) {
     const uint16_t pixel = expected.readPixel(x, row);

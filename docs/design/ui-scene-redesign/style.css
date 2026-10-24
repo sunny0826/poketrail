@@ -1,0 +1,15 @@
+:root{--bg:#0b1210;--panel:#11231e;--text:#f4f0e4;--muted:#8da59a;--mint:#7ce3b1;--gold:#f4c95d}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:"PingFang SC","STHeiti",sans-serif}
+a{color:inherit}a:focus-visible{outline:3px solid var(--gold);outline-offset:5px}header{padding:72px 24px 36px;max-width:1540px;margin:auto}
+.kicker{color:var(--mint);font:13px Menlo,monospace;letter-spacing:.18em}h1{font-size:clamp(42px,7vw,86px);line-height:1;margin:18px 0}.lead{color:var(--muted);font-size:18px}
+.badge{display:inline-block;margin-top:20px;padding:8px 12px;border:1px solid #496156;border-radius:6px;color:var(--gold);font-size:13px}
+.stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:32px}.stats b{font:26px Menlo,monospace;display:block}.stats span{color:var(--muted);font-size:12px}
+nav{position:sticky;top:0;z-index:2;display:flex;gap:8px;overflow:auto;padding:14px 24px;background:#0b1210f2;border-block:1px solid #263a32}
+nav a{text-decoration:none;white-space:nowrap;padding:9px 13px;border-radius:6px;color:var(--muted)}nav a:hover{background:var(--panel);color:var(--mint)}
+.overview{max-width:1540px;margin:auto;padding:24px}.overview img{display:block;width:100%;height:auto}
+section{max-width:1540px;margin:auto;padding:64px 24px;scroll-margin-top:70px}.section-head p{color:var(--mint);font-size:13px;margin:0 0 8px}h2{font-size:32px;margin:0 0 30px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:38px 24px}figure{margin:0;min-width:0;border-top:1px solid #263a32;padding-top:20px}
+figure img{display:block;width:min(100%,466px);height:auto;margin:auto;border-radius:50%;image-rendering:pixelated}figcaption{max-width:466px;margin:18px auto 0}figcaption span{color:var(--muted);font:11px Menlo,monospace}figcaption p{color:var(--muted);font-size:13px}h3{font-size:17px;margin:7px 0}
+object{display:block;width:100%;border:0}footer{padding:48px 24px 72px;text-align:center;color:var(--muted);font-size:13px}footer a{color:var(--mint)}
+@media(max-width:600px){header{padding-top:44px}section{padding:44px 16px}.overview{padding:16px}.grid{grid-template-columns:1fr}.stats{gap:20px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

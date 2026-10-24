@@ -1,0 +1,607 @@
+{
+  "schema": 2,
+  "kind": "independent-design-proposal",
+  "nativeSize": [
+    466,
+    466
+  ],
+  "safeRadius": 228,
+  "source": [
+    "firmware/apps/20_pokedex/icons_generated.cpp",
+    "firmware/apps/20_pokedex/sprites_generated.cpp"
+  ],
+  "frames": [
+    {
+      "id": "scene-forest",
+      "page": "Home",
+      "title": "森林 · 场景原画",
+      "group": "exploration",
+      "route": "forest",
+      "scene_only": true
+    },
+    {
+      "id": "scene-coast",
+      "page": "Home",
+      "title": "海边 · 场景原画",
+      "group": "exploration",
+      "route": "coast",
+      "scene_only": true
+    },
+    {
+      "id": "scene-cave",
+      "page": "Home",
+      "title": "洞窟 · 场景原画",
+      "group": "exploration",
+      "route": "cave",
+      "scene_only": true
+    },
+    {
+      "id": "home-forest",
+      "page": "Home",
+      "title": "森林 · 携带小火龙",
+      "group": "exploration",
+      "route": "forest",
+      "species": 4
+    },
+    {
+      "id": "home-coast",
+      "page": "Home",
+      "title": "海边 · 携带杰尼龟",
+      "group": "exploration",
+      "route": "coast",
+      "species": 7
+    },
+    {
+      "id": "home-cave",
+      "page": "Home",
+      "title": "洞窟 · 携带妙蛙种子",
+      "group": "exploration",
+      "route": "cave",
+      "species": 1
+    },
+    {
+      "id": "home-encounter",
+      "page": "Home",
+      "title": "发现宝可梦",
+      "group": "exploration",
+      "variant": "encounter",
+      "encounter": 1
+    },
+    {
+      "id": "home-throw-ready",
+      "page": "Home",
+      "title": "等待继续捕捉",
+      "group": "exploration",
+      "variant": "throw-ready",
+      "encounter": 1
+    },
+    {
+      "id": "home-unknown-date",
+      "page": "Home",
+      "title": "日期未知",
+      "group": "exploration",
+      "unknown_date": true
+    },
+    {
+      "id": "home-step-warning",
+      "page": "Home",
+      "title": "部分步数缺失",
+      "group": "exploration",
+      "variant": "step-warning"
+    },
+    {
+      "id": "home-recovery",
+      "page": "Home",
+      "title": "备用存档恢复",
+      "group": "exploration",
+      "variant": "recovery-warning"
+    },
+    {
+      "id": "menu-main",
+      "page": "Menu",
+      "title": "主菜单 · 第一页",
+      "group": "exploration",
+      "selected": 0,
+      "variant": "encounter"
+    },
+    {
+      "id": "menu-second",
+      "page": "Menu",
+      "title": "主菜单 · 第二页",
+      "group": "exploration",
+      "selected": 4
+    },
+    {
+      "id": "menu-last",
+      "page": "Menu",
+      "title": "主菜单 · 末页",
+      "group": "exploration",
+      "selected": 8
+    },
+    {
+      "id": "menu-recovery",
+      "page": "Menu",
+      "title": "菜单 · 恢复警告",
+      "group": "exploration",
+      "variant": "warning"
+    },
+    {
+      "id": "routes",
+      "page": "Routes",
+      "title": "路线选择",
+      "group": "exploration",
+      "selected": 1
+    },
+    {
+      "id": "partners",
+      "page": "Partners",
+      "title": "伙伴列表",
+      "group": "exploration",
+      "selected": 1
+    },
+    {
+      "id": "partners-long",
+      "page": "Partners",
+      "title": "伙伴列表 · 长名称",
+      "group": "exploration",
+      "selected": 6
+    },
+    {
+      "id": "partners-last",
+      "page": "Partners",
+      "title": "伙伴列表 · 末页返回",
+      "group": "exploration",
+      "selected": 7
+    },
+    {
+      "id": "encounter",
+      "page": "Encounter",
+      "title": "遭遇预告",
+      "group": "capture"
+    },
+    {
+      "id": "battle-attack",
+      "page": "Battle",
+      "title": "对战 · 攻击拍",
+      "group": "capture",
+      "action": "attack"
+    },
+    {
+      "id": "battle-dodge",
+      "page": "Battle",
+      "title": "对战 · 躲避拍",
+      "group": "capture",
+      "action": "dodge"
+    },
+    {
+      "id": "battle-perfect",
+      "page": "Battle",
+      "title": "对战 · 完美判定",
+      "group": "capture",
+      "variant": "perfect"
+    },
+    {
+      "id": "practice",
+      "page": "Practice",
+      "title": "捕获练习",
+      "group": "capture",
+      "action": "attack"
+    },
+    {
+      "id": "practice-throw",
+      "page": "PracticeThrow",
+      "title": "练习投球 · 不消耗精灵球",
+      "group": "capture"
+    },
+    {
+      "id": "practice-result",
+      "page": "PracticeResult",
+      "title": "练习成功 · 未收入图鉴",
+      "group": "capture",
+      "variant": "practice-captured"
+    },
+    {
+      "id": "pause",
+      "page": "Pause",
+      "title": "实战暂停",
+      "group": "capture"
+    },
+    {
+      "id": "pause-practice",
+      "page": "Pause",
+      "title": "练习暂停",
+      "group": "capture",
+      "variant": "practice"
+    },
+    {
+      "id": "throw-menu",
+      "page": "Throw",
+      "title": "投球准备",
+      "group": "capture"
+    },
+    {
+      "id": "throw-zero",
+      "page": "Throw",
+      "title": "零球 · 保留遭遇",
+      "group": "capture",
+      "balls": 0
+    },
+    {
+      "id": "throw-active",
+      "page": "Throw",
+      "title": "蓄力瞄准",
+      "group": "capture",
+      "variant": "active"
+    },
+    {
+      "id": "capture-flight",
+      "page": "Throw",
+      "title": "捕获 01 · 飞行",
+      "group": "capture",
+      "stage": "flight",
+      "stage_name": "飞行"
+    },
+    {
+      "id": "capture-flash",
+      "page": "Throw",
+      "title": "捕获 02 · 白闪",
+      "group": "capture",
+      "stage": "flash",
+      "stage_name": "白闪"
+    },
+    {
+      "id": "capture-drop",
+      "page": "Throw",
+      "title": "捕获 03 · 落地",
+      "group": "capture",
+      "stage": "drop",
+      "stage_name": "落地"
+    },
+    {
+      "id": "capture-wiggle",
+      "page": "Throw",
+      "title": "捕获 04 · 摇摆",
+      "group": "capture",
+      "stage": "wiggle",
+      "stage_name": "摇摆"
+    },
+    {
+      "id": "capture-success",
+      "page": "Throw",
+      "title": "捕获 05 · 成功揭示",
+      "group": "capture",
+      "stage": "reveal-success",
+      "stage_name": "成功"
+    },
+    {
+      "id": "capture-escape",
+      "page": "Throw",
+      "title": "捕获 06 · 挣脱揭示",
+      "group": "capture",
+      "stage": "reveal-failure",
+      "stage_name": "挣脱"
+    },
+    {
+      "id": "release-confirm",
+      "page": "ReleaseConfirm",
+      "title": "放弃捕捉确认",
+      "group": "capture"
+    },
+    {
+      "id": "result-captured",
+      "page": "Result",
+      "title": "结果 · 首次捕获",
+      "group": "capture",
+      "variant": "captured"
+    },
+    {
+      "id": "result-lost",
+      "page": "Result",
+      "title": "结果 · 对战失败",
+      "group": "capture",
+      "variant": "lost"
+    },
+    {
+      "id": "result-retreated",
+      "page": "Result",
+      "title": "结果 · 撤退",
+      "group": "capture",
+      "variant": "retreated"
+    },
+    {
+      "id": "result-released-owned",
+      "page": "Result",
+      "title": "结果 · 已捕获后放弃",
+      "group": "capture",
+      "variant": "released-owned"
+    },
+    {
+      "id": "result-released-new",
+      "page": "Result",
+      "title": "结果 · 放弃新捕捉",
+      "group": "capture",
+      "variant": "released-unowned"
+    },
+    {
+      "id": "result-migration",
+      "page": "Result",
+      "title": "结果 · 旧遭遇结清",
+      "group": "capture",
+      "variant": "migration"
+    },
+    {
+      "id": "result-left",
+      "page": "Result",
+      "title": "结果 · 宝可梦离开",
+      "group": "capture",
+      "variant": "left"
+    },
+    {
+      "id": "starter",
+      "page": "Starter",
+      "title": "初始伙伴选择",
+      "group": "partners",
+      "selected": 1
+    },
+    {
+      "id": "viewer-owned",
+      "page": "Viewer",
+      "title": "图鉴 · 当前拥有",
+      "group": "partners"
+    },
+    {
+      "id": "viewer-unowned",
+      "page": "Viewer",
+      "title": "图鉴 · 尚未获得",
+      "group": "partners",
+      "variant": "unowned"
+    },
+    {
+      "id": "viewer-reacting",
+      "page": "Viewer",
+      "title": "图鉴 · 互动",
+      "group": "partners",
+      "variant": "reacting"
+    },
+    {
+      "id": "viewer-memory-error",
+      "page": "Viewer",
+      "title": "图鉴 · 动画内存不足",
+      "group": "partners",
+      "variant": "memory-error"
+    },
+    {
+      "id": "partner-ready",
+      "page": "PartnerDetail",
+      "title": "伙伴详情 · 进化就绪",
+      "group": "partners",
+      "variant": "ready"
+    },
+    {
+      "id": "partner-saved",
+      "page": "PartnerDetail",
+      "title": "伙伴详情 · 进化已保存",
+      "group": "partners",
+      "variant": "saved"
+    },
+    {
+      "id": "partner-owned",
+      "page": "PartnerDetail",
+      "title": "伙伴详情 · 目标已拥有",
+      "group": "partners",
+      "variant": "owned"
+    },
+    {
+      "id": "partner-unready",
+      "page": "PartnerDetail",
+      "title": "伙伴详情 · 步数不足",
+      "group": "partners",
+      "variant": "unready"
+    },
+    {
+      "id": "evolution-confirm",
+      "page": "EvolutionConfirm",
+      "title": "进化确认",
+      "group": "partners"
+    },
+    {
+      "id": "records",
+      "page": "Records",
+      "title": "记录目录",
+      "group": "records"
+    },
+    {
+      "id": "records-last",
+      "page": "Records",
+      "title": "记录目录 · 末页",
+      "group": "records",
+      "selected": 4
+    },
+    {
+      "id": "first-capture",
+      "page": "FirstCaptures",
+      "title": "永久首捕卡",
+      "group": "records"
+    },
+    {
+      "id": "first-capture-empty",
+      "page": "FirstCaptures",
+      "title": "首捕卡 · 初始赠送空态",
+      "group": "records",
+      "variant": "empty",
+      "species": 1
+    },
+    {
+      "id": "recent",
+      "page": "Recent",
+      "title": "最近捕捉",
+      "group": "records"
+    },
+    {
+      "id": "days",
+      "page": "Days",
+      "title": "每日步数",
+      "group": "records"
+    },
+    {
+      "id": "achievements",
+      "page": "Achievements",
+      "title": "里程碑 · 已达成",
+      "group": "records"
+    },
+    {
+      "id": "achievements-empty",
+      "page": "Achievements",
+      "title": "里程碑 · 未达成",
+      "group": "records",
+      "variant": "empty"
+    },
+    {
+      "id": "date-welcome",
+      "page": "DateWelcome",
+      "title": "首次日期确认",
+      "group": "system"
+    },
+    {
+      "id": "clock",
+      "page": "Clock",
+      "title": "日期与时间",
+      "group": "system"
+    },
+    {
+      "id": "clock-editing",
+      "page": "Clock",
+      "title": "校时 · 编辑分钟",
+      "group": "system",
+      "variant": "editing",
+      "selected": 4
+    },
+    {
+      "id": "clock-error",
+      "page": "Clock",
+      "title": "校时 · 错误恢复",
+      "group": "system",
+      "variant": "error",
+      "selected": 7
+    },
+    {
+      "id": "error-save",
+      "page": "Error",
+      "title": "保存失败 · 重试同次结果",
+      "group": "system",
+      "variant": "save"
+    },
+    {
+      "id": "error-storage",
+      "page": "Error",
+      "title": "存储未初始化",
+      "group": "system",
+      "variant": "storage"
+    },
+    {
+      "id": "error-corrupt",
+      "page": "Error",
+      "title": "存档损坏 · 保留原文件",
+      "group": "system",
+      "variant": "corrupt"
+    },
+    {
+      "id": "error-unsupported",
+      "page": "Error",
+      "title": "存档版本较新",
+      "group": "system",
+      "variant": "unsupported"
+    },
+    {
+      "id": "error-graphics",
+      "page": "Error",
+      "title": "画面不可用",
+      "group": "system",
+      "variant": "graphics"
+    },
+    {
+      "id": "home-partial-day",
+      "page": "Home",
+      "title": "今日已记录 · 部分日",
+      "group": "exploration",
+      "variant": "partial-day"
+    },
+    {
+      "id": "date-pending",
+      "page": "DateWelcome",
+      "title": "上次校时未完成",
+      "group": "system",
+      "variant": "pending"
+    },
+    {
+      "id": "viewer-history",
+      "page": "Viewer",
+      "title": "图鉴 · 曾经获得",
+      "group": "partners",
+      "variant": "history"
+    },
+    {
+      "id": "partner-final",
+      "page": "PartnerDetail",
+      "title": "伙伴详情 · 最终形态",
+      "group": "partners",
+      "variant": "final"
+    }
+  ],
+  "animations": [
+    {
+      "id": "battle-attack",
+      "title": "普通攻击 · 前冲与受击",
+      "group": "battle-animation",
+      "file": "animations/battle-attack.gif",
+      "action": "attack",
+      "variant": "normal",
+      "route": "forest",
+      "partner": 4,
+      "enemy": 25,
+      "durationMs": 1500,
+      "frameMs": 50,
+      "frameCount": 30,
+      "loop": true,
+      "judgement": "命中",
+      "playerHp": 3,
+      "enemyHp": 2
+    },
+    {
+      "id": "battle-dodge",
+      "title": "闪避 · 侧移与残影",
+      "group": "battle-animation",
+      "file": "animations/battle-dodge.gif",
+      "action": "dodge",
+      "variant": "normal",
+      "route": "coast",
+      "partner": 7,
+      "enemy": 54,
+      "durationMs": 1500,
+      "frameMs": 50,
+      "frameCount": 30,
+      "loop": true,
+      "judgement": "命中",
+      "playerHp": 3,
+      "enemyHp": 3
+    },
+    {
+      "id": "battle-perfect",
+      "title": "完美攻击 · 金色爆发",
+      "group": "battle-animation",
+      "file": "animations/battle-perfect.gif",
+      "action": "attack",
+      "variant": "perfect",
+      "route": "cave",
+      "partner": 4,
+      "enemy": 41,
+      "durationMs": 1500,
+      "frameMs": 50,
+      "frameCount": 30,
+      "loop": true,
+      "judgement": "完美",
+      "playerHp": 3,
+      "enemyHp": 1
+    }
+  ]
+}

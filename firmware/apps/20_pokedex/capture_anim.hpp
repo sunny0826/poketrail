@@ -6,7 +6,6 @@
 // 所有位置与阶段都是 (startMs, now) 的纯函数，息屏唤醒或卡顿只会跳帧。
 namespace pokedex { namespace ui {
 
-constexpr uint16_t kGold = 0xFEA0;
 constexpr int kBallX = 233;
 constexpr int kHandY = 344;
 constexpr int kGroundY = 300;

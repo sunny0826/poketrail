@@ -4,47 +4,53 @@
 namespace pokedex { namespace ui {
 using namespace adventure;
 void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
-  char text[60];
-  line("捕获练习 · 不消耗精灵球", 43, TFT_DARKGREY);
-  line(speciesName(s.practiceSpecies), 80, TFT_CYAN);
+  scene(Route::Forest, true);
+  if (s.practiceThrowing) title(speciesName(s.practiceSpecies), "捕获练习 · 不消耗精灵球", theme::kGold);
+  else {
+    char text[32];
+    snprintf(text, sizeof(text), "本场剩余 %u 次", 2 - s.practiceUsedBalls);
+    title(speciesName(s.practiceSpecies), text, theme::kGold);
+  }
   if (s.capture.active) { capture(s, s.practiceSpecies, now); return; }
   if (s.practiceThrowing) {
-    sprite(s.practiceSpecies, now);
+    actorShadow(233, 233);
+    sprite(s.practiceSpecies, now, battlePlayback_, 233, 233, 0, 2, 190);
     const int32_t remaining = int32_t(s.practiceTargetMs - now);
     const int radius = remaining > 1500 ? 130 : remaining > 0 ? 24 + remaining * 106 / 1500 : 24;
     const bool perfect = remaining <= 70 && remaining >= -70;
-    M5.Display.drawCircle(233, 233, radius, remaining < 400 ? TFT_YELLOW : TFT_CYAN);
-    M5.Display.drawCircle(233, 233, 24, perfect && (now / 100) % 2 ? kGold : TFT_YELLOW);
+    M5.Display.drawCircle(233, 233, radius, remaining < 400 ? theme::kGold : theme::kMint);
+    M5.Display.drawCircle(233, 233, 24, perfect && (now / 100) % 2 ? theme::kText : theme::kGold);
     const uint8_t charge = s.charging ? captureChargeLevel(now - s.chargeStartMs) : 0;
-    if (charge == 1) M5.Display.drawCircle(233, kHandY, 27, kGold);
-    else if (charge == 2) M5.Display.drawCircle(233, kHandY, (now / 200) % 2 ? 34 : 30, kGold);
+    if (charge == 1) M5.Display.drawCircle(233, kHandY, 27, theme::kGold);
+    else if (charge == 2) M5.Display.drawCircle(233, kHandY, (now / 200) % 2 ? 34 : 30, theme::kGold);
     ballAt(233, kHandY);
-    line("按住蓄力 · 松手投球", 391, TFT_CYAN);
-    line("成功不会收入图鉴", 419, TFT_DARKGREY);
+    line("按住蓄力 · 松手投球", 399, theme::kMint);
+    line("成功不会收入图鉴", 426, theme::kMuted);
     return;
   }
-  thumbnail(s.practiceSpecies, 233, 127, 2);
-  snprintf(text, sizeof(text), "剩余 %u 次", 2 - s.practiceUsedBalls);
-  line(text, 174, TFT_CYAN);
-  line("成功不会收入图鉴", 196, TFT_DARKGREY);
-  item(s, 0, "准备投球");
-  item(s, 1, "换一只练习");
-  item(s, 2, "结束练习");
-  line("左键切换 · 右键确认", 391, TFT_CYAN);
-  line("轻触选项确认", 419, TFT_DARKGREY);
+  actorShadow(233, 147);
+  sprite(s.practiceSpecies, now, battlePlayback_, 147, 233, 0, 2, 110);
+  item(s, 0, "准备投球", menu_layout::kTop, 0, false, theme::Icon::Practice);
+  item(s, 1, "换一只练习", menu_layout::kTop, 0, false, theme::Icon::Partner);
+  item(s, 2, "结束练习", menu_layout::kTop, 0, false, theme::Icon::Back);
+  line("成功不会收入图鉴", 371, theme::kMuted);
+  line("左键切换 · 右键确认", 399, theme::kMint);
+  line("轻触选项确认", 426, theme::kMuted);
 }
 void Screens::practiceResult(const ScreenState& s, uint32_t now) {
-  line(s.practiceResult == Result::Captured ? "练习成功" :
-       s.practiceResult == Result::Lost ? "对战失败" : "练习结束", 52, TFT_WHITE, true);
-  line(speciesName(s.practiceSpecies), 90, TFT_CYAN);
+  title(s.practiceResult == Result::Captured ? "练习成功" :
+        s.practiceResult == Result::Lost ? "对战失败" : "练习结束",
+        speciesName(s.practiceSpecies), theme::kGold);
   if (s.practiceResult == Result::Captured) {
-    sprite(s.practiceSpecies, now, resultPlayback_, 172);
-    line("未收入图鉴", 262, TFT_DARKGREY);
+    actorShadow(233, 168);
+    sprite(s.practiceSpecies, now, resultPlayback_, 168, 233, 0, 2, 120);
+    line("未收入图鉴", 262, theme::kMuted);
   } else {
     thumbnail(s.practiceSpecies, 233, 160, 2);
-    line(s.practiceResult == Result::Lost ? "对战失败 · 下次再试" : "宝可梦逃走了", 240);
+    line(s.practiceResult == Result::Lost ? "对战失败 · 下次再试" : "宝可梦逃走了", 240, theme::kMuted);
   }
-  item(s, 0, "再练一只");
-  item(s, 1, "返回探索");
+  item(s, 0, "再练一只", menu_layout::kTop, 0, false, theme::Icon::Practice);
+  item(s, 1, "返回探索", menu_layout::kTop, 0, false, theme::Icon::Home);
+  line("左 / 右选择 · 双键确认", 420, theme::kMuted);
 }
 } }
