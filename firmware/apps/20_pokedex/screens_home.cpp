@@ -19,6 +19,7 @@ void bookIcon() {
 }
 }
 void Screens::menu(const ScreenState& s, const Engine& e, int top) {
+  if (s.page == Page::Menu) top = menu_layout::kMainTop;
   const auto phase = e.view().phase;
   const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", "151 图鉴", "资源与数据", "捕获练习", "立即省电", "返回探索"};
   const char* const resources[] = {"捕捉与步行记录", "日期与时间", "返回"};

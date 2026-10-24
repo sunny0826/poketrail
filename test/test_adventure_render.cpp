@@ -132,13 +132,13 @@ void viewerWakeAndPractice() {
   MemoryStore store; TestPlatform p; Runtime r(store, p); start(r); skipDateAndStarter(r, p);
   openMenu(r, p); tap(r, p, 298, 430);
   M5.Touch.detail.base_x = M5.Touch.detail.x = 233;
-  M5.Touch.detail.base_y = M5.Touch.detail.y = 238;
+  M5.Touch.detail.base_y = M5.Touch.detail.y = 150;
   M5.Touch.detail.pressed = true;
-  p.next.touch = p.next.held = true; p.next.x = 233; p.next.y = 238; frame(r);
+  p.next.touch = p.next.held = true; p.next.x = 233; p.next.y = 150; frame(r);
   check(r.screen().page == Page::Menu && r.screen().selected == 3,
         "visible viewer button waits for click release");
   M5.Touch.detail.pressed = false; M5.Touch.detail.released = M5.Touch.detail.clicked = true;
-  p.next.click = true; p.next.x = 233; p.next.y = 238; frame(r);
+  p.next.click = true; p.next.x = 233; p.next.y = 150; frame(r);
   check(r.screen().page == Page::Viewer, "visible menu click release enters real viewer");
   M5.Touch.detail = HostTouchDetail(); idle(r, 240);
   check(p.feedbacks == 0 && M5.Display.readPixel(410, 154) == theme::kViewerBackground, "entry touch release cannot trigger viewer reaction");

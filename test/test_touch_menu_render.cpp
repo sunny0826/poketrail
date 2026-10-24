@@ -108,10 +108,10 @@ void pagination() {
   screenshot(runtime, "menu-second-page");
   tap(runtime, 298, 430);
   check(runtime.screen().selected == 6, "menu reaches third page");
-  tap(runtime, 233, 238);
+  tap(runtime, 233, 150);
   check(runtime.dimmed() && runtime.screen().page == Page::Menu && runtime.screen().selected == 6,
         "menu sleep button acts once on release");
-  tap(runtime, 233, 238);
+  tap(runtime, 233, 150);
   check(!runtime.dimmed() && runtime.screen().page == Page::Menu && runtime.screen().selected == 6,
         "wake touch cannot activate a menu row");
   screenshot(runtime, "menu-last-page");
@@ -120,13 +120,13 @@ void pagination() {
   tap(runtime, 168, 430);
   check(runtime.screen().selected == 6, "menu previous button wraps from first to last");
   tap(runtime, 298, 430);
-  swipe(runtime, 233, 238, 120, 238);
+  swipe(runtime, 233, 150, 120, 150);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 3,
         "left swipe starting on a button only turns the page");
-  swipe(runtime, 233, 306, 380, 306);
+  swipe(runtime, 233, 218, 380, 218);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 0,
         "right swipe returns without activating its start button");
-  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 306);
+  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 218);
   check(runtime.screen().page == Page::Home, "menu return restores exploration");
   MemoryStore four; legacyOwned(four, {1,4,7,25});
   Runtime partners(four, platform); start(partners); openMenu(partners); select(partners, 2);
@@ -157,9 +157,15 @@ void resourcesAndHomeTouch() {
   tap(runtime, 233, 233);
   check(runtime.screen().page == Page::Menu, "home touch opens the main menu without a side key");
   screenshot(runtime, "menu-first-page");
+  check(M5.Display.readPixel(200, 150) == theme::kPanelActive,
+        "main menu uses the space freed by moving resources out");
+  tap(runtime, 233, 218);
+  check(runtime.screen().page == Page::Routes, "moved second menu button keeps its touch target");
+  tap(runtime, 233, 52);
+  check(runtime.screen().page == Page::Menu, "routes top touch returns to the moved main menu");
   tap(runtime, 233, 52);
   check(runtime.screen().page == Page::Home, "main-menu top touch returns home");
-  tap(runtime, 233, 233); tap(runtime, 298, 430); tap(runtime, 233, 306);
+  tap(runtime, 233, 233); tap(runtime, 298, 430); tap(runtime, 233, 218);
   check(runtime.screen().page == Page::Resources, "resources entry opens its own page");
   screenshot(runtime, "resources");
   tap(runtime, 233, 306);

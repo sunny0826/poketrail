@@ -27,14 +27,14 @@ void eighthItem() {
   edge(runtime, true, false);
   check(runtime.screen().selected == 7, "left from first item wraps to return on page three");
   const auto bytes = store.bytes;
-  tap(runtime, 233, 374); frame(runtime);
+  tap(runtime, 233, 286); frame(runtime);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 7 && store.bytes == bytes,
         "third-page blank row neither activates nor changes selection or save");
   screenshot(runtime, "home-menu-third-page");
   tap(runtime, 298, 430); frame(runtime); check(runtime.screen().selected == 0, "page control wraps to first page");
   tap(runtime, 298, 430); frame(runtime); check(runtime.screen().selected == 3, "page control reaches second page");
   tap(runtime, 298, 430); frame(runtime); check(runtime.screen().selected == 6, "page control reaches third page");
-  tap(runtime, 233, 306); settle(runtime); home(runtime);
+  tap(runtime, 233, 218); settle(runtime); home(runtime);
   openMenu(runtime, true); select(runtime, 7); settle(runtime); home(runtime);
 }
 void routesAndPartner() {

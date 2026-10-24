@@ -2,6 +2,7 @@
 namespace pokedex { namespace ui { namespace menu_layout {
 constexpr unsigned kPageSize = 3;
 constexpr int kTop = 238;
+constexpr int kMainTop = 150;
 constexpr int kPitch = 68;
 constexpr int kWidth = 320;
 constexpr int kHeight = 60;

@@ -86,7 +86,7 @@ void peakOwnership() {
   const uint64_t startSteps = runtime.engine().view().totalSteps;
   openMenu(runtime); walk(runtime, platform, 2);
   check(runtime.engine().view().totalSteps == startSteps, "two peaks wait for confirmation");
-  tap(runtime, 233, 374); tap(runtime, 233, 306); tap(runtime, 233, 238);
+  tap(runtime, 233, 286); tap(runtime, 233, 306); tap(runtime, 233, 238);
   check(runtime.engine().view().partner == 4, "switch through partner detail");
   walk(runtime, platform, 1);
   const auto& s = runtime.engine().view();
@@ -95,7 +95,7 @@ void peakOwnership() {
   MemoryStore triple; legacyOwned(triple, {1, 4, 7});
   Runtime switched(triple, platform); start(switched);
   openMenu(switched); walk(switched, platform, 1);
-  tap(switched, 233, 374); tap(switched, 233, 306); tap(switched, 233, 238);
+  tap(switched, 233, 286); tap(switched, 233, 306); tap(switched, 233, 238);
   walk(switched, platform, 1);
   tap(switched, 233, 374); tap(switched, 233, 374); tap(switched, 233, 238);
   check(switched.engine().view().partner == 7, "second switch occurs before confirmation of three peaks");
@@ -104,7 +104,7 @@ void peakOwnership() {
         switched.engine().view().progress[6].walked == 1, "three confirmed peaks retain A B C tags across two switches");
   MemoryStore failed; legacyOwned(failed, {1, 4});
   Runtime retry(failed, platform); start(retry);
-  openMenu(retry); tap(retry, 233, 374); tap(retry, 233, 306);
+  openMenu(retry); tap(retry, 233, 286); tap(retry, 233, 306);
   walk(retry, platform, 2); failed.fail = true; tap(retry, 233, 238);
   check(retry.screen().page == Page::Error && retry.engine().view().partner == 1, "failed switch still publishes old partner");
   walk(retry, platform, 1); failed.fail = false; select(retry, 0);
@@ -115,7 +115,7 @@ void peakOwnership() {
     Engine e(late); e.begin(); e.chooseStarter(1); step(e, 1, 7500); e.checkpoint();
   }
   Runtime evolving(late, platform); start(evolving);
-  openMenu(evolving); tap(evolving, 233, 374); tap(evolving, 233, 238); tap(evolving, 233, 306);
+  openMenu(evolving); tap(evolving, 233, 286); tap(evolving, 233, 238); tap(evolving, 233, 306);
   check(evolving.screen().page == Page::EvolutionConfirm, "evolution prepared before delayed peaks");
   walk(evolving, platform, 2); tap(evolving, 233, 238); walk(evolving, platform, 1);
   check(evolving.engine().view().partner == 2 && evolving.engine().view().progress[0].walked == 7502 &&
