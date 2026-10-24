@@ -49,7 +49,7 @@ class Screens {
   void invalidate();
   bool advanceHome(uint16_t partner, uint32_t now);
   bool advanceResult(uint16_t species, uint32_t now);
-  bool advanceScene(adventure::Route, uint32_t steps);
+  bool advanceScene(adventure::Route, uint32_t now, bool active);
   bool draw(const ScreenState&, const adventure::Engine&,
             const adventure::BattleView& practice, uint32_t now);
  private:
@@ -92,6 +92,8 @@ class Screens {
   Playback homePlayback_, battlePlayback_, enemyBattlePlayback_, resultPlayback_;
   adventure::Route sceneRoute_ = adventure::Route::Forest;
   uint64_t sceneSteps_ = 0;
+  uint32_t sceneLastMs_ = 0;
+  bool sceneTiming_ = false;
   uint16_t decodedId_ = 0, decodedFrame_ = UINT16_MAX, decodedScale_ = 0, decodedSilhouette_ = 0;
 };
 } }

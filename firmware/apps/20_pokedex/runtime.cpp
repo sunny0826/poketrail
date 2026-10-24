@@ -116,10 +116,8 @@ void Runtime::loop() {
   Input input = platform_.pollInput();
   metrics_.maxInputGapMs = std::max(metrics_.maxInputGapMs, input.at - lastInput_); lastInput_ = input.at;
   if (input.any() || input.held) lastActivity_ = input.at;
-  uint32_t consumedSteps = 0;
   if (pendingStepCount_ && !(practiceCapture_.stage() == PracticeStage::Battle &&
                              !practiceCapture_.battleView().paused)) {
-    consumedSteps = pendingStepCount_;
     engine_.observeSteps(pendingSteps_, pendingStepCount_, platform_.randomSeed());
     pendingStepCount_ = 0; dirty_ = true;
   }
@@ -146,12 +144,11 @@ void Runtime::loop() {
                          screen_.page == Page::Throw || screen_.page == Page::PracticeThrow;
   if (!dimmed() && safe() && platform_.now() - lastActivity_ >= 30000) sleepDisplay();
   if (!dimmed()) pollBattery(platform_.now());
+  const uint32_t now = platform_.now();
+  const bool sceneActive = !dimmed() && graphicsReady_ && screen_.page == Page::Home;
+  dirty_ |= screens_.advanceScene(engine_.view().route, now, sceneActive);
   if (!dimmed() && graphicsReady_) {
-    const uint32_t now = platform_.now();
-    if (screen_.page == Page::Home) {
-      dirty_ |= screens_.advanceScene(engine_.view().route, consumedSteps);
-      dirty_ |= screens_.advanceHome(engine_.view().partner, now);
-    }
+    if (screen_.page == Page::Home) dirty_ |= screens_.advanceHome(engine_.view().partner, now);
     if (screen_.page == Page::Result && engine_.view().result == Result::Captured)
       dirty_ |= screens_.advanceResult(engine_.view().encounter.species, now);
     if (screen_.page == Page::PracticeResult && practiceCapture_.result() == Result::Captured)

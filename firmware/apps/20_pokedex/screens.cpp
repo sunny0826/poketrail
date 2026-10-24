@@ -164,13 +164,22 @@ bool Screens::advance(Playback& playback, uint16_t id, uint32_t now) {
 }
 bool Screens::advanceHome(uint16_t partner, uint32_t now) { return advance(homePlayback_, partner, now); }
 bool Screens::advanceResult(uint16_t species, uint32_t now) { return advance(resultPlayback_, species, now); }
-bool Screens::advanceScene(Route route, uint32_t steps) {
-  if (sceneRoute_ != route) {
+bool Screens::advanceScene(Route route, uint32_t now, bool active) {
+  if (sceneRoute_ != route || !sceneTiming_) {
     sceneRoute_ = route;
     sceneSteps_ = 0;
+    sceneLastMs_ = now;
+    sceneTiming_ = true;
     return true;
   }
-  if (!steps) return false;
+  if (!active) {
+    sceneLastMs_ = now;
+    return false;
+  }
+  const uint32_t elapsed = now - sceneLastMs_;
+  if (elapsed < 100) return false;
+  const uint32_t steps = elapsed / 100;
+  sceneLastMs_ += steps * 100;
   sceneSteps_ += steps;
   return true;
 }

@@ -620,28 +620,7 @@
       "frameMs": 100,
       "frameCount": 40,
       "loop": true,
-      "exampleStepIncrement": 2,
-      "exampleVisualSteps": 48,
-      "walkingFrameRanges": [
-        [
-          0,
-          8
-        ],
-        [
-          16,
-          32
-        ]
-      ],
-      "stoppedFrameRanges": [
-        [
-          8,
-          16
-        ],
-        [
-          32,
-          40
-        ]
-      ],
+      "visualSteps": 40,
       "middlePixelsPerStep": 1,
       "nearPixelsPerStep": 2,
       "loopSourceHeight": 51,
@@ -663,28 +642,7 @@
       "frameMs": 100,
       "frameCount": 40,
       "loop": true,
-      "exampleStepIncrement": 2,
-      "exampleVisualSteps": 48,
-      "walkingFrameRanges": [
-        [
-          0,
-          8
-        ],
-        [
-          16,
-          32
-        ]
-      ],
-      "stoppedFrameRanges": [
-        [
-          8,
-          16
-        ],
-        [
-          32,
-          40
-        ]
-      ],
+      "visualSteps": 40,
       "middlePixelsPerStep": 1,
       "nearPixelsPerStep": 2,
       "loopSourceHeight": 44,
@@ -706,28 +664,7 @@
       "frameMs": 100,
       "frameCount": 40,
       "loop": true,
-      "exampleStepIncrement": 2,
-      "exampleVisualSteps": 48,
-      "walkingFrameRanges": [
-        [
-          0,
-          8
-        ],
-        [
-          16,
-          32
-        ]
-      ],
-      "stoppedFrameRanges": [
-        [
-          8,
-          16
-        ],
-        [
-          32,
-          40
-        ]
-      ],
+      "visualSteps": 40,
       "middlePixelsPerStep": 1,
       "nearPixelsPerStep": 2,
       "loopSourceHeight": 49,

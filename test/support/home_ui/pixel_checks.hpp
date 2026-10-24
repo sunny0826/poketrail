@@ -56,13 +56,7 @@ unsigned frameAt(const Sprite& sprite, uint32_t elapsed) {
   }
   check(false, "source durations cover the complete cycle"); return 0;
 }
-void spritePixels(uint16_t id, uint32_t origin, bool forestTransparency = false) {
-  lgfx::LGFX_Sprite scene;
-  scene.setColorDepth(16);
-  check(scene.createSprite(468, 468), "allocate transparent pixel oracle");
-  for (int y = 92; y < 362; ++y) for (int x = 5; x < 461; ++x)
-    scene.drawPixel(x, y, data::kRouteScenes[0].pixels[((y - 92) / 2) * data::kSceneWidth + (x - 5) / 2]);
-  scene.fillEllipse(233, 305, 40, 6, theme::rgb(0x6C, 0x68, 0x48));
+void spritePixels(uint16_t id, uint32_t origin, bool = false) {
   const auto& sprite = data::kSprites[id - 1];
   unsigned scale = displayScale(sprite);
   if (scale == 3 && sprite.height * 3 > 190) scale = 2;
@@ -79,8 +73,7 @@ void spritePixels(uint16_t id, uint32_t origin, bool forestTransparency = false)
       if (pixel != kTransparentKey) { ++ink; opaque &= actual == pixel; }
       else {
         ++holes;
-        transparent &= forestTransparency ? actual == scene.readPixel(left + x * scale + dx, top + y * scale + dy) :
-                                            actual != kTransparentKey;
+        transparent &= actual != kTransparentKey && actual != TFT_BLACK;
       }
     }
   }

@@ -113,7 +113,7 @@ class DesignPreviewTests(unittest.TestCase):
                 self.assertTrue(spec["loop"])
                 self.assertGreater(len(unique), 20)
 
-    def test_walking_animation_step_gating_and_fixed_ui(self):
+    def test_walking_animation_default_timeline_and_fixed_ui(self):
         from PIL import ImageDraw
         outside = Image.new("L", (466, 466), 255)
         ImageDraw.Draw(outside).ellipse((5, 5, 461, 461), fill=0)
@@ -140,18 +140,12 @@ class DesignPreviewTests(unittest.TestCase):
                 self.assertEqual(sum(durations), spec["durationMs"])
                 self.assertEqual(spec["frameMs"], WALK_FRAME_MS)
                 self.assertEqual(spec["frameCount"], WALK_FRAME_COUNT)
-                self.assertEqual(spec["exampleVisualSteps"], visual_steps_at(WALK_FRAME_COUNT))
+                self.assertEqual(spec["visualSteps"], visual_steps_at(WALK_FRAME_COUNT))
                 self.assertTrue(spec["loop"])
                 for region in fixed_regions:
                     reference = frames[0].crop(region).tobytes()
                     self.assertTrue(all(frame.crop(region).tobytes() == reference for frame in frames[1:]))
-                for start, end in spec["stoppedFrameRanges"]:
-                    for region in background_regions:
-                        reference = frames[start].crop(region).tobytes()
-                        self.assertTrue(all(frames[index].crop(region).tobytes() == reference
-                                            for index in range(start + 1, end)))
-                    self.assertEqual(visual_steps_at(start), visual_steps_at(end - 1))
-                for index in range(1, 8):
+                for index in range(1, WALK_FRAME_COUNT):
                     self.assertNotEqual(frames[index - 1].crop(background_regions[0]).tobytes(),
                                         frames[index].crop(background_regions[0]).tobytes())
                 for keyframe in spec["keyframes"]:

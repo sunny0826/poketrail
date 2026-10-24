@@ -18,9 +18,6 @@ else:
 FRAME_MS = 100
 FRAME_COUNT = 40
 DURATION_MS = FRAME_MS * FRAME_COUNT
-STEPS_PER_WALKING_FRAME = 2
-WALKING_RANGES = ((0, 8), (16, 32))
-STOPPED_RANGES = ((8, 16), (32, 40))
 ANIMATIONS = [
     dict(id="walk-forest", title="森林 · 林径后退", route="forest", partner=4),
     dict(id="walk-coast", title="海边 · 岸景后退", route="coast", partner=7),
@@ -29,9 +26,7 @@ ANIMATIONS = [
 
 
 def visual_steps_at(frame_index: int) -> int:
-    walked_frames = sum(max(0, min(frame_index, end) - start)
-                        for start, end in WALKING_RANGES if frame_index > start)
-    return walked_frames * STEPS_PER_WALKING_FRAME
+    return frame_index
 
 
 def sprite_frame_at(assets: GeneratedAssets, partner: int, time_ms: int) -> int:
@@ -52,14 +47,14 @@ def render_walk_frame(spec: dict, assets: GeneratedAssets, frame_index: int) -> 
 
 
 def walking_storyboard(out: Path) -> None:
-    labels = ("停止 · 背景冻结", "行走 · 地景靠近", "接缝 · 完整循环")
+    labels = ("首帧 · 初始位置", "默认 · 地景靠近", "接缝 · 完整循环")
     image = Image.new("RGB", (1000, 1080), "#0B1210")
     draw = ImageDraw.Draw(image)
-    draw.text((30, 30), "步行纵深 · 三路线关键帧", font=font(26), fill=TEXT, anchor="lm")
-    draw.text((30, 63), "示例步事件驱动；伙伴与界面固定，远景稳定，地景向屏幕下方靠近", font=font(14), fill=MUTED, anchor="lm")
+    draw.text((30, 30), "默认纵深动画 · 三路线关键帧", font=font(26), fill=TEXT, anchor="lm")
+    draw.text((30, 63), "每 100ms 一个视觉步；伙伴与界面固定，远景稳定，地景向屏幕下方靠近", font=font(14), fill=MUTED, anchor="lm")
     assets = GeneratedAssets()
     for row, spec in enumerate(ANIMATIONS):
-        frames = [render_walk_frame(spec, assets, 8), render_walk_frame(spec, assets, 4)]
+        frames = [render_walk_frame(spec, assets, 0), render_walk_frame(spec, assets, 4)]
         seam = dict(spec, page="Home", species=spec["partner"],
                     visual_steps=ground_height(spec["route"]) - 1)
         frames.append(render_frame(seam, assets))
@@ -84,16 +79,14 @@ def build_walking_animations(assets: GeneratedAssets, out: Path) -> list[dict]:
         relative = f"animations/{spec['id']}.gif"
         indexed[0].save(out / relative, save_all=True, append_images=indexed[1:],
                         duration=[FRAME_MS] * FRAME_COUNT, loop=0, optimize=False, disposal=2)
-        for name, frame_index in (("stationary", 8), ("moving", 4)):
+        for name, frame_index in (("stationary", 0), ("moving", 4)):
             frames[frame_index].save(out / "frames" / f"{spec['id']}-{name}.png", optimize=True)
         seam = dict(spec, page="Home", species=spec["partner"],
                     visual_steps=ground_height(spec["route"]) - 1)
         render_frame(seam, assets).save(out / "frames" / f"{spec['id']}-seam.png", optimize=True)
         manifest.append(dict(spec, group="walking-animation", file=relative,
             durationMs=DURATION_MS, frameMs=FRAME_MS, frameCount=FRAME_COUNT, loop=True,
-            exampleStepIncrement=STEPS_PER_WALKING_FRAME, exampleVisualSteps=visual_steps_at(FRAME_COUNT),
-            walkingFrameRanges=[list(range) for range in WALKING_RANGES],
-            stoppedFrameRanges=[list(range) for range in STOPPED_RANGES],
+            visualSteps=visual_steps_at(FRAME_COUNT),
             middlePixelsPerStep=MIDDLE_PIXELS_PER_STEP, nearPixelsPerStep=NEAR_PIXELS_PER_STEP,
             loopSourceHeight=ground_height(spec["route"]), keyframes=[f"frames/{spec['id']}-{name}.png"
             for name in ("stationary", "moving", "seam")], evidence="host-design-preview"))

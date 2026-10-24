@@ -143,7 +143,7 @@ def contact_sheet(ident: str, heading: str, specs: list[dict]) -> Path:
 
 def gallery(specs: list[dict], animations: list[dict]) -> str:
     groups = dict(GROUPS)
-    groups["walking-animation"] = ("步行纵深", "步事件示例、地景靠近与停止状态")
+    groups["walking-animation"] = ("默认纵深动画", "每 100ms 推进、地景靠近与完整循环")
     groups["battle-animation"] = ("战斗动画", "前冲、受击、闪避与完美判定")
     for group, (heading, description) in groups.items():
         figures = []
