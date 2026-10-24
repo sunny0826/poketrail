@@ -5,6 +5,7 @@
 #include "game.hpp"
 #include "menu_layout.hpp"
 #include "board_power.hpp"
+#include "screen_theme.hpp"
 namespace pokedex { namespace ui {
 enum class Page : uint8_t {
   Home, Menu, DateWelcome, Starter, Routes, Partners, Encounter, Battle, Practice,
@@ -56,17 +57,30 @@ class Screens {
   void clock(const ScreenState&);
   void menu(const ScreenState&, const adventure::Engine&, int top = menu_layout::kTop);
   void item(const ScreenState&, unsigned index, const char*, int top = menu_layout::kTop,
-            uint16_t species = 0, bool carried = false);
+            uint16_t species = 0, bool carried = false,
+            theme::Icon icon = theme::Icon::Dot, const char* note = nullptr);
   void thumbnail(uint16_t species, int x, int y, unsigned scale = 1);
-  void ballCount(uint64_t count, int y);
-  void line(const char*, int y, uint16_t color = 0xFFFF, bool large = false);
+  void ballCount(uint64_t count, int y, int x = 233);
+  void line(const char*, int y, uint16_t color = theme::kText, bool large = false);
+  void fitLine(const char*, int y, int width, uint16_t color, bool large = true);
+  void title(const char*, const char* subtitle, uint16_t accent);
+  void scene(adventure::Route, bool dim = false, int dx = 0);
+  void sceneThumbnail(adventure::Route, int cx, int cy);
+  void glyph(theme::Icon, int x, int y, uint16_t color);
+  void alert(const char*, int y, uint16_t color);
+  void progress(uint64_t value, uint32_t total, int y, uint16_t color);
+  void hp(const char*, uint8_t value, int x, uint16_t color);
+  void actorShadow(int cx, int cy);
+  void warning(int cx, int cy, uint16_t color);
   void stamp(const adventure::Stamp&, int top);
   void badges(uint8_t mask, int top);
   bool sprite(uint16_t id, uint32_t now);
-  bool sprite(uint16_t id, uint32_t now, Playback&, int cy = 233);
+  bool sprite(uint16_t id, uint32_t now, Playback&, int cy = 233, int cx = 233,
+              uint16_t silhouette = 0, uint8_t maxScale = 3, uint16_t maxHeight = kMaxDisplayHeight);
   bool advance(Playback&, uint16_t id, uint32_t now);
   uint16_t* pixels_ = nullptr;
-  Playback homePlayback_, battlePlayback_, resultPlayback_;
-  uint16_t decodedId_ = 0, decodedFrame_ = UINT16_MAX, decodedScale_ = 0;
+  uint16_t sceneRow_[456];
+  Playback homePlayback_, battlePlayback_, enemyBattlePlayback_, resultPlayback_;
+  uint16_t decodedId_ = 0, decodedFrame_ = UINT16_MAX, decodedScale_ = 0, decodedSilhouette_ = 0;
 };
 } }

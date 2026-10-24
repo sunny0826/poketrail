@@ -1,0 +1,26 @@
+{
+  "source": "tools/design_preview_scenes.py#pixel_scene_source",
+  "width": 228,
+  "height": 135,
+  "scale": 2,
+  "dimFactor": 0.52,
+  "thumbTop": 18,
+  "thumbHeight": 90,
+  "routes": [
+    {
+      "route": "forest",
+      "normalSha256": "d2c2593a4ecff9cf3c623b63d1d0a9d262d658d8cdf337cea8a04f43b28104dc",
+      "dimSha256": "c304eeae71491437190c53177f958bcb85ccbf046a8a3e16e6bcdd776dfab97e"
+    },
+    {
+      "route": "coast",
+      "normalSha256": "411368085bd7c15dfac444ce99fdb0aa8b9c14cfd6068948a722d7aa73cea706",
+      "dimSha256": "034cccfa1a2cd15f6dcb9afeb40a21cda6ddafbaf0df8e288e167611002d98cb"
+    },
+    {
+      "route": "cave",
+      "normalSha256": "190471b189a30e48c962eb8fbed0df7a6c502311f1b7112c816f84c4f3d01993",
+      "dimSha256": "70e8b2b4cc4e25dfdd1d4464de546320b5a2cda780275bfc387186b5075b70a2"
+    }
+  ]
+}

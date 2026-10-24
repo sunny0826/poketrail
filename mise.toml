@@ -55,6 +55,14 @@ run = "bash scripts/run_file_store_tests.sh"
 description = "核对151种遭遇目录与生成物"
 run = ["python3 tools/build_adventure_catalog.py --check", "python3 tools/build_evolution_rules.py --check", "python3 -m unittest test/test_adventure_catalog.py test/test_progression_catalog.py"]
 
+[tasks.scenes]
+description = "生成定稿的森林、海边和洞窟场景"
+run = "python3 tools/build_scene_backgrounds.py"
+
+[tasks.test-scenes]
+description = "核对场景来源、尺寸、像素和生成物"
+run = ["python3 tools/build_scene_backgrounds.py --check", "python3 -m unittest test/test_scene_backgrounds.py"]
+
 [tasks.icons]
 description = "生成固定来源的宝可梦与精灵球缩略图"
 run = "python3 tools/build_icons.py"

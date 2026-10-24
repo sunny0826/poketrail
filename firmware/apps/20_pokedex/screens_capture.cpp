@@ -20,14 +20,14 @@ void Screens::capture(const ScreenState& s, const Engine& e, uint32_t now) {
   const auto f = captureFrameAt(anim, now);
   switch (f.stage) {
     case CaptureStage::Flight: {
-      sprite(species, now);
+      sprite(species, now, battlePlayback_, 233, 233, 0, 2, 190);
       int x, y;
       captureFlightPos(f.t, x, y);
       const unsigned trail = anim.timing == Timing::Perfect ? 3 : anim.timing == Timing::Nice ? 2 : 0;
       for (unsigned i = 1; i <= trail; ++i) {
         int tx, ty;
         captureFlightPos(f.t - 0.06f * i, tx, ty);
-        M5.Display.fillCircle(tx, ty, 6 - int(i), anim.timing == Timing::Perfect ? kGold : TFT_WHITE);
+        M5.Display.fillCircle(tx, ty, 6 - int(i), anim.timing == Timing::Perfect ? theme::kGold : TFT_WHITE);
       }
       ballAt(x, y, 720.0f * f.t);
       break;
@@ -41,12 +41,13 @@ void Screens::capture(const ScreenState& s, const Engine& e, uint32_t now) {
       break;
     }
     case CaptureStage::Drop:
+      M5.Display.fillEllipse(kBallX, kGroundY + 14, 27, 5, theme::kShadow);
       ballAt(kBallX, captureDropY(f.t));
       break;
     case CaptureStage::Wiggle: {
       ballAt(kBallX, kGroundY, captureWiggleAngle(f.t));
       const int side = f.wiggle % 2 ? 1 : -1;
-      star(233 + side * 40, 285, 5, kGold);
+      star(233 + side * 40, 285, 5, theme::kGold);
       break;
     }
     case CaptureStage::Reveal:
@@ -54,14 +55,14 @@ void Screens::capture(const ScreenState& s, const Engine& e, uint32_t now) {
         for (unsigned i = 0; i < 6; ++i) {
           int x, y;
           captureStarPos(i, f.t, x, y);
-          star(x, y, 7, i % 2 ? kGold : TFT_WHITE);
+          star(x, y, 7, i % 2 ? theme::kGold : TFT_WHITE);
         }
-        M5.Display.drawCircle(233, kGroundY, 26, kGold);
+        M5.Display.drawCircle(233, kGroundY, 26, theme::kGold);
         ballAt(kBallX, kGroundY);
       } else {
         const int r = int(90.0f * f.t);
         if (r > 2) M5.Display.drawCircle(233, 233, r, TFT_WHITE);
-        sprite(species, now);
+        sprite(species, now, battlePlayback_, 233, 233, 0, 2, 190);
         ballAt(kBallX, 330);
       }
       break;

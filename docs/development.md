@@ -38,7 +38,8 @@ rtk proxy mise run icons-download
 | `check-adventure-catalog` | 151 目录、73 普通根与 72 进化边 |
 | `test-sprites` | GIF 哈希、完整帧和固件逐像素解码 |
 | `test-icons` | PNG 哈希、透明规则与生成像素 |
-| `test-render` | 真实 Runtime／M5GFX 页面和输入回归 |
+| `test-scenes` | 三路线场景来源、RGB565 像素与生成物 |
+| `test-render` | 九套真实 Runtime／M5GFX 页面、战斗动作与输入回归 |
 | `build` | ESP32-S3 固件 |
 | `check-startup-stack` | 构建后 Engine 启动局部栈帧 |
 
@@ -46,7 +47,10 @@ rtk proxy mise run icons-download
 
 ```bash
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_home_render
+rtk proxy mise exec -- python3 scripts/run_render_tests.py test_battle_render
 ```
+
+`test_battle_render` 通过真实按键、Runtime 和 M5GFX 核对双角色原帧时长、攻击与躲避位移、即时 HP、最终动作窗口、暂停恢复和保存失败。输出是主机截图，不表示设备已达到目标帧率。
 
 详细覆盖与限制见[验证说明](verification.md)。提交前按变更范围运行相关检查；固件变更还应运行 `build`。UI 变更须读取真实渲染截图，交互变更须验证实际输入路径。
 
@@ -58,7 +62,9 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_home_render
 | [runtime.cpp](../firmware/apps/20_pokedex/runtime.cpp) 及同名前缀文件 | 采样、页面、输入、省电和保存调度 |
 | [adventure.hpp](../firmware/apps/20_pokedex/adventure.hpp) 及同名前缀文件 | Engine 唯一修改玩法状态，提交与重试 |
 | [save_codec.cpp](../firmware/apps/20_pokedex/save_codec.cpp)、[file_store.cpp](../firmware/apps/20_pokedex/file_store.cpp) | 版本、语义校验、CRC、双槽和回读 |
-| [screens.cpp](../firmware/apps/20_pokedex/screens.cpp) 及同名前缀文件 | 从已发布状态绘制页面 |
+| [screens.cpp](../firmware/apps/20_pokedex/screens.cpp) 及同名前缀文件 | 从已发布状态绘制页面；公共组件位于 `screens_components.cpp` |
+| [screen_theme.hpp](../firmware/apps/20_pokedex/screen_theme.hpp) | 页面与 Viewer 的颜色和图标类型 |
+| [battle_presentation.hpp](../firmware/apps/20_pokedex/battle_presentation.hpp) | 从 `BattleView` 判定动作及 450ms 显示窗口，不结算玩法 |
 | [game.cpp](../firmware/apps/20_pokedex/game.cpp)、[sprite.cpp](../firmware/apps/20_pokedex/sprite.cpp) | 不依赖 Arduino 的图鉴时序与解码 |
 | [firmware/shared](../firmware/shared) | C152 初始化、电源与反馈 |
 | [tools](../tools)、[assets](../assets) | 生成器、固定来源、资料与哈希清单 |
@@ -74,6 +80,7 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_home_render
 | --- | --- |
 | 动画 | `rtk proxy mise run sprites` |
 | 缩略图 | `rtk proxy mise run icons`，初次用 `icons-download` |
+| 路线场景 | `rtk proxy mise run scenes` |
 | 进化规则 | `rtk proxy mise exec -- python3 tools/build_evolution_rules.py` |
 | 遭遇目录 | `rtk proxy mise exec -- python3 tools/build_adventure_catalog.py` |
 
@@ -87,7 +94,11 @@ rtk proxy mise exec -- python3 tools/build_sprites.py --ids 1,4,7 --out /tmp/spr
 
 151 只动画共 8165 个时序帧，保留原画布与时长；16 色 RGB565 调色板与 RLE 数据存于 Flash，相同帧共享数据。设备只解码当前帧，透明键为 `0xF81F`，黑白像素保留。
 
-基础形态使用 2 倍整数缩放，中间和最终形态优先 3 倍；超出 336×270 时回退 2 倍。按时间定位动画帧，不插值，不因点击反馈重启。进化关系仅使用编号 1～151，缩放不代表实际身高比例。
+基础形态使用 2 倍整数缩放，中间和最终形态优先 3 倍；超出 336×270 时回退 2 倍。页面再按可用高度限制：首页避免 3 倍角色占用步数区，Viewer 为属性栏留出空间，遭遇和结果页使用 1 倍或 2 倍。双角色战斗中，原图不超过 68×65 的角色用 2 倍，其他用 1 倍。所有页面保留完整原画布和透明像素，不插值。
+
+三路线场景通过 `tools/design_preview_scenes.py` 的 `pixel_scene_source()` 生成，清单位于 `assets/scene-backgrounds.json`。普通与暗色图均为 228×135 RGB565，绘制时逐行放大 2 倍；场景数组存于 Flash，只需 456 像素的行缓冲。遭遇、战斗和投球使用已保存的遭遇路线，选择新路线不改变当前遭遇背景。
+
+动画按原始帧时长推进，点击和战斗动作不会重启动画。双角色各自持有播放位置，共用解码缓冲；白闪和残影只改变本帧颜色与位置。Engine 与 HP 在判定后立即更新，结束战斗时页面保留最多 450ms 动作窗口，失败保存立即转到错误页。判定窗口和下一拍时间不变。进化关系仅使用编号 1～151，缩放不代表实际身高比例。
 
 串口每 10 秒输出采样、最大间隔、输入轮询、质量缺口、RTC 错误、绘制与保存耗时。`maxgap`、`input`、`render`、`commit` 的单位为毫秒。锁定 IMU 接口不能区分 I/O 失败和无新样本，显示 `imuio=not-exposed`；日志不代替真实计步和屏幕观察。
 

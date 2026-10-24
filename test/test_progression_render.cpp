@@ -35,12 +35,12 @@ void evolveAndRetry() {
   select(runtime, 2); select(runtime, 1); select(runtime, 3); openMenu(runtime); select(runtime, 3);
   check(runtime.screen().page == Page::Viewer, "history still browsable after replacing source");
   screenshot(runtime, "viewer-history");
-  check(glyph("曾经获得 · 顶部返回", 419, TFT_DARKGREY), "source history label is rendered");
+  check(glyph("曾经获得", 390, theme::kMint), "source history label is rendered");
   edge(runtime, false, true);
-  check(glyph("当前拥有 · 顶部返回", 419, TFT_DARKGREY), "evolved target ownership label is rendered");
+  check(glyph("当前拥有", 390, theme::kMint), "evolved target ownership label is rendered");
   screenshot(runtime, "viewer-owned");
   edge(runtime, false, true);
-  check(glyph("尚未获得 · 顶部返回", 419, TFT_DARKGREY), "unobtained label is rendered");
+  check(glyph("尚未获得", 390, theme::kMint), "unobtained label is rendered");
   screenshot(runtime, "viewer-unobtained");
   tap(runtime, 233, 30);
   Save loaded; check(store.load(loaded).status == LoadStatus::Loaded && loaded.progress[0].spent == 7500,

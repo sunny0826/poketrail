@@ -32,12 +32,17 @@ static void battles() {
   Battle b; b.begin(UINT32_MAX - 1000, 0);
   CHECK(b.view().targetMs == 499);
   CHECK(b.press(Action::Both, 499)); CHECK(b.view().enemyHp == 3);
+  CHECK(b.view().settledMs == 499);
   CHECK(!b.press(Action::Attack, 500));
   CHECK(b.requestPause()); b.tick(680); CHECK(b.view().paused && b.view().cueIndex == 1);
-  CHECK(b.resume(10000)); CHECK(b.view().targetMs == 11500);
+  CHECK(b.resume(10000)); CHECK(b.view().targetMs == 11500 && 10000u - b.view().settledMs >= 450);
   CHECK(b.requestPause()); b.tick(11681); CHECK(b.view().playerHp == 2 && b.view().paused);
-  CHECK(b.resume(20000)); b.tick(100000); CHECK(b.view().result == Result::Lost);
+  CHECK(b.view().settledMs == 11681);
+  CHECK(b.resume(20000)); b.tick(100000); CHECK(b.view().result == Result::Lost && b.view().settledMs == 100000);
+  b.begin(UINT32_MAX - 1499); CHECK(b.press(Action::Attack, 0)); CHECK(b.view().settledMs == 0);
+  CHECK(b.view().enemyHp == 1); b.tick(181); CHECK(b.view().settledMs == 0 && b.view().cueIndex == 1);
   b.begin(0); CHECK(!b.press(Action::Dodge, 1700)); CHECK(b.view().cueIndex == 1 && !b.view().consumed);
+  CHECK(b.view().settledMs == 1700);
   b.begin(0);
   for (unsigned i = 0; i < 12; ++i) {
     const uint32_t target = b.view().targetMs;

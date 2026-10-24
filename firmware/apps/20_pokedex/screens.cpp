@@ -8,6 +8,19 @@
 #include <cstdlib>
 namespace pokedex { namespace ui {
 using namespace adventure;
+namespace {
+uint16_t accentFor(Page page) {
+  switch (page) {
+    case Page::DateWelcome: case Page::Starter: case Page::Encounter: case Page::Pause:
+    case Page::Throw: case Page::Result: case Page::Records: case Page::FirstCaptures:
+    case Page::Recent: case Page::Days: case Page::Achievements: case Page::EvolutionConfirm:
+      return theme::kGold;
+    case Page::Error: case Page::ReleaseConfirm: return theme::kRed;
+    case Page::Clock: return theme::kBlue;
+    default: return theme::kMint;
+  }
+}
+}
 const char* routeName(Route r) {
   const char* names[] = {"森林", "海边", "洞窟"};
   return uint8_t(r) < 3 ? names[uint8_t(r)] : "未知";
@@ -43,10 +56,14 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
 void drawGraphicsError(const c152::BatteryStatus& battery) {
   M5.Display.startWrite();
   M5.Display.fillScreen(TFT_BLACK);
+  M5.Display.fillCircle(233, 233, 227, theme::kBackground);
+  M5.Display.drawTriangle(233, 153, 184, 239, 282, 239, theme::kRed);
   M5.Display.setTextDatum(middle_center);
+  M5.Display.setFont(&fonts::efontCN_24);
+  M5.Display.setTextColor(theme::kRed);
+  M5.Display.drawString("!", 233, 208);
   M5.Display.setFont(&fonts::efontCN_16);
-  M5.Display.setTextColor(TFT_RED, TFT_BLACK);
-  M5.Display.drawString("画面不可用，请重启", 233, 233);
+  M5.Display.drawString("画面不可用，请重启", 233, 290);
   drawBattery(battery);
   M5.Display.endWrite();
 }
@@ -55,12 +72,9 @@ bool Screens::begin() {
   pixels_ = static_cast<uint16_t*>(malloc(size_t(kMaxDisplayWidth) * kMaxDisplayHeight * 2));
   return pixels_ != nullptr;
 }
-void Screens::invalidate() { battlePlayback_.species = resultPlayback_.species = decodedId_ = 0; decodedFrame_ = UINT16_MAX; }
-void Screens::line(const char* t, int y, uint16_t color, bool large) {
-  M5.Display.setTextDatum(middle_center);
-  M5.Display.setFont(large ? &fonts::efontCN_24 : &fonts::efontCN_16);
-  M5.Display.setTextColor(color, TFT_BLACK);
-  M5.Display.drawString(t, 233, y);
+void Screens::invalidate() {
+  battlePlayback_.species = enemyBattlePlayback_.species = resultPlayback_.species = decodedId_ = 0;
+  decodedFrame_ = UINT16_MAX; decodedSilhouette_ = 0;
 }
 void Screens::thumbnail(uint16_t id, int x, int y, unsigned scale) {
   if (!id || id > kSpeciesCount || !scale) return;
@@ -78,31 +92,45 @@ void Screens::thumbnail(uint16_t id, int x, int y, unsigned scale) {
         M5.Display.fillRect(left + col * scale, top + row * scale, scale, scale, color);
     }
 }
-void Screens::ballCount(uint64_t count, int y) {
+void Screens::ballCount(uint64_t count, int y, int x) {
   char text[32]; snprintf(text, sizeof(text), "%llu", static_cast<unsigned long long>(count));
   M5.Display.setFont(&fonts::efontCN_16);
+  const int right = 405 - 8 - M5.Display.textWidth(text);
+  if (x > right) x = right;
   const auto& icon = data::kPokeBallIcon;
-  const int left = 233 - (int(icon.width) + 6 + M5.Display.textWidth(text)) / 2;
-  M5.Display.pushImage(left, y - icon.height / 2, icon.width, icon.height, icon.pixels, kTransparentKey);
-  M5.Display.setTextDatum(middle_left); M5.Display.setTextColor(TFT_WHITE, TFT_BLACK);
-  M5.Display.drawString(text, left + icon.width + 6, y);
+  M5.Display.pushImage(x - 15 - icon.width / 2, y - icon.height / 2, icon.width, icon.height,
+                       icon.pixels, kTransparentKey);
+  M5.Display.setTextDatum(middle_left); M5.Display.setTextColor(theme::kText);
+  M5.Display.drawString(text, x + 8, y);
 }
-void Screens::item(const ScreenState& s, unsigned index, const char* label, int top, uint16_t species, bool carried) {
+void Screens::item(const ScreenState& s, unsigned index, const char* label, int top,
+                   uint16_t species, bool carried, theme::Icon icon, const char* note) {
   const unsigned first = menu_layout::first(s.selected);
   if (index < first || index >= first + menu_layout::kPageSize) return;
   const auto bounds = menu_layout::rowBounds(index - first, top);
   const int y = menu_layout::center(index - first, top);
-  const uint16_t background = index == s.selected ? 0x1946 : 0x0821;
-  const uint16_t color = index == s.selected ? TFT_CYAN : TFT_WHITE;
-  M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 8, background);
-  M5.Display.setFont(&fonts::efontCN_24); M5.Display.setTextColor(color, background);
-  M5.Display.setTextDatum(species ? middle_left : middle_center);
-  M5.Display.drawString(label, species ? 145 : 233, y);
-  if (species) thumbnail(species, 119, y);
-  if (carried) {
-    M5.Display.drawLine(350, y, 355, y + 5, TFT_CYAN);
-    M5.Display.drawLine(355, y + 5, 365, y - 6, TFT_CYAN);
+  const bool active = index == s.selected;
+  const uint16_t accent = accentFor(s.page);
+  const uint16_t background = active ? theme::kPanelActive : theme::kPanel;
+  const uint16_t color = active ? accent : theme::kText;
+  M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 10, background);
+  if (active) {
+    M5.Display.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 10, accent);
+    M5.Display.fillRect(85, y - 10, 4, 20, accent);
   }
+  if (species) thumbnail(species, 112, y);
+  else glyph(icon, 108, y, color);
+  M5.Display.setFont(&fonts::efontCN_16);
+  const int labelWidth = note || carried ? 210 - M5.Display.textWidth(note ? note : "携带") : 210;
+  M5.Display.setClipRect(137, y - 20, labelWidth, 40);
+  M5.Display.setTextColor(color);
+  M5.Display.setTextDatum(middle_left);
+  M5.Display.drawString(label, 137, y);
+  M5.Display.clearClipRect();
+  if (note || carried) {
+    M5.Display.setTextDatum(middle_right); M5.Display.setTextColor(color);
+    M5.Display.drawString(note ? note : "携带", 357, y);
+  } else if (active) glyph(theme::Icon::Next, 357, y, accent);
 }
 bool Screens::advance(Playback& playback, uint16_t id, uint32_t now) {
   if (!id || id > data::kSpriteCount) return false;
@@ -116,23 +144,33 @@ bool Screens::advance(Playback& playback, uint16_t id, uint32_t now) {
 bool Screens::advanceHome(uint16_t partner, uint32_t now) { return advance(homePlayback_, partner, now); }
 bool Screens::advanceResult(uint16_t species, uint32_t now) { return advance(resultPlayback_, species, now); }
 bool Screens::sprite(uint16_t id, uint32_t now) { return sprite(id, now, battlePlayback_); }
-bool Screens::sprite(uint16_t id, uint32_t now, Playback& playback, int cy) {
-  if (!id || id > data::kSpriteCount || !pixels_) return false;
+bool Screens::sprite(uint16_t id, uint32_t now, Playback& playback, int cy, int cx,
+                     uint16_t silhouette, uint8_t maxScale, uint16_t maxHeight) {
+  if (!id || id > data::kSpriteCount || !pixels_ || !maxScale) return false;
   advance(playback, id, now);
   const auto& s = data::kSprites[id - 1];
   auto scale = displayScale(s);
-  if (cy != 233 && scale > 2) scale = 2;
-  if (decodedId_ != id || decodedFrame_ != playback.state.frame_index || decodedScale_ != scale) {
+  if (scale > maxScale) scale = maxScale;
+  while (scale > 1 && s.height * scale > maxHeight) --scale;
+  if (decodedId_ != id || decodedFrame_ != playback.state.frame_index ||
+      decodedScale_ != scale || decodedSilhouette_ != silhouette) {
     if (!decodeFrame(s, playback.state.frame_index, scale, pixels_, size_t(kMaxDisplayWidth) * kMaxDisplayHeight)) return false;
+    if (silhouette) {
+      const size_t count = size_t(s.width) * scale * s.height * scale;
+      for (size_t index = 0; index < count; ++index)
+        if (pixels_[index] != kTransparentKey) pixels_[index] = silhouette;
+    }
     decodedId_ = id; decodedFrame_ = playback.state.frame_index; decodedScale_ = scale;
+    decodedSilhouette_ = silhouette;
   }
-  M5.Display.pushImage(233 - s.width * scale / 2, cy - s.height * scale / 2,
+  M5.Display.pushImage(cx - s.width * scale / 2, cy - s.height * scale / 2,
                        s.width * scale, s.height * scale, pixels_, kTransparentKey);
   return true;
 }
 bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& practice, uint32_t now) {
   M5.Display.startWrite();
   M5.Display.fillScreen(TFT_BLACK);
+  M5.Display.fillCircle(233, 233, 227, theme::kBackground);
   bool rendered = pixels_ != nullptr;
   switch (s.page) {
     case Page::Home: rendered = exploration(e, now); break;
@@ -149,14 +187,15 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
                         s.page == Page::PartnerDetail || s.page == Page::Records;
   if (listPage && menuCount(s, e) > menu_layout::kPageSize) {
     const auto bounds = menu_layout::kNextPage;
-    M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 8, 0x0821);
+    M5.Display.fillRoundRect(bounds.x, 402, bounds.width, 32, 9, theme::kPanel);
     char count[48]; snprintf(count, sizeof(count), "%u/%u  下一页", s.selected / menu_layout::kPageSize + 1,
                             menu_layout::pageCount(menuCount(s, e)));
     M5.Display.setTextDatum(middle_center); M5.Display.setFont(&fonts::efontCN_16);
-    M5.Display.setTextColor(TFT_WHITE, 0x0821);
-    M5.Display.drawString(count, 233, bounds.y + bounds.height / 2);
-  } else if (s.page != Page::Home && s.page != Page::Battle && s.page != Page::Practice && s.page != Page::Throw)
-    line("左 / 右选择 · 双键确认", 422, TFT_DARKGREY);
+    M5.Display.setTextColor(theme::kText);
+    M5.Display.drawString(count, 233, 418);
+  } else if (s.page != Page::Home && s.page != Page::Battle && s.page != Page::Practice && s.page != Page::Throw &&
+             s.page != Page::FirstCaptures && s.page != Page::Recent && s.page != Page::Days && s.page != Page::Achievements)
+    line("左 / 右选择 · 双键确认", 420, theme::kMuted);
   drawBattery(s.battery);
   M5.Display.endWrite();
   return rendered;

@@ -3,7 +3,7 @@ using namespace progression_ui;
 namespace {
 int selectedTop() {
   for (int y = 210; y < 395; ++y)
-    if (M5.Display.readPixel(200, y) == 0x1946) return y;
+    if (M5.Display.readPixel(200, y) == theme::kPanelActive) return y;
   check(false, "selected menu button has a visible surface");
   return 0;
 }
@@ -66,13 +66,13 @@ void welcomeBoundaries() {
   check(store.commits == commits, "inert welcome touches never save");
   lgfx::LGFX_Sprite label;
   label.setColorDepth(16); check(label.createSprite(300, 44), "large label canvas allocated");
-  label.fillScreen(TFT_BLACK); label.setTextDatum(middle_center);
-  label.setFont(&fonts::efontCN_24); label.setTextColor(TFT_CYAN, TFT_BLACK);
-  label.drawString("暂不设置", 150, 22);
+  label.fillScreen(TFT_BLACK); label.setTextDatum(middle_left);
+  label.setFont(&fonts::efontCN_16); label.setTextColor(theme::kGold, TFT_BLACK);
+  label.drawString("暂不设置", 54, 22);
   unsigned ink = 0;
   for (int y = 0; y < 44; ++y) for (int x = 0; x < 300; ++x) if (label.readPixel(x, y)) {
     ++ink;
-    check(M5.Display.readPixel(83 + x, 254 + y) == label.readPixel(x, y), "menu label uses readable 24px glyphs");
+    check(M5.Display.readPixel(83 + x, 254 + y) == label.readPixel(x, y), "menu label uses complete left-aligned body glyphs");
   }
   check(ink > 50, "large menu label contains visible glyphs");
   label.deleteSprite();
@@ -165,14 +165,14 @@ void longLabelsAndWarnings() {
   screenshot(growing, "long-evolution-unready");
   DegradedStore backup; legacyOwned(backup, {1});
   Runtime recovered(backup, platform); start(recovered);
-  check(glyph("已从备用存档恢复", 422, TFT_YELLOW), "recovery warning remains visible on exploration");
+  check(glyph("已从备用存档恢复", 428, theme::kGold), "recovery warning remains visible on exploration");
   screenshot(recovered, "home-recovery-warning");
   Save saved;
   check(store.load(saved).status == LoadStatus::Loaded, "step-warning fixture loads saved state");
   saved.stepsIncomplete = true; saved.today.complete = false;
   check(store.commit(saved) == CommitStatus::Committed, "step-warning fixture uses valid persisted flag");
   Runtime incomplete(store, platform); start(incomplete);
-  check(glyph("部分步数缺失", 422, TFT_RED), "step warning remains visible on exploration");
+  check(glyph("部分步数缺失", 428, theme::kRed), "step warning remains visible on exploration");
   screenshot(incomplete, "home-step-warning");
 }
 void throwBounds() {

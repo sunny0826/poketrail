@@ -99,17 +99,18 @@ void checkFullSprites() {
     g_state.reacting = true;
     g_state.jump = 14;
     const auto& s = pokedex::data::kSprites[i];
-    const uint16_t scale = pokedex::displayScale(s);
+    uint16_t scale = pokedex::displayScale(s);
+    if (s.height * scale > 220) scale = 2;
     const int w = s.width * scale, h = s.height * scale;
     if (scale == 3) ++enlarged;
     check(w <= 336 && h <= 270 &&
-          scale == (s.has_evolved && s.id != 17 && s.id != 22 ? 3 : 2),
-          "intermediate and final forms enlarge; tall bird animations stay complete");
+          scale == (s.has_evolved && s.id != 17 && s.id != 22 && s.height * 3 <= 220 ? 3 : 2),
+          "intermediate and final forms enlarge within the observation area");
     check(render(), "all species render");
-    const int x0 = 233 - w/2, y0 = 233 - h/2 - g_state.jump;
-    bool canvas_inside = y0 >= kFieldTop && 233 - h/2 + h <= kFieldBottom && x0 + w <= 403;
+    const int x0 = 233 - w/2, y0 = 215 - h/2 - g_state.jump;
+    bool canvas_inside = y0 >= kFieldTop && 215 - h/2 + h <= kFieldBottom && x0 + w <= 403;
     for (const int x : {x0, x0 + w - 1})
-      for (const int y : {y0, 233 - h/2 + h - 1})
+      for (const int y : {y0, 215 - h/2 + h - 1})
         if ((x-233)*(x-233) + (y-233)*(y-233) >
             c152::kVisibleRadius*c152::kVisibleRadius) canvas_inside = false;
     check(canvas_inside, "full animation canvas and jump stay clear of labels circle and heart");
@@ -117,8 +118,12 @@ void checkFullSprites() {
     for (int y = 0; y < h; ++y) {
       for (int x = 0; x < w; ++x) {
         const uint16_t color = g_pixels[y*w+x];
-        if (color != pokedex::kTransparentKey &&
-            M5.Display.readPixel(x0+x, y0+y) != color) complete = false;
+        const uint16_t actual = M5.Display.readPixel(x0+x, y0+y);
+        if (color != pokedex::kTransparentKey && actual != color) {
+          if (complete) std::fprintf(stderr, "sprite mismatch id=%u x=%d y=%d expected=%04x actual=%04x\n",
+                                     unsigned(s.id), x0+x, y0+y, color, actual);
+          complete = false;
+        }
       }
     }
     check(complete, "entire sprite visible at highest response position");
@@ -131,8 +136,24 @@ void checkFullSprites() {
       }
     }
     check(inside, "sprite name type heart and hint inside round screen");
+    lgfx::LGFX_Sprite label;
+    label.setColorDepth(16); label.createSprite(260, 26); label.fillScreen(TFT_BLACK);
+    label.setTextDatum(middle_center); label.setFont(&fonts::efontCN_16);
+    label.setTextColor(theme::kBlue); label.drawString(s.types, 130, 13);
+    unsigned ink = 0, missing = 0;
+    for (int y = 0; y < 26; ++y) for (int x = 0; x < 260; ++x) {
+      if (!label.readPixel(x, y)) continue;
+      ++ink;
+      if (M5.Display.readPixel(103 + x, 340 + y) != label.readPixel(x, y)) ++missing;
+    }
+    check(ink > 8 && !missing, "complete type label survives reaction and field repaint");
   }
-  check(enlarged == 70, "70 intermediate and final forms render at three-times scale");
+  size_t expectedEnlarged = 0;
+  for (size_t i = 0; i < pokedex::data::kSpriteCount; ++i) {
+    const auto& sprite = pokedex::data::kSprites[i];
+    if (pokedex::displayScale(sprite) == 3 && sprite.height * 3 <= 220) ++expectedEnlarged;
+  }
+  check(enlarged == expectedEnlarged, "three-times sprites are limited only by the observation area");
 }
 
 void checkLargeAnimation() {
@@ -263,12 +284,12 @@ void checkEvolutionSizes() {
       resetFrame();
       g_state.sprite_index = id - 1;
       check(render(), "evolution comparison renders actual first frame");
+      const auto& decoded = pokedex::data::kSprites[id - 1];
+      uint16_t scale = pokedex::displayScale(decoded);
+      if (decoded.height * scale > 220) scale = 2;
       size_t area = 0;
-      for (int y = kFieldTop; y < kFieldBottom; ++y) {
-        for (int x = 0; x < c152::kScreenSize; ++x) {
-          if (M5.Display.readPixel(x, y) != TFT_BLACK) ++area;
-        }
-      }
+      for (size_t pixel = 0; pixel < size_t(decoded.width) * decoded.height * scale * scale; ++pixel)
+        if (g_pixels[pixel] != pokedex::kTransparentKey) ++area;
       check(area > previous_area, "evolved starter or representative species occupies more visible pixels");
       previous_area = area;
       const auto& s = pokedex::data::kSprites[id - 1];

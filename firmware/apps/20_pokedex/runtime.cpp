@@ -1,5 +1,6 @@
 #include "runtime.hpp"
 #include "viewer_screen.hpp"
+#include "battle_presentation.hpp"
 #include <algorithm>
 namespace pokedex { namespace ui {
 using namespace adventure;
@@ -56,6 +57,8 @@ void Runtime::syncPage() {
     if (screen_.page != Page::Starter) navigate(Page::Starter); return;
   }
   if (screen_.page == Page::Practice || (screen_.page == Page::Pause && screen_.practice)) return;
+  if (screen_.page == Page::Battle && !engine_.battleView().active &&
+      battleEffectActive(engine_.battleView(), platform_.now())) return;
   if (deferredThrow_ && (v.phase != Phase::ThrowReady || deferredThrow_ != v.encounter.id)) deferredThrow_ = 0;
   if (v.phase == Phase::ThrowReady) {
     if (deferredThrow_ != v.encounter.id && screen_.page != Page::Throw && screen_.page != Page::ReleaseConfirm)
@@ -125,7 +128,9 @@ void Runtime::loop() {
   if (screen_.page == Page::Practice) {
     practice_.tick(platform_.now());
     if (practice_.view().paused) navigate(Page::Pause);
-    else if (!practice_.view().active) { screen_.practice = false; navigate(Page::Home); }
+    else if (!practice_.view().active && !battleEffectActive(practice_.view(), platform_.now())) {
+      screen_.practice = false; navigate(Page::Home);
+    }
   }
   if (engine_.ready() && !engine_.savePending()) engine_.tick(platform_.now(), readingAt(platform_.now()));
   tickCapture(platform_.now());
