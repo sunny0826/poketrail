@@ -3,7 +3,8 @@
 namespace pokedex { namespace ui {
 using namespace adventure;
 void Runtime::goBack() {
-  if (screen_.page == Page::Viewer) {
+  if (screen_.page == Page::PracticeThrow || screen_.page == Page::PracticeResult) endPractice();
+  else if (screen_.page == Page::Viewer) {
     navigate(Page::Home); syncPage();
   } else if (screen_.page == Page::Clock && !engine_.view().starter) navigate(Page::DateWelcome);
   else if (screen_.page == Page::EvolutionConfirm) openPartner(screen_.species);
@@ -19,7 +20,8 @@ void Runtime::handle(const Input& raw) {
   }
   Input input = raw;
   const bool immediate = screen_.page == Page::Viewer || screen_.page == Page::Battle ||
-                         screen_.page == Page::Practice || screen_.page == Page::Throw;
+                         screen_.page == Page::Practice || screen_.page == Page::Throw ||
+                         screen_.page == Page::PracticeThrow;
   if (!immediate) {
     if (input.touch) {
       waitForRelease();
@@ -51,6 +53,12 @@ void Runtime::handle(const Input& raw) {
         screen_.command = result;
       }
       dirty_ = true;
+    } else if (screen_.page == Page::PracticeThrow && screen_.charging &&
+               practiceCapture_.throwView().active && !input.held && !input.rightDown) {
+      screen_.charging = false;
+      const auto outcome = practiceCapture_.pressThrow(input.at);
+      if (outcome.valid) startPracticeCapture(outcome);
+      dirty_ = true;
     }
     return;
   }
@@ -62,18 +70,19 @@ void Runtime::handle(const Input& raw) {
   if (screen_.page == Page::Battle || screen_.page == Page::Practice) {
     const bool practice = screen_.page == Page::Practice;
     if (input.pause || (input.touch && input.y < 85)) {
-      if (practice) practice_.requestPause(); else engine_.requestPause();
+      if (practice) practiceCapture_.requestPause(); else engine_.requestPause();
       return;
     }
     bool left = input.left || (input.touch && input.x < 233);
     bool right = input.right || (input.touch && input.x >= 233);
     if (left || right) {
       Action action = left && right ? Action::Both : left ? Action::Dodge : Action::Attack;
-      if (practice) practice_.press(action, input.at); else engine_.press(action, input.at);
+      if (practice) practiceCapture_.press(action, input.at); else engine_.press(action, input.at);
     }
     return;
   }
   if (screen_.page == Page::Throw) { handleThrow(input); return; }
+  if (screen_.page == Page::PracticeThrow) { handlePracticeThrow(input); return; }
   if (!input.left && !input.right && !input.touch) return;
   bool confirm = input.left && input.right;
   if (screen_.page == Page::Clock && screen_.editing) {
@@ -140,7 +149,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       else if (item == 3) navigate(Page::Viewer);
       else if (item == 4) navigate(Page::Records);
       else if (item == 5) openClock();
-      else if (item == 6) { screen_.practice = true; practice_.begin(at); navigate(Page::Practice); }
+      else if (item == 6) beginPractice(at);
       else if (item == 7) sleepDisplay();
       else if (item == 8) navigate(Page::Home);
       break;
@@ -158,16 +167,19 @@ void Runtime::activate(unsigned item, uint32_t at) {
       activateProgression(item, at); break;
     case Page::Encounter:
       if (item == 0) { engine_.startBattle(at); navigate(Page::Battle); }
-      else if (item == 1) { screen_.practice = true; practice_.begin(at); navigate(Page::Practice); }
+      else if (item == 1) beginPractice(at);
       else if (item == 2) navigate(Page::Partners);
       else navigate(Page::Home);
       break;
     case Page::Pause:
       if (screen_.practice) {
-        if (item == 0) { practice_.resume(at); navigate(Page::Practice); }
-        else { screen_.practice = false; practice_ = Battle(); navigate(Page::Home); }
+        if (item == 0) { practiceCapture_.resume(at); navigate(Page::Practice); }
+        else endPractice();
       } else if (item == 0) { engine_.resume(at); navigate(Page::Battle); }
       else engine_.retreat();
+      break;
+    case Page::PracticeResult:
+      if (item == 0) beginPractice(at); else endPractice();
       break;
     case Page::Result:
       engine_.acknowledgeResult(v.encounter.id, platform_.randomSeed()); navigate(Page::Home); break;

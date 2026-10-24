@@ -10,7 +10,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     ballCount(availableBalls(v), 43);
     line(speciesName(v.encounter.species), 80, TFT_CYAN);
     if (s.capture.active) {
-      capture(s, e, now);
+      capture(s, v.encounter.species, now);
     } else if (e.throwView().active) {
       sprite(v.encounter.species, now);
       const int32_t remaining = int32_t(e.throwView().targetMs - now);
@@ -40,10 +40,10 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   }
   const auto& b = s.page == Page::Practice ? practice : e.battleView();
   uint16_t partner = s.page == Page::Practice ? (v.partner ? v.partner : 1) : v.encounter.partner;
-  uint16_t enemy = s.page == Page::Practice ? 25 : v.encounter.species;
+  uint16_t enemy = s.page == Page::Practice ? (s.practiceSpecies ? s.practiceSpecies : 25) : v.encounter.species;
   char title[100];
   snprintf(title, sizeof(title), "%s %u  /  %s %u", speciesName(partner), b.playerHp, speciesName(enemy), b.enemyHp);
-  line(s.page == Page::Practice ? "免费练习 · 轻触上方暂停" : "轻触上方暂停", 38, TFT_DARKGREY);
+  line(s.page == Page::Practice ? "捕获练习 · 轻触上方暂停" : "轻触上方暂停", 38, TFT_DARKGREY);
   line(title, 62, TFT_WHITE);
   sprite(b.expected == Action::Attack ? partner : enemy, now);
   M5.Display.drawFastHLine(103, 382, 260, TFT_DARKGREY);

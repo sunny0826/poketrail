@@ -32,7 +32,9 @@ void Runtime::pollClock(uint32_t now) {
   auto r = makeReading(candidate, now, engine_.view().clock.offsetMinutes);
   const auto previous = engine_.view().clock.anchor;
   if (pendingClockWrite_) r.trusted = false;
-  auto result = practice_.view().active && !practice_.view().paused ? CommandResult::Deferred : engine_.observeClock(r);
+  const bool practiceBusy = practiceCapture_.stage() == PracticeStage::Battle &&
+                            !practiceCapture_.battleView().paused;
+  auto result = practiceBusy ? CommandResult::Deferred : engine_.observeClock(r);
   if ((result == CommandResult::Deferred || result == CommandResult::SavePending) && previous.trusted && previous.bootGeneration == r.bootGeneration) {
     const int32_t elapsed = int32_t(r.monotonicMs - previous.monotonicMs);
     const int64_t drift = (r.utcSeconds - previous.utcSeconds) * 1000 - elapsed;

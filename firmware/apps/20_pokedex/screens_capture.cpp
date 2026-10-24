@@ -14,9 +14,8 @@ void star(int x, int y, int r, uint16_t color) {
   M5.Display.drawFastVLine(x, y - r, 2 * r + 1, color);
 }
 }
-void Screens::capture(const ScreenState& s, const Engine& e, uint32_t now) {
+void Screens::capture(const ScreenState& s, uint16_t species, uint32_t now) {
   const auto& anim = s.capture;
-  const uint16_t species = e.view().encounter.species;
   const auto f = captureFrameAt(anim, now);
   switch (f.stage) {
     case CaptureStage::Flight: {

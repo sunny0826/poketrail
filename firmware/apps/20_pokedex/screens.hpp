@@ -8,6 +8,7 @@
 namespace pokedex { namespace ui {
 enum class Page : uint8_t {
   Home, Menu, DateWelcome, Starter, Routes, Partners, Encounter, Battle, Practice,
+  PracticeThrow, PracticeResult,
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
   Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, ReleaseConfirm
 };
@@ -28,6 +29,11 @@ struct ScreenState {
   CaptureAnim capture;
   uint32_t chargeStartMs = 0;
   bool charging = false;
+  uint16_t practiceSpecies = 0;
+  uint32_t practiceTargetMs = 0;
+  uint8_t practiceUsedBalls = 0;
+  bool practiceThrowing = false;
+  adventure::Result practiceResult = adventure::Result::None;
 };
 const char* routeName(adventure::Route);
 const char* speciesName(uint16_t id);
@@ -50,7 +56,9 @@ class Screens {
   void progression(const ScreenState&, const adventure::Engine&);
   void battle(const ScreenState&, const adventure::Engine&,
               const adventure::BattleView&, uint32_t);
-  void capture(const ScreenState&, const adventure::Engine&, uint32_t now);
+  void practiceThrow(const ScreenState&, uint32_t now);
+  void practiceResult(const ScreenState&, uint32_t now);
+  void capture(const ScreenState&, uint16_t species, uint32_t now);
   void ballAt(int x, int y, float angle = 0);
   void records(const ScreenState&, const adventure::Engine&);
   void clock(const ScreenState&);

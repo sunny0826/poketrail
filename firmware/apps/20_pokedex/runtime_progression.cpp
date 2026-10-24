@@ -64,7 +64,10 @@ void Runtime::activateProgression(unsigned item, uint32_t at) {
   navigate(Page::EvolutionConfirm);
 }
 void Runtime::tickCapture(uint32_t now) {
-  if (screen_.charging && !engine_.throwView().active) screen_.charging = false;
+  if (screen_.page == Page::Throw && screen_.charging && !engine_.throwView().active)
+    screen_.charging = false;
+  if (screen_.page == Page::PracticeThrow && screen_.charging && !practiceCapture_.throwView().active)
+    screen_.charging = false;
   if (!screen_.capture.active) { lastCaptureCue_ = 0; return; }
   const auto cue = uint8_t(captureCueAt(screen_.capture, now));
   if (cue != lastCaptureCue_) {
@@ -85,8 +88,7 @@ void Runtime::tickCapture(uint32_t now) {
     dirty_ = true;
   }
 }
-void Runtime::handleThrow(const Input& input) {
-  if (screen_.capture.active) {
+void Runtime::handleThrow(const Input& input) {  if (screen_.capture.active) {
     if (input.any()) { captureSkip(screen_.capture, input.at); waitForRelease(); }
     return;
   }
@@ -118,5 +120,96 @@ void Runtime::handleThrow(const Input& input) {
     screen_.command = engine_.beginThrow(AttemptKey(encounter.id, encounter.usedBalls + 1), input.at);
     waitForRelease();
   }
+}
+void Runtime::beginPractice(uint32_t at) {
+  screen_.practice = true;
+  screen_.charging = false;
+  screen_.capture = CaptureAnim();
+  practiceCapture_.begin(at, platform_.randomSeed());
+  screen_.practiceSpecies = practiceCapture_.species();
+  navigate(Page::Practice);
+}
+void Runtime::endPractice() {
+  const bool practicePage = screen_.page == Page::Practice || screen_.page == Page::PracticeThrow ||
+                            screen_.page == Page::PracticeResult || screen_.page == Page::Pause;
+  practiceCapture_.reset();
+  screen_.practice = false;
+  screen_.charging = false;
+  screen_.capture = CaptureAnim();
+  screen_.practiceSpecies = 0;
+  screen_.practiceThrowing = false;
+  screen_.practiceUsedBalls = 0;
+  screen_.practiceResult = Result::None;
+  if (practicePage) navigate(Page::Home);
+}
+void Runtime::syncPracticeView() {
+  screen_.practiceSpecies = practiceCapture_.species();
+  screen_.practiceThrowing = practiceCapture_.throwView().active;
+  screen_.practiceTargetMs = practiceCapture_.throwView().targetMs;
+  screen_.practiceUsedBalls = practiceCapture_.usedBalls();
+  screen_.practiceResult = practiceCapture_.result();
+}
+void Runtime::syncPracticePage() {
+  const PracticeStage stage = practiceCapture_.stage();
+  if (stage == PracticeStage::Idle) {
+    if (screen_.practice) {
+      screen_.practice = false;
+      if (screen_.page == Page::Practice || screen_.page == Page::PracticeThrow ||
+          screen_.page == Page::PracticeResult || screen_.page == Page::Pause)
+        navigate(Page::Home);
+    }
+    return;
+  }
+  if (stage == PracticeStage::Battle) {
+    if (practiceCapture_.battleView().paused) {
+      if (screen_.page != Page::Pause) navigate(Page::Pause);
+    } else if (screen_.page != Page::Practice) navigate(Page::Practice);
+    return;
+  }
+  if (stage == PracticeStage::Result) {
+    if (screen_.capture.active) return;
+    if (screen_.page != Page::PracticeResult) navigate(Page::PracticeResult);
+    return;
+  }
+  if (screen_.page != Page::PracticeThrow) navigate(Page::PracticeThrow);
+}
+void Runtime::startPracticeCapture(const PracticeOutcome& outcome) {
+  CaptureAnim anim;
+  anim.active = true;
+  anim.startMs = outcome.at;
+  anim.timing = outcome.timing;
+  anim.captured = outcome.captured;
+  anim.wiggleBreak = outcome.captured ? 0 : uint8_t(1 + outcome.roll % 3);
+  screen_.capture = anim;
+  lastCaptureCue_ = 0;
+  feedback(outcome.timing == Timing::Perfect ? 40 : 20);
+  dirty_ = true;
+}
+void Runtime::handlePracticeThrow(const Input& input) {
+  if (screen_.capture.active) {
+    if (input.any()) { captureSkip(screen_.capture, input.at); waitForRelease(); }
+    return;
+  }
+  if (practiceCapture_.throwView().active) {
+    if ((input.right || input.touch) && !screen_.charging) {
+      screen_.charging = true;
+      screen_.chargeStartMs = input.at;
+      feedback(20);
+    }
+    return;
+  }
+  bool confirm = input.left && input.right;
+  if (input.touch) {
+    const int row = menu_layout::rowAt(input.x, input.y);
+    if (row >= 0 && row < 3) {
+      screen_.selected = static_cast<unsigned>(row); confirm = true;
+    }
+  } else if (!confirm && input.left) {
+    screen_.selected = (screen_.selected + 1) % 3;
+  } else if (input.right) confirm = true;
+  if (!confirm) return;
+  if (screen_.selected == 1) beginPractice(input.at);
+  else if (screen_.selected == 2) endPractice();
+  else if (practiceCapture_.beginThrow(input.at)) waitForRelease();
 }
 } }

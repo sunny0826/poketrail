@@ -30,7 +30,7 @@ uint64_t availableBalls(const Save&);
 
 Save v2 新增 151 个培养账户、19 字节曾获得位图、rewardBaseSteps、ballsSpent、legacyChargedCount、voidedLegacyCount、rosterRevision、lastEvolution；Encounter 新增 legacyFreeAttempts。保存格式升 2，新遭遇规则升 2，规则版本与存档版本分开处理。
 
-实现入口：[Engine冻结提交与启动迁移](../../firmware/apps/20_pokedex/adventure.cpp)、[双版本语义校验](../../firmware/apps/20_pokedex/adventure_model.cpp)、[计步队列与安全刷步](../../firmware/apps/20_pokedex/adventure_steps.cpp)、[进化事务](../../firmware/apps/20_pokedex/adventure_progression.cpp)、[投球准备与结算](../../firmware/apps/20_pokedex/adventure_capture.cpp)。新增字段和状态由这些实际调用路径统一处理，页面读取已发布状态。
+实现入口：[Engine冻结提交与启动迁移](../../firmware/apps/20_pokedex/adventure.cpp)、[双版本语义校验](../../firmware/apps/20_pokedex/adventure_model.cpp)、[计步队列与安全刷步](../../firmware/apps/20_pokedex/adventure_steps.cpp)、[进化事务](../../firmware/apps/20_pokedex/adventure_progression.cpp)、[投球准备与结算](../../firmware/apps/20_pokedex/adventure_capture.cpp)、[捕获练习](../../firmware/apps/20_pokedex/practice_capture.cpp)。新增字段和状态由这些实际调用路径统一处理，页面读取已发布状态。
 
 ## 换伙伴前后的步数归属
 
@@ -54,6 +54,7 @@ schema1编码12139字节，schema2编码14672字节，均使用固定字段布�
 | Detector → Runtime → Engine | 两旧峰后切换、两次切换、进化后迟到峰、保存失败；归属和日期不漂移；异常缺口仍可见 |
 | 实际页面与Button_Class | 全部拥有分页、携带标记、分支和确认释放门；零球等待可留首页、采样和返回同场；151图鉴原操作保留 |
 | 实际投球时间线 | 准备零扣、按下/超时一球、重复键零扣、成功不能再投、Released与Escaped分开 |
+| 捕获练习 | 随机物种、真实对战与两次投球判定，独立对象不读写存档、不扣球、不写图鉴 |
 | codec与双槽故障注入 | 各phase v1字节fixture、v1/v2混合槽、同序冲突、未知版本、旧首捕500步、旧免费前缀、V=1后的ID边界 |
 | 真实提交失败和重启 | 写前、部分写、写后回读失败；完整旧或新快照，重试无双扣/双进化；v2再次启动保留已赚球 |
 | 溢出与资源 | 总步/培养/花费/ID/revision上界、128队列满、实际编码长度、全部Save副本峰值RAM、完整栈 |

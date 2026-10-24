@@ -3,6 +3,7 @@
 #include "motion.hpp"
 #include "device_clock.hpp"
 #include "menu_buttons.hpp"
+#include "practice_capture.hpp"
 namespace pokedex { namespace ui {
 struct Input {
   bool left = false, right = false, touch = false, pause = false, back = false;
@@ -53,7 +54,7 @@ class Runtime {
   const adventure::Engine& engine() const { return engine_; }
   const ScreenState& screen() const { return screen_; }
   const Metrics& metrics() const { return metrics_; }
-  const adventure::BattleView& practiceView() const { return practice_.view(); }
+  const adventure::BattleView& practiceView() const { return practiceCapture_.battleView(); }
   bool dimmed() const { return display_ != DisplayState::Awake; }
   void feedback(uint16_t duration);
  private:
@@ -64,6 +65,12 @@ class Runtime {
   void activate(unsigned item, uint32_t at);
   void activateProgression(unsigned item, uint32_t at);
   void handleThrow(const Input&);
+  void handlePracticeThrow(const Input&);
+  void beginPractice(uint32_t at);
+  void endPractice();
+  void syncPracticePage();
+  void syncPracticeView();
+  void startPracticeCapture(const adventure::PracticeOutcome&);
   void tickCapture(uint32_t now);
   void openPartner(uint16_t species);
   void resumeSavedProgression();
@@ -90,7 +97,7 @@ class Runtime {
   ScreenState screen_;
   MenuButtons menuButtons_;
   motion::Detector detector_;
-  adventure::Battle practice_;
+  adventure::CapturePractice practiceCapture_;
   adventure::ClockReading anchor_;
   adventure::StepEvent pendingSteps_[131];
   unsigned pendingStepCount_ = 0;

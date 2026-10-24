@@ -9,11 +9,11 @@ namespace pokedex { namespace ui {
 using namespace adventure;
 void Screens::menu(const ScreenState& s, const Engine& e, int top) {
   const auto phase = e.view().phase;
-  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", "151 图鉴", "捕捉与步行记录", "日期与时间", "免费练习", "立即省电", "返回探索"};
+  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", "151 图鉴", "捕捉与步行记录", "日期与时间", "捕获练习", "立即省电", "返回探索"};
   const char* const date[] = {"设置日期时间", "暂不设置", "浏览图鉴"};
   const char* const starters[] = {"妙蛙种子", "小火龙", "杰尼龟", "返回"};
   const char* const routes[] = {"森林", "海边", "洞窟", "返回"};
-  const char* const encounter[] = {"开始对战", "免费练习", "选择伙伴", "稍后再战"};
+  const char* const encounter[] = {"开始对战", "捕获练习", "选择伙伴", "稍后再战"};
   const char* const pause[] = {"继续", "确认撤退"};
   const char* const records[] = {"永久首捕 · 151种", "最近32次捕捉", "今日与14日日汇总", "每日与长期里程碑", "返回"};
   const char* const error[] = {"重试保存 / 读取", "浏览图鉴"};

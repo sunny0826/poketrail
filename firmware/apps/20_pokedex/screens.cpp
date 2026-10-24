@@ -27,6 +27,8 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::Encounter: return 4;
     case Page::Pause: return 2;
     case Page::Throw: return e.throwView().active ? 0 : 3;
+    case Page::PracticeThrow: return s.capture.active || s.practiceThrowing ? 0 : 3;
+    case Page::PracticeResult: return 2;
     case Page::PartnerDetail: return 2 + e.evolutionView(s.species).count;
     case Page::EvolutionConfirm: case Page::ReleaseConfirm: return 2;
     case Page::Result: return 1;
@@ -138,6 +140,8 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     case Page::Home: rendered = exploration(e, now); break;
     case Page::Battle: case Page::Practice: case Page::Throw:
       battle(s, e, practice, now); break;
+    case Page::PracticeThrow: practiceThrow(s, now); break;
+    case Page::PracticeResult: practiceResult(s, now); break;
     case Page::FirstCaptures: case Page::Recent: case Page::Days: case Page::Achievements:
       records(s, e); break;
     case Page::Clock: clock(s); break;
@@ -155,7 +159,8 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     M5.Display.setTextDatum(middle_center); M5.Display.setFont(&fonts::efontCN_16);
     M5.Display.setTextColor(TFT_WHITE, 0x0821);
     M5.Display.drawString(count, 233, bounds.y + bounds.height / 2);
-  } else if (s.page != Page::Home && s.page != Page::Battle && s.page != Page::Practice && s.page != Page::Throw)
+  } else if (s.page != Page::Home && s.page != Page::Battle && s.page != Page::Practice &&
+             s.page != Page::Throw && s.page != Page::PracticeThrow)
     line("左 / 右选择 · 双键确认", 422, TFT_DARKGREY);
   drawBattery(s.battery);
   M5.Display.endWrite();
