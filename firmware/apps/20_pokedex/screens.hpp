@@ -8,7 +8,7 @@
 #include "screen_theme.hpp"
 namespace pokedex { namespace ui {
 enum class Page : uint8_t {
-  Home, Menu, DateWelcome, Starter, Routes, Partners, Encounter, Battle, Practice,
+  Home, Menu, Resources, DateWelcome, Starter, Routes, Partners, Encounter, Battle, Practice,
   PracticeThrow, PracticeResult,
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
   Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, ReleaseConfirm
@@ -40,6 +40,7 @@ const char* routeName(adventure::Route);
 const char* speciesName(uint16_t id);
 const char* progressionMessage(adventure::CommandResult);
 unsigned menuCount(const ScreenState&, const adventure::Engine&);
+bool touchBackEnabled(Page);
 void drawGraphicsError(const c152::BatteryStatus&);
 class Screens {
  public:
@@ -65,8 +66,7 @@ class Screens {
   void clock(const ScreenState&);
   void menu(const ScreenState&, const adventure::Engine&, int top = menu_layout::kTop);
   void item(const ScreenState&, unsigned index, const char*, int top = menu_layout::kTop,
-            uint16_t species = 0, bool carried = false,
-            theme::Icon icon = theme::Icon::Dot, const char* note = nullptr);
+            uint16_t species = 0, bool carried = false, const char* note = nullptr);
   void thumbnail(uint16_t species, int x, int y, unsigned scale = 1);
   void ballCount(uint64_t count, int y, int x = 233);
   void line(const char*, int y, uint16_t color = theme::kText, bool large = false);

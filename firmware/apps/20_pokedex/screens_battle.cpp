@@ -71,12 +71,9 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     } else {
       actorShadow(233, 147);
       sprite(v.encounter.species, now, battlePlayback_, 147, 233, 0, 2, 110);
-      item(s, 0, availableBalls(v) ? "准备投球" : "暂无精灵球", menu_layout::kTop, 0, false, theme::Icon::Practice);
-      item(s, 1, "保留遭遇 · 继续走路", menu_layout::kTop, 0, false, theme::Icon::Home);
-      item(s, 2, "放弃这次捕捉", menu_layout::kTop, 0, false, theme::Icon::Back);
-      if (s.command == CommandResult::NoBalls) line(progressionMessage(s.command), 370, theme::kGold);
-      line("左键切换 · 右键确认", 399, theme::kMint);
-      line("轻触选项确认", 426, theme::kMuted);
+      item(s, 0, availableBalls(v) ? "准备投球" : "暂无精灵球", menu_layout::kTop);
+      item(s, 1, "保留遭遇 · 继续走路", menu_layout::kTop);
+      item(s, 2, "放弃这次捕捉", menu_layout::kTop);
     }
     return;
   }

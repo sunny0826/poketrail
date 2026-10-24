@@ -9,22 +9,6 @@
 namespace pokedex { namespace ui {
 using namespace adventure;
 namespace {
-theme::Icon iconFor(Page page, unsigned index) {
-  using I = theme::Icon;
-  switch (page) {
-    case Page::Menu: {
-      const I icons[] = {I::Practice,I::Route,I::Partner,I::Book,I::Records,I::Clock,I::Practice,I::Sleep,I::Home};
-      return icons[index];
-    }
-    case Page::DateWelcome: { const I icons[] = {I::Clock,I::Next,I::Book}; return icons[index]; }
-    case Page::Routes: return index < 3 ? I::Route : I::Back;
-    case Page::Encounter: { const I icons[] = {I::Practice,I::Practice,I::Partner,I::Back}; return icons[index]; }
-    case Page::Pause: return index ? I::Back : I::Next;
-    case Page::Records: return index == 0 ? I::Book : index == 4 ? I::Back : I::Records;
-    case Page::Error: return index ? I::Book : I::Next;
-    default: return I::Dot;
-  }
-}
 void bookIcon() {
   M5.Display.drawRect(207, 124, 52, 44, theme::kGold);
   M5.Display.drawLine(233, 124, 233, 168, theme::kGold);
@@ -36,7 +20,8 @@ void bookIcon() {
 }
 void Screens::menu(const ScreenState& s, const Engine& e, int top) {
   const auto phase = e.view().phase;
-  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", "151 图鉴", "捕捉与步行记录", "日期与时间", "捕获练习", "立即省电", "返回探索"};
+  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", "151 图鉴", "资源与数据", "捕获练习", "立即省电", "返回探索"};
+  const char* const resources[] = {"捕捉与步行记录", "日期与时间", "返回"};
   const char* const date[] = {"设置日期时间", "暂不设置", "浏览图鉴"};
   const char* const starters[] = {"妙蛙种子", "小火龙", "杰尼龟", "返回"};
   const char* const routes[] = {"森林", "海边", "洞窟", "返回"};
@@ -47,11 +32,11 @@ void Screens::menu(const ScreenState& s, const Engine& e, int top) {
   const char* const* labels = nullptr;
   switch (s.page) {
     case Page::Menu: labels = home; break;
+    case Page::Resources: labels = resources; break;
     case Page::DateWelcome: labels = date; break;
     case Page::Starter: {
       const uint16_t ids[] = {1, 4, 7, 0};
-      for (unsigned i = 0; i < 4; ++i) item(s, i, starters[i], top, ids[i], false,
-        i == 3 ? theme::Icon::Back : theme::Icon::Partner);
+      for (unsigned i = 0; i < 4; ++i) item(s, i, starters[i], top, ids[i]);
       return;
     }
     case Page::Routes: labels = routes; break;
@@ -64,20 +49,22 @@ void Screens::menu(const ScreenState& s, const Engine& e, int top) {
       for (unsigned id = 1; id <= 151; ++id) if (owns(e.view(), id)) {
         item(s, row++, speciesName(id), top, id, id == e.view().partner);
       }
-      item(s, row, "返回", top, 0, false, theme::Icon::Back); return;
+      item(s, row, "返回", top); return;
     }
-    case Page::Result: item(s, 0, "确认结果 · 继续探索", top, 0, false, theme::Icon::Next); return;
+    case Page::Result: item(s, 0, "确认结果 · 继续探索", top); return;
     default: return;
   }
-  for (unsigned i = 0; i < menuCount(s, e); ++i)
-    item(s, i, labels[i], top, 0, false, iconFor(s.page, i));
+  for (unsigned i = 0; i < menuCount(s, e); ++i) item(s, i, labels[i], top);
 }
 void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
   const auto& v = e.view();
   char text[100];
   switch (s.page) {
-    case Page::Menu: {
+    case Page::Menu:
       title("步行探险", "", theme::kMint);
+      break;
+    case Page::Resources: {
+      title("资源与数据", "", theme::kGold);
       snprintf(text, sizeof(text), "%s %llu 步 · %s", v.clock.trusted ? "今日" : "上次记录",
                static_cast<unsigned long long>(v.today.steps), routeName(v.route));
       line(text, 80, theme::kMint);

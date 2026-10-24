@@ -15,13 +15,13 @@ void Screens::clock(const ScreenState& s) {
   for (unsigned i = 0; i < 9; ++i) {
     if (i < 6) {
       snprintf(text, sizeof(text), "%d", values[i]);
-      item(s, i, names[i], menu_layout::kTop, 0, false, theme::Icon::Clock, text);
+      item(s, i, names[i], menu_layout::kTop, 0, false, text);
     } else if (i == 6) {
-      item(s, i, "校时模式", menu_layout::kTop, 0, false, theme::Icon::Clock, modes[uint8_t(s.clockMode)]);
+      item(s, i, "校时模式", menu_layout::kTop, 0, false, modes[uint8_t(s.clockMode)]);
     } else if (i == 7) {
-      item(s, i, "保存并校时", menu_layout::kTop, 0, false, theme::Icon::Next);
+      item(s, i, "保存并校时", menu_layout::kTop);
     } else {
-      item(s, i, "返回", menu_layout::kTop, 0, false, theme::Icon::Back);
+      item(s, i, "返回", menu_layout::kTop);
     }
   }
 }

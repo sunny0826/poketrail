@@ -89,8 +89,7 @@ void edge(Runtime& r, TestPlatform& p, bool left, bool right) {
 }
 void tap(Runtime& r, TestPlatform& p, int x, int y) {
   p.next.touch = true; p.next.held = true; p.next.x = x; p.next.y = y; frame(r);
-  if (r.screen().page == Page::Viewer && y < 80) p.next.back = true;
-  frame(r);
+  p.next.click = true; p.next.back = y < 80; p.next.x = x; p.next.y = y; frame(r);
 }
 void openMenu(Runtime& r, TestPlatform& p) {
   check(r.screen().page == Page::Home, "open menu starts from exploration");

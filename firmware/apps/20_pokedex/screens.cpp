@@ -12,7 +12,7 @@ namespace {
 uint16_t accentFor(Page page) {
   switch (page) {
     case Page::DateWelcome: case Page::Starter: case Page::Encounter: case Page::Pause:
-    case Page::Throw: case Page::Result: case Page::Records: case Page::FirstCaptures:
+    case Page::Throw: case Page::Result: case Page::Resources: case Page::Records: case Page::FirstCaptures:
     case Page::Recent: case Page::Days: case Page::Achievements: case Page::EvolutionConfirm:
       return theme::kGold;
     case Page::Error: case Page::ReleaseConfirm: return theme::kRed;
@@ -30,7 +30,8 @@ const char* speciesName(uint16_t id) {
 }
 unsigned menuCount(const ScreenState& s, const Engine& e) {
   switch (s.page) {
-    case Page::Menu: return 9;
+    case Page::Menu: return 8;
+    case Page::Resources: return 3;
     case Page::DateWelcome: return 3;
     case Page::Starter: return 4;
     case Page::Routes: return 4;
@@ -53,6 +54,15 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::Clock: return 9;
     case Page::Error: return 2;
     default: return 0;
+  }
+}
+bool touchBackEnabled(Page page) {
+  switch (page) {
+    case Page::Menu: case Page::Resources: case Page::Routes: case Page::Partners:
+    case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
+    case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
+    case Page::Achievements: case Page::Clock: return true;
+    default: return false;
   }
 }
 void drawGraphicsError(const c152::BatteryStatus& battery) {
@@ -106,7 +116,7 @@ void Screens::ballCount(uint64_t count, int y, int x) {
   M5.Display.drawString(text, x + 8, y);
 }
 void Screens::item(const ScreenState& s, unsigned index, const char* label, int top,
-                   uint16_t species, bool carried, theme::Icon icon, const char* note) {
+                   uint16_t species, bool carried, const char* note) {
   const unsigned first = menu_layout::first(s.selected);
   if (index < first || index >= first + menu_layout::kPageSize) return;
   const auto bounds = menu_layout::rowBounds(index - first, top);
@@ -115,24 +125,33 @@ void Screens::item(const ScreenState& s, unsigned index, const char* label, int 
   const uint16_t accent = accentFor(s.page);
   const uint16_t background = active ? theme::kPanelActive : theme::kPanel;
   const uint16_t color = active ? accent : theme::kText;
-  M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 10, background);
+  M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 16, background);
   if (active) {
-    M5.Display.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 10, accent);
-    M5.Display.fillRect(85, y - 10, 4, 20, accent);
+    M5.Display.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 16, accent);
+    M5.Display.fillRect(bounds.x + 1, y - 12, 4, 24, accent);
   }
-  if (species) thumbnail(species, 112, y);
-  else glyph(icon, 108, y, color);
-  M5.Display.setFont(&fonts::efontCN_16);
-  const int labelWidth = note || carried ? 210 - M5.Display.textWidth(note ? note : "携带") : 210;
-  M5.Display.setClipRect(137, y - 20, labelWidth, 40);
+  if (species) thumbnail(species, bounds.x + 34, y);
+  const char* trailing = note ? note : carried ? "携带" : nullptr;
+  M5.Display.setFont(&fonts::efontCN_24);
   M5.Display.setTextColor(color);
+  if (!species && !trailing) {
+    M5.Display.setClipRect(bounds.x + 12, y - 24, bounds.width - 24, 48);
+    M5.Display.setTextDatum(middle_center);
+    M5.Display.drawString(label, 233, y);
+    M5.Display.clearClipRect();
+    return;
+  }
+  const int left = species ? bounds.x + 64 : bounds.x + 16;
+  const int right = bounds.x + bounds.width - 16;
+  const int trailingWidth = trailing ? M5.Display.textWidth(trailing) + 12 : 0;
+  M5.Display.setClipRect(left, y - 24, right - left - trailingWidth, 48);
   M5.Display.setTextDatum(middle_left);
-  M5.Display.drawString(label, 137, y);
+  M5.Display.drawString(label, left, y);
   M5.Display.clearClipRect();
-  if (note || carried) {
-    M5.Display.setTextDatum(middle_right); M5.Display.setTextColor(color);
-    M5.Display.drawString(note ? note : "携带", 357, y);
-  } else if (active) glyph(theme::Icon::Next, 357, y, accent);
+  if (trailing) {
+    M5.Display.setTextDatum(middle_right);
+    M5.Display.drawString(trailing, right, y);
+  }
 }
 bool Screens::advance(Playback& playback, uint16_t id, uint32_t now) {
   if (!id || id > data::kSpriteCount) return false;
@@ -187,20 +206,27 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
       progression(s, e); break;
     default: home(s, e, now); break;
   }
-  const bool listPage = s.page == Page::Menu || s.page == Page::Clock || s.page == Page::Partners ||
-                        s.page == Page::PartnerDetail || s.page == Page::Records;
+  const bool listPage = s.page == Page::Menu || s.page == Page::Resources || s.page == Page::Clock ||
+                        s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::Records;
   if (listPage && menuCount(s, e) > menu_layout::kPageSize) {
-    const auto bounds = menu_layout::kNextPage;
-    M5.Display.fillRoundRect(bounds.x, 402, bounds.width, 32, 9, theme::kPanel);
-    char count[48]; snprintf(count, sizeof(count), "%u/%u  下一页", s.selected / menu_layout::kPageSize + 1,
+    M5.Display.fillCircle(168, 430, 20, theme::kPanel);
+    M5.Display.fillCircle(298, 430, 20, theme::kPanel);
+    glyph(theme::Icon::Back, 168, 430, theme::kText);
+    glyph(theme::Icon::Next, 298, 430, theme::kText);
+    char count[24]; snprintf(count, sizeof(count), "%u / %u", s.selected / menu_layout::kPageSize + 1,
                             menu_layout::pageCount(menuCount(s, e)));
-    M5.Display.setTextDatum(middle_center); M5.Display.setFont(&fonts::efontCN_16);
+    M5.Display.setTextDatum(middle_center); M5.Display.setFont(&fonts::efontCN_24);
     M5.Display.setTextColor(theme::kText);
-    M5.Display.drawString(count, 233, 418);
-  } else if (s.page != Page::Home && s.page != Page::Battle && s.page != Page::Practice &&
-             s.page != Page::Throw && s.page != Page::PracticeThrow &&
-             s.page != Page::FirstCaptures && s.page != Page::Recent && s.page != Page::Days && s.page != Page::Achievements)
-    line("左 / 右选择 · 双键确认", 420, theme::kMuted);
+    M5.Display.drawString(count, 233, 430);
+  }
+  if (touchBackEnabled(s.page)) {
+    glyph(theme::Icon::Back, 112, 52, theme::kMuted);
+    if (s.page == Page::Menu) {
+      M5.Display.setTextDatum(middle_left); M5.Display.setFont(&fonts::efontCN_16);
+      M5.Display.setTextColor(theme::kMuted);
+      M5.Display.drawString("首页", 128, 52);
+    }
+  }
   drawBattery(s.battery);
   M5.Display.endWrite();
   return rendered;

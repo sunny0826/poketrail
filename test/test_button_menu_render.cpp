@@ -86,13 +86,13 @@ void touchCancelsPending() {
   check(r.screen().selected == 1, "touch on release frame takes precedence over pending single key");
   buttons(true, false); frame(r); tap(r, 233, 276); release(r);
   check(r.screen().page == Page::Starter && r.screen().selected == 0,
-        "valid touch acts immediately and cancels key navigation on next page");
+        "valid click release acts once and cancels key navigation on next page");
   select(r, 3); select(r, 0); select(r, 0);
   buttons(false, true); frame(r); tap(r, 233, 380); release(r);
   check(!r.screen().editing && r.screen().selected == 0,
         "touch ending clock editing cancels pending key without moving field");
-  buttons(false, true); frame(r); tap(r, 233, 422); release(r);
-  check(r.screen().selected == 4, "touch pagination cancels a pending key on same page");
+  buttons(false, true); frame(r); tap(r, 298, 430); release(r);
+  check(r.screen().selected == 3, "touch pagination cancels a pending key on same page");
 }
 void wakeAndRecords() {
   MemoryStore store; HostPlatform platform; Runtime r(store, platform); start(r);
@@ -101,7 +101,7 @@ void wakeAndRecords() {
   check(!r.dimmed() && r.screen().page == Page::DateWelcome && r.screen().selected == 1,
         "first staggered chord only wakes without moving or confirming");
   release(r); chord(r, false); release(r); select(r, 0);
-  openMenu(r); select(r, 4); select(r, 1);
+  openMenu(r); select(r, 4); select(r, 0); select(r, 1);
   check(r.screen().page == Page::Recent && menuCount(r.screen(), r.engine()) == 1,
         "empty recent records still have a return item");
   chord(r, true); release(r); check(r.screen().page == Page::Records, "empty record return accepts staggered chord");
@@ -133,7 +133,7 @@ BattleView battleView(const Runtime& r, bool practice) { return practice ? r.pra
 void pauseAndResume(bool practice) {
   MemoryStore store; seedEncounter(store); HostPlatform platform; Runtime r(store, platform); start(r);
   openMenu(r);
-  if (practice) select(r, 6); else { select(r, 0); select(r, 0); }
+  if (practice) select(r, 5); else { select(r, 0); select(r, 0); }
   const Page active = practice ? Page::Practice : Page::Battle;
   check(r.screen().page == active && !battleView(r, practice).consumed,
         "entering battle consumes held menu confirmation without attacking");

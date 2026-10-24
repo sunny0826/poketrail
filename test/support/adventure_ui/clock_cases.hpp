@@ -18,7 +18,7 @@ void clockAndErrors() {
   edge(r, p, true, true);
   select(r, p, 7); check(p.clockWrites == 1 && r.engine().view().clock.calibrated, "manual date persists pending before RTC and confirms");
   select(r, p, 1); check(r.engine().view().starter == 4, "second starter choice works");
-  openMenu(r, p); select(r, p, 5); select(r, p, 6);
+  openMenu(r, p); select(r, p, 4); select(r, p, 1); select(r, p, 6);
   edge(r, p, false, true); edge(r, p, false, true); edge(r, p, true, true);
   check(r.screen().clockMode == ClockChangeMode::RepairWrongDate, "explicit repair mode selectable with keys");
   p.writeValid = false; select(r, p, 7);
@@ -62,7 +62,7 @@ void midnightAndSampling() {
   idle(r, 240); walk(r, p, 3);
   check(r.engine().view().totalSteps == 6, "new cadence after actual stop and decay resumes counting");
   const auto dailySteps = r.engine().view().today.steps;
-  openMenu(r, p); select(r, p, 5); select(r, p, 7);
+  openMenu(r, p); select(r, p, 4); select(r, p, 1); select(r, p, 7);
   check(r.engine().view().clock.trusted && r.engine().view().today.steps == dailySteps,
         "ordinary same-day correction through UI preserves daily bucket");
   const auto gaps = r.metrics().qualityGaps;
@@ -91,7 +91,7 @@ void practiceMidnightAchievement() {
     check(e.checkpoint() == CommandResult::Applied, "9997 steps persisted before runtime reload");
   }
   p.utc = 1792713595LL; p.rtcSetAt = host_time_ms;
-  Runtime r(store, p); start(r); openMenu(r, p); select(r, p, 6);
+  Runtime r(store, p); start(r); openMenu(r, p); select(r, p, 5);
   check(r.screen().page == Page::Practice, "practice opens before midnight");
   walk(r, p, 6);
   check(r.engine().view().totalSteps == 9997, "practice buffers the six pre-midnight peaks");

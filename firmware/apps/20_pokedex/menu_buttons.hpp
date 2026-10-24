@@ -5,6 +5,7 @@ enum class MenuAction : uint8_t { None, Previous, Next, Confirm };
 class MenuButtons {
  public:
   void reset() { state_ = State::Idle; }
+  void consume() { state_ = State::Consumed; }
   MenuAction update(bool left, bool right) {
     if (state_ == State::Consumed) {
       if (!left && !right) reset();

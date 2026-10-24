@@ -57,9 +57,12 @@ class HostPlatform : public Platform {
     input.at = now(); buttonInput.sample(input, M5.BtnA, M5.BtnB);
     input.touch = c152::touchWasPressed(); const auto detail = M5.Touch.getDetail();
     input.x = detail.x; input.y = detail.y;
+    const int dx = detail.x - detail.base_x, dy = detail.y - detail.base_y;
+    input.click = detail.wasReleased() && detail.wasClicked() && std::abs(dx) <= 12 && std::abs(dy) <= 12;
+    input.back = input.click && detail.base_y < 80 && detail.y < 80;
+    if (detail.wasReleased() && std::abs(dx) >= 45 && std::abs(dx) > std::abs(dy))
+      input.swipe = dx < 0 ? 1 : -1;
     input.held = input.held || detail.isPressed();
-    input.back = detail.wasReleased() && detail.wasClicked() && detail.base_y < 80 && detail.y < 80 &&
-                 std::abs(detail.x - detail.base_x) <= 12 && std::abs(detail.y - detail.base_y) <= 12;
     return input;
   }
   device_clock::Reading readClock() override { return {}; }
@@ -80,6 +83,13 @@ void tap(Runtime& runtime, int x, int y) {
   auto& detail = M5.Touch.detail;
   detail.base_x = detail.x = x; detail.base_y = detail.y = y; detail.pressed = true;
   frame(runtime); detail.pressed = false; detail.released = detail.clicked = true;
+  frame(runtime); detail = HostTouchDetail();
+}
+void swipe(Runtime& runtime, int startX, int startY, int endX, int endY) {
+  auto& detail = M5.Touch.detail;
+  detail.base_x = detail.x = startX; detail.base_y = detail.y = startY; detail.pressed = true;
+  frame(runtime); detail.x = endX; detail.y = endY;
+  detail.pressed = false; detail.released = true; detail.clicked = false;
   frame(runtime); detail = HostTouchDetail();
 }
 void openMenu(Runtime& runtime, bool left = false) {

@@ -104,7 +104,7 @@ void Runtime::handleThrow(const Input& input) {  if (screen_.capture.active) {
     return;
   }
   bool confirm = input.left && input.right;
-  if (input.touch) {
+  if (input.click) {
     const int row = menu_layout::rowAt(input.x, input.y);
     if (row >= 0 && row < 3) {
       screen_.selected = static_cast<unsigned>(row); confirm = true;
@@ -206,7 +206,7 @@ void Runtime::handlePracticeThrow(const Input& input) {
     return;
   }
   bool confirm = input.left && input.right;
-  if (input.touch) {
+  if (input.click) {
     const int row = menu_layout::rowAt(input.x, input.y);
     if (row >= 0 && row < 3) {
       screen_.selected = static_cast<unsigned>(row); confirm = true;

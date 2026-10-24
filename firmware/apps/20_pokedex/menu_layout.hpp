@@ -1,10 +1,10 @@
 #pragma once
 namespace pokedex { namespace ui { namespace menu_layout {
-constexpr unsigned kPageSize = 4;
-constexpr int kTop = 228;
-constexpr int kPitch = 48;
-constexpr int kWidth = 300;
-constexpr int kHeight = 44;
+constexpr unsigned kPageSize = 3;
+constexpr int kTop = 238;
+constexpr int kPitch = 68;
+constexpr int kWidth = 320;
+constexpr int kHeight = 60;
 struct Rect {
   int x, y, width, height;
   bool contains(int px, int py) const {
@@ -25,5 +25,9 @@ inline unsigned pageCount(unsigned count) { return (count + kPageSize - 1) / kPa
 inline unsigned nextPage(unsigned selected, unsigned count) {
   return ((selected / kPageSize + 1) % pageCount(count)) * kPageSize;
 }
-constexpr Rect kNextPage = {145, 403, 176, 38};
+inline unsigned previousPage(unsigned selected, unsigned count) {
+  return ((selected / kPageSize + pageCount(count) - 1) % pageCount(count)) * kPageSize;
+}
+constexpr Rect kPreviousPage = {148, 410, 40, 40};
+constexpr Rect kNextPage = {278, 410, 40, 40};
 } } }

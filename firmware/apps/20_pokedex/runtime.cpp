@@ -125,9 +125,11 @@ void Runtime::loop() {
   if (engine_.ready() &&
       (start - lastClock_ >= 1000 || (clockDeferred_ && safe() && !engine_.savePending()))) pollClock(platform_.now());
   const bool blockedInput = releaseGate_;
+  const bool viewerWasActive = screen_.page == Page::Viewer;
   if (releaseGate_) {
-    if (!input.held && !input.any()) releaseGate_ = false;
+    if (!input.held && (!input.any() || input.click || input.swipe)) releaseGate_ = false;
   } else if (!dimmed()) handle(input);
+  if (releaseGate_ && !input.held && (input.click || input.swipe)) releaseGate_ = false;
   if (practiceCapture_.stage() != PracticeStage::Idle) {
     const auto outcome = practiceCapture_.tick(platform_.now());
     if (outcome.valid) startPracticeCapture(outcome);
@@ -151,7 +153,8 @@ void Runtime::loop() {
       dirty_ |= screens_.advanceResult(practiceCapture_.species(), now);
     if (screen_.page == Page::Viewer && waking) {
       if (!viewer_screen::redraw(now)) { drawGraphicsError(screen_.battery); ++metrics_.displayErrors; }
-    } else if (screen_.page == Page::Viewer && !releaseGate_ && !blockedInput) {
+    } else if (screen_.page == Page::Viewer && !releaseGate_ && !blockedInput &&
+               (viewerWasActive || (!input.click && !input.swipe))) {
       viewer_screen::update(now);
     } else if (screen_.page != Page::Viewer && (dirty_ || now - lastRender_ >= (timedPage ? 40u : 500u))) {
       if (!screens_.draw(screen_, engine_, practiceCapture_.battleView(), now)) ++metrics_.displayErrors;

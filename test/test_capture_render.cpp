@@ -80,7 +80,7 @@ void practiceCapture() {
   const uint32_t failSeed = practiceSeed(false, firstSpecies);
   check(successSeed && failSeed, "deterministic practice seeds available");
   p.seed = successSeed;
-  openMenu(r, p); select(r, p, 6);
+  openMenu(r, p); select(r, p, 5);
   check(r.screen().page == Page::Practice, "menu offers capture practice");
   check(firstSpecies == r.screen().practiceSpecies,
         "practice rolls a random species for each session");

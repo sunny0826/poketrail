@@ -6,11 +6,11 @@
 #include "practice_capture.hpp"
 namespace pokedex { namespace ui {
 struct Input {
-  bool left = false, right = false, touch = false, pause = false, back = false;
+  bool left = false, right = false, touch = false, click = false, pause = false, back = false;
   bool held = false, leftDown = false, rightDown = false;
-  int x = 0, y = 0;
+  int x = 0, y = 0, swipe = 0;
   uint32_t at = 0;
-  bool any() const { return left || right || touch || pause || back; }
+  bool any() const { return left || right || touch || click || swipe || pause || back; }
 };
 struct Sample {
   bool fresh = false, ioError = false;

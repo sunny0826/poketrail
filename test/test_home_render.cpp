@@ -1,24 +1,8 @@
 #include "support/home_ui/pixel_checks.hpp"
+#include "support/home_ui/touch_cases.hpp"
 #include <cstring>
 
 namespace {
-void ignoredTouches() {
-  MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-  home(runtime); const auto bytes = store.bytes; const unsigned commits = store.commits;
-  for (int y : {30, 228, 276, 324, 372, 422}) for (int x : {90, 233, 375}) {
-    tap(runtime, x, y); frame(runtime); home(runtime);
-    check(runtime.engine().view().partner == 1 && runtime.engine().view().route == Route::Forest,
-          "old touch targets cannot change partner or route");
-  }
-  auto& touch = M5.Touch.detail;
-  touch.base_x = touch.x = 233; touch.base_y = touch.y = 233; touch.pressed = true;
-  frame(runtime); buttons(true, false); frame(runtime); buttons(true, true); frame(runtime);
-  idle(runtime, 240); home(runtime);
-  touch.pressed = false; touch.released = touch.clicked = true; frame(runtime); touch = {};
-  buttons(false, true); frame(runtime); home(runtime); settle(runtime);
-  check(store.bytes == bytes && store.commits == commits, "ignored touches perform no save transaction");
-  openMenu(runtime, true); select(runtime, 8); settle(runtime); home(runtime);
-}
 void openingGestures() {
   for (unsigned gesture = 0; gesture < 4; ++gesture) {
     MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -34,26 +18,24 @@ void openingGestures() {
     settle(runtime); edge(runtime, false, true);
     check(runtime.screen().page == Page::Menu && runtime.screen().selected == 1,
           "a new released single key navigates after full release");
-    select(runtime, 8); settle(runtime); home(runtime);
+    select(runtime, 7); settle(runtime); home(runtime);
   }
 }
-void ninthItem() {
+void eighthItem() {
   MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); check(menuCount(runtime.screen(), runtime.engine()) == 9, "menu has nine entries");
+  openMenu(runtime); check(menuCount(runtime.screen(), runtime.engine()) == 8, "menu has eight entries");
   edge(runtime, true, false);
-  check(runtime.screen().selected == 8, "left from first item wraps to return on page three");
+  check(runtime.screen().selected == 7, "left from first item wraps to return on page three");
   const auto bytes = store.bytes;
-  for (int y : {276, 324, 372}) {
-    tap(runtime, 233, y); frame(runtime);
-    check(runtime.screen().page == Page::Menu && runtime.screen().selected == 8 && store.bytes == bytes,
-          "third-page blank rows neither activate nor change selection or save");
-  }
+  tap(runtime, 233, 374); frame(runtime);
+  check(runtime.screen().page == Page::Menu && runtime.screen().selected == 7 && store.bytes == bytes,
+        "third-page blank row neither activates nor changes selection or save");
   screenshot(runtime, "home-menu-third-page");
-  tap(runtime, 233, 422); frame(runtime); check(runtime.screen().selected == 0, "page control wraps to first page");
-  tap(runtime, 233, 422); frame(runtime); check(runtime.screen().selected == 4, "page control reaches second page");
-  tap(runtime, 233, 422); frame(runtime); check(runtime.screen().selected == 8, "page control reaches third page");
-  tap(runtime, 233, 228); settle(runtime); home(runtime);
-  openMenu(runtime, true); select(runtime, 8); settle(runtime); home(runtime);
+  tap(runtime, 298, 430); frame(runtime); check(runtime.screen().selected == 0, "page control wraps to first page");
+  tap(runtime, 298, 430); frame(runtime); check(runtime.screen().selected == 3, "page control reaches second page");
+  tap(runtime, 298, 430); frame(runtime); check(runtime.screen().selected == 6, "page control reaches third page");
+  tap(runtime, 233, 306); settle(runtime); home(runtime);
+  openMenu(runtime, true); select(runtime, 7); settle(runtime); home(runtime);
 }
 void routesAndPartner() {
   MemoryStore store; legacyOwned(store, {1, 4, 7}); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -73,7 +55,8 @@ void routesAndPartner() {
   openMenu(runtime); select(runtime, 2); select(runtime, 1);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 4, "partner list opens Charmander detail");
   select(runtime, 0); settle(runtime); check(runtime.engine().view().partner == 4, "carry action selects Charmander");
-  select(runtime, menuCount(runtime.screen(), runtime.engine()) - 1); select(runtime, 3); settle(runtime); home(runtime);
+  select(runtime, menuCount(runtime.screen(), runtime.engine()) - 1); select(runtime, 3); select(runtime, 7);
+  settle(runtime); home(runtime);
   screenshot(runtime, "home-partner-switched");
   check(textLine(speciesName(4), 52, theme::kText, 240), "home name follows the current carried partner");
   Save loaded; check(store.load(loaded).status == LoadStatus::Loaded && loaded.partner == 4, "carried partner is durable");
@@ -90,11 +73,11 @@ void animationContinuity() {
   for (unsigned i = 1; i < std::min<unsigned>(sprite.frame_count, 24); ++i) {
     frame(runtime, sprite.frames[i].duration_ms); spritePixels(1, origin, true);
   }
-  openMenu(runtime); idle(runtime, 380); select(runtime, 8); frame(runtime); home(runtime); spritePixels(1, origin, true);
+  openMenu(runtime); idle(runtime, 380); select(runtime, 7); frame(runtime); home(runtime); spritePixels(1, origin, true);
   openMenu(runtime); select(runtime, 1); select(runtime, 1); frame(runtime); home(runtime); spritePixels(1, origin);
   openMenu(runtime); select(runtime, 3); frame(runtime); idle(runtime, 240); tap(runtime, 233, 30); frame(runtime);
   home(runtime); spritePixels(1, origin);
-  openMenu(runtime); select(runtime, 6); frame(runtime);
+  openMenu(runtime); select(runtime, 5); frame(runtime);
   check(runtime.screen().page == Page::Practice, "real menu starts practice");
   idle(runtime, 2500); tap(runtime, 233, 30);
   for (unsigned i = 0; runtime.screen().page == Page::Practice && i < 200; ++i) frame(runtime);
@@ -199,9 +182,10 @@ void maximumToday() {
   check(runtime.engine().view().today.steps == UINT64_MAX, "maximum daily number survives startup without truncation");
   screenshot(runtime, "home-today-uint64-max"); todayLine(runtime);
   openMenu(runtime); screenshot(runtime, "menu-uint64-max");
+  select(runtime, 4); screenshot(runtime, "resources-uint64-max");
   check(glyph("18446744073709551615 / 7500 步", 156, theme::kText),
-        "maximum cultivation balance remains fully readable on its own line");
-  select(runtime, 2); select(runtime, 0); screenshot(runtime, "partner-uint64-max");
+        "maximum cultivation balance remains fully readable on its own resources line");
+  tap(runtime, 233, 52); select(runtime, 2); select(runtime, 0); screenshot(runtime, "partner-uint64-max");
   check(glyph("陪伴 18446744073709551615 步", 80, theme::kMint) &&
         glyph("可用 18446744073709551615 步", 165, theme::kMint),
         "maximum partner counters remain fully readable without overlapping the preview");
@@ -214,7 +198,7 @@ void sleepContinuity() {
   home(runtime); check(!runtime.dimmed(), "wake settles without opening menu");
   buttons(false, true); frame(runtime); home(runtime); settle(runtime); spritePixels(1, origin, true);
   screenshot(runtime, "home-after-wake"); spritePixels(1, origin, true);
-  openMenu(runtime); select(runtime, 8); frame(runtime); home(runtime);
+  openMenu(runtime); select(runtime, 7); frame(runtime); home(runtime);
 }
 void saveFailure() {
   MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -269,7 +253,7 @@ void animationWraparound() {
   const uint32_t origin = host_time_ms;
   idle(runtime, 700); home(runtime);
   check(host_time_ms < 1000, "home animation crosses millis wrap"); spritePixels(1, origin, true);
-  openMenu(runtime); select(runtime, 8); frame(runtime); home(runtime); spritePixels(1, origin, true);
+  openMenu(runtime); select(runtime, 7); frame(runtime); home(runtime); spritePixels(1, origin, true);
 }
 void allPartners() {
   const std::vector<uint16_t> representatives = {1, 4, 7, 6, 42, 122, 139, 149};
@@ -304,7 +288,7 @@ void allPartners() {
 }
 int main() {
   c152::begin("HOME TEST");
-  ignoredTouches(); openingGestures(); ninthItem(); routesAndPartner(); animationContinuity();
+  homeTouch(); openingGestures(); eighthItem(); routesAndPartner(); animationContinuity();
   datesAndLiveSteps(); maximumToday(); sleepContinuity(); saveFailure(); clockPendingRestart();
   battleContinuity(); allPartners(); animationWraparound();
   std::printf("%u home Runtime/Button_Class/M5GFX checks, 0 failures\n", checks);

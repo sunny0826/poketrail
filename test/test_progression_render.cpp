@@ -32,7 +32,7 @@ void evolveAndRetry() {
   check(save.progress[0].spent == 7500 && save.progress[1].walked == 0 && save.captureCounts[1] == 0,
         "evolution neither transfers steps nor fabricates captures");
   screenshot(runtime, "evolution-saved");
-  select(runtime, 2); select(runtime, 1); select(runtime, 3); openMenu(runtime); select(runtime, 3);
+  select(runtime, 2); select(runtime, 1); select(runtime, 3);
   check(runtime.screen().page == Page::Viewer, "history still browsable after replacing source");
   screenshot(runtime, "viewer-history");
   check(glyph("曾经获得", 390, theme::kMint), "source history label is rendered");
@@ -86,7 +86,7 @@ void peakOwnership() {
   const uint64_t startSteps = runtime.engine().view().totalSteps;
   openMenu(runtime); walk(runtime, platform, 2);
   check(runtime.engine().view().totalSteps == startSteps, "two peaks wait for confirmation");
-  tap(runtime, 233, 324); tap(runtime, 233, 276); tap(runtime, 233, 228);
+  tap(runtime, 233, 374); tap(runtime, 233, 306); tap(runtime, 233, 238);
   check(runtime.engine().view().partner == 4, "switch through partner detail");
   walk(runtime, platform, 1);
   const auto& s = runtime.engine().view();
@@ -95,17 +95,17 @@ void peakOwnership() {
   MemoryStore triple; legacyOwned(triple, {1, 4, 7});
   Runtime switched(triple, platform); start(switched);
   openMenu(switched); walk(switched, platform, 1);
-  tap(switched, 233, 324); tap(switched, 233, 276); tap(switched, 233, 228);
+  tap(switched, 233, 374); tap(switched, 233, 306); tap(switched, 233, 238);
   walk(switched, platform, 1);
-  tap(switched, 233, 324); tap(switched, 233, 324); tap(switched, 233, 228);
+  tap(switched, 233, 374); tap(switched, 233, 374); tap(switched, 233, 238);
   check(switched.engine().view().partner == 7, "second switch occurs before confirmation of three peaks");
   walk(switched, platform, 1);
   check(switched.engine().view().progress[0].walked == 1 && switched.engine().view().progress[3].walked == 1 &&
         switched.engine().view().progress[6].walked == 1, "three confirmed peaks retain A B C tags across two switches");
   MemoryStore failed; legacyOwned(failed, {1, 4});
   Runtime retry(failed, platform); start(retry);
-  openMenu(retry); tap(retry, 233, 324); tap(retry, 233, 276);
-  walk(retry, platform, 2); failed.fail = true; tap(retry, 233, 228);
+  openMenu(retry); tap(retry, 233, 374); tap(retry, 233, 306);
+  walk(retry, platform, 2); failed.fail = true; tap(retry, 233, 238);
   check(retry.screen().page == Page::Error && retry.engine().view().partner == 1, "failed switch still publishes old partner");
   walk(retry, platform, 1); failed.fail = false; select(retry, 0);
   check(retry.engine().view().partner == 4 && retry.engine().view().progress[0].walked == 3 &&
@@ -115,9 +115,9 @@ void peakOwnership() {
     Engine e(late); e.begin(); e.chooseStarter(1); step(e, 1, 7500); e.checkpoint();
   }
   Runtime evolving(late, platform); start(evolving);
-  openMenu(evolving); tap(evolving, 233, 324); tap(evolving, 233, 228); tap(evolving, 233, 276);
+  openMenu(evolving); tap(evolving, 233, 374); tap(evolving, 233, 238); tap(evolving, 233, 306);
   check(evolving.screen().page == Page::EvolutionConfirm, "evolution prepared before delayed peaks");
-  walk(evolving, platform, 2); tap(evolving, 233, 228); walk(evolving, platform, 1);
+  walk(evolving, platform, 2); tap(evolving, 233, 238); walk(evolving, platform, 1);
   check(evolving.engine().view().partner == 2 && evolving.engine().view().progress[0].walked == 7502 &&
         evolving.engine().view().progress[1].walked == 1, "late source peaks cultivate historical source after evolution");
 }
@@ -137,7 +137,7 @@ void noBallsWaitAndRelease() {
   edge(runtime, false, true);
   check(!runtime.engine().throwView().active && runtime.screen().command == CommandResult::NoBalls, "zero ball cannot prepare");
   screenshot(runtime, "zero-balls");
-  tap(runtime, 233, 276); idle(runtime, 1200);
+  tap(runtime, 233, 306); idle(runtime, 1200);
   check(runtime.screen().page == Page::Home && runtime.engine().view().phase == Phase::ThrowReady,
         "waiting remains on home across syncPage ticks");
   const uint64_t encounter = runtime.engine().view().encounter.id;
@@ -151,18 +151,18 @@ void noBallsWaitAndRelease() {
   idle(runtime, 1800);
   check(availableBalls(runtime.engine().view()) == 0 && runtime.engine().view().encounter.usedBalls == 1,
         "timeout charges one ball exactly once");
-  tap(runtime, 233, 324);
+  tap(runtime, 233, 374);
   check(runtime.screen().page == Page::ReleaseConfirm, "release requires separate confirmation");
   screenshot(runtime, "release-confirm");
-  tap(runtime, 233, 276); check(runtime.screen().page == Page::Throw, "release cancel preserves encounter");
-  tap(runtime, 233, 324); tap(runtime, 233, 228);
+  tap(runtime, 233, 306); check(runtime.screen().page == Page::Throw, "release cancel preserves encounter");
+  tap(runtime, 233, 374); tap(runtime, 233, 238);
   check(runtime.engine().view().result == Result::Released && runtime.screen().page == Page::Result,
         "release persists distinct resolved result");
   check(runtime.engine().view().ballsSpent == 1 && runtime.engine().view().captureCounts[0] == 0,
         "release neither refunds ball nor grants capture");
   screenshot(runtime, "released");
   MemoryStore restartStore; legacyVictory(restartStore);
-  Runtime waiting(restartStore, platform); start(waiting); tap(waiting, 233, 276);
+  Runtime waiting(restartStore, platform); start(waiting); tap(waiting, 233, 306);
   Runtime restart(restartStore, platform); start(restart);
   check(restart.screen().page == Page::Throw && !restart.engine().throwView().active,
         "restart restores pending victory and explicit wait option, not RAM timeline");

@@ -36,8 +36,11 @@ class DevicePlatform : public pokedex::ui::Platform {
     input.touch = c152::touchWasPressed();
     const auto detail = M5.Touch.getDetail();
     input.x = detail.x; input.y = detail.y;
-    input.back = detail.wasReleased() && detail.wasClicked() && detail.base_y < 80 && detail.y < 80 &&
-                 std::abs(detail.x - detail.base_x) <= 12 && std::abs(detail.y - detail.base_y) <= 12;
+    const int dx = detail.x - detail.base_x, dy = detail.y - detail.base_y;
+    input.click = detail.wasReleased() && detail.wasClicked() && std::abs(dx) <= 12 && std::abs(dy) <= 12;
+    input.back = input.click && detail.base_y < 80 && detail.y < 80;
+    if (detail.wasReleased() && std::abs(dx) >= 45 && std::abs(dx) > std::abs(dy))
+      input.swipe = dx < 0 ? 1 : -1;
     input.held = input.held || detail.isPressed();
     lastInput_ = input;
     return input;

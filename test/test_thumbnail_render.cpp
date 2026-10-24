@@ -44,14 +44,14 @@ void starters() {
             "starter preview preserves original animation pixels");
     }
     check(visible > 100, "starter preview contains visible pixels");
-    for (unsigned j = 0; j < 3; ++j) pokemon(ids[j], 112, 228 + j * 48);
+    for (unsigned j = 0; j < 3; ++j) pokemon(ids[j], 107, 238 + j * 68);
     char name[48]; std::snprintf(name, sizeof(name), "starter-%u", ids[i]); screenshot(runtime, name);
   }
   tap(runtime, 119, 276);
   check(runtime.screen().page == Page::Home && runtime.engine().view().partner == 4,
         "touch thumbnail selects its visible starter row");
   screenshot(runtime, "home-starter");
-  openMenu(runtime); ball(0, 110); screenshot(runtime, "menu-zero-balls");
+  openMenu(runtime); select(runtime, 4); ball(0, 110); screenshot(runtime, "resources-zero-balls");
 }
 void collection() {
   MemoryStore store; std::vector<uint16_t> ids;
@@ -62,22 +62,22 @@ void collection() {
   for (unsigned selected = 0; selected < 152; ++selected) {
     if (selected) edge(runtime, false, true);
     check(runtime.screen().selected == selected, "all collection rows reachable by right button");
-    const unsigned first = selected / 4 * 4;
-    for (unsigned row = first; row < first + 4 && row < 151; ++row)
-      pokemon(row + 1, 112, 228 + (row - first) * 48);
+    const unsigned first = selected / 3 * 3;
+    for (unsigned row = first; row < first + 3 && row < 151; ++row)
+      pokemon(row + 1, 107, 238 + (row - first) * 68);
     if (selected < 151) pokemon(selected + 1, 233, 137, 2);
     if (selected == 82) screenshot(runtime, "partners-carried");
     if (selected == 150) screenshot(runtime, "partners-last-species");
   }
   screenshot(runtime, "partners-last-back");
-  tap(runtime, 233, 372);
-  check(runtime.screen().page == Page::Home, "last-page back row remains touch reachable");
-  openMenu(runtime); select(runtime, 2); tap(runtime, 119, 276);
+  tap(runtime, 233, 306);
+  check(runtime.screen().page == Page::Menu, "last-page back row returns to the main menu");
+  select(runtime, 7); openMenu(runtime); select(runtime, 2); tap(runtime, 119, 306);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 2,
         "thumbnail row opens matching partner detail");
-  pokemon(2, 233, 132, 2); pokemon(3, 112, 276);
+  pokemon(2, 233, 132, 2); pokemon(3, 107, 306);
   screenshot(runtime, "partner-before-switch");
-  tap(runtime, 233, 228);
+  tap(runtime, 233, 238);
   check(runtime.engine().view().partner == 2, "detail carry action switches selected species");
   pokemon(2, 233, 132, 2); screenshot(runtime, "partner-carried");
 }
@@ -89,15 +89,15 @@ void evolution() {
   }
   HostPlatform platform; Runtime runtime(store, platform); start(runtime); openMenu(runtime); select(runtime, 2); select(runtime, 1);
   pokemon(133, 233, 132, 2);
-  for (unsigned i = 0; i < 3; ++i) pokemon(134 + i, 112, 276 + i * 48);
+  for (unsigned i = 0; i < 2; ++i) pokemon(134 + i, 107, 306 + i * 68);
   screenshot(runtime, "eevee-targets");
-  tap(runtime, 119, 324);
+  tap(runtime, 119, 374);
   check(runtime.screen().page == Page::EvolutionConfirm && runtime.screen().evolution.to == 135,
         "evolution target thumbnail selects correct branch");
   pokemon(133, 164, 127, 2); pokemon(135, 302, 127, 2);
   screenshot(runtime, "evolution-captured-source");
-  check(glyph("已捕获的原形态不会再遇到", 351, theme::kGold), "irreversible source exclusion explained before evolution");
-  tap(runtime, 233, 276);
+  check(glyph("已捕获的原形态不会再遇到", 376, theme::kGold), "irreversible source exclusion explained before evolution");
+  tap(runtime, 233, 306);
   check(runtime.screen().page == Page::PartnerDetail && runtime.engine().view().partner == 133,
         "cancel returns without replacing source");
 }
@@ -130,9 +130,9 @@ void throwEntry() {
   screenshot(runtime, "throw-ready");
   edge(runtime, true, false); edge(runtime, false, true);
   check(runtime.screen().page == Page::Home, "left switches and right confirms keep-walking option");
-  screenshot(runtime, "home-saved-victory"); openMenu(runtime);
-  ball(5, 110); screenshot(runtime, "menu-saved-victory");
-  select(runtime, 0); edge(runtime, false, true);
+  screenshot(runtime, "home-saved-victory"); openMenu(runtime); select(runtime, 4);
+  ball(5, 110); screenshot(runtime, "resources-saved-victory");
+  tap(runtime, 233, 52); select(runtime, 0); edge(runtime, false, true);
   check(runtime.engine().throwView().active && availableBalls(runtime.engine().view()) == 5,
         "right confirms prepare without spending a ball");
   ball(5, 109); screenshot(runtime, "throw-active");
@@ -146,9 +146,9 @@ void exhaustedRoutes() {
   ++old.nextEncounterId; old.totalSteps += 500; old.undatedSteps += 500;
   check(store.commit(old) == CommitStatus::Committed, "starter previously captured in old save");
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); screenshot(runtime, "forest-exhausted");
+  openMenu(runtime); select(runtime, 4); screenshot(runtime, "forest-exhausted");
   check(glyph("本路线已捕获完 · 可换路线", 183, theme::kGold), "exhausted route explains next action");
-  select(runtime, 1); select(runtime, 1);
+  tap(runtime, 233, 52); select(runtime, 1); select(runtime, 1);
   check(runtime.engine().view().route == Route::Coast, "route can change after exhaustion");
   screenshot(runtime, "coast-available");
   captured.push_back(129); MemoryStore full; legacyOwned(full, captured);
@@ -156,7 +156,7 @@ void exhaustedRoutes() {
   old.captureCounts[0] = 1; old.firstCapture[0] = old.firstCapture[3]; old.firstCapture[0].species = 1;
   ++old.nextEncounterId; old.totalSteps += 500; old.undatedSteps += 500;
   check(full.commit(old) == CommitStatus::Committed, "all ordinary species have permanent records");
-  Runtime complete(full, platform); start(complete); openMenu(complete);
+  Runtime complete(full, platform); start(complete); openMenu(complete); select(complete, 4);
   screenshot(complete, "all-captured");
   check(glyph("普通宝可梦已全部捕获", 183, theme::kGold), "completed pool explained without promising impossible encounter");
 }

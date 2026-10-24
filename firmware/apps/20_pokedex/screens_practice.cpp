@@ -30,12 +30,9 @@ void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
   }
   actorShadow(233, 147);
   sprite(s.practiceSpecies, now, battlePlayback_, 147, 233, 0, 2, 110);
-  item(s, 0, "准备投球", menu_layout::kTop, 0, false, theme::Icon::Practice);
-  item(s, 1, "换一只练习", menu_layout::kTop, 0, false, theme::Icon::Partner);
-  item(s, 2, "结束练习", menu_layout::kTop, 0, false, theme::Icon::Back);
-  line("成功不会收入图鉴", 371, theme::kMuted);
-  line("左键切换 · 右键确认", 399, theme::kMint);
-  line("轻触选项确认", 426, theme::kMuted);
+  item(s, 0, "准备投球", menu_layout::kTop);
+  item(s, 1, "换一只练习", menu_layout::kTop);
+  item(s, 2, "结束练习", menu_layout::kTop);
 }
 void Screens::practiceResult(const ScreenState& s, uint32_t now) {
   title(s.practiceResult == Result::Captured ? "练习成功" :
@@ -49,8 +46,7 @@ void Screens::practiceResult(const ScreenState& s, uint32_t now) {
     thumbnail(s.practiceSpecies, 233, 160, 2);
     line(s.practiceResult == Result::Lost ? "对战失败 · 下次再试" : "宝可梦逃走了", 240, theme::kMuted);
   }
-  item(s, 0, "再练一只", menu_layout::kTop, 0, false, theme::Icon::Practice);
-  item(s, 1, "返回探索", menu_layout::kTop, 0, false, theme::Icon::Home);
-  line("左 / 右选择 · 双键确认", 420, theme::kMuted);
+  item(s, 0, "再练一只", menu_layout::kTop);
+  item(s, 1, "返回探索", menu_layout::kTop);
 }
 } }

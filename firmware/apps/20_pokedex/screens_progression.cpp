@@ -25,8 +25,8 @@ void Screens::progression(const ScreenState& s, const Engine& e) {
     warning(233, 133, theme::kRed);
     line("不退探索步数或已用精灵球", 179, theme::kText);
     line("伙伴与已有收藏保留", 199, theme::kMuted);
-    item(s, 0, "确认放弃", menu_layout::kTop, 0, false, theme::Icon::Back);
-    item(s, 1, "返回投球", menu_layout::kTop, 0, false, theme::Icon::Next);
+    item(s, 0, "确认放弃", menu_layout::kTop);
+    item(s, 1, "返回投球", menu_layout::kTop);
     return;
   }
   if (s.page == Page::EvolutionConfirm) {
@@ -40,12 +40,12 @@ void Screens::progression(const ScreenState& s, const Engine& e) {
     snprintf(text, sizeof(text), "使用 %lu 培养步", static_cast<unsigned long>(rule ? rule->steps : 0));
     line(text, 168, theme::kText);
     line("原形态不再可携带", 193, theme::kGold);
-    item(s, 0, "确认进化", menu_layout::kTop, 0, false, theme::Icon::Next);
-    item(s, 1, "稍后", menu_layout::kTop, 0, false, theme::Icon::Back);
-    line("余下培养步留在原形态", 326, theme::kMuted);
+    item(s, 0, "确认进化", menu_layout::kTop);
+    item(s, 1, "稍后", menu_layout::kTop);
+    line("余下培养步留在原形态", 350, theme::kMuted);
     if (s.evolution.from && save.captureCounts[s.evolution.from - 1])
-      line("已捕获的原形态不会再遇到", 351, theme::kGold);
-    if (s.command != CommandResult::Applied) line(progressionMessage(s.command), 370, theme::kGold);
+      line("已捕获的原形态不会再遇到", 376, theme::kGold);
+    if (s.command != CommandResult::Applied) line(progressionMessage(s.command), 402, theme::kGold);
     return;
   }
   const EvolutionView view = e.evolutionView(s.species);
@@ -71,13 +71,13 @@ void Screens::progression(const ScreenState& s, const Engine& e) {
     snprintf(text, sizeof(text), "%s需 %lu 步", speciesName(option.target), static_cast<unsigned long>(option.cost));
     alert(text, 188, theme::kGold);
   }
-  item(s, 0, save.partner == s.species ? "已携带" : "选择携带", menu_layout::kTop, 0, false, theme::Icon::Partner);
+  item(s, 0, save.partner == s.species ? "已携带" : "选择携带", menu_layout::kTop);
   for (unsigned i = 0; i < view.count; ++i) {
     const EvolutionOption& option = view.options[i];
     const char* note = option.status == CommandResult::TargetOwned ? "已拥有" :
       option.status == CommandResult::InsufficientProgress ? "未达标" : nullptr;
-    item(s, i + 1, speciesName(option.target), menu_layout::kTop, option.target, false, theme::Icon::Partner, note);
+    item(s, i + 1, speciesName(option.target), menu_layout::kTop, option.target, false, note);
   }
-  item(s, view.count + 1, "返回伙伴列表", menu_layout::kTop, 0, false, theme::Icon::Back);
+  item(s, view.count + 1, "返回伙伴列表", menu_layout::kTop);
 }
 } }

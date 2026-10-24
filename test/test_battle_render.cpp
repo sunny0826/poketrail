@@ -17,7 +17,7 @@ void fixture(MemoryStore& store, uint16_t partner = 4, uint16_t enemy = 25, Rout
 uint32_t enter(Runtime& r, bool practice = false) {
   openMenu(r);
   if (!practice) select(r, 0);
-  else for (unsigned i = 0; i < 6; ++i) edge(r, false, true);
+  else for (unsigned i = 0; i < 5; ++i) edge(r, false, true);
   buttons(true, true); frame(r);
   const uint32_t origin = host_time_ms;
   check(r.screen().page == (practice ? Page::Practice : Page::Battle), "real chord enters battle surface");
