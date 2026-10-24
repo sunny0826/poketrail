@@ -1,5 +1,6 @@
 #include "support/home_ui/pixel_checks.hpp"
 #include "support/home_ui/touch_cases.hpp"
+#include "support/home_ui/depth_cases.hpp"
 #include <cstring>
 
 namespace {
@@ -290,6 +291,6 @@ int main() {
   c152::begin("HOME TEST");
   homeTouch(); openingGestures(); eighthItem(); routesAndPartner(); animationContinuity();
   datesAndLiveSteps(); maximumToday(); sleepContinuity(); saveFailure(); clockPendingRestart();
-  battleContinuity(); allPartners(); animationWraparound();
+  battleContinuity(); sceneDepthMotion(); sceneDepthNavigationAndSleep(); allPartners(); animationWraparound();
   std::printf("%u home Runtime/Button_Class/M5GFX checks, 0 failures\n", checks);
 }

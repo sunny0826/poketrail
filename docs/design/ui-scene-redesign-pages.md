@@ -6,6 +6,7 @@
 | --- | --- |
 | `Home` | [森林](ui-scene-redesign/frames/home-forest.png) · [海边](ui-scene-redesign/frames/home-coast.png) · [洞窟](ui-scene-redesign/frames/home-cave.png) · [遭遇](ui-scene-redesign/frames/home-encounter.png) · [待捕捉](ui-scene-redesign/frames/home-throw-ready.png) · [日期未知](ui-scene-redesign/frames/home-unknown-date.png) · [部分日](ui-scene-redesign/frames/home-partial-day.png) · [步数缺失](ui-scene-redesign/frames/home-step-warning.png) · [恢复警告](ui-scene-redesign/frames/home-recovery.png) |
 | `Menu` | [第一页](ui-scene-redesign/frames/menu-main.png) · [第二页](ui-scene-redesign/frames/menu-second.png) · [末页](ui-scene-redesign/frames/menu-last.png) · [恢复警告](ui-scene-redesign/frames/menu-recovery.png) |
+| `Resources` | [资源与数据](ui-scene-redesign/frames/resources.png) |
 | `DateWelcome` | [首次日期确认](ui-scene-redesign/frames/date-welcome.png) · [未完成校时恢复](ui-scene-redesign/frames/date-pending.png) |
 | `Starter` | [初始伙伴](ui-scene-redesign/frames/starter.png) |
 | `Routes` | [路线选择](ui-scene-redesign/frames/routes.png) |
@@ -30,4 +31,4 @@
 | `EvolutionConfirm` | [进化确认](ui-scene-redesign/frames/evolution-confirm.png) |
 | `ReleaseConfirm` | [放弃捕捉确认](ui-scene-redesign/frames/release-confirm.png) |
 
-分组联系表：[探索与菜单](ui-scene-redesign/contacts/exploration.png) · [遭遇与捕捉](ui-scene-redesign/contacts/capture.png) · [伙伴与图鉴](ui-scene-redesign/contacts/partners.png) · [步行记录](ui-scene-redesign/contacts/records.png) · [日期与异常](ui-scene-redesign/contacts/system.png) · [战斗动画分镜](ui-scene-redesign/contacts/battle-animation.png)
+分组联系表：[探索与菜单](ui-scene-redesign/contacts/exploration.png) · [遭遇与捕捉](ui-scene-redesign/contacts/capture.png) · [伙伴与图鉴](ui-scene-redesign/contacts/partners.png) · [步行记录](ui-scene-redesign/contacts/records.png) · [日期与异常](ui-scene-redesign/contacts/system.png) · [步行纵深关键帧](ui-scene-redesign/contacts/walking-animation.png) · [战斗动画分镜](ui-scene-redesign/contacts/battle-animation.png)

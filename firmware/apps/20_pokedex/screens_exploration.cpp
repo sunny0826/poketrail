@@ -47,7 +47,7 @@ void todayNumber(const char* text, bool partial) {
 }
 bool Screens::exploration(const Engine& engine, uint32_t now) {
   const auto& save = engine.view();
-  scene(save.route);
+  scene(save.route, false, 0, sceneSteps_);
   actorShadow(233, 238);
   uint8_t maxScale = 2;
   if (save.partner) {

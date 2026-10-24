@@ -24,13 +24,29 @@ void Screens::title(const char* heading, const char* subtitle, uint16_t accent) 
   fitLine(heading, 52, 240, theme::kText, true);
   if (subtitle && *subtitle) fitLine(subtitle, 80, 300, accent, false);
 }
-void Screens::scene(Route route, bool dim, int dx) {
+void Screens::scene(Route route, bool dim, int dx, uint64_t visualSteps) {
   const unsigned index = uint8_t(route) < 3 ? uint8_t(route) : 0;
   const auto& source = dim ? data::kRouteScenesDim[index] : data::kRouteScenes[index];
+  const auto& layers = data::kRouteSceneLayers[index];
+  const unsigned groundTop = layers.groundTop;
+  const unsigned groundHeight = data::kSceneHeight - groundTop;
+  const bool depth = !dim && visualSteps;
+  const unsigned middleOffset = depth ? visualSteps % groundHeight : 0;
+  const unsigned nearOffset = depth ? (visualSteps % groundHeight * 2) % groundHeight : 0;
   for (unsigned y = 0; y < data::kSceneHeight; ++y) {
-    const uint16_t* row = source.pixels + y * data::kSceneWidth;
-    for (unsigned x = 0; x < data::kSceneWidth; ++x)
-      sceneRow_[x * 2] = sceneRow_[x * 2 + 1] = row[x];
+    const uint16_t* row = depth ? layers.far.pixels + y * data::kSceneWidth
+                                : source.pixels + y * data::kSceneWidth;
+    const bool ground = depth && y >= groundTop;
+    const unsigned middleY = ground ? groundTop + (y - groundTop + groundHeight - middleOffset) % groundHeight : groundTop;
+    const unsigned nearY = ground ? groundTop + (y - groundTop + groundHeight - nearOffset) % groundHeight : groundTop;
+    const uint16_t* middle = layers.middle.pixels + middleY * data::kSceneWidth;
+    const uint16_t* near = layers.near.pixels + nearY * data::kSceneWidth;
+    for (unsigned x = 0; x < data::kSceneWidth; ++x) {
+      uint16_t pixel = row[x];
+      if (ground && middle[x] != data::kSceneTransparentKey) pixel = middle[x];
+      if (ground && near[x] != data::kSceneTransparentKey) pixel = near[x];
+      sceneRow_[x * 2] = sceneRow_[x * 2 + 1] = pixel;
+    }
     for (unsigned dy = 0; dy < 2; ++dy) {
       const int screenY = 92 + y * 2 + dy;
       const int vertical = screenY - 233;

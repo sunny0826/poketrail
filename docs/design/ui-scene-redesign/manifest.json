@@ -126,6 +126,12 @@
       "variant": "warning"
     },
     {
+      "id": "resources",
+      "page": "Resources",
+      "title": "资源与数据",
+      "group": "exploration"
+    },
+    {
       "id": "routes",
       "page": "Routes",
       "title": "路线选择",
@@ -602,6 +608,135 @@
       "judgement": "完美",
       "playerHp": 3,
       "enemyHp": 1
+    },
+    {
+      "id": "walk-forest",
+      "title": "森林 · 林径后退",
+      "route": "forest",
+      "partner": 4,
+      "group": "walking-animation",
+      "file": "animations/walk-forest.gif",
+      "durationMs": 4000,
+      "frameMs": 100,
+      "frameCount": 40,
+      "loop": true,
+      "exampleStepIncrement": 2,
+      "exampleVisualSteps": 48,
+      "walkingFrameRanges": [
+        [
+          0,
+          8
+        ],
+        [
+          16,
+          32
+        ]
+      ],
+      "stoppedFrameRanges": [
+        [
+          8,
+          16
+        ],
+        [
+          32,
+          40
+        ]
+      ],
+      "middlePixelsPerStep": 1,
+      "nearPixelsPerStep": 2,
+      "loopSourceHeight": 51,
+      "keyframes": [
+        "frames/walk-forest-stationary.png",
+        "frames/walk-forest-moving.png",
+        "frames/walk-forest-seam.png"
+      ],
+      "evidence": "host-design-preview"
+    },
+    {
+      "id": "walk-coast",
+      "title": "海边 · 岸景后退",
+      "route": "coast",
+      "partner": 7,
+      "group": "walking-animation",
+      "file": "animations/walk-coast.gif",
+      "durationMs": 4000,
+      "frameMs": 100,
+      "frameCount": 40,
+      "loop": true,
+      "exampleStepIncrement": 2,
+      "exampleVisualSteps": 48,
+      "walkingFrameRanges": [
+        [
+          0,
+          8
+        ],
+        [
+          16,
+          32
+        ]
+      ],
+      "stoppedFrameRanges": [
+        [
+          8,
+          16
+        ],
+        [
+          32,
+          40
+        ]
+      ],
+      "middlePixelsPerStep": 1,
+      "nearPixelsPerStep": 2,
+      "loopSourceHeight": 44,
+      "keyframes": [
+        "frames/walk-coast-stationary.png",
+        "frames/walk-coast-moving.png",
+        "frames/walk-coast-seam.png"
+      ],
+      "evidence": "host-design-preview"
+    },
+    {
+      "id": "walk-cave",
+      "title": "洞窟 · 晶簇后退",
+      "route": "cave",
+      "partner": 1,
+      "group": "walking-animation",
+      "file": "animations/walk-cave.gif",
+      "durationMs": 4000,
+      "frameMs": 100,
+      "frameCount": 40,
+      "loop": true,
+      "exampleStepIncrement": 2,
+      "exampleVisualSteps": 48,
+      "walkingFrameRanges": [
+        [
+          0,
+          8
+        ],
+        [
+          16,
+          32
+        ]
+      ],
+      "stoppedFrameRanges": [
+        [
+          8,
+          16
+        ],
+        [
+          32,
+          40
+        ]
+      ],
+      "middlePixelsPerStep": 1,
+      "nearPixelsPerStep": 2,
+      "loopSourceHeight": 49,
+      "keyframes": [
+        "frames/walk-cave-stationary.png",
+        "frames/walk-cave-moving.png",
+        "frames/walk-cave-seam.png"
+      ],
+      "evidence": "host-design-preview"
     }
   ]
 }

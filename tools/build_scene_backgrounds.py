@@ -12,8 +12,10 @@ from PIL import ImageEnhance
 
 if __package__:
     from tools.design_preview import pixel_scene_source
+    from tools.design_preview_scenes import GROUND_TOP, pixel_scene_layers
 else:
     from design_preview import pixel_scene_source
+    from design_preview_scenes import GROUND_TOP, pixel_scene_layers
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_HEADER = ROOT / "firmware/apps/20_pokedex/scene_backgrounds_generated.hpp"
@@ -22,6 +24,8 @@ ROUTES = ("forest", "coast", "cave")
 WIDTH = 228
 HEIGHT = 135
 DIM_FACTOR = 0.52
+TRANSPARENT_KEY = 0xF81F
+LAYERS = ("far", "middle", "near")
 
 
 def to_rgb565(r: int, g: int, b: int) -> int:
@@ -35,6 +39,14 @@ def image_pixels(route: str, dim: bool = False) -> list[int]:
     if image.size != (WIDTH, HEIGHT):
         raise ValueError(f"unexpected scene canvas for {route}: {image.size}")
     return [to_rgb565(r, g, b) for r, g, b in image.get_flattened_data()]
+
+
+def layer_pixels(route: str, layer: str) -> list[int]:
+    image = getattr(pixel_scene_layers(route), layer).convert("RGBA")
+    if image.size != (WIDTH, HEIGHT):
+        raise ValueError(f"unexpected {layer} layer canvas for {route}: {image.size}")
+    return [TRANSPARENT_KEY if alpha == 0 else to_rgb565(r, g, b)
+            for r, g, b, alpha in image.get_flattened_data()]
 
 
 def pixel_digest(pixels: list[int]) -> str:
@@ -55,11 +67,19 @@ constexpr uint16_t kSceneHeight = {HEIGHT};
 constexpr uint16_t kSceneScale = 2;
 constexpr uint16_t kSceneThumbTop = 18;
 constexpr uint16_t kSceneThumbHeight = 90;
+constexpr uint16_t kSceneTransparentKey = 0x{TRANSPARENT_KEY:04X};
 struct SceneBackground {{
   const uint16_t* pixels;
 }};
+struct SceneLayerSet {{
+  SceneBackground far;
+  SceneBackground middle;
+  SceneBackground near;
+  uint8_t groundTop;
+}};
 extern const SceneBackground kRouteScenes[3];
 extern const SceneBackground kRouteScenesDim[3];
+extern const SceneLayerSet kRouteSceneLayers[3];
 
 }}  // namespace data
 }}  // namespace pokedex
@@ -82,6 +102,9 @@ def generate_source() -> str:
             suffix = "Dim" if dim else ""
             lines.append(f"// {route}{suffix}, {WIDTH}x{HEIGHT}")
             emit_array(lines, f"kScene{route.title()}{suffix}", image_pixels(route, dim))
+        for layer in LAYERS:
+            lines.append(f"// {route} {layer}, {WIDTH}x{HEIGHT}")
+            emit_array(lines, f"kScene{route.title()}{layer.title()}", layer_pixels(route, layer))
     lines.extend(["}  // namespace", "",
                   "const SceneBackground kRouteScenes[3] = {"])
     for route in ROUTES:
@@ -89,6 +112,10 @@ def generate_source() -> str:
     lines.extend(["};", "", "const SceneBackground kRouteScenesDim[3] = {"])
     for route in ROUTES:
         lines.append(f"    {{kScene{route.title()}Dim}},")
+    lines.extend(["};", "", "const SceneLayerSet kRouteSceneLayers[3] = {"])
+    for route in ROUTES:
+        lines.append(f"    {{{{kScene{route.title()}Far}}, {{kScene{route.title()}Middle}}, "
+                     f"{{kScene{route.title()}Near}}, {GROUND_TOP[route]}}},")
     lines.extend(["};", "}  // namespace data", "}  // namespace pokedex", ""])
     return "\n".join(lines)
 
@@ -98,10 +125,14 @@ def generate_manifest() -> str:
     for route in ROUTES:
         normal = image_pixels(route)
         dim = image_pixels(route, True)
-        routes.append(dict(route=route, normalSha256=pixel_digest(normal), dimSha256=pixel_digest(dim)))
+        layers = dict(groundTop=GROUND_TOP[route])
+        for layer in LAYERS:
+            layers[f"{layer}Sha256"] = pixel_digest(layer_pixels(route, layer))
+        routes.append(dict(route=route, normalSha256=pixel_digest(normal),
+                           dimSha256=pixel_digest(dim), layers=layers))
     return json.dumps(dict(source="tools/design_preview_scenes.py#pixel_scene_source", width=WIDTH,
-        height=HEIGHT, scale=2, dimFactor=DIM_FACTOR, thumbTop=18, thumbHeight=90,
-        routes=routes), ensure_ascii=False, indent=2) + "\n"
+        height=HEIGHT, scale=2, dimFactor=DIM_FACTOR, transparentKey=TRANSPARENT_KEY,
+        thumbTop=18, thumbHeight=90, routes=routes), ensure_ascii=False, indent=2) + "\n"
 
 
 def generate_all() -> tuple[str, str, str]:

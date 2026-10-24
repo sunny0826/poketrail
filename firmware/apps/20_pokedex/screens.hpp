@@ -49,6 +49,7 @@ class Screens {
   void invalidate();
   bool advanceHome(uint16_t partner, uint32_t now);
   bool advanceResult(uint16_t species, uint32_t now);
+  bool advanceScene(adventure::Route, uint32_t steps);
   bool draw(const ScreenState&, const adventure::Engine&,
             const adventure::BattleView& practice, uint32_t now);
  private:
@@ -72,7 +73,7 @@ class Screens {
   void line(const char*, int y, uint16_t color = theme::kText, bool large = false);
   void fitLine(const char*, int y, int width, uint16_t color, bool large = true);
   void title(const char*, const char* subtitle, uint16_t accent);
-  void scene(adventure::Route, bool dim = false, int dx = 0);
+  void scene(adventure::Route, bool dim = false, int dx = 0, uint64_t visualSteps = 0);
   void sceneThumbnail(adventure::Route, int cx, int cy);
   void glyph(theme::Icon, int x, int y, uint16_t color);
   void alert(const char*, int y, uint16_t color);
@@ -89,6 +90,8 @@ class Screens {
   uint16_t* pixels_ = nullptr;
   uint16_t sceneRow_[456];
   Playback homePlayback_, battlePlayback_, enemyBattlePlayback_, resultPlayback_;
+  adventure::Route sceneRoute_ = adventure::Route::Forest;
+  uint64_t sceneSteps_ = 0;
   uint16_t decodedId_ = 0, decodedFrame_ = UINT16_MAX, decodedScale_ = 0, decodedSilhouette_ = 0;
 };
 } }

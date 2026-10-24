@@ -4,23 +4,42 @@
   "height": 135,
   "scale": 2,
   "dimFactor": 0.52,
+  "transparentKey": 63519,
   "thumbTop": 18,
   "thumbHeight": 90,
   "routes": [
     {
       "route": "forest",
       "normalSha256": "d2c2593a4ecff9cf3c623b63d1d0a9d262d658d8cdf337cea8a04f43b28104dc",
-      "dimSha256": "c304eeae71491437190c53177f958bcb85ccbf046a8a3e16e6bcdd776dfab97e"
+      "dimSha256": "c304eeae71491437190c53177f958bcb85ccbf046a8a3e16e6bcdd776dfab97e",
+      "layers": {
+        "groundTop": 84,
+        "farSha256": "fff417c6ecce070a48354432b56153ebbc483efbe9e67f1cc98eef1dcd9e3805",
+        "middleSha256": "4e396e7600d5f6f517d4f3ed86d325b365e73b784c94a77d059b851f6a00b4c0",
+        "nearSha256": "11874ea0b6a8b2a87200a94a652e745c70f189e7152e05c90ed20828eb747cde"
+      }
     },
     {
       "route": "coast",
       "normalSha256": "411368085bd7c15dfac444ce99fdb0aa8b9c14cfd6068948a722d7aa73cea706",
-      "dimSha256": "034cccfa1a2cd15f6dcb9afeb40a21cda6ddafbaf0df8e288e167611002d98cb"
+      "dimSha256": "034cccfa1a2cd15f6dcb9afeb40a21cda6ddafbaf0df8e288e167611002d98cb",
+      "layers": {
+        "groundTop": 91,
+        "farSha256": "27d19247df54be802f598b6fa61c4777e9a3f1c7030fe9e2743869d4998aa9d9",
+        "middleSha256": "297b7e38efda1c58d9357e59dd47a5016547ad5e3d44717ee6c86ebb1c51e4cd",
+        "nearSha256": "689101deb3c7e54a541e0d9f85320a9eb9fe813a2e2a96b0ad9535ec8377e7fc"
+      }
     },
     {
       "route": "cave",
       "normalSha256": "190471b189a30e48c962eb8fbed0df7a6c502311f1b7112c816f84c4f3d01993",
-      "dimSha256": "70e8b2b4cc4e25dfdd1d4464de546320b5a2cda780275bfc387186b5075b70a2"
+      "dimSha256": "70e8b2b4cc4e25dfdd1d4464de546320b5a2cda780275bfc387186b5075b70a2",
+      "layers": {
+        "groundTop": 86,
+        "farSha256": "1dbde63f39777709b94959f6566d293d37bbd9f98d8a52ffee8d8f7539d20618",
+        "middleSha256": "2a39c55808179748f17edb2613d57ccc7b0a1ca351609687e0b04381b182f574",
+        "nearSha256": "b3b8098cc9a8b204f4cca16d1fdb7ee7c56292e354615d2f12a28051d88686f2"
+      }
     }
   ]
 }

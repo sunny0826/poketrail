@@ -24,8 +24,9 @@ def base(spec: dict, assets: GeneratedAssets, background: str = BG) -> Canvas:
     return c
 
 
-def scene(c: Canvas, route: str, dim: bool = False, dx: int = 0) -> None:
-    image = pixel_scene(route)
+def scene(c: Canvas, route: str, dim: bool = False, dx: int = 0,
+          visual_steps: int = 0) -> None:
+    image = pixel_scene(route, visual_steps)
     if dim:
         image = ImageEnhance.Brightness(image).enhance(0.52)
     c.paste(image.convert("RGBA"), 233 + dx, 227)
@@ -51,7 +52,7 @@ def home(spec: dict, assets: GeneratedAssets) -> Canvas:
     c = base(spec, assets)
     route = spec.get("route", "forest")
     partner = spec.get("species", 4)
-    scene(c, route)
+    scene(c, route, visual_steps=spec.get("visual_steps", 0))
     if spec.get("scene_only"):
         title(c, ROUTE_NAMES[route], "路线场景 · 像素原画", ROUTE_COLORS[route])
         code = {"forest": "FOREST / 01", "coast": "COAST / 02", "cave": "CAVE / 03"}[route]

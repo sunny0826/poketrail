@@ -109,6 +109,20 @@ def release(spec: dict, assets: GeneratedAssets) -> Canvas:
     return c
 
 
+def resources(spec: dict, assets: GeneratedAssets) -> Canvas:
+    c = base(spec, assets)
+    title(c, "资源与数据", "", GOLD)
+    c.text("今日 3,842 步 · 森林", 233, 80, 14, MINT)
+    poke_count(c, assets, 5, 327, 110)
+    c.text("小火龙 · 培养", 233, 132, 14, MUTED)
+    c.text("6,750 / 7,500 步", 233, 156, 16, TEXT)
+    alert(c, "下次遭遇还差 1,600 步", 183, GOLD)
+    menu(c, [{"label": "捕捉与步行记录", "icon": "records"},
+             {"label": "日期与时间", "icon": "clock"},
+             {"label": "返回", "icon": "back"}], spec.get("selected", 0), GOLD)
+    return c
+
+
 def records(spec: dict, assets: GeneratedAssets) -> Canvas:
     c = base(spec, assets)
     title(c, "捕捉与步行记录", "每日最高 8,432 步", GOLD)
@@ -242,6 +256,7 @@ def render_detail(spec: dict, assets: GeneratedAssets) -> Canvas:
     if page == "PartnerDetail": return partner_detail(spec, assets)
     if page == "EvolutionConfirm": return evolution(spec, assets)
     if page == "ReleaseConfirm": return release(spec, assets)
+    if page == "Resources": return resources(spec, assets)
     if page == "Records": return records(spec, assets)
     if page == "FirstCaptures": return capture_card(spec, assets)
     if page == "Recent": return capture_card(spec, assets, True)

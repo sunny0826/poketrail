@@ -12,10 +12,12 @@ if __package__:
     from tools.design_preview import GeneratedAssets, GOLD, MINT, MUTED, TEXT, font
     from tools.design_preview_screens import render_frame
     from tools.design_preview_battle import build_battle_animations
+    from tools.design_preview_walk import build_walking_animations
 else:
     from design_preview import GeneratedAssets, GOLD, MINT, MUTED, TEXT, font
     from design_preview_screens import render_frame
     from design_preview_battle import build_battle_animations
+    from design_preview_walk import build_walking_animations
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs/design/ui-scene-redesign"
@@ -48,6 +50,7 @@ FRAMES = [
     frame("menu-second", "Menu", "主菜单 · 第二页", "exploration", selected=4),
     frame("menu-last", "Menu", "主菜单 · 末页", "exploration", selected=8),
     frame("menu-recovery", "Menu", "菜单 · 恢复警告", "exploration", variant="warning"),
+    frame("resources", "Resources", "资源与数据", "exploration"),
     frame("routes", "Routes", "路线选择", "exploration", selected=1),
     frame("partners", "Partners", "伙伴列表", "exploration", selected=1),
     frame("partners-long", "Partners", "伙伴列表 · 长名称", "exploration", selected=6),
@@ -140,12 +143,14 @@ def contact_sheet(ident: str, heading: str, specs: list[dict]) -> Path:
 
 def gallery(specs: list[dict], animations: list[dict]) -> str:
     groups = dict(GROUPS)
+    groups["walking-animation"] = ("步行纵深", "步事件示例、地景靠近与停止状态")
     groups["battle-animation"] = ("战斗动画", "前冲、受击、闪避与完美判定")
     for group, (heading, description) in groups.items():
         figures = []
-        source = animations if group == "battle-animation" else specs
+        animated = group in ("walking-animation", "battle-animation")
+        source = animations if animated else specs
         for spec in source:
-            if group != "battle-animation" and spec["group"] != group:
+            if spec["group"] != group:
                 continue
             path = spec.get("file", f"frames/{spec['id']}.png")
             figures.append(f'''<figure id="{spec['id']}">
@@ -165,7 +170,7 @@ def gallery(specs: list[dict], animations: list[dict]) -> str:
 <title>PokeTrail · 旅途观测仪</title><link rel="stylesheet" href="style.css"></head><body>
 <header><p class="kicker">POKETRAIL / FIELD INSTRUMENT 01</p><h1>旅途观测仪</h1><p class="lead">全场景与 UI 视觉重设计 · 复古像素 / 圆屏 / 离线步行</p>
 <span class="badge">独立设计提案 · 非 Runtime / 实机截图 · 示例数据</span>
-<div class="stats"><div><b>25 / 25</b><span>正式页面</span></div><div><b>3</b><span>路线场景</span></div><div><b>{len(specs)}</b><span>静态设计帧</span></div><div><b>{len(animations)}</b><span>战斗动画</span></div><div><b>466 px</b><span>原生圆屏</span></div></div></header>
+<div class="stats"><div><b>26 / 26</b><span>正式页面</span></div><div><b>3</b><span>路线场景</span></div><div><b>{len(specs)}</b><span>静态设计帧</span></div><div><b>{len(animations)}</b><span>运动动画</span></div><div><b>466 px</b><span>原生圆屏</span></div></div></header>
 <nav aria-label="设计分组">{nav}</nav>
 <div class="overview"><img src="contacts/overview.png" alt="六张核心设计总览"></div>
 {''.join(sections)}
@@ -183,13 +188,13 @@ def main() -> None:
     contact_sheet("overview", "核心视觉总览", [by_id[ident] for ident in OVERVIEW])
     for group, (heading, _) in GROUPS.items():
         contact_sheet(group, heading, [spec for spec in FRAMES if spec["group"] == group])
-    animations = build_battle_animations(assets, OUT)
+    animations = build_battle_animations(assets, OUT) + build_walking_animations(assets, OUT)
     manifest = dict(schema=2, kind="independent-design-proposal", nativeSize=[466, 466],
         safeRadius=228, source=["firmware/apps/20_pokedex/icons_generated.cpp",
         "firmware/apps/20_pokedex/sprites_generated.cpp"], frames=FRAMES, animations=animations)
     (OUT / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (OUT / "index.html").write_text(gallery(FRAMES, animations), encoding="utf-8")
-    print(f"generated {len(FRAMES)} design frames, {len(animations)} battle GIFs, 7 contact sheets: {OUT}")
+    print(f"generated {len(FRAMES)} design frames, {len(animations)} motion GIFs, 8 contact sheets: {OUT}")
 
 
 if __name__ == "__main__":

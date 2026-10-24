@@ -164,6 +164,16 @@ bool Screens::advance(Playback& playback, uint16_t id, uint32_t now) {
 }
 bool Screens::advanceHome(uint16_t partner, uint32_t now) { return advance(homePlayback_, partner, now); }
 bool Screens::advanceResult(uint16_t species, uint32_t now) { return advance(resultPlayback_, species, now); }
+bool Screens::advanceScene(Route route, uint32_t steps) {
+  if (sceneRoute_ != route) {
+    sceneRoute_ = route;
+    sceneSteps_ = 0;
+    return true;
+  }
+  if (!steps) return false;
+  sceneSteps_ += steps;
+  return true;
+}
 bool Screens::sprite(uint16_t id, uint32_t now) { return sprite(id, now, battlePlayback_); }
 bool Screens::sprite(uint16_t id, uint32_t now, Playback& playback, int cy, int cx,
                      uint16_t silhouette, uint8_t maxScale, uint16_t maxHeight) {

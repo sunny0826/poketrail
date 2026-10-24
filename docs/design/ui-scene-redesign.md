@@ -1,9 +1,9 @@
 # PokeTrail 全场景与 UI 重设计
 
-> 状态：设计已定稿，场景、25 个页面样式与双角色战斗动作已接入固件。保留原玩法、输入与存档契约；实现细节和验证边界见[实现与验收](ui-scene-redesign-implementation.md)。
-> 图像：独立 Pillow 渲染，使用仓库生成数据中的真实 RGB565 像素素材；不是 Runtime/M5GFX 截图，也不是实体 C152 验收证据。页面数据均为示例。
+> 状态：分层场景、步行纵深、26 个页面样式与双角色战斗动作已接入固件。保留原玩法、输入与存档契约；实现细节和验证边界见[实现与验收](ui-scene-redesign-implementation.md)。
+> 图像：独立 Pillow 渲染，使用仓库生成数据中的真实 RGB565 像素素材；不是 Runtime/M5GFX 截图，也不是实体 C152 验收证据。页面数据与步事件均为示例。
 
-[打开完整视觉画廊](ui-scene-redesign/index.html) · [查看 76 帧与 3 条动画](ui-scene-redesign/manifest.json)
+[打开完整视觉画廊](ui-scene-redesign/index.html) · [查看 77 帧与 6 条动画](ui-scene-redesign/manifest.json)
 
 ![核心视觉总览](ui-scene-redesign/contacts/overview.png)
 
@@ -62,7 +62,11 @@
 
 主页场景位于 `y=92..361`。伙伴置于中央并下移 10 像素，接触影保持地面原位，前脚和后脚落在同一片影子上，不与脚底分离。底部依次显示遭遇进度、今日步数和当前操作。日期未知时显示“今日 --”，不把累计步数伪装成今日步数。
 
-场景源图由 `tools/design_preview_scenes.py` 的 `pixel_scene_source()` 确定性绘制，`tools/build_scene_backgrounds.py` 生成普通与暗色 RGB565 数据，`assets/scene-backgrounds.json` 保存来源、尺寸和像素哈希。固件按行放大并沿圆屏裁剪，不分配完整场景缓冲。不得直接编辑 `*_generated.hpp/.cpp`。
+步行纵深设计固定远山、树冠和岩拱，只让地面层向屏幕下方靠近。中层地景每个视觉步下移 1 个源像素，近层地景下移 2 个源像素；不做左右平移。森林、海边和洞窟分别按 51、44、49 源像素的地面带高度循环。伙伴、接触影和全部 UI 固定，停止段不推进背景。三条路线的[步行动图](ui-scene-redesign/walking-animation.html)和[关键帧联系表](ui-scene-redesign/contacts/walking-animation.png)展示起步、停止和循环接缝；时序与实现边界见[运动设计规格](ui-scene-redesign-motion.md)。
+
+![步行纵深三路线关键帧](ui-scene-redesign/contacts/walking-animation.png)
+
+场景源图由 `tools/design_preview_scenes.py` 确定性绘制。`pixel_scene_layers()` 提供分层，`pixel_scene_motion()` 按整数源像素循环合成；`pixel_scene_source()` 保持原静止画面。`tools/build_scene_backgrounds.py` 生成普通、暗色与分层 RGB565 数据，`assets/scene-backgrounds.json` 保存来源、尺寸和像素哈希。固件按行放大并沿圆屏裁剪，不分配完整场景缓冲。不得直接编辑 `*_generated.hpp/.cpp`。
 
 ## 公共组件
 
@@ -73,9 +77,9 @@
 - **确认页**：先说明会失去什么，再显示确认与返回。选中态不能替代后果说明；实际选中索引仍由 Runtime 决定。
 - **图鉴**：独立 `Viewer` 路径也使用相同颜色与字体层级。拥有、曾经获得和尚未获得不能只靠 sprite 是否显示来区分。
 
-## 页面、战斗与捕获
+## 页面与运动
 
-[25 个页面覆盖](ui-scene-redesign-pages.md)列出全部页面、状态和分组联系表；[战斗与捕获规格](ui-scene-redesign-motion.md)说明动作、关键帧和时序。
+[26 个页面覆盖](ui-scene-redesign-pages.md)列出全部页面、状态和分组联系表；[步行、战斗与捕获规格](ui-scene-redesign-motion.md)说明动作、关键帧和时序。
 
 ## 交互与玩法
 

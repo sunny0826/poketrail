@@ -9,6 +9,9 @@ from tools.design_preview import GeneratedAssets, pixel_scene_source
 from tools.design_preview_battle import (
     ANIMATIONS, DURATION_MS, FRAME_MS, battle_state, source_frame,
 )
+from tools.design_preview_walk import (
+    FRAME_COUNT as WALK_FRAME_COUNT, FRAME_MS as WALK_FRAME_MS, sprite_frame_at, visual_steps_at,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs/design/ui-scene-redesign"
@@ -21,6 +24,8 @@ class DesignPreviewTests(unittest.TestCase):
         cls.frames = cls.manifest["frames"]
         cls.by_id = {frame["id"]: frame for frame in cls.frames}
         cls.animations = cls.manifest["animations"]
+        cls.battle_animations = [item for item in cls.animations if item["group"] == "battle-animation"]
+        cls.walking_animations = [item for item in cls.animations if item["group"] == "walking-animation"]
         cls.assets = GeneratedAssets()
 
     def test_every_firmware_page_is_covered(self):
@@ -29,7 +34,7 @@ class DesignPreviewTests(unittest.TestCase):
         expected = {item.strip() for item in body.replace("\n", " ").split(",") if item.strip()}
         actual = {frame["page"] for frame in self.frames}
         self.assertEqual(actual, expected)
-        self.assertEqual(len(expected), 25)
+        self.assertEqual(len(expected), 26)
 
     def test_ids_groups_and_references_are_complete(self):
         self.assertEqual(len(self.by_id), len(self.frames))
@@ -85,9 +90,9 @@ class DesignPreviewTests(unittest.TestCase):
         from PIL import ImageDraw
         outside = Image.new("L", (466, 466), 255)
         ImageDraw.Draw(outside).ellipse((5, 5, 461, 461), fill=0)
-        self.assertEqual({item["id"] for item in self.animations},
+        self.assertEqual({item["id"] for item in self.battle_animations},
                          {"battle-attack", "battle-dodge", "battle-perfect"})
-        for spec in self.animations:
+        for spec in self.battle_animations:
             with self.subTest(animation=spec["id"]), Image.open(OUT / spec["file"]) as image:
                 self.assertEqual(image.format, "GIF")
                 self.assertEqual(image.size, (466, 466))
@@ -108,8 +113,60 @@ class DesignPreviewTests(unittest.TestCase):
                 self.assertTrue(spec["loop"])
                 self.assertGreater(len(unique), 20)
 
+    def test_walking_animation_step_gating_and_fixed_ui(self):
+        from PIL import ImageDraw
+        outside = Image.new("L", (466, 466), 255)
+        ImageDraw.Draw(outside).ellipse((5, 5, 461, 461), fill=0)
+        fixed_regions = ((0, 0, 466, 92), (0, 362, 466, 466))
+        background_regions = ((5, 92, 170, 362), (296, 92, 461, 362), (170, 92, 296, 170))
+        self.assertEqual({item["id"] for item in self.walking_animations},
+                         {"walk-forest", "walk-coast", "walk-cave"})
+        for spec in self.walking_animations:
+            with self.subTest(animation=spec["id"]), Image.open(OUT / spec["file"]) as image:
+                self.assertEqual(image.format, "GIF")
+                self.assertEqual(image.size, (466, 466))
+                self.assertLessEqual(image.n_frames, WALK_FRAME_COUNT)
+                self.assertEqual(image.info.get("loop"), 0)
+                frames = []
+                durations = []
+                for frame in ImageSequence.Iterator(image):
+                    duration = frame.info.get("duration")
+                    durations.append(duration)
+                    self.assertEqual(duration % WALK_FRAME_MS, 0)
+                    rgb = frame.convert("RGB")
+                    frames.extend([rgb.copy()] * (duration // WALK_FRAME_MS))
+                    self.assertIsNone(ImageChops.multiply(rgb, outside.convert("RGB")).getbbox())
+                self.assertEqual(len(frames), WALK_FRAME_COUNT)
+                self.assertEqual(sum(durations), spec["durationMs"])
+                self.assertEqual(spec["frameMs"], WALK_FRAME_MS)
+                self.assertEqual(spec["frameCount"], WALK_FRAME_COUNT)
+                self.assertEqual(spec["exampleVisualSteps"], visual_steps_at(WALK_FRAME_COUNT))
+                self.assertTrue(spec["loop"])
+                for region in fixed_regions:
+                    reference = frames[0].crop(region).tobytes()
+                    self.assertTrue(all(frame.crop(region).tobytes() == reference for frame in frames[1:]))
+                for start, end in spec["stoppedFrameRanges"]:
+                    for region in background_regions:
+                        reference = frames[start].crop(region).tobytes()
+                        self.assertTrue(all(frames[index].crop(region).tobytes() == reference
+                                            for index in range(start + 1, end)))
+                    self.assertEqual(visual_steps_at(start), visual_steps_at(end - 1))
+                for index in range(1, 8):
+                    self.assertNotEqual(frames[index - 1].crop(background_regions[0]).tobytes(),
+                                        frames[index].crop(background_regions[0]).tobytes())
+                for keyframe in spec["keyframes"]:
+                    self.assertTrue((OUT / keyframe).is_file())
+                expected = self.assets.sprite(spec["partner"],
+                    sprite_frame_at(self.assets, spec["partner"], 4 * WALK_FRAME_MS))
+                with Image.open(OUT / "frames" / f"{spec['id']}-moving.png") as moving:
+                    left, top = 233 - expected.width // 2, 248 - expected.height // 2
+                    actual = moving.crop((left, top, left + expected.width, top + expected.height))
+                    for source, target in zip(expected.get_flattened_data(), actual.get_flattened_data()):
+                        if source[3]:
+                            self.assertEqual(source[:3], target)
+
     def test_battle_keyframe_states_and_hp(self):
-        manifest = {item["id"]: item for item in self.animations}
+        manifest = {item["id"]: item for item in self.battle_animations}
         for spec in ANIMATIONS:
             with self.subTest(animation=spec["id"]):
                 early = battle_state(spec, 650)
@@ -145,16 +202,18 @@ class DesignPreviewTests(unittest.TestCase):
             self.assertEqual(source_frame(animations, 4, time_ms).tobytes(), expected.tobytes())
 
     def test_contacts_and_offline_gallery_cover_the_manifest(self):
-        for name in ("overview", "exploration", "capture", "partners", "records", "system", "battle-animation"):
+        for name in ("overview", "exploration", "capture", "partners", "records", "system",
+                     "walking-animation", "battle-animation"):
             with self.subTest(contact=name), Image.open(OUT / "contacts" / f"{name}.png") as image:
                 self.assertGreater(image.width, 900)
                 self.assertGreater(image.height, 700)
         gallery = (OUT / "index.html").read_text(encoding="utf-8")
         gallery += "\n".join((OUT / f"{name}.html").read_text(encoding="utf-8")
-                             for name in ("exploration", "capture", "battle-animation",
+                             for name in ("exploration", "capture", "walking-animation", "battle-animation",
                                           "partners", "records", "system"))
         self.assertNotIn("<script", gallery)
         self.assertNotRegex(gallery, r"(?:src|href)=\"https?://")
+        self.assertIn('href="walking-animation.html"', gallery)
         self.assertIn('href="battle-animation.html"', gallery)
         for frame in self.frames:
             self.assertIn(f'src="frames/{frame["id"]}.png"', gallery)

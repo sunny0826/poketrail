@@ -4,6 +4,7 @@ firmware/apps/20_pokedex/*_generated.cpp linguist-generated=true
 assets/animations-gen1.json linguist-generated=true
 assets/evolution-gen1.json linguist-generated=true
 assets/icons-gen1.json linguist-generated=true
+docs/design/ui-scene-redesign/manifest.json linguist-generated=true
 
 # Upstream data snapshots; provenance and licenses are in THIRD_PARTY_NOTICES.md.
 assets/evolution-source/*.csv linguist-vendored=true linguist-generated=true
