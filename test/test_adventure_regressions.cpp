@@ -150,6 +150,28 @@ void rebootSameDay() {
   expect(!engine->view().clock.trusted && engine->view().clock.anomaly &&
          engine->view().today.dayKey == 20261025 && engine->view().today.steps == 2,
          "a real backward date remains an anomaly and keeps the current day");
+  ClockReading repaired = first;
+  repaired.monotonicMs = 80000;
+  const uint64_t id = engine->view().clock.pending.transactionId + 1;
+  REQUIRE(engine->beginClockChange(id, ClockChangeMode::Normal, repaired) == CommandResult::Applied);
+  REQUIRE(engine->finishClockChange(id, repaired) == CommandResult::Applied);
+  const Save& recovered = engine->view();
+  expect(recovered.clock.trusted && !recovered.clock.anomaly && recovered.today.dayKey == 20261025 &&
+         recovered.today.steps == 2,
+         "normal recalibration clears a saved anomaly and restores today");
+  ClockReading older = repaired;
+  older.utcSeconds = utc - 2 * 86400;
+  older.monotonicMs = 90000;
+  REQUIRE(pokedex::calendar::fromUtc(older.utcSeconds, older.offsetMinutes, local));
+  REQUIRE(pokedex::calendar::dayKey(local, older.dayKey));
+  const uint64_t repair = recovered.clock.pending.transactionId + 1;
+  const uint32_t epoch = engine->view().clock.calibrationEpoch;
+  REQUIRE(engine->beginClockChange(repair, ClockChangeMode::Normal, older) == CommandResult::Applied);
+  REQUIRE(engine->finishClockChange(repair, older) == CommandResult::Applied);
+  expect(engine->view().clock.trusted && !engine->view().clock.anomaly &&
+         engine->view().clock.calibrationEpoch == epoch + 1 &&
+         engine->view().today.dayKey == older.dayKey && engine->view().today.steps == 0,
+         "normal recalibration to an earlier date starts a new calibration and archives the old day");
 }
 void clockEdges() {
   for (int drift : {120000, 120001, -120000, -120001}) {

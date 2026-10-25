@@ -74,7 +74,8 @@ CommandResult Engine::finishClockChange(uint64_t id, const ClockReading& r) {
       r.utcSeconds < p.targetUtcSeconds || r.utcSeconds - p.targetUtcSeconds > 5)
     return CommandResult::InvalidInput;
   stage(); ClockState& c = candidate_.clock;
-  if (p.mode == ClockChangeMode::RepairWrongDate) {
+  if (p.mode == ClockChangeMode::RepairWrongDate ||
+      (p.mode == ClockChangeMode::Normal && p.targetDayKey < c.dayHighWater)) {
     candidate_.today.complete = false; archiveDay(candidate_); candidate_.today = DayBucket();
     ++c.calibrationEpoch; c.dayHighWater = 0;
   }
