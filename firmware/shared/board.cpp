@@ -1,6 +1,10 @@
 #include "board.hpp"
 
 #include <stdio.h>
+#if defined(ESP32) || defined(ESP32S3)
+#include <driver/gpio.h>
+#include <esp_sleep.h>
+#endif
 
 namespace {
 
@@ -44,6 +48,31 @@ void update() {
     M5.Power.setVibration(0);
     vibration_active = false;
   }
+}
+
+bool restUntilInput(uint32_t durationMs) {
+#if !defined(ESP32) && !defined(ESP32S3)
+  (void)durationMs;
+  return false;
+#else
+  if (durationMs == 0) return true;
+  // StopWatch keys are active-low. CST816S INT on GPIO13 is active-low while touched.
+  const gpio_num_t pins[] = {GPIO_NUM_1, GPIO_NUM_2, GPIO_NUM_13};
+  bool armed = true;
+  for (const gpio_num_t pin : pins) {
+    if (gpio_wakeup_enable(pin, GPIO_INTR_LOW_LEVEL) != ESP_OK) armed = false;
+  }
+  if (!armed || esp_sleep_enable_gpio_wakeup() != ESP_OK ||
+      esp_sleep_enable_timer_wakeup(uint64_t(durationMs) * 1000) != ESP_OK) {
+    for (const gpio_num_t pin : pins) gpio_wakeup_disable(pin);
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+    return false;
+  }
+  const esp_err_t slept = esp_light_sleep_start();
+  for (const gpio_num_t pin : pins) gpio_wakeup_disable(pin);
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+  return slept == ESP_OK;
+#endif
 }
 
 bool touchWasPressed() {

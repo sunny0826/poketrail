@@ -4,6 +4,7 @@
 #include "device_clock.hpp"
 #include "menu_buttons.hpp"
 #include "practice_capture.hpp"
+#include <algorithm>
 namespace pokedex { namespace ui {
 struct Input {
   bool left = false, right = false, touch = false, click = false, pause = false, back = false;
@@ -56,6 +57,18 @@ class Runtime {
   const Metrics& metrics() const { return metrics_; }
   const adventure::BattleView& practiceView() const { return practiceCapture_.battleView(); }
   bool dimmed() const { return display_ != DisplayState::Awake; }
+  // Pocket idle may pause the CPU until the next sample. Vibration and an
+  // unfinished save keep the loop awake; a key only ends the current pause.
+  bool pocketIdle() const {
+    return display_ == DisplayState::Asleep && !releaseGate_ && !platform_.vibrationActive() &&
+           !engine_.savePending();
+  }
+  uint32_t nextSampleMs(uint32_t now) const {
+    // A 100ms gap discards the walking cadence. Keep 40ms for wake latency.
+    const uint32_t elapsed = now - lastSample_;
+    if (!hasSample_ || elapsed >= 60) return 0;
+    return std::min<uint32_t>(60 - elapsed, 20);
+  }
   void feedback(uint16_t duration);
  private:
   void navigate(Page);

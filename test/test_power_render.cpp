@@ -236,6 +236,37 @@ void viewerErrorWake() {
         "viewer render failure redraws an error before lighting the display");
   viewer_screen::g_ready = true;
 }
+void pocketRest() {
+  MemoryStore store; ready(store, 4997);
+  PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
+  check(!runtime.pocketIdle() && runtime.nextSampleMs(host_time_ms) == 20,
+        "visible runtime reports the sample cadence but does not enter pocket rest");
+  idle(runtime, 30020);
+  check(runtime.pocketIdle() && runtime.nextSampleMs(host_time_ms) == 20,
+        "a fresh asleep sample may rest 20ms and still leaves 40ms before the cadence limit");
+  host_time_ms += 1;
+  check(runtime.pocketIdle() && runtime.nextSampleMs(host_time_ms) == 20,
+        "rest stays capped at the 20ms sample cadence");
+  host_time_ms += 50;
+  check(runtime.nextSampleMs(host_time_ms) == 9,
+        "rest shrinks so wake latency cannot reach the 100ms step gap");
+  host_time_ms += 9;
+  check(runtime.nextSampleMs(host_time_ms) == 0,
+        "no rest remains inside the 40ms cadence margin");
+  host_time_ms -= 60;
+  walk(runtime, platform, 8); idle(runtime, 1000);
+  check(runtime.pocketIdle() && runtime.engine().view().phase == Phase::EncounterReady,
+        "pocket rest remains available after an asleep encounter");
+  platform.feedback(40);
+  check(!runtime.pocketIdle(), "encounter vibration keeps the asleep loop awake");
+  host_time_ms += 39; check(!runtime.pocketIdle(), "rest stays off until the motor duration elapses");
+  host_time_ms += 1; check(runtime.pocketIdle(), "rest resumes when the motor stops and no save is pending");
+  store.fail = true; walk(runtime, platform, 4); idle(runtime, 30020);
+  check(runtime.engine().savePending() && !runtime.pocketIdle(),
+        "an unfinished save keeps the asleep loop awake for retry");
+  store.fail = false; edge(runtime, false, true); idle(runtime, 180);
+  check(!runtime.dimmed() && !runtime.pocketIdle(), "waking and visible display never enter pocket rest");
+}
 void wraparound() {
   host_time_ms = UINT32_MAX - 30050;
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -246,6 +277,7 @@ void wraparound() {
 int main() {
   c152::begin("POWER TEST");
   autoSleepAndWalk(); manualAndBoundary(); clockDraft(); pausedAndActive(); throwWaiting();
-  viewerWakeInputs(); batteryStates(); failedCommandsAndSave(); wakeFailureAndSaveRetry(); viewerErrorWake(); wraparound();
+  viewerWakeInputs(); batteryStates(); failedCommandsAndSave(); wakeFailureAndSaveRetry(); viewerErrorWake();
+  pocketRest(); wraparound();
   std::printf("%u power Runtime/Button_Class/pixel checks, 0 failures\n", checks);
 }

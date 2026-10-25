@@ -21,6 +21,10 @@ void begin(const char* title);
 // 每帧调用一次，刷新 M5Unified 的输入与电源状态。
 void update();
 
+// Pause the CPU until the earlier of durationMs or a key/touch edge.
+// Returns false when light sleep is unavailable; the caller must not block instead.
+bool restUntilInput(uint32_t durationMs);
+
 // 触摸的上升沿（按下瞬间）。返回 true 表示这一帧刚按下。
 bool touchWasPressed();
 

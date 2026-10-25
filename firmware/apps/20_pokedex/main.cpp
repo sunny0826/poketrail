@@ -126,5 +126,6 @@ void loop() {
     diagnostic("power dim=%u battery=%d charge=%u displayerr=%lu\n",
       unsigned(runtime.dimmed()), int(battery.percent), unsigned(battery.charge), (unsigned long)m.displayErrors);
   }
-  delay(1);
+  const uint32_t wait = runtime.nextSampleMs(millis());
+  if (!(runtime.pocketIdle() && wait > 0 && c152::restUntilInput(wait))) delay(1);
 }

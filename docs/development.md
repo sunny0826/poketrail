@@ -60,7 +60,7 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_previe
 
 | 位置 | 职责 |
 | --- | --- |
-| [main.cpp](../firmware/apps/20_pokedex/main.cpp) | 设备输入、IMU、时钟和存档装配 |
+| [main.cpp](../firmware/apps/20_pokedex/main.cpp) | 设备输入、IMU、时钟、存档装配；熄屏空闲时在下一次采样前 light sleep |
 | [runtime.cpp](../firmware/apps/20_pokedex/runtime.cpp) 及同名前缀文件 | 采样、页面、输入、省电和保存调度 |
 | [adventure.hpp](../firmware/apps/20_pokedex/adventure.hpp) 及同名前缀文件 | Engine 唯一修改玩法状态，提交与重试 |
 | [save_codec.cpp](../firmware/apps/20_pokedex/save_codec.cpp)、[file_store.cpp](../firmware/apps/20_pokedex/file_store.cpp) | 版本、语义校验、CRC、双槽和回读 |
