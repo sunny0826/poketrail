@@ -47,7 +47,7 @@ class MemoryStore : public Store {
 class HostPlatform : public Platform {
  public:
   float z = 1;
-  uint32_t vibrationEnd = 0;
+  uint32_t vibrationEnd = host_time_ms;
   ButtonInput buttonInput;
   uint32_t now() override { return host_time_ms; }
   uint32_t randomSeed() override { return 7; }
@@ -146,12 +146,12 @@ void legacyOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t 
   check(validate(save), "legacy collection fixture validates before migration");
   check(store.commit(save) == CommitStatus::Committed, "legacy collection has authentic versioned bytes");
 }
-bool glyph(const char* text, int y, uint16_t color, int x = 233, bool left = false) {
+bool glyph(const char* text, int y, uint16_t color, int x = 233, bool left = false, bool large = false) {
   lgfx::LGFX_Sprite expected;
   expected.setColorDepth(16);
   if (!expected.createSprite(468, 28)) return false;
   expected.fillScreen(TFT_BLACK); expected.setTextDatum(left ? middle_left : middle_center);
-  expected.setFont(&fonts::efontCN_16); expected.setTextColor(color);
+  expected.setFont(large ? &fonts::efontCN_24 : &fonts::efontCN_16); expected.setTextColor(color);
   expected.drawString(text, x, 14);
   unsigned ink = 0, missed = 0;
   for (int row = 0; row < 28; ++row) for (int x = 0; x < 468; ++x) {
@@ -163,8 +163,8 @@ bool glyph(const char* text, int y, uint16_t color, int x = 233, bool left = fal
   expected.deleteSprite();
   return ink > 8 && missed == 0;
 }
-void screenshot(Runtime& runtime, const char* name) {
-  M5.Display.beginObservation(); frame(runtime, 500); M5.Display.endObservation();
+void screenshot(Runtime& runtime, const char* name, uint32_t advanceMs = 500) {
+  M5.Display.beginObservation(); frame(runtime, advanceMs); M5.Display.endObservation();
   const auto& frames = M5.Display.publishedFrames();
   check(frames.size() == 1 && frames[0] == M5.Display.framebuffer(), "one complete published UI frame");
   const std::string path = verificationOutput((std::string(name) + ".ppm").c_str());

@@ -13,6 +13,42 @@ void Runtime::openPartner(uint16_t species) {
   screen_.species = species; screen_.evolved = false;
   navigate(Page::PartnerDetail);
 }
+void Runtime::startEvolution() {
+  const auto& request = engine_.view().lastEvolution.request;
+  screen_.evolutionAnim.from = request.from;
+  screen_.evolutionAnim.to = request.to;
+  screen_.evolutionAnim.startMs = platform_.now();
+  screen_.evolved = false;
+  navigate(Page::Evolution);
+}
+bool Runtime::hasEvolutionPreview(uint16_t species, void* context) {
+  return static_cast<Runtime*>(context)->engine_.evolutionView(species).count != 0;
+}
+void Runtime::openEvolutionPreview(uint16_t species) {
+  const auto view = engine_.evolutionView(species);
+  if (!view.count) return;
+  screen_.evolutionAnim.from = species;
+  if (view.count == 1) chooseEvolutionPreview(0);
+  else navigate(Page::EvolutionPreviewTargets);
+}
+void Runtime::chooseEvolutionPreview(unsigned item) {
+  const auto view = engine_.evolutionView(screen_.evolutionAnim.from);
+  if (item >= view.count) { navigate(Page::Viewer); return; }
+  screen_.evolutionAnim.to = view.options[item].target;
+  screen_.evolutionAnim.startMs = platform_.now();
+  navigate(Page::EvolutionPreview);
+}
+void Runtime::tickEvolution(uint32_t now, bool inputHeld) {
+  if (screen_.page != Page::Evolution && screen_.page != Page::EvolutionPreview) return;
+  if (evolutionFrameAt(screen_.evolutionAnim, now).stage == EvolutionStage::Done) {
+    if (screen_.page == Page::EvolutionPreview) navigate(Page::Viewer);
+    else {
+      openPartner(screen_.evolutionAnim.to);
+      screen_.evolved = true;
+    }
+    releaseGate_ = inputHeld;
+  }
+}
 void Runtime::resumeSavedProgression() {
   const PendingRoster pending = pendingRoster_;
   pendingRoster_ = PendingRoster::None;
@@ -21,10 +57,9 @@ void Runtime::resumeSavedProgression() {
     const auto& receipt = engine_.view().lastEvolution.request;
     evolved = receipt.from == screen_.evolution.from && receipt.to == screen_.evolution.to &&
               receipt.rosterRevision == screen_.evolution.rosterRevision;
-    if (evolved) screen_.species = receipt.to;
   }
-  openPartner(screen_.species);
-  screen_.evolved = evolved;
+  if (evolved) startEvolution();
+  else openPartner(screen_.species);
 }
 void Runtime::activateProgression(unsigned item, uint32_t at) {
   if (screen_.page == Page::ReleaseConfirm) {
@@ -38,7 +73,9 @@ void Runtime::activateProgression(unsigned item, uint32_t at) {
   if (screen_.page == Page::EvolutionConfirm) {
     if (item == 1) { openPartner(screen_.species); return; }
     const CommandResult result = engine_.evolve(screen_.evolution, readingAt(at));
-    if (result == CommandResult::Applied || result == CommandResult::Duplicate) {
+    if (result == CommandResult::Applied) {
+      startEvolution();
+    } else if (result == CommandResult::Duplicate) {
       openPartner(screen_.evolution.to); screen_.evolved = true;
     } else {
       screen_.command = result; waitForRelease();

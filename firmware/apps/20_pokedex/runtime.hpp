@@ -72,6 +72,11 @@ class Runtime {
   void syncPracticeView();
   void startPracticeCapture(const adventure::PracticeOutcome&);
   void tickCapture(uint32_t now);
+  void startEvolution();
+  void openEvolutionPreview(uint16_t species);
+  void chooseEvolutionPreview(unsigned item);
+  void tickEvolution(uint32_t now, bool inputHeld);
+  static bool hasEvolutionPreview(uint16_t species, void* context);
   void openPartner(uint16_t species);
   void resumeSavedProgression();
   static const char* collectionLabel(uint16_t species, void* context);

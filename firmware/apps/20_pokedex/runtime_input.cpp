@@ -1,5 +1,6 @@
 #include "runtime.hpp"
 #include "menu_layout.hpp"
+#include "viewer_screen.hpp"
 namespace pokedex { namespace ui {
 using namespace adventure;
 void Runtime::goBack() {
@@ -12,6 +13,7 @@ void Runtime::goBack() {
            screen_.page == Page::Days || screen_.page == Page::Achievements) navigate(Page::Records);
   else if (screen_.page == Page::Clock)
     navigate(engine_.view().starter ? Page::Resources : Page::DateWelcome);
+  else if (screen_.page == Page::EvolutionPreviewTargets) navigate(Page::Viewer);
   else if (screen_.page == Page::EvolutionConfirm) openPartner(screen_.species);
   else if (screen_.page == Page::ReleaseConfirm) navigate(Page::Throw);
   else if (screen_.page == Page::PartnerDetail) navigate(Page::Partners);
@@ -19,6 +21,14 @@ void Runtime::goBack() {
   else navigate(Page::Home);
 }
 void Runtime::handle(const Input& raw) {
+  if (screen_.page == Page::Evolution || screen_.page == Page::EvolutionPreview) {
+    if (raw.left || raw.right || raw.click) {
+      skipEvolution(screen_.evolutionAnim, raw.at);
+      dirty_ = true;
+      waitForRelease();
+    }
+    return;
+  }
   if (screen_.page == Page::Home) {
     if (raw.touch) { navigate(Page::Menu); return; }
     if (raw.back) { waitForRelease(); return; }
@@ -75,6 +85,9 @@ void Runtime::handle(const Input& raw) {
   dirty_ = true;
   if (screen_.page == Page::Viewer) {
     if (input.back) goBack();
+    else if (input.click && !input.left && !input.right &&
+             viewer_screen::kEvolutionPreviewButton.contains(input.x, input.y))
+      openEvolutionPreview(viewer_screen::species());
     return;
   }
   if (screen_.page == Page::Battle || screen_.page == Page::Practice) {
@@ -197,6 +210,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
     }
     case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
       activateProgression(item, at); break;
+    case Page::EvolutionPreviewTargets: chooseEvolutionPreview(item); break;
     case Page::Encounter:
       if (item == 0) { engine_.startBattle(at); navigate(Page::Battle); }
       else if (item == 1) beginPractice(at);

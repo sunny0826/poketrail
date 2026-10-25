@@ -25,8 +25,11 @@ void evolveAndRetry() {
   buttons(false, false); frame(runtime);
   store.fail = store.writeThenFail = false; select(runtime, 0);
   const auto& save = runtime.engine().view();
+  check(runtime.screen().page == Page::Evolution && runtime.screen().evolutionAnim.to == 2,
+        "successful retry plays the durably saved evolution");
+  idle(runtime, kEvolutionTotalMs);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 2 && runtime.screen().evolved,
-        "retry returns to durably evolved detail");
+        "saved evolution finishes on target detail");
   check(save.partner == 2 && save.encounter.partner == 2 && !owns(save, 1) && registered(save, 1) && owns(save, 2),
         "evolution replaces source, registers history and updates frozen encounter partner");
   check(save.progress[0].spent == 7500 && save.progress[1].walked == 0 && save.captureCounts[1] == 0,
@@ -64,6 +67,9 @@ void eeveeAndCollection() {
   select(runtime, 0);
   check(runtime.engine().view().partner == 135 && runtime.engine().view().progress[132].walked -
         runtime.engine().view().progress[132].spent == 1, "chosen branch keeps one source step");
+  check(runtime.screen().page == Page::Evolution && runtime.screen().evolutionAnim.to == 135,
+        "chosen Eevee branch appears in animation");
+  idle(runtime, kEvolutionTotalMs);
   select(runtime, 1); select(runtime, 3);
   check(runtime.screen().species == 144, "legacy event species remains reachable");
   select(runtime, 0); check(runtime.engine().view().partner == 144, "legacy event species may still be carried");

@@ -14,6 +14,7 @@ uint16_t accentFor(Page page) {
     case Page::DateWelcome: case Page::Starter: case Page::Encounter: case Page::Pause:
     case Page::Throw: case Page::Result: case Page::Resources: case Page::Records: case Page::FirstCaptures:
     case Page::Recent: case Page::Days: case Page::Achievements: case Page::EvolutionConfirm:
+    case Page::EvolutionPreviewTargets:
       return theme::kGold;
     case Page::Error: case Page::ReleaseConfirm: return theme::kRed;
     case Page::Clock: return theme::kBlue;
@@ -45,6 +46,7 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::PracticeResult: return 2;
     case Page::PartnerDetail: return 2 + e.evolutionView(s.species).count;
     case Page::EvolutionConfirm: case Page::ReleaseConfirm: return 2;
+    case Page::EvolutionPreviewTargets: return 1 + e.evolutionView(s.evolutionAnim.from).count;
     case Page::Result: return 1;
     case Page::Records: return 5;
     case Page::FirstCaptures: return 152;
@@ -61,7 +63,7 @@ bool touchBackEnabled(Page page) {
     case Page::Menu: case Page::Resources: case Page::Routes: case Page::Partners:
     case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
     case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
-    case Page::Achievements: case Page::Clock: return true;
+    case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets: return true;
     default: return false;
   }
 }
@@ -218,6 +220,8 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
       battle(s, e, practice, now); break;
     case Page::PracticeThrow: practiceThrow(s, now); break;
     case Page::PracticeResult: practiceResult(s, now); break;
+    case Page::Evolution: case Page::EvolutionPreview: rendered = evolution(s, now); break;
+    case Page::EvolutionPreviewTargets: evolutionPreviewTargets(s, e); break;
     case Page::FirstCaptures: case Page::Recent: case Page::Days: case Page::Achievements:
       records(s, e); break;
     case Page::Clock: clock(s); break;
@@ -226,7 +230,8 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     default: home(s, e, now); break;
   }
   const bool listPage = s.page == Page::Menu || s.page == Page::Resources || s.page == Page::Clock ||
-                        s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::Records;
+                        s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::Records ||
+                        s.page == Page::EvolutionPreviewTargets;
   if (listPage && menuCount(s, e) > menu_layout::kPageSize) {
     M5.Display.fillCircle(168, 430, 20, theme::kPanel);
     M5.Display.fillCircle(298, 430, 20, theme::kPanel);

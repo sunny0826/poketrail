@@ -39,7 +39,7 @@ rtk proxy mise run icons-download
 | `test-sprites` | GIF 哈希、完整帧和固件逐像素解码 |
 | `test-icons` | PNG 哈希、透明规则与生成像素 |
 | `test-scenes` | 三路线场景来源、RGB565 像素与生成物 |
-| `test-render` | 十套真实 Runtime／M5GFX 页面、战斗动作与输入回归 |
+| `test-render` | 十二套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归 |
 | `build` | ESP32-S3 固件 |
 | `check-startup-stack` | 构建后 Engine 启动局部栈帧 |
 
@@ -48,9 +48,11 @@ rtk proxy mise run icons-download
 ```bash
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_home_render
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_battle_render
+rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_render
+rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_preview_render
 ```
 
-`test_battle_render` 通过真实按键、Runtime 和 M5GFX 核对双角色原帧时长、攻击与躲避位移、即时 HP、最终动作窗口、暂停恢复和保存失败。输出是主机截图，不表示设备已达到目标帧率。
+`test_battle_render` 通过真实按键、Runtime 和 M5GFX 核对双角色原帧时长、攻击与躲避位移、即时 HP、最终动作窗口、暂停恢复和保存失败。`test_evolution_render` 覆盖保存后播放、形态交替、跳过与释放门、重试与重启、播放中计步及圆屏边界。`test_evolution_preview_render` 遍历全部 72 条进化边，核对新档、坏档、未拥有和零培养步下的预览、伊布分支、连续刷新、原条目返回、账户不变及真实进化重试隔离。输出是主机截图，不表示设备已达到目标帧率。
 
 详细覆盖与限制见[验证说明](verification.md)。提交前按变更范围运行相关检查；固件变更还应运行 `build`。UI 变更须读取真实渲染截图，交互变更须验证实际输入路径。
 

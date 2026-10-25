@@ -61,7 +61,7 @@ def main():
               str(app / "sprites_generated.cpp"), str(app / "battery_screen.cpp")]
     adventure_sources = [
         "runtime.cpp", "runtime_clock.cpp", "runtime_input.cpp", "runtime_progression.cpp", "runtime_power.cpp", "screens.cpp",
-        "screens_home.cpp", "screens_exploration.cpp", "screens_battle.cpp", "screens_capture.cpp", "screens_practice.cpp", "screens_records.cpp", "screens_clock.cpp", "screens_progression.cpp", "screens_components.cpp", "scene_backgrounds_generated.cpp",
+        "screens_home.cpp", "screens_exploration.cpp", "screens_battle.cpp", "screens_capture.cpp", "screens_practice.cpp", "screens_records.cpp", "screens_clock.cpp", "screens_progression.cpp", "screens_evolution.cpp", "screens_components.cpp", "scene_backgrounds_generated.cpp",
         "viewer_screen.cpp", "adventure.cpp", "adventure_steps.cpp", "adventure_clock.cpp",
         "adventure_capture.cpp", "adventure_model.cpp", "adventure_progression.cpp", "adventure_migration.cpp",
         "battle.cpp", "practice_capture.cpp", "capture_anim.cpp", "encounter_catalog.cpp", "icons_generated.cpp",
@@ -76,6 +76,8 @@ def main():
               ("test_capture_render", [str(app / name) for name in adventure_sources]),
               ("test_battle_render", [str(app / name) for name in adventure_sources]),
               ("test_progression_render", [str(app / name) for name in adventure_sources]),
+              ("test_evolution_render", [str(app / name) for name in adventure_sources]),
+              ("test_evolution_preview_render", [str(app / name) for name in adventure_sources]),
               ("test_thumbnail_render", [str(app / name) for name in adventure_sources]),
               ("test_power_render", [str(app / name) for name in adventure_sources]),
               ("test_home_render", [str(app / name) for name in adventure_sources])]

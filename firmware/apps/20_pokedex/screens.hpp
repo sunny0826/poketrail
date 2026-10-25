@@ -2,6 +2,7 @@
 #include "adventure.hpp"
 #include "calendar.hpp"
 #include "capture_anim.hpp"
+#include "evolution_anim.hpp"
 #include "game.hpp"
 #include "menu_layout.hpp"
 #include "board_power.hpp"
@@ -11,7 +12,8 @@ enum class Page : uint8_t {
   Home, Menu, Resources, DateWelcome, Starter, Routes, Partners, Encounter, Battle, Practice,
   PracticeThrow, PracticeResult,
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
-  Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, ReleaseConfirm
+  Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, ReleaseConfirm, Evolution,
+  EvolutionPreviewTargets, EvolutionPreview
 };
 struct ScreenState {
   Page page = Page::Home;
@@ -22,6 +24,7 @@ struct ScreenState {
   bool practice = false;
   uint16_t species = 0;
   adventure::EvolveRequest evolution;
+  EvolutionAnim evolutionAnim;
   adventure::CommandResult command = adventure::CommandResult::Applied;
   bool evolved = false;
   calendar::CivilTime civil = {2026, 1, 1, 12, 0, 0};
@@ -57,6 +60,8 @@ class Screens {
   bool exploration(const adventure::Engine&, uint32_t now);
   void home(const ScreenState&, const adventure::Engine&, uint32_t now);
   void progression(const ScreenState&, const adventure::Engine&);
+  bool evolution(const ScreenState&, uint32_t now);
+  void evolutionPreviewTargets(const ScreenState&, const adventure::Engine&);
   void battle(const ScreenState&, const adventure::Engine&,
               const adventure::BattleView&, uint32_t);
   void practiceThrow(const ScreenState&, uint32_t now);

@@ -33,6 +33,8 @@ void (*feedbackCallback)(uint16_t, void*) = nullptr;
 void* callbackContext = nullptr;
 const char* (*collectionCallback)(uint16_t, void*) = nullptr;
 void* collectionContext = nullptr;
+bool (*evolutionPreviewCallback)(uint16_t, void*) = nullptr;
+void* evolutionPreviewContext = nullptr;
 
 void text(const char* value, int32_t y, uint16_t color, const lgfx::IFont* font) {
   M5.Display.setTextDatum(middle_center);
@@ -51,7 +53,12 @@ void drawLabels(const pokedex::Sprite& sprite) {
     const char* status = collectionCallback(sprite.id, collectionContext);
     text(status, 390, theme::kMint, &fonts::efontCN_16);
   }
-  text("互动 · 按键切换 · 顶部返回", 423, theme::kMuted, &fonts::efontCN_16);
+  if (evolutionPreviewCallback && evolutionPreviewCallback(sprite.id, evolutionPreviewContext)) {
+    const auto& button = kEvolutionPreviewButton;
+    M5.Display.fillRoundRect(button.x, button.y, button.width, button.height, 12, theme::kPanelActive);
+    M5.Display.drawRoundRect(button.x, button.y, button.width, button.height, 12, theme::kGold);
+    text("预览进化", 423, theme::kGold, &fonts::efontCN_16);
+  } else text("互动 · 按键切换 · 顶部返回", 423, theme::kMuted, &fonts::efontCN_16);
 }
 
 void drawHeart() {
@@ -131,6 +138,7 @@ void begin() {
   }
   g_state.animation_started_ms = millis();
   g_state.frame_index = 0;
+  g_state.reacting = false; g_state.jump = 0;
   g_ready = render();
   Serial.printf("viewer ready=%u animations=%u first=#%03u frames=%u\n",
                 unsigned(g_ready), unsigned(pokedex::data::kSpriteCount),
@@ -194,4 +202,10 @@ void setCollectionLabel(const char* (*callback)(uint16_t, void*), void* context)
   collectionContext = context;
   g_label_sprite = UINT16_MAX;
 }
+void setEvolutionPreview(bool (*callback)(uint16_t, void*), void* context) {
+  evolutionPreviewCallback = callback;
+  evolutionPreviewContext = context;
+  g_label_sprite = UINT16_MAX;
+}
+uint16_t species() { return data::kSprites[g_state.sprite_index].id; }
 } }
