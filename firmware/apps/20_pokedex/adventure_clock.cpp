@@ -20,7 +20,7 @@ bool Engine::applyClock(Save& s, const ClockReading& r) {
   if (r.dayKey < c.dayHighWater) {
     c.trusted = false; c.anomaly = true; s.today.complete = false; return true;
   }
-  if (!consistentReading(c.anchor, r, false)) {
+  if (c.anchor.trusted && !consistentReading(c.anchor, r, false)) {
     c.trusted = false; c.anomaly = true; s.today.complete = false; return true;
   }
   bool changed = !wasTrusted;

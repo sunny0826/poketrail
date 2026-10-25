@@ -82,7 +82,7 @@ bool Engine::applyStep(Save& s, const StepEvent& e) {
   const ClockReading& r = e.clock;
   bool dated = s.clock.calibrated && s.clock.trusted && !s.clock.anomaly && !s.clock.pending.active &&
     r.trusted && r.calibrationEpoch == s.clock.calibrationEpoch && r.offsetMinutes == s.clock.offsetMinutes;
-  if (dated && !consistentReading(s.clock.anchor, r, true)) {
+  if (dated && s.clock.anchor.trusted && !consistentReading(s.clock.anchor, r, true)) {
     s.clock.trusted = false; s.clock.anomaly = true; s.today.complete = false;
     dated = false; mandatory = true;
   }

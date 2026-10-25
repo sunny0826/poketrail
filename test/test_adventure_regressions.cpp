@@ -107,6 +107,50 @@ void lateAchievement(unsigned threshold, bool lifetime) {
   expect((lifetime ? reload->view().lifetime[0] : reload->view().dailyFirst[0]).first.timeKnown,
          "known milestone date survives a real codec and FileStore reload");
 }
+void rebootSameDay() {
+  std::unique_ptr<World> w(new World);
+  const int64_t utc = 1792886400LL;
+  w->calibrate(w->reading(utc, 1000));
+  w->step(w->reading(utc + 60, 61000));
+  Save restarted = w->engine.view();
+  restarted.clock.trusted = false;
+  restarted.clock.anchor = ClockReading();
+  ++restarted.bootGeneration;
+  restarted.lastStepBatch = 0;
+  Slots slots;
+  slots.bytes[0] = encode(w->engine.view());
+  ++restarted.sequence;
+  slots.bytes[1] = encode(restarted);
+  FileStore store(slots);
+  std::unique_ptr<Engine> engine(new Engine(store));
+  REQUIRE(engine->begin() == CommandResult::Applied);
+  ClockReading first = w->reading(utc + 120, 1000);
+  first.bootGeneration = engine->view().bootGeneration;
+  first.calibrationEpoch = engine->view().clock.calibrationEpoch;
+  pokedex::calendar::CivilTime local;
+  REQUIRE(pokedex::calendar::fromUtc(first.utcSeconds, first.offsetMinutes, local));
+  REQUIRE(pokedex::calendar::dayKey(local, first.dayKey));
+  REQUIRE(engine->observeClock(first) == CommandResult::Applied);
+  StepEvent event;
+  event.batchId = 1;
+  event.clock = first;
+  event.clock.utcSeconds = utc + 180;
+  event.clock.monotonicMs = 61000;
+  REQUIRE(engine->observeSteps(&event, 1, 1) == CommandResult::Applied);
+  const Save& save = engine->view();
+  expect(save.clock.trusted && !save.clock.anomaly && save.today.dayKey == 20261025 &&
+         save.today.steps == 2 && save.undatedSteps == 0 && save.totalSteps == 2,
+         "reboot keeps the same local day and counts its steps as today");
+  ClockReading backward = first;
+  backward.utcSeconds = utc - 86400;
+  backward.monotonicMs = 70000;
+  REQUIRE(pokedex::calendar::fromUtc(backward.utcSeconds, backward.offsetMinutes, local));
+  REQUIRE(pokedex::calendar::dayKey(local, backward.dayKey));
+  REQUIRE(engine->observeClock(backward) == CommandResult::Applied);
+  expect(!engine->view().clock.trusted && engine->view().clock.anomaly &&
+         engine->view().today.dayKey == 20261025 && engine->view().today.steps == 2,
+         "a real backward date remains an anomaly and keeps the current day");
+}
 void clockEdges() {
   for (int drift : {120000, 120001, -120000, -120001}) {
     std::unique_ptr<World> w(new World);
@@ -202,7 +246,7 @@ void bootRetry() {
 }
 int main() {
   lateAchievement(1000, false); lateAchievement(10000, true);
-  clockEdges(); historicalBoundaries(); dateCorruption(); bootRetry();
+  rebootSameDay(); clockEdges(); historicalBoundaries(); dateCorruption(); bootRetry();
   std::printf("adventure regressions: %u checks, %u failures\n", checks, failures);
   return failures ? 1 : 0;
 }
