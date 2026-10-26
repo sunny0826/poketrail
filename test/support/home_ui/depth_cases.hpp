@@ -86,7 +86,7 @@ void sceneDepthNavigationAndSleep() {
   const uint32_t forestOrigin = host_time_ms;
   walk(runtime, platform, 3);
   const uint64_t forestSteps = defaultSceneSteps(forestOrigin);
-  openMenu(runtime); walk(runtime, platform, 2); select(runtime, 7); home(runtime);
+  openMenu(runtime); walk(runtime, platform, 2); select(runtime, 8); home(runtime);
   check(groundScene(Route::Forest, forestSteps), "menu time does not advance or jump the home scene");
   openMenu(runtime); select(runtime, 1); select(runtime, 1); home(runtime);
   check(farScene(Route::Coast, 0) && groundScene(Route::Coast, 0), "route change resets depth to the static coast");

@@ -83,6 +83,7 @@ class Runtime {
   void handlePracticeThrow(const Input&);
   void beginPractice(uint32_t at);
   void endPractice();
+  void openRuinsTargets();
   void syncPracticePage();
   void syncPracticeView();
   void startPracticeCapture(const adventure::PracticeOutcome&);

@@ -16,6 +16,7 @@ struct Writer {
       data[pos++] = uint8_t(bits >> (i * 8));
     }
   }
+  bool atEnd() const { return false; }  // the writer always emits the whole layout
 };
 struct Reader {
   const uint8_t* data; size_t capacity; size_t pos; bool ok;
@@ -30,6 +31,7 @@ struct Reader {
     if (std::is_same<T, bool>::value && bits > 1) ok = false;
     value = static_cast<T>(bits);
   }
+  bool atEnd() const { return pos >= capacity; }
 };
 template<class A, class T> void stamp(A& a, T& s) {
   a.field(s.timeKnown); a.field(s.dayComplete); a.field(s.utcSeconds); a.field(s.offsetMinutes);
@@ -47,6 +49,17 @@ template<class A, class T> void day(A& a, T& s) {
 template<class A, class T> void reading(A& a, T& s) {
   a.field(s.trusted); a.field(s.utcSeconds); a.field(s.offsetMinutes); a.field(s.dayKey);
   a.field(s.bootGeneration); a.field(s.monotonicMs); a.field(s.calibrationEpoch);
+}
+// Schema-3 activity block, appended after the frozen schema-3 payload. Readers
+// treat an exactly finished old payload as the all-default legacy state.
+template<class A, class T> void activityBlock(A& a, T& s) {
+  a.field(s.activityEncounterCount);
+  a.field(s.encounter.origin); a.field(s.encounter.opponent);
+  a.field(s.ruins.clueMask); a.field(s.ruins.unlocked); a.field(s.ruins.lastTarget);
+  a.field(s.dragonTrial.active); a.field(s.dragonTrial.trialId);
+  a.field(s.dragonTrial.stageIndex); a.field(s.dragonTrial.stageStartHp);
+  a.field(s.dragonTrial.normalBonus); a.field(s.dragonTrial.perfectBonus);
+  a.field(s.dragonTrial.guard);
 }
 template<class A, class T> void payload(A& a, T& s) {
   // Schema 1/2 keep their frozen 151-species, 19-byte layout. Schema 3 widens to 251/32.
@@ -89,6 +102,7 @@ template<class A, class T> void payload(A& a, T& s) {
     a.field(s.lastEvolution.request.rosterRevision); a.field(s.lastEvolution.cost);
     stamp(a, s.lastEvolution.at); a.field(s.encounter.legacyFreeAttempts);
   }
+  if (s.schema >= 3 && !a.atEnd()) activityBlock(a, s);
 }
 uint32_t updateCrc(uint32_t crc, const uint8_t* p, size_t n) {
   for (size_t i = 0; i < n; ++i) {

@@ -28,9 +28,13 @@ uint64_t availableBalls(const Save&);
 | 规则 JSON、目录生成器 | 唯一父关系、费用、普通资格与编译期表 |
 | save_codec、file_store | 版本解析、CRC、双槽选择和完整回读；不产生游戏奖励 |
 
-Save v2 新增 151 个培养账户、19 字节曾获得位图、rewardBaseSteps、ballsSpent、legacyChargedCount、voidedLegacyCount、rosterRevision、lastEvolution；Encounter 新增 legacyFreeAttempts。Save v3 把物种数组扩到 251：32 字节拥有／曾获得位图、251 个培养账户与捕获次数、251 张首捕卡，新增的 100 项初始为空。保存格式升 3，新遭遇规则仍为 2，规则版本与存档版本分开处理；schema1/2 的 151／19 字节布局保持可读。
+Save v2 新增 151 个培养账户、19 字节曾获得位图、rewardBaseSteps、ballsSpent、legacyChargedCount、voidedLegacyCount、rosterRevision、lastEvolution；Encounter 新增 legacyFreeAttempts。Save v3 把物种数组扩到 251：32 字节拥有／曾获得位图、251 个培养账户与捕获次数、251 张首捕卡，新增的 100 项初始为空。保存格式升 3，新遭遇规则仍为 2，规则版本与存档版本分开处理；schema1/2 的 151／19 字节布局保持可读。schema3 尾部追加 22 字节可选活动块：`activityEncounterCount`、`Encounter.origin/opponent`、`RuinsState` 与 `DragonTrialState`。旧 schema3 payload 在块前恰好结束时读为全默认；普通遭遇写 origin=Ordinary、opponent=species，opponent=0 继续表示旧默认按 species。
 
-实现入口：[Engine冻结提交与启动迁移](../../firmware/apps/20_pokedex/adventure.cpp)、[双版本语义校验](../../firmware/apps/20_pokedex/adventure_model.cpp)、[计步队列与安全刷步](../../firmware/apps/20_pokedex/adventure_steps.cpp)、[进化事务](../../firmware/apps/20_pokedex/adventure_progression.cpp)、[投球准备与结算](../../firmware/apps/20_pokedex/adventure_capture.cpp)、[捕获练习](../../firmware/apps/20_pokedex/practice_capture.cpp)。新增字段和状态由这些实际调用路径统一处理，页面读取已发布状态。
+传说遗迹（R1）只解释既有块，不扩编码：`RuinsState` 保存三条线索位、一次性解锁和当前目标；当前活动遭遇继续使用 `Encounter`，`origin=Ruins` 且 `species`/`opponent` 由 [ruins_catalog.hpp](../../firmware/apps/20_pokedex/ruins_catalog.hpp) 固定表约束。完成状态仍由 `captureCounts` 派生。活动 ID 与普通遭遇共用 `nextEncounterId`，`activityEncounterCount` 让探索账把活动 ID 排除在 5000 步费用之外；活动阶段内不创建普通遭遇，未关闭活动场时不能切换目标。`Result::RuinsClue` 与 `Result::RuinsCleared` 只出现在 schema3 的 Ruins 遭遇上；普通结果仍限旧值。龙穴状态继续只保存字段，遭遇 `origin=DragonTrial` 在本轮被校验拒绝，留给 R2。
+
+线索战对手（10/54/74）可能在普通流程中已被捕获，因此启动时的已捕获释放守卫只对普通遭遇和处于投球阶段的首领生效，不会误关线索战。顺序解谜的部分输入只存在 RAM；线索位与解锁一旦提交就跨重启保持。
+
+实现入口：[Engine冻结提交与启动迁移](../../firmware/apps/20_pokedex/adventure.cpp)、[存档语义校验](../../firmware/apps/20_pokedex/adventure_model_save.cpp)、[计步队列与安全刷步](../../firmware/apps/20_pokedex/adventure_steps.cpp)、[进化事务](../../firmware/apps/20_pokedex/adventure_progression.cpp)、[投球准备与结算](../../firmware/apps/20_pokedex/adventure_capture.cpp)、[捕获练习](../../firmware/apps/20_pokedex/practice_capture.cpp)。新增字段和状态由这些实际调用路径统一处理，页面读取已发布状态。
 
 ## 换伙伴前后的步数归属
 
@@ -42,7 +46,7 @@ Detector 在更新 `peakAt_` 时同时冻结本拍 `uint16_t` 不透明归属标
 
 ## 资源与验收
 
-schema1编码12139字节，schema2编码14672字节，schema3编码21498字节，均使用固定字段布局；本轮按实测把单槽上限设为24576字节（预留3078字节），双槽加候选缓冲共73728字节。codec日志会分别输出三种长度；v1 快照仍为12139，不能据此判断新版长度。`FileStore::Workspace` 继续整体堆分配，主机实测 103232 字节（含解码用 Save）；`sizeof(Save)=29456`、`sizeof(Engine)=66176` 只用于评估静态 RAM 增量，不代替设备堆峰值。
+schema1编码12139字节，schema2编码14672字节，schema3编码21520字节（旧schema3无活动块时为21498），均使用固定字段布局；R1 按实测把单槽上限设为24576字节（预留3056字节），双槽加候选缓冲共73728字节。codec日志会分别输出三种长度与活动块；v1 快照仍为12139，不能据此判断新版长度。`FileStore::Workspace` 继续整体堆分配，主机实测 103264 字节（含解码用 Save）；`sizeof(Save)=29488`、`sizeof(Engine)=66288` 只用于评估静态 RAM 增量，不代替设备堆峰值。2026-10-27 审查修复轮按当前源码重新实测，Engine 为 66288；更早文档中的 66280 是旧数字，已按实测更正。
 
 固件 Flash 和静态 RAM 占用以当前构建输出为准；主机 ABI 不能代替 Xtensa 目标大小。`check-startup-stack` 检查 Engine 启动局部栈帧，不能代替完整任务栈或全系统堆峰值测量。
 
@@ -55,7 +59,7 @@ schema1编码12139字节，schema2编码14672字节，schema3编码21498字节�
 | 实际页面与Button_Class | 全部拥有分页、携带标记、五分支分页和确认释放门；零球等待可留首页、采样和返回同场；251图鉴原操作保留 |
 | 实际投球时间线 | 准备零扣、按下/超时一球、重复键零扣、成功不能再投、Released与Escaped分开 |
 | 捕获练习 | 随机物种、真实对战与两次投球判定，独立对象不读写存档、不扣球、不写图鉴 |
-| codec与双槽故障注入 | 各phase v1字节fixture、schema2现场编码、v1/v2/v3混合槽、同序冲突、未知版本、旧首捕500步、旧免费前缀、V=1后的ID边界 |
+| codec与双槽故障注入 | 各phase v1字节fixture、schema2现场编码、v1/v2/v3混合槽、同序冲突、未知版本、旧首捕500步、旧免费前缀、V=1后的ID边界、旧schema3短payload默认、活动块截断与非法origin/stage/window/guard |
 | 真实提交失败和重启 | 写前、部分写、写后回读失败；完整旧或新快照，重试无双扣/双进化；v2/v3再次启动保留已赚球 |
 | 溢出与资源 | 总步/培养/花费/ID/revision上界、128队列满、实际编码长度、全部Save副本峰值RAM、完整栈 |
 | 设备验收 | 四种携带误差、采样/输入/Flash时延、RTC保持与恢复、电流、满盘/物理掉电、挂载保留和初始化 |

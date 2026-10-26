@@ -8,7 +8,6 @@ inline bool battleEffectActive(const adventure::BattleView& battle, uint32_t now
          now - battle.settledMs < kBattleEffectMs;
 }
 inline adventure::Action battleEffectAction(const adventure::BattleView& battle) {
-  if (battle.consumed) return battle.expected;
-  return battle.expected == adventure::Action::Attack ? adventure::Action::Dodge : adventure::Action::Attack;
+  return battle.lastActionValid ? battle.lastAction : battle.expected;
 }
 } }

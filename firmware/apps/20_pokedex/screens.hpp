@@ -1,5 +1,6 @@
 #pragma once
 #include "adventure.hpp"
+#include "ruins_catalog.hpp"
 #include "calendar.hpp"
 #include "capture_anim.hpp"
 #include "evolution_anim.hpp"
@@ -13,7 +14,8 @@ enum class Page : uint8_t {
   PracticeThrow, PracticeResult,
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
   Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, ReleaseConfirm, Evolution,
-  EvolutionPreviewTargets, EvolutionPreview
+  EvolutionPreviewTargets, EvolutionPreview,
+  Ruins, RuinsClues, RuinsOrder, RuinsTargets, RuinsBoss
 };
 struct ScreenState {
   Page page = Page::Home;
@@ -38,11 +40,16 @@ struct ScreenState {
   uint8_t practiceUsedBalls = 0;
   bool practiceThrowing = false;
   adventure::Result practiceResult = adventure::Result::None;
+  // Partial route-order input stays in RAM; only clues and the unlock persist.
+  uint8_t orderInput[adventure::kRuinsClueTotal] = {0, 0, 0};
+  uint8_t orderCount = 0;
+  uint8_t orderConflict = adventure::kRuinsNoIndex;
 };
 const char* routeName(adventure::Route);
 const char* speciesName(uint16_t id);
 const char* progressionMessage(adventure::CommandResult);
 unsigned menuCount(const ScreenState&, const adventure::Engine&);
+int menuTop(const ScreenState&, const adventure::Engine&);
 bool touchBackEnabled(Page);
 void drawGraphicsError(const c152::BatteryStatus&);
 class Screens {
@@ -66,6 +73,8 @@ class Screens {
               const adventure::BattleView&, uint32_t);
   void practiceThrow(const ScreenState&, uint32_t now);
   void practiceResult(const ScreenState&, uint32_t now);
+  void ruins(const ScreenState&, const adventure::Engine&, uint32_t now);
+  void ruinsResult(const ScreenState&, const adventure::Engine&, uint32_t now);
   void capture(const ScreenState&, uint16_t species, uint32_t now);
   void ballAt(int x, int y, float angle = 0);
   void records(const ScreenState&, const adventure::Engine&);
@@ -83,7 +92,7 @@ class Screens {
   void glyph(theme::Icon, int x, int y, uint16_t color);
   void alert(const char*, int y, uint16_t color);
   void progress(uint64_t value, uint32_t total, int y, uint16_t color);
-  void hp(const char*, uint8_t value, int x, uint16_t color);
+  void hp(const char*, uint8_t value, uint8_t max, int x, uint16_t color);
   void actorShadow(int cx, int cy);
   void warning(int cx, int cy, uint16_t color);
   void stamp(const adventure::Stamp&, int top);

@@ -1,6 +1,7 @@
 #include "../firmware/apps/20_pokedex/adventure.hpp"
 #include "../firmware/apps/20_pokedex/save_codec.hpp"
 #include "../firmware/apps/20_pokedex/encounter_catalog.hpp"
+#include "../firmware/apps/20_pokedex/ruins_catalog.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
@@ -118,6 +119,45 @@ static void modernEncounterBoundaries(const Save& legacy1) {
     CHECK(codec::decode(retiredBytes.data(), retiredBytes.size(), retiredBack) == codec::DecodeStatus::Ok);
     rejectBytes(forgedAt(retiredBytes, fieldOffset(resolved, lost), uint8_t(Result::Released)));
   }
+  // A schema-3 ruins boss encounter is legal only with its catalog target and a
+  // solved unlock, and it does not consume the ordinary 5000-step credit.
+  Save activity = modernEncounter(3, 251);
+  activity.activityEncounterCount = 1; activity.explorationCredit = 5000;
+  activity.encounter.opponent = 251; activity.encounter.origin = EncounterOrigin::Ruins;
+  activity.ruins.clueMask = kRuinsAllClues; activity.ruins.unlocked = true;
+  activity.ruins.lastTarget = 251;
+  CHECK(validate(activity)); acceptAtStartup(activity);
+  Save activitySchema2 = activity; activitySchema2.schema = 2;
+  rejectAtStartup(activitySchema2);
+  // An activity-issued ID still booked as an ordinary encounter: the same books
+  // are legal with an activity origin, so only the ordinary-ID rule can reject it.
+  // The current field is a fixed Forest clue battle (opponent 10).
+  Save activityBook = modernEncounter(3, 10);
+  activityBook.activityEncounterCount = 1; activityBook.explorationCredit = 5000;
+  activityBook.encounter.opponent = 10; activityBook.encounter.origin = EncounterOrigin::Ruins;
+  CHECK(validate(activityBook)); acceptAtStartup(activityBook);
+  // The frozen schema-3 activity block puts origin right after the 8-byte count.
+  const auto originOffset = [](const std::vector<uint8_t>& bytes) { return bytes.size() - 22 + 8; };
+  Save dragonBook = activityBook; dragonBook.encounter.origin = EncounterOrigin::DragonTrial;
+  reject(dragonBook);
+  const auto bookBytes = encode(activityBook);
+  Save bookBack;
+  CHECK(codec::decode(bookBytes.data(), bookBytes.size(), bookBack) == codec::DecodeStatus::Ok);
+  rejectBytes(forgedAt(bookBytes, originOffset(bookBytes), uint8_t(EncounterOrigin::Ordinary)));
+  Save ordinaryBook = activityBook; ordinaryBook.encounter.origin = EncounterOrigin::Ordinary;
+  rejectAtStartup(ordinaryBook);
+  // A legacy-charged boundary must not excuse the current ordinary field.
+  Save legacyMix = activityBook;
+  legacyMix.totalSteps = legacyMix.undatedSteps = 5500;
+  legacyMix.nextEncounterId = 3; legacyMix.encounter.id = 2; legacyMix.legacyChargedCount = 1;
+  CHECK(validate(legacyMix)); acceptAtStartup(legacyMix);
+  Save legacyDragon = legacyMix; legacyDragon.encounter.origin = EncounterOrigin::DragonTrial;
+  reject(legacyDragon);
+  const auto legacyBookBytes = encode(legacyMix);
+  rejectBytes(forgedAt(legacyBookBytes, originOffset(legacyBookBytes),
+                       uint8_t(EncounterOrigin::Ordinary)));
+  Save legacyUnpaid = legacyMix; legacyUnpaid.encounter.origin = EncounterOrigin::Ordinary;
+  rejectAtStartup(legacyUnpaid);
   // Schema 1 stores no ballsSpent and never owned modern encounters: a legacy
   // encounter with a non-ordinary species and a spent ball must still load.
   Save legacyThrow = legacy1;
@@ -130,6 +170,88 @@ static void modernEncounterBoundaries(const Save& legacy1) {
   Save legacyBack; CHECK(codec::decode(legacyBytes.data(), legacyBytes.size(), legacyBack) == codec::DecodeStatus::Ok);
   CHECK(legacyBack.encounter.usedBalls == 1 && legacyBack.ballsSpent == 0);
 }
+// A legal Forest clue battle, resolved by the public Engine commands. The two
+// games below are the only sources of the clue snapshots used by the invariant
+// tests, so a forged field is a single byte away from a real state.
+static Save ruinsClueBattleSave() {
+  Save s; s.schema = 3; s.sequence = 12; s.bootGeneration = 1; s.starter = 1; s.partner = 1;
+  s.rosterRevision = 1; setRegistered(s, 1); setOwned(s, 1);
+  s.totalSteps = s.undatedSteps = 5000; s.explorationCredit = 5000;
+  s.nextEncounterId = 2; s.activityEncounterCount = 1;
+  s.encounter.id = 1; s.encounter.species = s.encounter.opponent = 10;
+  s.encounter.partner = 1; s.encounter.route = Route::Forest; s.encounter.ruleVersion = 2;
+  s.encounter.origin = EncounterOrigin::Ruins; s.phase = Phase::EncounterReady;
+  CHECK(validate(s));
+  return s;
+}
+static Save ruinsClueSnapshot(bool win) {
+  FixedStore store; store.saved = ruinsClueBattleSave();
+  Engine engine(store); CHECK(engine.begin() == CommandResult::Applied);
+  CHECK(engine.startBattle(1000) == CommandResult::Applied);
+  for (unsigned guard = 0; engine.view().phase == Phase::Battle && guard < 16; ++guard) {
+    const BattleView view = engine.battleView();
+    if (win) CHECK(engine.press(view.expected, view.targetMs) == CommandResult::Applied);
+    if (engine.view().phase != Phase::Battle) break;
+    ClockReading clock; clock.bootGeneration = engine.view().bootGeneration;
+    CHECK(engine.tick(view.targetMs + kNormalWindowMs + 1, clock) == CommandResult::Applied);
+  }
+  CHECK(engine.view().phase == Phase::Resolved);
+  return engine.view();
+}
+// The current clue's bit and the terminal result must agree: only RuinsClue may
+// carry the bit; an unresolved, Lost or Retreated run may not. Other routes'
+// bits stay legal because they are independent evidence already earned.
+static void ruinsClueResultInvariant() {
+  const Save win = ruinsClueSnapshot(true);
+  CHECK(win.result == Result::RuinsClue && (win.ruins.clueMask & 1) && !win.ruins.unlocked);
+  CHECK(validate(win)); acceptAtStartup(win);
+  Save winAgain; const auto winBytes = encode(win);
+  CHECK(codec::decode(winBytes.data(), winBytes.size(), winAgain) == codec::DecodeStatus::Ok);
+
+  const Save lost = ruinsClueSnapshot(false);
+  CHECK(lost.result == Result::Lost && !(lost.ruins.clueMask & 1));
+  CHECK(validate(lost)); acceptAtStartup(lost);
+  const auto lostBytes = encode(lost);
+
+  Save retreated = lost; retreated.result = Result::Retreated; CHECK(validate(retreated));
+  const size_t resultByte = fieldOffset(lost, retreated);
+  Save otherBit = lost; otherBit.ruins.clueMask = 2; CHECK(validate(otherBit));
+  const size_t maskByte = fieldOffset(lost, otherBit);
+
+  // Real success painted back to a failure result: rejected by validate, by the
+  // encoder, by decode after a fresh CRC, and by startup.
+  for (Result result : {Result::Lost, Result::Retreated}) {
+    Save bad = win; bad.result = result;
+    reject(bad); rejectAtStartup(bad);
+    rejectBytes(forgedAt(winBytes, resultByte, uint8_t(result)));
+  }
+  // Real failure snapshots that suddenly own this run's clue bit.
+  const Save* failures[] = {&lost, &retreated};
+  for (const Save* base : failures) {
+    Save bad = *base; bad.ruins.clueMask |= 1;
+    reject(bad); rejectAtStartup(bad);
+    const auto bytes = encode(*base);
+    rejectBytes(forgedAt(bytes, maskByte, uint8_t(base->ruins.clueMask | 1)));
+  }
+  // An unresolved run has not banked this clue either.
+  const Save pending = ruinsClueBattleSave();
+  Save pendingBattleStart = pending; pendingBattleStart.phase = Phase::Battle;
+  const Save pendingBattle = pendingBattleStart; CHECK(validate(pendingBattle));
+  for (const Save* base : {&pending, &pendingBattle}) {
+    Save bad = *base; bad.ruins.clueMask |= 1;
+    reject(bad); rejectAtStartup(bad);
+    const auto bytes = encode(*base);
+    rejectBytes(forgedAt(bytes, maskByte, 1));
+  }
+  // Positives keep the neighbouring route bits and the later clue wins legal.
+  Save pendingOther = pending; pendingOther.ruins.clueMask = 2;
+  CHECK(validate(pendingOther)); acceptAtStartup(pendingOther);
+  Save winAll = win; winAll.ruins.clueMask = kRuinsAllClues;
+  CHECK(validate(winAll)); acceptAtStartup(winAll);
+  Save lostOther = lost; lostOther.ruins.clueMask = 6;
+  CHECK(validate(lostOther)); acceptAtStartup(lostOther);
+  std::puts("PASS clue bit and result agree for success, failure and unresolved saves");
+}
 int main() {
   // Minimal schema-1 save with a charged legacy encounter boundary.
   Save legacy1; legacy1.schema = 1; legacy1.bootGeneration = 1;
@@ -139,5 +261,6 @@ int main() {
   legacy1.encounter.ruleVersion = 1;
   for (auto& a : legacy1.encounter.attempts) a.ruleVersion = 1;
   modernEncounterBoundaries(legacy1);
+  ruinsClueResultInvariant();
   std::printf("save codec modern: %u checks passed\n", checks);
 }

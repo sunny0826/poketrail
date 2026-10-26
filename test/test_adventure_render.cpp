@@ -1,6 +1,7 @@
 #include "support/adventure_ui/harness.hpp"
 #include "support/adventure_ui/clock_cases.hpp"
 #include "support/adventure_ui/capture_cases.hpp"
+#include "support/adventure_ui/ruins_cases.hpp"
 #include "scene_backgrounds_generated.hpp"
 
 namespace {
@@ -22,7 +23,7 @@ void bootAndCapture() {
   check(r.engine().view().route == Route::Coast, "route selection uses Engine command");
   openMenu(r, p); select(r, p, 2);
   check(menuCount(r.screen(), r.engine()) == 2, "partner menu only owns starter plus back");
-  select(r, p, 1); select(r, p, 7);
+  select(r, p, 1); select(r, p, 8);
   walk(r, p, 10008);
   check(r.engine().view().phase == Phase::EncounterReady && r.engine().view().totalSteps >= 10000, "continuous IMU steps create 5000-step encounter and bank next cycle");
   check(r.dimmed() && p.light == 0, "30-second inactivity dims but continues sampling");
@@ -70,6 +71,9 @@ void bootAndCapture() {
   check(r.engine().view().encounter.usedBalls == 2 && r.screen().page == Page::Result, "retry publishes same saved second attempt");
   check(r.engine().view().encounter.id == key.encounterId, "retry preserves encounter identity");
   published(r, "result");
+  check(menuCount(r.screen(), r.engine()) == 1, "ordinary result offers a single confirm action");
+  check(ruinsText("确认结果 · 继续探索", menuTop(r.screen(), r.engine()), theme::kGold, true, 10000),
+        "ordinary result draws its confirm action without a retry row");
   if (r.engine().view().result == Result::Captured) {
     check(r.engine().view().recentSize == 1, "capture awards exactly one recent record");
     const auto& c = r.engine().view().recent[0];
@@ -183,5 +187,6 @@ int main() {
   c152::begin("ADVENTURE TEST");
   bootAndCapture(); clockAndErrors(); midnightAndSampling(); practiceMidnightAchievement();
   fullRecordRestart(); viewerWakeAndPractice(); firstBallSuccess(); captureAnimation(); captureEscape();
+  ruinsCases();
   std::printf("%u adventure UI checks, 0 failures\n", checks);
 }

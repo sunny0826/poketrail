@@ -126,8 +126,14 @@ void pagination() {
   swipe(runtime, 233, 218, 380, 218);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 0,
         "right swipe returns without activating its start button");
-  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 218);
+  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 286);
   check(runtime.screen().page == Page::Home, "menu return restores exploration");
+  openMenu(runtime);
+  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 218);
+  check(runtime.screen().page == Page::Ruins, "third-page touch row opens the ruins");
+  frame(runtime);
+  tap(runtime, 233, 30);
+  check(runtime.screen().page == Page::Menu, "ruins top touch returns to the menu");
   MemoryStore four; legacyOwned(four, {1,4,7,25});
   Runtime partners(four, platform); start(partners); openMenu(partners); select(partners, 2);
   tap(partners, 298, 430);

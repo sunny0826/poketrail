@@ -134,13 +134,27 @@ void Screens::progress(uint64_t value, uint32_t total, int y, uint16_t color) {
     M5.Display.fillRect(x, y, 13, 5, index < filled ? color : theme::kDisabled);
   }
 }
-void Screens::hp(const char* name, uint8_t value, int x, uint16_t color) {
+void Screens::hp(const char* name, uint8_t value, uint8_t max, int x, uint16_t color) {
   M5.Display.setTextDatum(middle_left);
   M5.Display.setFont(&fonts::efontCN_16);
   M5.Display.setTextColor(theme::kText);
   M5.Display.drawString(name, x, 92);
-  for (unsigned index = 0; index < 3; ++index)
-    M5.Display.fillRect(x + index * 18, 108, 13, 7, index < value ? color : theme::kDisabled);
+  // The original three-segment bar stays pixel-identical for the default 3/3.
+  // Smaller maxima keep one segment per point of health instead of always
+  // drawing three, so a full 1/1 or 2/2 bar cannot look already damaged.
+  if (max <= 3) {
+    const unsigned slots = max ? max : 3;
+    for (unsigned index = 0; index < slots; ++index)
+      M5.Display.fillRect(x + index * 18, 108, 13, 7, index < value ? color : theme::kDisabled);
+    return;
+  }
+  // Larger maxima need one compact 49 px track: a proportional share is the only
+  // way 5 -> 4 -> 3 stays readable inside the 466 px circle.
+  constexpr int kWidth = 49;
+  M5.Display.fillRect(x, 108, kWidth, 7, theme::kDisabled);
+  unsigned filled = max ? unsigned(value) * kWidth / max : 0;
+  if (filled > unsigned(kWidth)) filled = kWidth;
+  if (filled) M5.Display.fillRect(x, 108, int(filled), 7, color);
 }
 void Screens::actorShadow(int cx, int cy) {
   M5.Display.fillEllipse(cx, cy + 67, 40, 6, theme::rgb(0x6C, 0x68, 0x48));

@@ -73,7 +73,7 @@ void collection() {
   screenshot(runtime, "partners-last-back");
   tap(runtime, 233, 374);
   check(runtime.screen().page == Page::Menu, "last-page back row returns to the main menu");
-  select(runtime, 7); openMenu(runtime); select(runtime, 2); tap(runtime, 119, 306);
+  select(runtime, 8); openMenu(runtime); select(runtime, 2); tap(runtime, 119, 306);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 2,
         "thumbnail row opens matching partner detail");
   pokemon(2, 233, 132, 2); pokemon(3, 107, 306);

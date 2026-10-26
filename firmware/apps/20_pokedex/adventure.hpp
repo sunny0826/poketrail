@@ -7,6 +7,12 @@ struct ThrowView {
   AttemptKey key;
   uint32_t targetMs = 0;
 };
+// The route puzzle returns the first conflicting position instead of changing
+// state. A wrong guess costs no ball, step or unlock.
+struct RuinsOrderResult {
+  CommandResult status = CommandResult::InvalidInput;
+  uint8_t conflict = 0;
+};
 class Engine {
  public:
   explicit Engine(Store& store) : store_(store) {}
@@ -41,6 +47,14 @@ class Engine {
   CommandResult beginClockChange(uint64_t transactionId, ClockChangeMode,
                                  const ClockReading& target);
   CommandResult finishClockChange(uint64_t transactionId, const ClockReading& verified);
+  // Legendary ruins. The Engine owns clue submission, order checking, target
+  // selection, boss progression and the activity result transaction.
+  CommandResult beginRuinsClue(uint8_t clueIndex, uint32_t seedForEncounter);
+  RuinsOrderResult solveRuinsOrder(const uint8_t* order);
+  CommandResult selectRuinsTarget(uint16_t species);
+  CommandResult beginRuinsBoss(uint32_t seedForEncounter);
+  CommandResult retryRuinsActivity(uint64_t encounterId, uint32_t seedForEncounter);
+  CommandResult acknowledgeActivityResult(uint64_t encounterId);
  private:
   CommandResult guard() const;
   void stage();
@@ -51,6 +65,8 @@ class Engine {
   bool applyClock(Save&, const ClockReading&);
   void archiveDay(Save&);
   void createEncounter(Save&, uint32_t seed);
+  void openActivity(Save&, uint16_t species, uint16_t opponent, Route, uint32_t seed);
+  CommandResult startActivity(uint16_t species, uint16_t opponent, Route, uint32_t seed);
   CommandResult finishBattle();
   CommandResult resolveThrow(AttemptKey, Timing, const ClockReading&);
   void awardCapture(Save&, const ClockReading&);

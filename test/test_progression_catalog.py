@@ -119,6 +119,8 @@ int main() {
                         "-Ifirmware/apps/20_pokedex", str(source),
                         "firmware/apps/20_pokedex/encounter_catalog.cpp",
                         "firmware/apps/20_pokedex/adventure_model.cpp",
+                        "firmware/apps/20_pokedex/adventure_model_activity.cpp",
+                        "firmware/apps/20_pokedex/adventure_model_save.cpp",
                         "firmware/apps/20_pokedex/calendar.cpp", "-o", str(binary)],
                        cwd=ROOT, check=True)
         subprocess.run([str(binary)], cwd=ROOT, check=True)
@@ -259,6 +261,8 @@ int main() {
                         "-Ifirmware/apps/20_pokedex", str(source),
                         "firmware/apps/20_pokedex/encounter_catalog.cpp",
                         "firmware/apps/20_pokedex/adventure_model.cpp",
+                        "firmware/apps/20_pokedex/adventure_model_activity.cpp",
+                        "firmware/apps/20_pokedex/adventure_model_save.cpp",
                         "firmware/apps/20_pokedex/calendar.cpp", "-o", str(binary)],
                        cwd=ROOT, check=True)
         subprocess.run([str(binary)], cwd=ROOT, check=True)

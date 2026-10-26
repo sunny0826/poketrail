@@ -18,6 +18,9 @@ void Runtime::goBack() {
   else if (screen_.page == Page::ReleaseConfirm) navigate(Page::Throw);
   else if (screen_.page == Page::PartnerDetail) navigate(Page::Partners);
   else if (screen_.page == Page::Partners || screen_.page == Page::Routes) navigate(Page::Menu);
+  else if (screen_.page == Page::Ruins) navigate(Page::Menu);
+  else if (screen_.page == Page::RuinsClues || screen_.page == Page::RuinsOrder ||
+           screen_.page == Page::RuinsTargets || screen_.page == Page::RuinsBoss) navigate(Page::Ruins);
   else navigate(Page::Home);
 }
 void Runtime::handle(const Input& raw) {
@@ -137,9 +140,7 @@ void Runtime::handle(const Input& raw) {
     return;
   }
   if (input.click) {
-    const int top = screen_.page == Page::Result
-                        ? (engine_.view().result == Result::Captured ? 372 : 355)
-                        : screen_.page == Page::Menu ? menu_layout::kMainTop : menu_layout::kTop;
+    const int top = menuTop(screen_, engine_);
     const int row = menu_layout::rowAt(input.x, input.y, top);
     if (row >= 0) {
       const unsigned selected = menu_layout::first(screen_.selected) + unsigned(row);
@@ -154,6 +155,11 @@ void Runtime::handle(const Input& raw) {
     screen_.selected = (screen_.selected + (input.left ? count - 1 : 1)) % count;
   }
   if (confirm) activate(screen_.selected, input.at);
+}
+void Runtime::openRuinsTargets() {
+  navigate(Page::RuinsTargets);
+  const uint8_t index = ruinsTargetIndex(engine_.view().ruins.lastTarget);
+  if (index != kRuinsNoIndex) screen_.selected = index;
 }
 void Runtime::activate(unsigned item, uint32_t at) {
   const auto& v = engine_.view();
@@ -190,6 +196,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       else if (item == 4) navigate(Page::Resources);
       else if (item == 5) beginPractice(at);
       else if (item == 6) sleepDisplay();
+      else if (item == 7) navigate(Page::Ruins);
       else navigate(Page::Home);
       break;
     case Page::Resources:
@@ -212,10 +219,80 @@ void Runtime::activate(unsigned item, uint32_t at) {
       activateProgression(item, at); break;
     case Page::EvolutionPreviewTargets: chooseEvolutionPreview(item); break;
     case Page::Encounter:
-      if (item == 0) { engine_.startBattle(at); navigate(Page::Battle); }
+      if (v.encounter.origin == EncounterOrigin::Ruins) {
+        if (item == 0) {
+          if (engine_.startBattle(at) == CommandResult::Applied) navigate(Page::Battle);
+        } else if (item == 1) navigate(Page::Home);
+        else navigate(Page::Ruins);
+      } else if (item == 0) { engine_.startBattle(at); navigate(Page::Battle); }
       else if (item == 1) beginPractice(at);
       else if (item == 2) navigate(Page::Partners);
       else navigate(Page::Home);
+      break;
+    case Page::Ruins:
+      if (v.encounter.origin == EncounterOrigin::Ruins && item == 1) {
+        // A waiting activity encounter is resumed, never overwritten. A deferred
+        // throw has to reopen the throw page; the encounter page cannot start a
+        // battle from Phase::ThrowReady.
+        if (v.phase == Phase::ThrowReady) {
+          if (deferredThrow_ == v.encounter.id) deferredThrow_ = 0;
+          navigate(Page::Throw);
+        } else navigate(Page::Encounter);
+      } else if (!v.ruins.unlocked) {
+        if (item == 0) navigate(Page::RuinsClues);
+        else if (item == 1) {
+          screen_.orderCount = 0;
+          screen_.orderConflict = kRuinsNoIndex;
+          navigate(Page::RuinsOrder);
+        } else goBack();
+      } else if (item == 0) openRuinsTargets();
+      else if (item == 1) {
+        if (ruinsTargetIndex(v.ruins.lastTarget) == kRuinsNoIndex) openRuinsTargets();
+        else navigate(Page::RuinsBoss);
+      } else goBack();
+      break;
+    case Page::RuinsClues:
+      if (item < kRuinsClueTotal) {
+        if (v.ruins.clueMask & ruinsClueBit(uint8_t(item))) {
+          screen_.command = CommandResult::Duplicate;
+          break;
+        }
+        const CommandResult result = engine_.beginRuinsClue(uint8_t(item), platform_.randomSeed());
+        screen_.command = result;
+        if (result == CommandResult::Applied) navigate(Page::Encounter);
+      } else goBack();
+      break;
+    case Page::RuinsOrder:
+      if (item < kRuinsClueTotal) {
+        if (v.ruins.clueMask != kRuinsAllClues) { screen_.command = CommandResult::InvalidPhase; break; }
+        if (screen_.orderCount >= kRuinsClueTotal) break;
+        screen_.orderInput[screen_.orderCount++] = uint8_t(item);
+        screen_.orderConflict = kRuinsNoIndex;
+        if (screen_.orderCount == kRuinsClueTotal) {
+          const RuinsOrderResult result = engine_.solveRuinsOrder(screen_.orderInput);
+          screen_.command = result.status;
+          if (result.status == CommandResult::Applied) { feedback(40); navigate(Page::Ruins); }
+          else if (result.status == CommandResult::Duplicate) navigate(Page::Ruins);
+          else if (result.status == CommandResult::InvalidInput) {
+            screen_.orderConflict = result.conflict;
+            screen_.orderCount = 0;
+          }
+        }
+      } else goBack();
+      break;
+    case Page::RuinsTargets:
+      if (item < kRuinsTargetTotal) {
+        const CommandResult result = engine_.selectRuinsTarget(ruinsTargetAt(uint8_t(item)).species);
+        screen_.command = result;
+        if (result == CommandResult::Applied || result == CommandResult::Duplicate) navigate(Page::Ruins);
+      } else goBack();
+      break;
+    case Page::RuinsBoss:
+      if (item == 0) {
+        const CommandResult result = engine_.beginRuinsBoss(platform_.randomSeed());
+        screen_.command = result;
+        if (result == CommandResult::Applied) navigate(Page::Encounter);
+      } else goBack();
       break;
     case Page::Pause:
       if (screen_.practice) {
@@ -228,7 +305,21 @@ void Runtime::activate(unsigned item, uint32_t at) {
       if (item == 0) beginPractice(at); else endPractice();
       break;
     case Page::Result:
-      engine_.acknowledgeResult(v.encounter.id, platform_.randomSeed()); navigate(Page::Home); break;
+      if (v.encounter.origin == EncounterOrigin::Ruins) {
+        // Same predicate as the drawn rows and menuCount.
+        if (ruinsActivityRetryable(v.encounter, v.result) && item == 0) {
+          const CommandResult result = engine_.retryRuinsActivity(v.encounter.id, platform_.randomSeed());
+          screen_.command = result;
+          if (result == CommandResult::Applied) navigate(Page::Encounter);
+        } else {
+          const CommandResult result = engine_.acknowledgeActivityResult(v.encounter.id);
+          screen_.command = result;
+          if (result == CommandResult::Applied) navigate(Page::Ruins);
+        }
+      } else {
+        engine_.acknowledgeResult(v.encounter.id, platform_.randomSeed()); navigate(Page::Home);
+      }
+      break;
     case Page::Records: {
       if (item == 4) { goBack(); break; }
       const Page pages[] = {Page::FirstCaptures, Page::Recent, Page::Days, Page::Achievements};

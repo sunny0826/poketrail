@@ -79,7 +79,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   }
   const auto& b = s.page == Page::Practice ? practice : e.battleView();
   uint16_t partner = s.page == Page::Practice ? (v.partner ? v.partner : 1) : v.encounter.partner;
-  uint16_t enemy = s.page == Page::Practice ? (s.practiceSpecies ? s.practiceSpecies : 25) : v.encounter.species;
+  uint16_t enemy = s.page == Page::Practice ? (s.practiceSpecies ? s.practiceSpecies : 25) : encounterOpponent(v.encounter);
   const bool effect = battleEffectActive(b, now);
   const uint32_t age = effect ? now - b.settledMs : kBattleEffectMs;
   const Action action = effect ? battleEffectAction(b) : b.expected;
@@ -94,8 +94,8 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   const Route route = s.page == Page::Practice ? v.route : v.encounter.route;
   scene(route, true, shake);
   title(s.page == Page::Practice ? "捕获练习" : "节奏对战", "轻触上方暂停", theme::kMint);
-  hp(speciesName(partner), b.playerHp, 91, theme::kMint);
-  hp(speciesName(enemy), b.enemyHp, 282, theme::kGold);
+  hp(speciesName(partner), b.playerHp, b.playerMaxHp, 91, theme::kMint);
+  hp(speciesName(enemy), b.enemyHp, b.enemyMaxHp, 282, theme::kGold);
   const uint8_t playerScale = actorScale(partner), enemyScale = actorScale(enemy);
   if (!attack && hit && age >= 10 && age < 250) {
     sprite(partner, now, battlePlayback_, 232, 145 + shake, theme::kOutline, playerScale);
@@ -103,7 +103,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   }
   if (!attack && age < 100) M5.Display.fillRect(286 - int(age) * 65 / 100, 225, 9, 5, theme::kBlue);
   const int32_t delta = int32_t(now - b.targetMs);
-  const bool perfectWindow = delta >= -int32_t(kPerfectWindowMs) && delta <= int32_t(kPerfectWindowMs);
+  const bool perfectWindow = delta >= -int32_t(b.perfectWindowMs) && delta <= int32_t(b.perfectWindowMs);
   if (attack && age < 100) brackets(enemyX, 226, perfect || perfectWindow ? theme::kGold : theme::routeColor(route));
   else if (!effect && b.expected == Action::Attack) brackets(enemyX, 226, perfectWindow ? theme::kGold : theme::routeColor(route));
   actorShadow(playerX, 232); actorShadow(enemyX, 226);
@@ -114,12 +114,13 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   if (effect && !attack && !hit) impact(playerX, 228, age, theme::kRed, false);
   M5.Display.fillRoundRect(99, 344, 268, 27, 8, theme::kBackground);
   M5.Display.drawFastHLine(103, 357, 260, theme::kTrack);
-  for (int boundary : {-180, -70, 70, 180}) {
-    const int x = 233 + boundary * 120 / int(kBeatIntervalMs);
-    M5.Display.drawFastVLine(x, 352, 11, std::abs(boundary) == 70 ? theme::kGold : theme::kMuted);
+  for (int boundary : {-int(b.normalWindowMs), -int(b.perfectWindowMs),
+                       int(b.perfectWindowMs), int(b.normalWindowMs)}) {
+    const int x = 233 + boundary * 120 / int(b.beatMs);
+    M5.Display.drawFastVLine(x, 352, 11, std::abs(boundary) == int(b.perfectWindowMs) ? theme::kGold : theme::kMuted);
   }
   M5.Display.drawRoundRect(217, 346, 32, 22, 4, perfectWindow ? theme::kGold : theme::kMint);
-  const int x = 233 + std::max(-1625, std::min(1625, int(delta))) * 120 / int(kBeatIntervalMs);
+  const int x = 233 + std::max(-1625, std::min(1625, int(delta))) * 120 / int(b.beatMs);
   M5.Display.fillCircle(x, 357, 5, perfect || perfectWindow ? theme::kGold : theme::kMint);
   const char* result[] = {"未命中", "命中", "漂亮", "完美"};
   line(b.pauseRequested ? "本拍结束后暂停" : effect || b.consumed ? result[uint8_t(b.lastTiming)] :

@@ -20,16 +20,20 @@ void bookIcon() {
 }
 void Screens::menu(const ScreenState& s, const Engine& e, int top) {
   if (s.page == Page::Menu) top = menu_layout::kMainTop;
-  const auto phase = e.view().phase;
-  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", "251 图鉴", "资源与数据", "捕获练习", "立即省电", "返回探索"};
+  const auto& save = e.view();
+  const auto phase = save.phase;
+  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", "251 图鉴", "资源与数据", "捕获练习", "立即省电", "传说遗迹", "返回探索"};
   const char* const resources[] = {"捕捉与步行记录", "日期与时间", "返回"};
   const char* const date[] = {"设置日期时间", "暂不设置", "浏览图鉴"};
   const char* const starters[] = {"妙蛙种子", "小火龙", "杰尼龟", "返回"};
   const char* const routes[] = {"森林", "海边", "洞窟", "返回"};
   const char* const encounter[] = {"开始对战", "捕获练习", "选择伙伴", "稍后再战"};
+  const char* const encounterRuins[] = {"开始对战", "暂离", "返回遗迹"};
   const char* const pause[] = {"继续", "确认撤退"};
   const char* const records[] = {"永久首捕 · 251种", "最近32次捕捉", "今日与14日日汇总", "每日与长期里程碑", "返回"};
   const char* const error[] = {"重试保存 / 读取", "浏览图鉴"};
+  const char* const order[] = {"森林", "海边", "洞窟", "返回"};
+  const char* const boss[] = {"开始挑战", "返回"};
   const char* const* labels = nullptr;
   switch (s.page) {
     case Page::Menu: labels = home; break;
@@ -41,10 +45,49 @@ void Screens::menu(const ScreenState& s, const Engine& e, int top) {
       return;
     }
     case Page::Routes: labels = routes; break;
-    case Page::Encounter: labels = encounter; break;
+    case Page::Encounter:
+      labels = save.encounter.origin == EncounterOrigin::Ruins ? encounterRuins : encounter; break;
     case Page::Pause: labels = pause; break;
     case Page::Records: labels = records; break;
     case Page::Error: labels = error; break;
+    case Page::Ruins: {
+      const char* const locked[] = {"寻找线索", "排列路线", "返回"};
+      const char* const unlocked[] = {"选择目标", "挑战首领", "返回"};
+      const char* const waiting[] = {"查看目标", "继续遭遇", "返回"};
+      const char* const waitingClue[] = {"查看线索", "继续遭遇", "返回"};
+      const bool pending = save.encounter.origin == EncounterOrigin::Ruins;
+      const char* const* actions = pending ? (save.ruins.unlocked ? waiting : waitingClue) :
+                                   save.ruins.unlocked ? unlocked : locked;
+      for (unsigned i = 0; i < 3; ++i) item(s, i, actions[i], top);
+      return;
+    }
+    case Page::RuinsClues: {
+      for (uint8_t index = 0; index < kRuinsClueTotal; ++index) {
+        const RuinsClueSpec clue = ruinsClueAt(index);
+        const bool found = save.ruins.clueMask & ruinsClueBit(index);
+        char label[24];
+        // An earned clue names the slot it has to occupy in the route order.
+        if (found) snprintf(label, sizeof(label), "第%u位 · %s",
+                            unsigned(ruinsClueOrderPosition(index)), routeName(clue.route));
+        else snprintf(label, sizeof(label), "%s线索", routeName(clue.route));
+        item(s, index, label, top, 0, false, found ? "已获得" : "挑战");
+      }
+      item(s, kRuinsClueTotal, "返回", top);
+      return;
+    }
+    case Page::RuinsOrder: labels = order; break;
+    case Page::RuinsTargets: {
+      for (uint8_t index = 0; index < kRuinsTargetTotal; ++index) {
+        const uint16_t species = ruinsTargetAt(index).species;
+        const bool current = save.encounter.origin == EncounterOrigin::Ruins &&
+                             save.encounter.species == species;
+        const char* note = save.captureCounts[species - 1] ? "已完成" : current ? "当前" : "可挑战";
+        item(s, index, speciesName(species), top, species, false, note);
+      }
+      item(s, kRuinsTargetTotal, "返回", top);
+      return;
+    }
+    case Page::RuinsBoss: labels = boss; break;
     case Page::Partners: {
       unsigned row = 0;
       for (unsigned id = 1; id <= kSpeciesCount; ++id) if (owns(e.view(), id)) {
@@ -52,7 +95,16 @@ void Screens::menu(const ScreenState& s, const Engine& e, int top) {
       }
       item(s, row, "返回", top); return;
     }
-    case Page::Result: item(s, 0, "确认结果 · 继续探索", top); return;
+    case Page::Result: {
+      const bool activity = save.encounter.origin == EncounterOrigin::Ruins;
+      if (!activity) { item(s, 0, "确认结果 · 继续探索", top); return; }
+      // The rows, their count and the key handling all ask the same question.
+      if (ruinsActivityRetryable(save.encounter, save.result)) {
+        item(s, 0, "重试本阶段", top);
+        item(s, 1, "返回遗迹", top);
+      } else item(s, 0, "确认结果 · 返回遗迹", top);
+      return;
+    }
     default: return;
   }
   for (unsigned i = 0; i < menuCount(s, e); ++i) item(s, i, labels[i], top);
@@ -135,6 +187,11 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
       M5.Display.fillRect(239, 120, 13, 44, theme::kGold);
       break;
     case Page::Result:
+      if (v.encounter.origin == EncounterOrigin::Ruins && v.result != Result::Captured) {
+        ruinsResult(s, e, now);
+        menu(s, e, menuTop(s, e));
+        return;
+      }
       title(v.result == Result::Captured ? "捕捉成功" : v.result == Result::Lost ? "对战结束" :
             v.result == Result::Retreated ? "已经撤退" : v.result == Result::Released ?
             (v.captureCounts[v.encounter.species - 1] ? "已捕获 · 遭遇结束" : "已放弃捕捉") :
@@ -176,7 +233,7 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
           line("不退探索步数或已用精灵球", 249, theme::kRed);
         } else line("伙伴仍在，继续步行探索", 249, theme::kMuted);
       }
-      menu(s, e, v.result == Result::Captured ? 372 : 355); return;
+      menu(s, e, menuTop(s, e)); return;
     case Page::Records:
       title("捕捉与步行记录", "", theme::kGold);
       snprintf(text, sizeof(text), "每日最高 %llu 步", static_cast<unsigned long long>(v.bestDaySteps));

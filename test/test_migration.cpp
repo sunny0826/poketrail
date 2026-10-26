@@ -28,8 +28,14 @@ static void phases() {
   for(unsigned kind=0;kind<9;++kind){
     Slots slots;slots.files[0]=legacy(kind);const auto original=slots.files[0];auto old=decoded(original);
     CHECK(old->schema==1&&encoded(*old)==original&&original.size()==12139);
+    CHECK(!old->activityEncounterCount&&old->encounter.origin==EncounterOrigin::Ordinary&&
+          !old->encounter.opponent&&!old->ruins.clueMask&&!old->ruins.unlocked&&
+          !old->ruins.lastTarget&&!old->dragonTrial.active);
     FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied&&e.ready());const auto& s=e.view();
     CHECK(s.schema==3&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
+    CHECK(s.activityEncounterCount==0&&s.encounter.origin==EncounterOrigin::Ordinary&&
+          !s.encounter.opponent&&!s.ruins.clueMask&&!s.ruins.unlocked&&!s.ruins.lastTarget&&
+          !s.dragonTrial.active&&!s.dragonTrial.trialId);
     CHECK(s.rewardBaseSteps==500&&availableBalls(s)==0&&s.captureCounts==old->captureCounts&&s.owned==old->owned);
     CHECK(s.progress[0].walked==0&&registered(s,1)&&s.rosterRevision==1);
     CHECK(s.voidedLegacyCount==(kind==5||kind==6?1:0)&&s.legacyChargedCount==(kind==5||kind==6?0:1));
@@ -120,6 +126,8 @@ static void schema2Upgrade() {
   CHECK(s.schema==3&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
   CHECK(s.partner==4&&s.progress[3].walked==1000&&s.totalSteps==1000&&s.explorationCredit==1000);
   CHECK(s.rewardBaseSteps==0&&s.legacyChargedCount==0&&s.rosterRevision==1);
+  CHECK(s.activityEncounterCount==0&&s.explorationCredit==1000);
+  CHECK(slots.files[1].size()==21520);
   for(uint16_t id=152;id<=251;++id)CHECK(!registered(s,id)&&!owns(s,id)&&!s.progress[id-1].walked&&!s.captureCounts[id-1]);
   FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==3);
   CHECK(reboot.view().progress[3].walked==1000&&slots.writes==2);

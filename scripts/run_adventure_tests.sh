@@ -9,7 +9,9 @@ sources=(firmware/apps/20_pokedex/adventure_progression.cpp
   firmware/apps/20_pokedex/adventure_migration.cpp
   firmware/apps/20_pokedex/adventure.cpp firmware/apps/20_pokedex/adventure_steps.cpp
   firmware/apps/20_pokedex/adventure_clock.cpp firmware/apps/20_pokedex/adventure_capture.cpp
-  firmware/apps/20_pokedex/adventure_model.cpp firmware/apps/20_pokedex/battle.cpp
+  firmware/apps/20_pokedex/adventure_model.cpp
+  firmware/apps/20_pokedex/adventure_model_activity.cpp
+  firmware/apps/20_pokedex/adventure_model_save.cpp firmware/apps/20_pokedex/battle.cpp
   firmware/apps/20_pokedex/calendar.cpp firmware/apps/20_pokedex/encounter_catalog.cpp
   firmware/apps/20_pokedex/save_codec.cpp firmware/apps/20_pokedex/file_store.cpp)
 flags=(-Ifirmware/apps/20_pokedex -std=c++11 -O1 -g -Wall -Wextra -Werror)

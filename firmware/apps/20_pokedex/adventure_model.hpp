@@ -12,11 +12,25 @@ constexpr size_t kHistoryCount = 14;
 constexpr uint16_t kSchemaVersion = 3;
 constexpr uint16_t kRuleVersion = 2;
 constexpr uint32_t kEncounterSteps = 5000;
+// Activity state ceilings. They keep the optional schema-3 block representable
+// and reject impossible values; the activity catalogs tighten them when fixed.
+constexpr uint8_t kRuinsClueCount = 3;
+constexpr uint8_t kDragonTrialCount = 2;
+constexpr uint8_t kDragonTrialStageCount = 8;
+constexpr uint8_t kMaxBattleHp = 9;
+constexpr uint16_t kMaxWindowBonusMs = 180;
+constexpr uint8_t kMaxMissedDodgeGuard = 1;
 enum class Route : uint8_t { Forest, Coast, Cave };
+enum class EncounterOrigin : uint8_t { Ordinary = 0, Ruins = 1, DragonTrial = 2 };
 enum class Phase : uint8_t { Walking, EncounterReady, Battle, ThrowReady, Resolved };
 enum class Timing : uint8_t { Miss, Normal, Nice, Perfect };
 enum class Action : uint8_t { Attack, Dodge, Both };
-enum class Result : uint8_t { None, Won, Lost, Retreated, Captured, Escaped, Released, MigrationRetired };
+enum class Result : uint8_t {
+  None, Won, Lost, Retreated, Captured, Escaped, Released, MigrationRetired,
+  // Terminal activity outcomes. They reuse the one-byte result slot and only
+  // appear in schema-3 saves with a Ruins encounter.
+  RuinsClue, RuinsCleared
+};
 enum class ClockChangeMode : uint8_t { Normal, TimezoneChange, RepairWrongDate };
 enum class CommandResult : uint8_t {
   Applied, Duplicate, InvalidPhase, SavePending, StorageError, InvalidInput,
@@ -96,9 +110,23 @@ struct ThrowAttempt {
   bool captured = false;
   uint16_t ruleVersion = kRuleVersion;
 };
+struct RuinsState {
+  uint8_t clueMask = 0;
+  bool unlocked = false;
+  uint16_t lastTarget = 0;
+};
+struct DragonTrialState {
+  bool active = false;
+  uint8_t trialId = 0;
+  uint8_t stageIndex = 0;
+  uint8_t stageStartHp = 0;
+  uint8_t normalBonus = 0;
+  uint8_t perfectBonus = 0;
+  uint8_t guard = 0;
+};
 struct Encounter {
   uint64_t id = 0;
-  uint16_t species = 0;
+  uint16_t species = 0;  // Final capture target; ordinary opponents equal species.
   uint16_t partner = 0;
   Route route = Route::Forest;
   uint32_t seed = 0;
@@ -106,6 +134,8 @@ struct Encounter {
   uint8_t usedBalls = 0;
   uint8_t legacyFreeAttempts = 0;
   std::array<ThrowAttempt, 2> attempts;
+  uint16_t opponent = 0;  // 0 keeps the legacy default of species.
+  EncounterOrigin origin = EncounterOrigin::Ordinary;
 };
 struct Save {
   std::array<uint8_t, kSpeciesBytes> registered = {{0}};
@@ -141,6 +171,9 @@ struct Save {
   Phase phase = Phase::Walking;
   Result result = Result::None;
   Encounter encounter;
+  uint64_t activityEncounterCount = 0;
+  RuinsState ruins;
+  DragonTrialState dragonTrial;
 };
 struct StepEvent {
   uint16_t partner = 0;
@@ -158,6 +191,7 @@ bool consistentReading(const ClockReading& anchor, const ClockReading&, bool all
 bool validate(const Save&);
 uint32_t mixRandom(uint32_t);
 uint8_t throwRoll(const Encounter&, uint8_t attemptIndex);
+uint16_t encounterOpponent(const Encounter&);
 uint8_t captureProbability(bool rare, Timing);
 Stamp makeStamp(const Save&, const ClockReading&);
 } }

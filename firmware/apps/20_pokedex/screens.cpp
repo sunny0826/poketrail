@@ -16,6 +16,9 @@ uint16_t accentFor(Page page) {
     case Page::Recent: case Page::Days: case Page::Achievements: case Page::EvolutionConfirm:
     case Page::EvolutionPreviewTargets:
       return theme::kGold;
+    case Page::Ruins: case Page::RuinsClues: case Page::RuinsOrder:
+    case Page::RuinsTargets: case Page::RuinsBoss:
+      return theme::kPurple;
     case Page::Error: case Page::ReleaseConfirm: return theme::kRed;
     case Page::Clock: return theme::kBlue;
     default: return theme::kMint;
@@ -31,7 +34,7 @@ const char* speciesName(uint16_t id) {
 }
 unsigned menuCount(const ScreenState& s, const Engine& e) {
   switch (s.page) {
-    case Page::Menu: return 8;
+    case Page::Menu: return 9;
     case Page::Resources: return 3;
     case Page::DateWelcome: return 3;
     case Page::Starter: return 4;
@@ -39,7 +42,7 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::Partners: {
       unsigned n = 1; for (unsigned id = 1; id <= kSpeciesCount; ++id) n += owns(e.view(), id); return n;
     }
-    case Page::Encounter: return 4;
+    case Page::Encounter: return e.view().encounter.origin == EncounterOrigin::Ruins ? 3 : 4;
     case Page::Pause: return 2;
     case Page::Throw: return e.throwView().active ? 0 : 3;
     case Page::PracticeThrow: return s.capture.active || s.practiceThrowing ? 0 : 3;
@@ -47,7 +50,13 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::PartnerDetail: return 2 + e.evolutionView(s.species).count;
     case Page::EvolutionConfirm: case Page::ReleaseConfirm: return 2;
     case Page::EvolutionPreviewTargets: return 1 + e.evolutionView(s.evolutionAnim.from).count;
-    case Page::Result: return 1;
+    case Page::Result:
+      return ruinsActivityRetryable(e.view().encounter, e.view().result) ? 2 : 1;
+    case Page::Ruins: return 3;
+    case Page::RuinsClues: return kRuinsClueTotal + 1;
+    case Page::RuinsOrder: return kRuinsClueTotal + 1;
+    case Page::RuinsTargets: return kRuinsTargetTotal + 1;
+    case Page::RuinsBoss: return 2;
     case Page::Records: return 5;
     case Page::FirstCaptures: return kSpeciesCount + 1;
     case Page::Recent: return e.view().recentSize + 1;
@@ -58,12 +67,26 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     default: return 0;
   }
 }
+int menuTop(const ScreenState& s, const Engine& e) {
+  if (s.page == Page::Menu) return menu_layout::kMainTop;
+  if (s.page != Page::Result) return menu_layout::kTop;
+  const auto& v = e.view();
+  if (v.encounter.origin == EncounterOrigin::Ruins) {
+    // The capture card keeps the taller row clear of its badges.
+    if (v.result == Result::Captured) return 372;
+    // Two result actions need the 306/374 rows to stay inside the round screen.
+    return ruinsActivityRetryable(v.encounter, v.result) ? 306 : 355;
+  }
+  return v.result == Result::Captured ? 372 : 355;
+}
 bool touchBackEnabled(Page page) {
   switch (page) {
     case Page::Menu: case Page::Resources: case Page::Routes: case Page::Partners:
     case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
     case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
-    case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets: return true;
+    case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets:
+    case Page::Ruins: case Page::RuinsClues: case Page::RuinsOrder:
+    case Page::RuinsTargets: case Page::RuinsBoss: return true;
     default: return false;
   }
 }
@@ -220,6 +243,9 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
       battle(s, e, practice, now); break;
     case Page::PracticeThrow: practiceThrow(s, now); break;
     case Page::PracticeResult: practiceResult(s, now); break;
+    case Page::Ruins: case Page::RuinsClues: case Page::RuinsOrder:
+    case Page::RuinsTargets: case Page::RuinsBoss:
+      ruins(s, e, now); break;
     case Page::Evolution: case Page::EvolutionPreview: rendered = evolution(s, now); break;
     case Page::EvolutionPreviewTargets: evolutionPreviewTargets(s, e); break;
     case Page::FirstCaptures: case Page::Recent: case Page::Days: case Page::Achievements:
@@ -231,7 +257,8 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
   }
   const bool listPage = s.page == Page::Menu || s.page == Page::Resources || s.page == Page::Clock ||
                         s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::Records ||
-                        s.page == Page::EvolutionPreviewTargets;
+                        s.page == Page::EvolutionPreviewTargets || s.page == Page::RuinsClues ||
+                        s.page == Page::RuinsOrder || s.page == Page::RuinsTargets;
   if (listPage && menuCount(s, e) > menu_layout::kPageSize) {
     M5.Display.fillCircle(168, 430, 20, theme::kPanel);
     M5.Display.fillCircle(298, 430, 20, theme::kPanel);

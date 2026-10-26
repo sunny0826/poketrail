@@ -1,8 +1,10 @@
 #include "adventure.hpp"
 #include "encounter_catalog.hpp"
+#include "ruins_catalog.hpp"
 namespace pokedex { namespace adventure {
 CommandResult Engine::beginThrow(AttemptKey key, uint32_t now) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
+  if (ruinsClueIndexForEncounter(state_.encounter) != kRuinsNoIndex) return CommandResult::InvalidPhase;
   if (!key.encounterId || key.encounterId != state_.encounter.id || key.attemptIndex < 1 || key.attemptIndex > 2)
     return CommandResult::InvalidInput;
   if (key.attemptIndex <= state_.encounter.usedBalls) return CommandResult::Duplicate;
