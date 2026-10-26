@@ -7,13 +7,14 @@ class PowerPlatform : public HostPlatform {
  public:
   c152::BatteryStatus battery;
   unsigned reads = 0, sleeps = 0, wakes = 0, feedbacks = 0, clockWrites = 0;
-  bool failSleep = false, failWake = false, observeWake = false;
+  bool failSleep = false, failWake = false, observeWake = false, usb = false;
   std::vector<uint16_t> litFrame;
   c152::DisplayTransition displaySleep(bool sleeping) override {
     if (sleeping) { ++sleeps; return {!failSleep}; }
     ++wakes; return {!failWake, 150};
   }
   c152::BatteryStatus readBattery() override { ++reads; return battery; }
+  bool usbHostPresent() override { return usb; }
   void feedback(uint16_t ms) override { ++feedbacks; HostPlatform::feedback(ms); }
   device_clock::Reading writeClock(int64_t) override { ++clockWrites; return {}; }
   void brightness(uint8_t value) override {
@@ -261,6 +262,10 @@ void pocketRest() {
   check(!runtime.pocketIdle(), "encounter vibration keeps the asleep loop awake");
   host_time_ms += 39; check(!runtime.pocketIdle(), "rest stays off until the motor duration elapses");
   host_time_ms += 1; check(runtime.pocketIdle(), "rest resumes when the motor stops and no save is pending");
+  platform.usb = true; check(!runtime.pocketIdle(),
+    "a USB host keeps the asleep loop awake so CDC survives");
+  platform.usb = false; check(runtime.pocketIdle(),
+    "unplugging restores pocket rest");
   store.fail = true; walk(runtime, platform, 4); idle(runtime, 30020);
   check(runtime.engine().savePending() && !runtime.pocketIdle(),
         "an unfinished save keeps the asleep loop awake for retry");

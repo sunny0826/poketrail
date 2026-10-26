@@ -29,6 +29,7 @@ class Platform {
   virtual device_clock::Reading writeClock(int64_t utc) = 0;
   virtual void feedback(uint16_t duration) = 0;
   virtual bool vibrationActive() = 0;
+  virtual bool usbHostPresent() { return false; }
   virtual void brightness(uint8_t) = 0;
   virtual c152::DisplayTransition displaySleep(bool sleeping) = 0;
   virtual c152::BatteryStatus readBattery() = 0;
@@ -57,11 +58,12 @@ class Runtime {
   const Metrics& metrics() const { return metrics_; }
   const adventure::BattleView& practiceView() const { return practiceCapture_.battleView(); }
   bool dimmed() const { return display_ != DisplayState::Awake; }
-  // Pocket idle may pause the CPU until the next sample. Vibration and an
-  // unfinished save keep the loop awake; a key only ends the current pause.
+  // Pocket idle may pause the CPU until the next sample. Vibration, an
+  // unfinished save, and an attached USB host keep the loop awake; a key only
+  // ends the current pause. A USB host keeps light sleep from dropping CDC.
   bool pocketIdle() const {
     return display_ == DisplayState::Asleep && !releaseGate_ && !platform_.vibrationActive() &&
-           !engine_.savePending();
+           !engine_.savePending() && !platform_.usbHostPresent();
   }
   uint32_t nextSampleMs(uint32_t now) const {
     // A 100ms gap discards the walking cadence. Keep 40ms for wake latency.

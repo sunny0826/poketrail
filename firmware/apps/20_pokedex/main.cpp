@@ -50,6 +50,7 @@ class DevicePlatform : public pokedex::ui::Platform {
   pokedex::device_clock::Reading writeClock(int64_t utc) override { return clock_.setAndVerify(utc); }
   void feedback(uint16_t duration) override { c152::feedback(0, duration, 70); }
   bool vibrationActive() override { return c152::vibrationActive(); }
+  bool usbHostPresent() override { return Serial.isPlugged(); }
   void brightness(uint8_t value) override { c152::setDisplayBrightness(value); }
   c152::DisplayTransition displaySleep(bool sleeping) override { return c152::setDisplaySleep(sleeping); }
   c152::BatteryStatus readBattery() override { return c152::readBattery(); }
