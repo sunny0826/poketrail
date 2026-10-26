@@ -272,6 +272,21 @@ void pocketRest() {
   store.fail = false; edge(runtime, false, true); idle(runtime, 180);
   check(!runtime.dimmed() && !runtime.pocketIdle(), "waking and visible display never enter pocket rest");
 }
+void checkpointPacing() {
+  MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
+  const unsigned before = store.commits;
+  walk(runtime, platform, 64);  // 32 秒连续步，跨过 boot+30s 的 checkpoint 到期点
+  check(store.commits == before, "continuous stepping defers the thirty-second checkpoint");
+  const unsigned commits = store.commits;
+  idle(runtime, 1900);
+  check(store.commits == commits, "deferral holds while steps stay within the activity window");
+  idle(runtime, 200);  // 最后一步 2.1 秒前：节奏窗口已过，写入不再打断计步
+  check(store.commits > commits, "quiescence releases the deferred checkpoint");
+  const unsigned capped = store.commits;
+  walk(runtime, platform, 244);  // 122 秒连续步
+  idle(runtime, 600);  // 跨过 120 秒推迟上限
+  check(store.commits > capped, "the deferral cap forces a checkpoint during endless stepping");
+}
 void wraparound() {
   host_time_ms = UINT32_MAX - 30050;
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -283,6 +298,6 @@ int main() {
   c152::begin("POWER TEST");
   autoSleepAndWalk(); manualAndBoundary(); clockDraft(); pausedAndActive(); throwWaiting();
   viewerWakeInputs(); batteryStates(); failedCommandsAndSave(); wakeFailureAndSaveRetry(); viewerErrorWake();
-  pocketRest(); wraparound();
+  pocketRest(); checkpointPacing(); wraparound();
   std::printf("%u power Runtime/Button_Class/pixel checks, 0 failures\n", checks);
 }

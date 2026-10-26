@@ -123,6 +123,7 @@ class Runtime {
   unsigned pendingStepCount_ = 0;
   uint32_t lastSamplePoll_ = 0, lastSample_ = 0, lastInput_ = 0;
   uint32_t lastClock_ = 0, lastCheckpoint_ = 0, lastRender_ = 0, lastActivity_ = 0;
+  uint32_t lastStepEventMs_ = 0;
   uint64_t batchId_ = 0, notifiedEncounter_ = 0, pendingClockWrite_ = 0;
   uint64_t deferredThrow_ = 0;
   uint8_t lastCaptureCue_ = 0;

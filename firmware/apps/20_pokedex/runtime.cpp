@@ -4,6 +4,14 @@
 #include <algorithm>
 namespace pokedex { namespace ui {
 using namespace adventure;
+namespace {
+// A checkpoint write blocks sampling long enough to break walking cadence.
+// Defer it while steps keep arriving and release once the cadence window
+// (kMaxStepMs) has lapsed, or force it after the deferral cap so progress
+// still reaches flash during long uninterrupted walks.
+constexpr uint32_t kStepActiveMs = 2000;
+constexpr uint32_t kCheckpointDeferralMs = 120000;
+}
 CommitStatus TimedStore::commit(const Save& s) {
   uint32_t start = platform_.now();
   auto result = store_.commit(s);
@@ -104,6 +112,7 @@ void Runtime::sample(uint32_t now) {
   hasSample_ = true; lastSample_ = s.at; gapReported_ = false; ++metrics_.samples;
   const auto batch = detector_.sample(s.x, s.y, s.z, s.at, engine_.ready() ? engine_.view().partner : 0);
   if (batch.qualityGap) { ++metrics_.qualityGaps; discardAnchors(); }
+  if (batch.count) lastStepEventMs_ = now;
   for (unsigned i = 0; i < batch.count; ++i) {
     if (!engine_.ready() || batchId_ == UINT64_MAX) continue;
     StepEvent event; event.batchId = ++batchId_; event.clock = readingAt(batch.events[i].monotonicMs);
@@ -172,7 +181,11 @@ void Runtime::loop() {
     platform_.brightness(96);
   }
   if (engine_.ready() && safe() && !engine_.savePending() && platform_.now() - lastCheckpoint_ >= 30000) {
-    engine_.checkpoint(); lastCheckpoint_ = platform_.now();
+    const uint32_t due = platform_.now() - lastCheckpoint_;
+    const bool stepping = platform_.now() - lastStepEventMs_ < kStepActiveMs;
+    if (!stepping || due >= kCheckpointDeferralMs) {
+      engine_.checkpoint(); lastCheckpoint_ = platform_.now();
+    }
   }
 }
 } }
