@@ -29,7 +29,7 @@ static void phases() {
     Slots slots;slots.files[0]=legacy(kind);const auto original=slots.files[0];auto old=decoded(original);
     CHECK(old->schema==1&&encoded(*old)==original&&original.size()==12139);
     FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied&&e.ready());const auto& s=e.view();
-    CHECK(s.schema==2&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
+    CHECK(s.schema==3&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
     CHECK(s.rewardBaseSteps==500&&availableBalls(s)==0&&s.captureCounts==old->captureCounts&&s.owned==old->owned);
     CHECK(s.progress[0].walked==0&&registered(s,1)&&s.rosterRevision==1);
     CHECK(s.voidedLegacyCount==(kind==5||kind==6?1:0)&&s.legacyChargedCount==(kind==5||kind==6?0:1));
@@ -61,7 +61,7 @@ static void failures() {
     Slots slots;slots.files[0]=legacy(6);slots.after=complete;slots.cut=complete?SIZE_MAX:100;
     {FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::StorageError);}
     slots.after=false;slots.cut=SIZE_MAX;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
-    CHECK(e.view().schema==2&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
+    CHECK(e.view().schema==3&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
     CHECK(e.view().sequence==(complete?12:11));
   }
 }
@@ -105,13 +105,34 @@ static void creditAndBoundary() {
   MemoryStore store;store.disk=encoded(*owned);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   CHECK(e.view().result==Result::Captured&&owns(e.view(),2)&&registered(e.view(),2)&&e.view().voidedLegacyCount==0);
 }
+static std::vector<uint8_t> version2(uint16_t partner, uint64_t steps) {
+  Save s; s.schema=2; s.sequence=5; s.bootGeneration=1; s.starter=1; s.partner=partner;
+  s.rosterRevision=1; setRegistered(s,1); setRegistered(s,partner); setOwned(s,partner);
+  total(s,steps); s.rewardBaseSteps=0; s.ballsSpent=0; s.legacyChargedCount=0; s.voidedLegacyCount=0;
+  s.explorationCredit=steps; s.nextEncounterId=1; s.progress[partner-1].walked=steps;
+  CHECK(validate(s)); return encoded(s);
+}
+static void schema2Upgrade() {
+  const auto bytes=version2(4,1000);auto old=decoded(bytes);
+  CHECK(old->schema==2&&old->progress[3].walked==1000);
+  Slots slots;slots.files[0]=bytes;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
+  const auto& s=e.view();
+  CHECK(s.schema==3&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
+  CHECK(s.partner==4&&s.progress[3].walked==1000&&s.totalSteps==1000&&s.explorationCredit==1000);
+  CHECK(s.rewardBaseSteps==0&&s.legacyChargedCount==0&&s.rosterRevision==1);
+  for(uint16_t id=152;id<=251;++id)CHECK(!registered(s,id)&&!owns(s,id)&&!s.progress[id-1].walked&&!s.captureCounts[id-1]);
+  FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==3);
+  CHECK(reboot.view().progress[3].walked==1000&&slots.writes==2);
+  Save enc;CHECK(codec::decode(slots.files[0].data(),slots.files[0].size(),enc)==codec::DecodeStatus::Ok);
+  CHECK(enc.schema==3&&validate(enc));
+}
 static void mixedSlots() {
   Slots slots;slots.files[0]=legacy(0);FileStore first(slots);Engine e(first);CHECK(e.begin()==CommandResult::Applied);
   const auto v2=slots.files[1];auto s=decoded(v2);s->sequence=10;slots.files[1]=encoded(*s);
   FileStore conflict(slots);std::unique_ptr<Save> out(new Save);CHECK(conflict.load(*out).status==LoadStatus::Corrupt);
-  slots.files[1]=v2;slots.files[1][4]=3;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
+  slots.files[1]=v2;slots.files[1][4]=4;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
   slots.files[1]=v2;slots.files[1].back()^=1;FileStore corrupt(slots);
   CHECK(corrupt.load(*out).status==LoadStatus::Loaded&&out->schema==1&&out->sequence==10);
-  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==2);
+  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==3);
 }
-int main(){phases();failures();oldThrowsAndBase();creditAndBoundary();mixedSlots();std::printf("migration: %u checks passed\n",checks);}
+int main(){phases();failures();oldThrowsAndBase();creditAndBoundary();schema2Upgrade();mixedSlots();std::printf("migration: %u checks passed\n",checks);}

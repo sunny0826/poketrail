@@ -146,6 +146,31 @@ void legacyOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t 
   check(validate(save), "legacy collection fixture validates before migration");
   check(store.commit(save) == CommitStatus::Committed, "legacy collection has authentic versioned bytes");
 }
+void modernOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t partner = 1) {
+  // Schema 3 collection with Johto ownership; the legacy helper can only express 151 species.
+  Save save; save.sequence = 1; save.bootGeneration = 1; save.starter = 1; save.partner = partner;
+  save.rosterRevision = 1; setRegistered(save, 1); setOwned(save, 1);
+  setRegistered(save, partner); setOwned(save, partner);
+  uint64_t captures = 0;
+  for (uint16_t id : ids) {
+    setRegistered(save, id); setOwned(save, id);
+    if (id == 1) continue;
+    save.captureCounts[id - 1] = 1; ++captures;
+    Capture capture; capture.species = id; capture.at.bootGeneration = 1;
+    capture.at.totalSteps = captures * 500;
+    save.firstCapture[id - 1] = capture;
+  }
+  save.totalSteps = save.undatedSteps = captures * kEncounterSteps;
+  save.nextEncounterId = captures + 1;
+  save.explorationCredit = 0;
+  const uint64_t thresholds[] = {10000, 50000, 100000};
+  for (unsigned i = 0; i < 3; ++i) if (save.totalSteps >= thresholds[i]) {
+    save.lifetime[i].reached = true; save.lifetime[i].first.bootGeneration = 1;
+    save.lifetime[i].first.totalSteps = thresholds[i];
+  }
+  check(validate(save), "modern collection fixture validates");
+  check(store.commit(save) == CommitStatus::Committed, "modern collection is encoded by production codec");
+}
 bool glyph(const char* text, int y, uint16_t color, int x = 233, bool left = false, bool large = false) {
   lgfx::LGFX_Sprite expected;
   expected.setColorDepth(16);

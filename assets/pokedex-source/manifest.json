@@ -1,0 +1,30 @@
+{
+  "revision": "f38eb24b70f8462976154f534e79bf2bdd7af847",
+  "language": {
+    "id": 12,
+    "identifier": "zh-hans"
+  },
+  "scope": "National Pokedex 152-251 default forms; Chinese names, types, height and weight only.",
+  "sources": {
+    "pokemon.csv": {
+      "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/f38eb24b70f8462976154f534e79bf2bdd7af847/data/v2/csv/pokemon.csv",
+      "sha256": "16c81c33188b0eac403aa2f759fcbe9e42c611f722d263f5b5a6a5bff9f8ce6b",
+      "bytes": 47082
+    },
+    "pokemon_species_names.csv": {
+      "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/f38eb24b70f8462976154f534e79bf2bdd7af847/data/v2/csv/pokemon_species_names.csv",
+      "sha256": "820cde17074cdb1c2b0595c997fb8f998e773bd5da3bb525dec85703c86c5fd9",
+      "bytes": 404502
+    },
+    "pokemon_types.csv": {
+      "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/f38eb24b70f8462976154f534e79bf2bdd7af847/data/v2/csv/pokemon_types.csv",
+      "sha256": "f1fc4bfd657a034ea3bf6972423b10276424aa068577b304a78a08996425ba05",
+      "bytes": 19058
+    },
+    "type_names.csv": {
+      "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/f38eb24b70f8462976154f534e79bf2bdd7af847/data/v2/csv/type_names.csv",
+      "sha256": "685230c51074cf2f723debcf827a4df4c36ab0ec7e929c806ad65a3e40958705",
+      "bytes": 2843
+    }
+  }
+}

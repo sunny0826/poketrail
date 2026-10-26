@@ -102,9 +102,17 @@ static void captureRetry() {
   CHECK(steps(restart, 5000, 1) == CommandResult::Applied);
   CHECK(restart.view().phase == Phase::Walking && restart.view().captureCounts[0] == 1);
 }
+static void kantoOnly(Save& s) {
+  for (uint16_t id = 152; id <= kSpeciesCount; ++id) {
+    const uint8_t mask = uint8_t(~(1u << ((id - 1) % 8)));
+    s.owned[(id - 1) / 8] &= mask; s.registered[(id - 1) / 8] &= mask;
+    s.captureCounts[id - 1] = 0; s.firstCapture[id - 1] = Capture(); s.progress[id - 1] = SpeciesProgress();
+  }
+}
 static void pendingOldDuplicate() {
   for (unsigned schema : {1u, 2u}) for (Phase phase : {Phase::EncounterReady, Phase::Battle, Phase::ThrowReady}) {
     auto s = collection();
+    if (schema < 3) kantoOnly(*s);
     s->captureCounts[0] = 3;
     s->nextEncounterId += 2; total(*s, s->totalSteps + 2 * kEncounterSteps);
     s->explorationCredit = kEncounterSteps;
@@ -121,6 +129,10 @@ static void pendingOldDuplicate() {
       for (auto& attempt : s->encounter.attempts) attempt.ruleVersion = 1;
       if (s->encounter.usedBalls) s->encounter.attempts[0].roll = throwRoll(s->encounter, 1);
       s->explorationCredit = s->totalSteps - (s->nextEncounterId - 1) * 500;
+    } else {
+      s->schema = schema;
+      total(*s, s->nextEncounterId * kEncounterSteps);
+      s->explorationCredit = kEncounterSteps;
     }
     CHECK(validate(*s));
     MemoryStore store; store.disk = encoded(*s); store.before = true;

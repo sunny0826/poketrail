@@ -2,18 +2,28 @@ from __future__ import annotations
 
 if __package__:
     from tools.design_preview import (
-        BG, BLUE, GOLD, MINT, MUTED, PANEL, PANEL_2, PURPLE, RED, TEXT,
+        BG, BLUE, GOLD, MINT, MUTED, PANEL, PANEL_2, PURPLE, RED, SPECIES_COUNT, TEXT,
         Canvas, GeneratedAssets, alert, battery, glyph, menu, poke_count, progress,
         title,
     )
     from tools.design_preview_screens import base, sprite, star
 else:
     from design_preview import (
-        BG, BLUE, GOLD, MINT, MUTED, PANEL, PANEL_2, PURPLE, RED, TEXT,
+        BG, BLUE, GOLD, MINT, MUTED, PANEL, PANEL_2, PURPLE, RED, SPECIES_COUNT, TEXT,
         Canvas, GeneratedAssets, alert, battery, glyph, menu, poke_count, progress,
         title,
     )
     from design_preview_screens import base, sprite, star
+
+RECORDS_FIRST_CAPTURES_LABEL = f"永久首捕 · {SPECIES_COUNT}种"
+
+
+def viewer_counter(number: int) -> str:
+    return f"#{number:03d} / {SPECIES_COUNT}"
+
+
+def first_capture_footer(number: int) -> str:
+    return f"{number:03d} / {SPECIES_COUNT + 1} · 轻触下方返回"
 
 
 def record_footer(c: Canvas, value: str) -> None:
@@ -31,7 +41,7 @@ def viewer(spec: dict, assets: GeneratedAssets) -> Canvas:
         c.text("!", 233, 208, 40, RED, mono=True)
         c.text("动画内存不足", 233, 290, 20, RED)
         return c
-    c.text(f"#{number:03d} / 151", 233, 42, 14, MUTED, mono=True)
+    c.text(viewer_counter(number), 233, 42, 14, MUTED, mono=True)
     c.text(assets.name(number), 233, 72, 24, TEXT)
     c.draw.ellipse((113, 103, 353, 343), outline="#203B32", width=2)
     c.draw.ellipse((143, 126, 323, 320), outline="#162C25", width=2)
@@ -131,7 +141,7 @@ def records(spec: dict, assets: GeneratedAssets) -> Canvas:
     for y in (135, 145, 155):
         c.draw.line((214, y, 226, y), fill=GOLD)
         c.draw.line((240, y, 252, y), fill=GOLD)
-    items = [{"label": "永久首捕 · 151种", "icon": "book"},
+    items = [{"label": RECORDS_FIRST_CAPTURES_LABEL, "icon": "book"},
              {"label": "最近32次捕捉", "icon": "records"},
              {"label": "今日与14日日汇总", "icon": "records"},
              {"label": "每日与长期里程碑", "icon": "records"},
@@ -156,7 +166,7 @@ def capture_card(spec: dict, assets: GeneratedAssets, recent: bool = False) -> C
         c.text("UTC+08:00 · 完整日", 233, 282, 13, MUTED)
         c.fit("今日 3,842 步 · 累计 48,210 步", 233, 315, 300, 14, TEXT)
         c.text("每日 1千 3千  ·  累计 1万", 233, 349, 14, GOLD)
-    record_footer(c, "01 / 32 · 轻触下方返回" if recent else f"{number:03d} / 152 · 轻触下方返回")
+    record_footer(c, "01 / 32 · 轻触下方返回" if recent else first_capture_footer(number))
     return c
 
 

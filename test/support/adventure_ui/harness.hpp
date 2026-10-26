@@ -98,7 +98,7 @@ void openMenu(Runtime& r, TestPlatform& p) {
 }
 void select(Runtime& r, TestPlatform& p, unsigned item) {
   const auto page = r.screen().page;
-  for (unsigned guard = 0; r.screen().selected != item && guard < 160; ++guard) edge(r, p, false, true);
+  for (unsigned guard = 0; r.screen().selected != item && guard < 320; ++guard) edge(r, p, false, true);
   check(r.screen().page == page && r.screen().selected == item, "menu item reachable with physical keys");
   edge(r, p, true, true);
 }

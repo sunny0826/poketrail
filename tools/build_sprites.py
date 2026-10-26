@@ -16,16 +16,31 @@ from PIL import Image
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_HEADER = REPO_ROOT / "firmware/apps/20_pokedex/sprites_generated.hpp"
 CACHE_DIR = REPO_ROOT / "assets/sprites/black-white"
-METADATA_CACHE = REPO_ROOT / "assets/pokedex-gen1.json"
-EVOLUTION_CACHE = REPO_ROOT / "assets/evolution-gen1.json"
-MANIFEST = REPO_ROOT / "assets/animations-gen1.json"
+METADATA_CACHE = (REPO_ROOT / "assets/pokedex-gen1.json",
+                  REPO_ROOT / "assets/pokedex-gen2.json")
+SCALE_CACHE = REPO_ROOT / "assets/sprite-scales.json"
+MANIFESTS = {
+    1: REPO_ROOT / "assets/animations-gen1.json",
+    2: REPO_ROOT / "assets/animations-gen2.json",
+}
+GEN1_COUNT = 151
+POKEMON_COUNT = 251
 SPRITE_REVISION = "97a7832d307311c0e1c6ea9035308bf80cc94f81"
 SPRITE_URL = (
     f"https://raw.githubusercontent.com/PokeAPI/sprites/{SPRITE_REVISION}/"
     "sprites/pokemon/versions/generation-v/black-white/animated/{id}.gif"
 )
 TRANSPARENT_KEY = 0xF81F
-MAX_CANVAS = 128
+MAX_CANVAS = 160
+
+
+def generation_of(number: int) -> int:
+    return 1 if number <= GEN1_COUNT else 2
+
+
+def requires_separate_output(wanted: list[int], has_ids: bool) -> bool:
+    """非完整 1-251 输出（或显式 --ids）不得写入正式动画表。"""
+    return has_ids or sorted(wanted) != list(range(1, POKEMON_COUNT + 1))
 
 
 def fetch(number: int, expected_hash: str | None = None) -> bytes:
@@ -40,7 +55,7 @@ def fetch(number: int, expected_hash: str | None = None) -> bytes:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
     if expected_hash and hashlib.sha256(data).hexdigest() != expected_hash:
-        raise ValueError(f"#{number} GIF differs from assets/animations-gen1.json")
+        raise ValueError(f"#{number} GIF differs from its animations manifest")
     return data
 
 
@@ -112,38 +127,74 @@ def build_animation(data: bytes) -> dict:
                 sha256=hashlib.sha256(data).hexdigest())
 
 
-def load_evolved_species(path: Path = EVOLUTION_CACHE) -> set[int]:
-    raw = json.loads(path.read_text())["parents"]
-    if set(raw) != {str(i) for i in range(1, 152)}:
-        raise ValueError("evolution metadata must contain exactly IDs 1-151")
-    parents = {int(number): parent for number, parent in raw.items()}
-    for number, parent in parents.items():
-        if parent is not None and (type(parent) is not int or
-                                   parent not in parents or parent == number):
-            raise ValueError(f"#{number}: invalid evolution parent {parent}")
-    for number in parents:
-        seen = set()
-        current = number
-        while current is not None:
-            if current in seen:
-                raise ValueError(f"#{number}: evolution cycle")
-            seen.add(current)
-            current = parents[current]
-    return {number for number, parent in parents.items() if parent is not None}
+def load_scales(path: Path = SCALE_CACHE) -> set[int]:
+    data = json.loads(path.read_text())["generations"]
+    if set(data) != {"1", "2"}:
+        raise ValueError("sprite scales must describe generations 1 and 2")
+    evolved = set()
+    for key, first, last in (("1", 1, GEN1_COUNT), ("2", GEN1_COUNT + 1, POKEMON_COUNT)):
+        entry = data[key]
+        if (entry.get("first"), entry.get("last")) != (first, last):
+            raise ValueError(f"generation {key}: unexpected ID range")
+        ids = entry.get("evolved")
+        if not isinstance(ids, list) or not all(type(i) is int for i in ids):
+            raise ValueError(f"generation {key}: evolved must be an integer list")
+        if len(set(ids)) != len(ids) or any(not first <= i <= last for i in ids):
+            raise ValueError(f"generation {key}: invalid evolved IDs")
+        if key == "2":
+            base = entry.get("base")
+            if (not isinstance(base, list) or not all(type(i) is int for i in base)
+                    or len(set(base)) != len(base)
+                    or set(base) != set(range(first, last + 1)) - set(ids)):
+                raise ValueError("generation 2: base and evolved must partition 152-251")
+        evolved.update(ids)
+    return evolved
+
+
+def load_metadata() -> dict[int, dict]:
+    by_id = {}
+    for path in METADATA_CACHE:
+        for entry in json.loads(path.read_text())["pokemons"]:
+            if entry["zukan_sub_id"] != 0:
+                continue
+            number = int(entry["zukan_id"])
+            if number in by_id:
+                raise ValueError(f"#{number}: duplicate metadata")
+            by_id[number] = entry
+    if set(by_id) != set(range(1, POKEMON_COUNT + 1)):
+        raise ValueError("metadata must contain exactly IDs 1-251")
+    return by_id
+
+
+def load_manifests() -> tuple[dict[int, str], set[int]]:
+    hashes = {}
+    present = set()
+    for generation, path in MANIFESTS.items():
+        if not path.exists():
+            continue
+        present.add(generation)
+        manifest = json.loads(path.read_text())
+        if manifest["revision"] != SPRITE_REVISION:
+            raise ValueError(f"generation {generation} animation manifest revision differs")
+        first, last = (1, GEN1_COUNT) if generation == 1 else (GEN1_COUNT + 1, POKEMON_COUNT)
+        ids = [entry["id"] for entry in manifest["sprites"]]
+        if sorted(ids) != list(range(first, last + 1)):
+            raise ValueError(f"generation {generation}: incomplete animation manifest")
+        for entry in manifest["sprites"]:
+            hashes[entry["id"]] = entry["sha256"]
+    return hashes, present
 
 
 def load_sprites(wanted: list[int]) -> list[dict]:
-    evolved_species = load_evolved_species()
-    metadata = json.loads(METADATA_CACHE.read_text())["pokemons"]
-    by_id = {int(e["zukan_id"]): e for e in metadata if e["zukan_sub_id"] == 0}
-    manifest = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
-    if manifest and manifest["revision"] != SPRITE_REVISION:
-        raise ValueError("animation manifest revision differs from generator")
-    hashes = {entry["id"]: entry["sha256"] for entry in manifest.get("sprites", [])}
+    evolved_species = load_scales()
+    by_id = load_metadata()
+    hashes, present = load_manifests()
     sprites = []
     for number in wanted:
         if number not in by_id:
             raise ValueError(f"#{number} metadata missing")
+        if generation_of(number) in present and number not in hashes:
+            raise ValueError(f"#{number}: missing animation manifest entry")
         entry = by_id[number]
         animation = build_animation(fetch(number, hashes.get(number)))
         sprites.append(dict(animation, id=number, name=entry["pokemon_name"],
@@ -211,24 +262,40 @@ def generate_manifest(sprites: list[dict]) -> str:
                       ensure_ascii=False, indent=2) + '\n'
 
 
+def write_manifests(sprites: list[dict], generation: int) -> None:
+    for key, path in MANIFESTS.items():
+        if key not in ({1} if generation == 1 else {1, 2}):
+            continue
+        first, last = (1, GEN1_COUNT) if key == 1 else (GEN1_COUNT + 1, POKEMON_COUNT)
+        selected = [s for s in sprites if first <= s["id"] <= last]
+        if [s["id"] for s in selected] != list(range(first, last + 1)):
+            raise ValueError(f"generation {key}: incomplete manifest output")
+        path.write_text(generate_manifest(selected), encoding='utf-8')
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--generation', type=int, choices=[1], default=1)
+    parser.add_argument('--generation', type=int, choices=[1, 2], default=2,
+                        help='1 生成 1-151；2 生成 1-251（默认）')
     parser.add_argument('--ids', default='', help='指定编号，逗号分隔')
     parser.add_argument('--out', type=Path)
     args = parser.parse_args()
-    wanted = [int(n) for n in args.ids.split(',')] if args.ids else list(range(1, 152))
-    if len(set(wanted)) != len(wanted) or any(n < 1 or n > 151 for n in wanted):
-        parser.error('编号必须是1至151的不重复整数')
+    count = GEN1_COUNT if args.generation == 1 else POKEMON_COUNT
+    wanted = [int(n) for n in args.ids.split(',')] if args.ids else list(range(1, count + 1))
+    if len(set(wanted)) != len(wanted) or any(n < 1 or n > POKEMON_COUNT for n in wanted):
+        parser.error('编号必须是1至251的不重复整数')
     output = (args.out or OUT_HEADER).resolve()
-    if args.ids and (args.out is None or
-                     output.with_suffix('.cpp').resolve() == OUT_HEADER.with_suffix('.cpp').resolve()):
-        parser.error('使用 --ids 时必须通过 --out 指定完整图鉴之外的输出路径')
+    official = {OUT_HEADER.resolve(), OUT_HEADER.with_suffix('.cpp').resolve()}
+    if requires_separate_output(wanted, bool(args.ids)):
+        if args.out is None:
+            parser.error('非完整 1-251 输出必须通过 --out 指定独立路径')
+        if output in official or output.with_suffix('.cpp').resolve() in official:
+            parser.error('非完整 1-251 输出不得写入正式动画表，请指定独立的 --out 路径')
     sprites = load_sprites(wanted)
     output.write_text(generate_header(sprites), encoding='utf-8')
     output.with_suffix('.cpp').write_text(generate_source(sprites), encoding='utf-8')
-    if wanted == list(range(1, 152)) and output == OUT_HEADER:
-        MANIFEST.write_text(generate_manifest(sprites), encoding='utf-8')
+    if not args.ids and output == OUT_HEADER:
+        write_manifests(sprites, args.generation)
     print(f'{len(sprites)} animations; {sum(len(s["frames"]) for s in sprites)} frames; '
           f'{sum(len(s["data"]) for s in sprites):,} compressed bytes')
     return 0

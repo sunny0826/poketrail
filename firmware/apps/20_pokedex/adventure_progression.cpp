@@ -3,7 +3,7 @@
 namespace pokedex { namespace adventure {
 EvolutionView Engine::evolutionView(uint16_t species) const {
   EvolutionView view; view.from = species; view.revision = state_.rosterRevision;
-  if (species < 1 || species > 151) return view;
+  if (species < 1 || species > kSpeciesCount) return view;
   const SpeciesProgress& progress = state_.progress[species - 1];
   view.walked = progress.walked; view.available = progress.walked - progress.spent;
   CommandResult status = guard();
@@ -13,7 +13,7 @@ EvolutionView Engine::evolutionView(uint16_t species) const {
        (battle_.view().active && battle_.view().result == Result::None))) status = CommandResult::InvalidPhase;
   if (status == CommandResult::Applied && (!owns(state_, species) || state_.partner != species)) status = CommandResult::InvalidInput;
   size_t count = 0; const EvolutionRule* rules = evolutionRules(count);
-  for (size_t i = 0; i < count && view.count < 3; ++i) {
+  for (size_t i = 0; i < count && view.count < kEvolutionOptions; ++i) {
     if (rules[i].from != species) continue;
     EvolutionOption& option = view.options[view.count++]; option.target = rules[i].to; option.cost = rules[i].steps;
     option.status = status;

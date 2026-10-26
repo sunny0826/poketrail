@@ -7,6 +7,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
+SPECIES_COUNT = 251
 SIZE = 466
 CENTER = 233
 RADIUS = 228
@@ -60,8 +61,8 @@ class GeneratedAssets:
                 name, types, number, width, height, frames, evolved = match.groups()
                 self.meta[int(number)] = dict(name=name, types=types, width=int(width),
                     height=int(height), frames=int(frames), evolved=evolved == "true")
-        if set(self.meta) != set(range(1, 152)):
-            raise ValueError("generated sprite table must contain IDs 1-151")
+        if set(self.meta) != set(range(1, SPECIES_COUNT + 1)):
+            raise ValueError(f"generated sprite table must contain IDs 1-{SPECIES_COUNT}")
 
     @staticmethod
     def _array(source: str, kind: str, name: str) -> list[int]:

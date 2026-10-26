@@ -10,7 +10,7 @@ from pathlib import Path
 
 from PIL import Image
 from tools.build_icons import (
-    CACHE_DIR, MANIFEST, OUT_HEADER, POKEMON_COUNT, SPRITE_REVISION,
+    CACHE_DIR, GEN1_COUNT, MANIFESTS, OUT_HEADER, POKEMON_COUNT, SPRITE_REVISION,
     TRANSPARENT_KEY, build_icon, generate_header, generate_source, load_icons,
 )
 
@@ -39,35 +39,56 @@ def parse_generated_arrays():
     for match in re.finditer(r'const uint16_t (\w+)\[\] = \{(.*?)\};', source, re.S):
         name, body = match.groups()
         arrays[name] = [int(token, 16) for token in re.findall(r'0x[0-9A-Fa-f]{4}', body)]
-    table = re.search(r'const Icon kPokemonIcons\[151\] = \{(.*?)\};', source, re.S)
+    table = re.search(r'const Icon kPokemonIcons\[251\] = \{(.*?)\};', source, re.S)
     entries = re.findall(r'\{(\d+), (\d+), (\w+)\}', table.group(1))
     ball = re.search(r'const Icon kPokeBallIcon = \{(\d+), (\d+), (\w+)\};', source)
     return arrays, entries, ball.groups()
 
 
+def copy_icons_fixture(root):
+    for relative in ('tools/build_icons.py', 'assets/icons-gen1.json',
+                     'assets/icons-gen2.json'):
+        destination = root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / relative, destination)
+    (root / 'assets/sprites').mkdir(parents=True, exist_ok=True)
+    (root / 'assets/sprites/icons').symlink_to(CACHE_DIR, target_is_directory=True)
+
+
 class ManifestTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.manifest = json.loads(MANIFEST.read_text())
+        cls.manifests = {g: json.loads(p.read_text()) for g, p in MANIFESTS.items()}
 
-    def test_source_pinned_to_fixed_revision(self):
-        self.assertEqual(self.manifest['revision'], SPRITE_REVISION)
-        self.assertIn(SPRITE_REVISION, self.manifest['source'])
-        self.assertIn('generation-vii/icons/', self.manifest['pokemon_path'])
-        self.assertEqual(self.manifest['poke_ball_path'], 'sprites/items/poke-ball.png')
+    def test_sources_pinned_to_fixed_revision(self):
+        for generation, manifest in self.manifests.items():
+            with self.subTest(generation=generation):
+                self.assertEqual(manifest['revision'], SPRITE_REVISION)
+                self.assertIn(SPRITE_REVISION, manifest['source'])
+                self.assertIn('generation-vii/icons/', manifest['pokemon_path'])
+        self.assertEqual(self.manifests[1]['poke_ball_path'], 'sprites/items/poke-ball.png')
 
-    def test_all_151_ids_complete_and_unique(self):
-        ids = [entry['id'] for entry in self.manifest['icons']]
+    def test_all_251_ids_complete_and_unique(self):
+        entries = [entry for manifest in self.manifests.values()
+                   for entry in manifest['icons']]
+        ids = [entry['id'] for entry in entries]
         self.assertEqual(sorted(ids), list(range(1, POKEMON_COUNT + 1)))
         self.assertEqual(len(ids), len(set(ids)))
-        for entry in self.manifest['icons']:
+        for entry in entries:
             with self.subTest(id=entry['id']):
                 self.assertRegex(entry['sha256'], r'^[0-9a-f]{64}$')
                 self.assertGreater(entry['width'], 0)
                 self.assertGreater(entry['height'], 0)
 
+    def test_generation_ranges_are_split(self):
+        self.assertEqual([e['id'] for e in self.manifests[1]['icons']],
+                         list(range(1, GEN1_COUNT + 1)))
+        self.assertEqual([e['id'] for e in self.manifests[2]['icons']],
+                         list(range(GEN1_COUNT + 1, POKEMON_COUNT + 1)))
+        self.assertNotIn('poke_ball', self.manifests[2])
+
     def test_poke_ball_entry_present(self):
-        ball = self.manifest['poke_ball']
+        ball = self.manifests[1]['poke_ball']
         self.assertRegex(ball['sha256'], r'^[0-9a-f]{64}$')
         self.assertGreater(ball['width'], 0)
         self.assertGreater(ball['height'], 0)
@@ -91,15 +112,17 @@ class SourceAssetTests(unittest.TestCase):
                 self.assertNotEqual(value, 0xF81F, f'{path.name}: opaque pixel hits key')
         self.assertGreater(transparent, 0, f'{path.name}: no transparent pixels')
 
-    def test_all_cached_pngs_match_manifest(self):
-        manifest = json.loads(MANIFEST.read_text())
-        for entry in manifest['icons']:
-            with self.subTest(id=entry['id']):
-                path = CACHE_DIR / f'{entry["id"]:04d}.png'
-                self.assertTrue(path.exists(), f'missing {path}')
-                self.check_icon(path, entry)
+    def test_all_cached_pngs_match_manifests(self):
+        for manifest in MANIFESTS.values():
+            data = json.loads(manifest.read_text())
+            for entry in data['icons']:
+                with self.subTest(id=entry['id']):
+                    path = CACHE_DIR / f'{entry["id"]:04d}.png'
+                    self.assertTrue(path.exists(), f'missing {path}')
+                    self.check_icon(path, entry)
         with self.subTest(id='poke-ball'):
-            self.check_icon(CACHE_DIR / 'poke-ball.png', manifest['poke_ball'])
+            ball = json.loads(MANIFESTS[1].read_text())['poke_ball']
+            self.check_icon(CACHE_DIR / 'poke-ball.png', ball)
 
     def test_pokemon_icons_expected_canvas(self):
         for number in range(1, POKEMON_COUNT + 1):
@@ -122,7 +145,7 @@ class GeneratedCodeTests(unittest.TestCase):
         self.assertRegex(self.header,
                          r'struct Icon \{\s*uint16_t width;\s*uint16_t height;'
                          r'\s*const uint16_t\* pixels;\s*\};')
-        self.assertIn('extern const Icon kPokemonIcons[151];', self.header)
+        self.assertIn('extern const Icon kPokemonIcons[251];', self.header)
         self.assertIn('extern const Icon kPokeBallIcon;', self.header)
 
     def test_transparent_key_matches_sprite_hpp(self):
@@ -130,7 +153,7 @@ class GeneratedCodeTests(unittest.TestCase):
         self.assertRegex(sprite, r'kTransparentKey = 0xF81F')
         self.assertEqual(TRANSPARENT_KEY, 0xF81F)
 
-    def test_table_has_151_entries_in_id_order(self):
+    def test_table_has_251_entries_in_id_order(self):
         self.assertEqual(len(self.entries), POKEMON_COUNT)
         for index, (width, height, array) in enumerate(self.entries, start=1):
             with self.subTest(id=index):
@@ -154,10 +177,72 @@ class GeneratedCodeTests(unittest.TestCase):
         self.assertEqual(self.arrays[array], pixels)
 
     def test_generated_files_are_current(self):
-        pokemon, poke_ball = load_icons(download=False, write_manifest=False)
+        pokemon, poke_ball = load_icons(download=False, write_manifests=False)
         self.assertEqual(self.header, generate_header())
         self.assertEqual(OUT_HEADER.with_suffix('.cpp').read_text(encoding='utf-8'),
                          generate_source(pokemon, poke_ball))
+
+
+class ManifestRequirementTests(unittest.TestCase):
+    """普通生成与 --check 必须要求两代清单存在；只有 --write-manifests 可重建。"""
+
+    def make_root(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        copy_icons_fixture(root)
+        (root / 'firmware/apps/20_pokedex').mkdir(parents=True)
+        return root
+
+    def run_generator(self, root, *args):
+        return subprocess.run([sys.executable, str(root / 'tools/build_icons.py'), *args],
+                              cwd=root, text=True, capture_output=True)
+
+    def test_missing_manifest_fails_for_each_generation(self):
+        for removed in ((1,), (2,), (1, 2)):
+            for args in ((), ('--check',), ('--download',)):
+                with self.subTest(removed=removed, args=args):
+                    root = self.make_root()
+                    for generation in removed:
+                        (root / f'assets/icons-gen{generation}.json').unlink()
+                    result = self.run_generator(root, *args)
+                    self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                    self.assertIn(f'generation {removed[0]} icon manifest missing',
+                                  result.stderr)
+                    self.assertFalse(
+                        (root / 'firmware/apps/20_pokedex/icons_generated.cpp').exists())
+
+    def test_write_manifests_is_the_only_rebuild_bypass(self):
+        root = self.make_root()
+        originals = {path: path.read_bytes()
+                     for path in (root / 'assets/icons-gen1.json',
+                                  root / 'assets/icons-gen2.json')}
+        (root / 'assets/icons-gen2.json').unlink()
+        result = self.run_generator(root, '--write-manifests')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for path, original in originals.items():
+            self.assertEqual(path.read_bytes(), original)
+        self.assertTrue(
+            (root / 'firmware/apps/20_pokedex/icons_generated.cpp').exists())
+
+    def test_poke_ball_entry_and_hash_are_enforced(self):
+        for mutate in ('missing_entry', 'wrong_hash'):
+            with self.subTest(mutate=mutate):
+                root = self.make_root()
+                path = root / 'assets/icons-gen1.json'
+                manifest = json.loads(path.read_text())
+                if mutate == 'missing_entry':
+                    manifest.pop('poke_ball')
+                    expected = 'missing poke_ball entry'
+                else:
+                    manifest['poke_ball']['sha256'] = '0' * 64
+                    expected = 'poke-ball.png: SHA256'
+                path.write_text(json.dumps(manifest))
+                result = self.run_generator(root)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn(expected, result.stderr)
+                self.assertFalse(
+                    (root / 'firmware/apps/20_pokedex/icons_generated.cpp').exists())
 
 
 class GeneratorBehaviorTests(unittest.TestCase):
@@ -186,12 +271,7 @@ class GeneratorBehaviorTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
-        for relative in ('tools/build_icons.py', 'assets/icons-gen1.json',
-                         'assets/sprites/icons/0001.png',
-                         'assets/sprites/icons/poke-ball.png'):
-            destination = root / relative
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(ROOT / relative, destination)
+        copy_icons_fixture(root)
         manifest_path = root / 'assets/icons-gen1.json'
         manifest = json.loads(manifest_path.read_text())
         manifest['icons'][0]['sha256'] = '0' * 64
@@ -206,7 +286,8 @@ class GeneratorBehaviorTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
-        for relative in ('tools/build_icons.py', 'assets/icons-gen1.json'):
+        for relative in ('tools/build_icons.py', 'assets/icons-gen1.json',
+                         'assets/icons-gen2.json'):
             destination = root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / relative, destination)

@@ -81,8 +81,10 @@ void bootAndCapture() {
         "result acknowledgement immediately redeems saved credit without extra steps");
   openMenu(r, p); select(r, p, 4); published(r, "resources"); select(r, p, 0);
   published(r, "records"); select(r, p, 0); published(r, "first-capture");
-  select(r, p, 150); check(r.screen().selected == 150, "permanent 151st species reachable independently of recent ring");
+  select(r, p, 150); check(r.screen().selected == 150, "permanent Kanto 151st species reachable independently of recent ring");
   published(r, "first-capture-151"); tap(r, p, 233, 360);
+  select(r, p, 0); select(r, p, 250); check(r.screen().selected == 250, "permanent Johto 251st species reachable in the extended catalog");
+  published(r, "first-capture-251"); tap(r, p, 233, 360);
   select(r, p, 1); published(r, "recent"); tap(r, p, 233, 360);
   select(r, p, 2); published(r, "days"); tap(r, p, 233, 360);
   select(r, p, 3); published(r, "achievements"); tap(r, p, 233, 360);

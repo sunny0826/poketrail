@@ -55,22 +55,23 @@ void starters() {
 }
 void collection() {
   MemoryStore store; std::vector<uint16_t> ids;
-  for (unsigned id = 1; id <= 151; ++id) ids.push_back(id);
-  legacyOwned(store, ids, 83);
+  for (unsigned id = 1; id <= 251; ++id) ids.push_back(id);
+  modernOwned(store, ids, 83);
   HostPlatform platform; Runtime runtime(store, platform); start(runtime); openMenu(runtime); select(runtime, 2);
   screenshot(runtime, "partners-first");
-  for (unsigned selected = 0; selected < 152; ++selected) {
+  for (unsigned selected = 0; selected < 252; ++selected) {
     if (selected) edge(runtime, false, true);
     check(runtime.screen().selected == selected, "all collection rows reachable by right button");
     const unsigned first = selected / 3 * 3;
-    for (unsigned row = first; row < first + 3 && row < 151; ++row)
+    for (unsigned row = first; row < first + 3 && row < 251; ++row)
       pokemon(row + 1, 107, 238 + (row - first) * 68);
-    if (selected < 151) pokemon(selected + 1, 233, 137, 2);
+    if (selected < 251) pokemon(selected + 1, 233, 137, 2);
     if (selected == 82) screenshot(runtime, "partners-carried");
-    if (selected == 150) screenshot(runtime, "partners-last-species");
+    if (selected == 150) screenshot(runtime, "partners-kanto-last");
+    if (selected == 250) screenshot(runtime, "partners-last-species");
   }
   screenshot(runtime, "partners-last-back");
-  tap(runtime, 233, 306);
+  tap(runtime, 233, 374);
   check(runtime.screen().page == Page::Menu, "last-page back row returns to the main menu");
   select(runtime, 7); openMenu(runtime); select(runtime, 2); tap(runtime, 119, 306);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 2,
@@ -139,11 +140,11 @@ void throwEntry() {
 }
 void exhaustedRoutes() {
   MemoryStore store; std::vector<uint16_t> captured;
-  for (uint16_t id = 1; id <= 151; ++id) if (ordinaryEncounter(id) && id != 129) captured.push_back(id);
-  legacyOwned(store, captured);
+  for (uint16_t id = 1; id <= kSpeciesCount; ++id) if (ordinaryEncounter(id) && id != 129) captured.push_back(id);
+  modernOwned(store, captured);
   Save old; check(store.load(old).status == LoadStatus::Loaded, "read exhausted fixture");
   old.captureCounts[0] = 1; old.firstCapture[0] = old.firstCapture[3]; old.firstCapture[0].species = 1;
-  ++old.nextEncounterId; old.totalSteps += 500; old.undatedSteps += 500;
+  ++old.nextEncounterId; old.totalSteps += kEncounterSteps; old.undatedSteps += kEncounterSteps;
   check(store.commit(old) == CommitStatus::Committed, "starter previously captured in old save");
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   openMenu(runtime); select(runtime, 4); screenshot(runtime, "forest-exhausted");
@@ -151,10 +152,10 @@ void exhaustedRoutes() {
   tap(runtime, 233, 52); select(runtime, 1); select(runtime, 1);
   check(runtime.engine().view().route == Route::Coast, "route can change after exhaustion");
   screenshot(runtime, "coast-available");
-  captured.push_back(129); MemoryStore full; legacyOwned(full, captured);
+  captured.push_back(129); MemoryStore full; modernOwned(full, captured);
   check(full.load(old).status == LoadStatus::Loaded, "read all-captured fixture");
   old.captureCounts[0] = 1; old.firstCapture[0] = old.firstCapture[3]; old.firstCapture[0].species = 1;
-  ++old.nextEncounterId; old.totalSteps += 500; old.undatedSteps += 500;
+  ++old.nextEncounterId; old.totalSteps += kEncounterSteps; old.undatedSteps += kEncounterSteps;
   check(full.commit(old) == CommitStatus::Committed, "all ordinary species have permanent records");
   Runtime complete(full, platform); start(complete); openMenu(complete); select(complete, 4);
   screenshot(complete, "all-captured");

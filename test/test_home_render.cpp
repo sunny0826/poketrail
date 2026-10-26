@@ -257,9 +257,10 @@ void animationWraparound() {
   openMenu(runtime); select(runtime, 7); frame(runtime); home(runtime); spritePixels(1, origin, true);
 }
 void allPartners() {
-  const std::vector<uint16_t> representatives = {1, 4, 7, 6, 42, 122, 139, 149};
-  for (uint16_t id = 1; id <= 151; ++id) {
-    MemoryStore store; legacyOwned(store, {id}, id); HostPlatform platform;
+  const std::vector<uint16_t> representatives = {1, 4, 7, 6, 42, 122, 139, 149,
+                                                 152, 157, 160, 181, 197, 208, 245, 249, 251};
+  for (uint16_t id = 1; id <= kSpeciesCount; ++id) {
+    MemoryStore store; modernOwned(store, {id}, id); HostPlatform platform;
     Runtime runtime(store, platform); start(runtime); const uint32_t origin = host_time_ms;
     home(runtime); check(runtime.engine().view().partner == id, "legal versioned collection restores requested partner");
     spritePixels(id, origin, id == 1); roundPixels();

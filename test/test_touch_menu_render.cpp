@@ -139,15 +139,15 @@ void pagination() {
   tap(partners, 233, 306);
   check(partners.screen().page == Page::Menu, "partner back returns to the main menu");
   MemoryStore full; std::vector<uint16_t> ids;
-  for (unsigned id = 1; id <= 151; ++id) ids.push_back(id);
-  legacyOwned(full, ids, 122);
+  for (unsigned id = 1; id <= 251; ++id) ids.push_back(id);
+  modernOwned(full, ids, 122);
   Runtime collection(full, platform); start(collection); openMenu(collection); select(collection, 2);
-  for (unsigned page = 1; page < 51; ++page) {
+  for (unsigned page = 1; page < 84; ++page) {
     tap(collection, 298, 430);
     check(collection.screen().selected == page * 3, "touch pagination reaches every page of full collection");
   }
   screenshot(collection, "collection-last-page");
-  tap(collection, 233, 306);
+  tap(collection, 233, 374);
   check(collection.screen().page == Page::Menu, "full collection last back works by touch");
 }
 void resourcesAndHomeTouch() {
