@@ -168,7 +168,10 @@ void stepSaveBoundaries() {
     store.fail = true;
     for (unsigned t = 0; t < 500; t += 20) {
       platform.z = 1 - 0.30f * std::cos(6.28318530718f * t / 500);
-      if (!duringAnimation && t >= 420) buttons(true, true);
+      // 确认键必须与第三个步峰的确认批同帧：观察步先失败入队、确认
+      // 命令随后记录，才构成「步重试与进化收据失配」场景。EMA 系数
+      // 决定谷判定的帧位（0.8 时为 t=400），调整滤波参数需同步对齐。
+      if (!duringAnimation && t >= 400) buttons(true, true);
       frame(runtime);
     }
     platform.z = 1;

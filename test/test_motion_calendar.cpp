@@ -66,6 +66,15 @@ void motionTests() {
   stationary.cycle();
   stationary.rest(3000);
   check(stationary.steps.empty(), "single pickup/setdown no steps");
+  // 口袋/背包佩戴：信号是脚步冲击谐波（~9Hz 衰减振荡），低通滤波必须放行
+  // 足够的冲击能量让谷值压过阈值，否则步数大量丢失。
+  for (float impact : {0.20f, 0.30f}) {
+    Feed pocket;
+    for (int s = 0; s < 40; ++s)
+      for (unsigned t = 0; t < 500; t += 20)
+        pocket.sample(1.0f + impact * cosf(6.2831853f * float(t) / 110.0f) * expf(-float(t) / 70.0f));
+    check(pocket.steps.size() >= 39, "pocket impact steps counted at walking cadence");
+  }
   Feed first;
   first.cycle(); first.cycle();
   check(first.steps.empty(), "two peaks remain unconfirmed");

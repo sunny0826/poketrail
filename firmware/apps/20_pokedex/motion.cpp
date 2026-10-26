@@ -94,7 +94,9 @@ StepBatch Detector::sample(float x, float y, float z, uint32_t now, uint16_t tag
     return result;
   }
   lastSample_ = now;
-  filtered_ += 0.5f * (magnitude - filtered_);
+  // 0.8 passes the ~9Hz footstep impact carried in pockets and bags; 0.5
+  // attenuated it below the valley threshold and lost most pocket steps.
+  filtered_ += 0.8f * (magnitude - filtered_);
   if (!tracking_ && (confirmed_ || pendingCount_) && now - lastPeak_ > kMaxStepMs)
     clearCadence();
   if (filtered_ <= 0.94f) {
