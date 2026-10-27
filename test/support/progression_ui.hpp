@@ -54,7 +54,14 @@ class HostPlatform : public Platform {
   Sample sample() override { Sample s; s.fresh = true; s.z = z; s.at = now(); return s; }
   Input pollInput() override {
     c152::update(); Input input;
-    input.at = now(); buttonInput.sample(input, M5.BtnA, M5.BtnB);
+    input.at = now();
+    uint8_t button = 0;
+    if (M5.Power.M5pm1.readRegister(0x48, &button, 1)) {
+      const bool down = (button & 0x01) != 0;
+      input.power = (down && !powerWasDown_) || ((button & 0x80) != 0 && !down);
+      powerWasDown_ = down;
+    }
+    buttonInput.sample(input, M5.BtnA, M5.BtnB);
     input.touch = c152::touchWasPressed(); const auto detail = M5.Touch.getDetail();
     input.x = detail.x; input.y = detail.y;
     const int dx = detail.x - detail.base_x, dy = detail.y - detail.base_y;
@@ -72,6 +79,7 @@ class HostPlatform : public Platform {
   void brightness(uint8_t value) override { M5.Display.setBrightness(value); }
   c152::DisplayTransition displaySleep(bool) override { return {true}; }
   c152::BatteryStatus readBattery() override { return {}; }
+  bool powerWasDown_ = false;
 };
 void frame(Runtime& runtime, uint32_t ms = 20) { host_time_ms += ms; runtime.loop(); }
 void idle(Runtime& runtime, unsigned ms) { for (unsigned i = 0; i < ms; i += 20) frame(runtime); }
@@ -107,6 +115,7 @@ void select(Runtime& runtime, unsigned index) {
 }
 void start(Runtime& runtime) {
   M5.BtnA = m5::Button_Class(); M5.BtnB = m5::Button_Class(); buttons(false, false);
+  M5.powerDown(false);
   M5.Touch.detail = HostTouchDetail();
   check(runtime.begin(), "runtime graphics ready"); frame(runtime);
 }

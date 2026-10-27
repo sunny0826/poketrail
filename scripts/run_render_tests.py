@@ -80,6 +80,7 @@ def main():
               ("test_evolution_preview_render", [str(app / name) for name in adventure_sources]),
               ("test_thumbnail_render", [str(app / name) for name in adventure_sources]),
               ("test_power_render", [str(app / name) for name in adventure_sources]),
+              ("test_power_pages_render", [str(app / name) for name in adventure_sources]),
               ("test_home_render", [str(app / name) for name in adventure_sources])]
     if len(sys.argv) > 1:
         selected = set(sys.argv[1:])

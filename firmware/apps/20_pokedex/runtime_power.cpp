@@ -26,7 +26,8 @@ void Runtime::sleepDisplay() {
 }
 
 bool Runtime::updateDisplayPower(const Input& input) {
-  if (display_ == DisplayState::Asleep && !releaseGate_ && (input.any() || input.held)) {
+  if (display_ == DisplayState::Asleep && !releaseGate_ &&
+      (input.any() || input.held || input.power)) {
     const auto result = platform_.displaySleep(false);
     if (!result.accepted) { ++metrics_.displayErrors; waitForRelease(); return false; }
     wakeDelay_ = result.settleMs;
