@@ -61,3 +61,7 @@ schema3 存档在同一启动事务里确定性升级到 schema4：先按 v3 语
 精灵球不限量：规则 3 的投球不再检查库存、不再递增 `ballsSpent`，`NoBalls` 仅对规则 1–2 的在途遭遇保留。旧账目字段 `rewardBaseSteps`／`ballsSpent` 原样保留并可校验；`ballsSpent < usedBalls - legacyFreeAttempts` 下界仅对规则 1–2 的遭遇要求。schema4 的非 legacy 遭遇必须为当前规则版本；空遭遇（Walking）保持编码原值。
 
 写前、部分写、回读失败继续冻结同一 candidate 重试，不重新迁移、重抽目标或升级规则；旧固件不能读取 schema4。
+
+### 活动分支固件存档的兼容读取
+
+未合并的活动分支固件（legendary-ruins、dragon-trial）在 schema3 payload 末尾追加了 22 字节活动块，并可能持有超出普通池的在途活动遭遇：这些遭遇消耗遭遇 ID 但不消耗探索步，schema3 账目等式对它们不成立。解码器识别「schema3 + 恰好 22 字节尾部」的帧时跳过活动块、关闭在途活动遭遇（回到 Walking、清空结果），并就地升级 schema4；schema4 的每场 0–5000 步账目上界吸收零消耗的 ID 区间，总步、培养账户、捕获历史与伙伴全部保留，活动进度（遗迹线索、试炼阶段）随尾部块一起丢弃。真实活动固件产物见 `test/fixtures/progression/schema3-activity.bin`。该兼容只针对历史固件产物；活动功能正式合并时会按新的迁移契约重新设计字段。

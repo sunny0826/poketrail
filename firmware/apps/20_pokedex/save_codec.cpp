@@ -1,4 +1,7 @@
 #include "save_codec.hpp"
+#include "adventure_migration.hpp"
+#include "encounter_catalog.hpp"
+#include <cstdio>
 #include <memory>
 #include <new>
 #include <type_traits>
@@ -131,7 +134,24 @@ DecodeStatus decode(const uint8_t* bytes, size_t length, Save& out) {
   if (!parsed) return DecodeStatus::IoError;
   parsed->schema = schema; parsed->sequence = sequence;
   Reader data(bytes + kHeaderSize, payloadLength); payload(data, *parsed);
-  if (!data.ok || data.pos != payloadLength || !validate(*parsed)) return DecodeStatus::Corrupt;
+  if (!data.ok) return DecodeStatus::Corrupt;
+  // Frames written by the unmerged activity-branch firmware (legendary-ruins,
+  // dragon-trial) append a 22-byte activity block to an otherwise ordinary
+  // schema-3 payload. Skip that block, retire any in-flight activity encounter
+  // (its species lies outside the ordinary pool), and upgrade to schema 4 on
+  // the spot: schema-3 bookkeeping cannot express encounters that consumed no
+  // exploration credit, while schema-4 accepts the zero-cost id range.
+  const bool activityTail = parsed->schema == 3 && data.pos + 22 == payloadLength;
+  if (!activityTail && data.pos != payloadLength) return DecodeStatus::Corrupt;
+  if (activityTail) {
+    if (parsed->encounter.id && !ordinaryEncounter(parsed->encounter.species)) {
+      parsed->encounter = Encounter();
+      parsed->phase = Phase::Walking;
+      parsed->result = Result::None;
+    }
+    upgradeToSchema4(*parsed);
+  }
+  if (!validate(*parsed)) return DecodeStatus::Corrupt;
   out = *parsed;
   return DecodeStatus::Ok;
 }

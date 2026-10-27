@@ -139,4 +139,25 @@ static void mixedSlots() {
   CHECK(corrupt.load(*out).status==LoadStatus::Loaded&&out->schema==1&&out->sequence==10);
   slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==4);
 }
-int main(){phases();failures();oldThrowsAndBase();creditAndBoundary();schema2Upgrade();mixedSlots();std::printf("migration: %u checks passed\n",checks);}
+static void activityTail() {
+  // A real frame written by the unmerged activity-branch firmware: an ordinary
+  // schema-3 payload plus a 22-byte activity block, mid-activity-encounter
+  // (species 251, ThrowReady) with ids that consumed no exploration credit.
+  char path[128]; std::snprintf(path, sizeof(path), "test/fixtures/progression/schema3-activity.bin");
+  std::ifstream file(path, std::ios::binary); CHECK(bool(file));
+  const std::vector<uint8_t> frame((std::istreambuf_iterator<char>(file)), {});
+  CHECK(frame.size() == 21520);
+  Save s; CHECK(codec::decode(frame.data(), frame.size(), s) == codec::DecodeStatus::Ok);
+  CHECK(s.schema == 4 && s.sequence == 8555 && s.totalSteps == 6293 && s.explorationCredit == 1293);
+  CHECK(s.explorationSpent == 5000 && s.explorationSpent + s.explorationCredit == s.totalSteps);
+  CHECK(s.phase == Phase::Walking && !s.encounter.id && s.result == Result::None);
+  CHECK(s.partner == 1 && s.progress[0].walked == 6281 && s.encounterTarget >= kEncounterMinSteps);
+  CHECK(s.nextEncounterId == 14 && s.ballsSpent == 6 && validate(s));
+  MemoryStore store; store.disk = frame; Engine e(store);
+  CHECK(e.begin() == CommandResult::Applied && e.ready());
+  CHECK(e.view().schema == 4 && e.view().totalSteps == 6293 && e.view().partner == 1);
+  CHECK(e.view().phase == Phase::Walking && e.view().explorationCredit == 1293);
+  // The zero-cost activity ids stay inside schema-4 bookkeeping bounds.
+  CHECK(e.view().explorationSpent + e.view().explorationCredit == e.view().totalSteps);
+}
+int main(){phases();failures();oldThrowsAndBase();creditAndBoundary();schema2Upgrade();mixedSlots();activityTail();std::printf("migration: %u checks passed\n",checks);}

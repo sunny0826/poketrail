@@ -43,10 +43,13 @@ bool migrateLegacy(Save& s) {
   // spent + credit == totalSteps. Any non-legacy encounter still in play is
   // upgraded to the current rules; finished attempts keep their own version so
   // their stored probability and roll stay verifiable.
+  upgradeToSchema4(s);
+  return validate(s);
+}
+void upgradeToSchema4(Save& s) {
   s.explorationSpent = s.totalSteps - s.explorationCredit;
   if (s.encounter.id && s.encounter.ruleVersion == 2) s.encounter.ruleVersion = 3;
   s.encounterTarget = nextEncounterTarget(mixRandom(uint32_t(s.bootGeneration) ^ uint32_t(s.totalSteps)));
   s.schema = kSchemaVersion;
-  return validate(s);
 }
 } }
