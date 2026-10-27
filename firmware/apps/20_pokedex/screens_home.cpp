@@ -69,7 +69,7 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
       snprintf(text, sizeof(text), "%s %llu 步 · %s", v.clock.trusted ? "今日" : "上次记录",
                static_cast<unsigned long long>(v.today.steps), routeName(v.route));
       line(text, 80, theme::kMint);
-      ballCount(availableBalls(v), 110, 327);
+      ballIcon(110, 312);
       const EvolutionView progress = e.evolutionView(v.partner);
       snprintf(text, sizeof(text), "%s · %s", speciesName(v.partner), progress.count ? "培养" : "最终形态");
       line(text, 132, theme::kMuted);
@@ -86,7 +86,7 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
           alert(all ? "普通宝可梦已全部捕获" : "本路线已捕获完 · 可换路线", 183, theme::kGold);
         } else {
           snprintf(text, sizeof(text), "下次遭遇还差 %llu 步", static_cast<unsigned long long>(
-            v.explorationCredit < kEncounterSteps ? kEncounterSteps - v.explorationCredit : 0));
+            v.explorationCredit < v.encounterTarget ? v.encounterTarget - v.explorationCredit : 0));
           alert(text, 183, theme::kGold);
         }
       } else alert("已有遭遇 · 随时继续", 183, theme::kGold);
@@ -171,7 +171,7 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
         thumbnail(v.encounter.species, 233, 164, 2);
         if (v.result == Result::MigrationRetired) {
           line("升级已退回 500 探索步", 249, theme::kGold);
-          line("升级后每 1000 步获得一球", 277, theme::kText);
+          line("精灵球不限量", 277, theme::kText);
         } else if (v.result == Result::Released && !v.captureCounts[v.encounter.species - 1]) {
           line("不退探索步数或已用精灵球", 249, theme::kRed);
         } else line("伙伴仍在，继续步行探索", 249, theme::kMuted);

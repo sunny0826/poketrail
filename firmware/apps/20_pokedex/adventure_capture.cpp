@@ -10,7 +10,7 @@ CommandResult Engine::beginThrow(AttemptKey key, uint32_t now) {
     return CommandResult::InvalidPhase;
   if (key.attemptIndex != state_.encounter.usedBalls + 1) return CommandResult::InvalidInput;
   if (throw_.active) return CommandResult::Duplicate;
-  if (!availableBalls(state_)) return CommandResult::NoBalls;
+  if (state_.encounter.ruleVersion < 3 && !availableBalls(state_)) return CommandResult::NoBalls;
   throw_.active = true; throw_.key = key; throw_.targetMs = now + 1500;
   return CommandResult::Applied;
 }
@@ -33,9 +33,10 @@ void Engine::awardCapture(Save& s, const ClockReading& r) {
 CommandResult Engine::resolveThrow(AttemptKey key, Timing timing, const ClockReading& r) {
   if (!validReading(r) || r.bootGeneration != state_.bootGeneration) return CommandResult::InvalidInput;
   if (state_.captureCounts[state_.encounter.species - 1] == UINT32_MAX) return CommandResult::InvalidInput;
-  if (!availableBalls(state_)) return CommandResult::NoBalls;
-  const bool captured = throwRoll(state_.encounter, key.attemptIndex) <
-    captureProbability(catalogEntry(state_.encounter.species)->rare, timing);
+  if (state_.encounter.ruleVersion < 3 && !availableBalls(state_)) return CommandResult::NoBalls;
+  const uint16_t rule = state_.encounter.ruleVersion;
+  const bool captured = throwRoll(state_.encounter, key.attemptIndex, rule) <
+    captureProbability(rule, catalogEntry(state_.encounter.species)->rare, timing);
   if (captured && !owns(state_, state_.encounter.species) && state_.rosterRevision == UINT64_MAX)
     return CommandResult::InvalidInput;
   // Closing the timeline precedes any synchronous flash work.
@@ -46,10 +47,10 @@ CommandResult Engine::resolveThrow(AttemptKey key, Timing timing, const ClockRea
   queueSize_ = 0; overflow_ = false;
   applyClock(candidate_, r);
   ThrowAttempt& a = candidate_.encounter.attempts[key.attemptIndex - 1];
-  ++candidate_.ballsSpent;
-  a.used = true; a.timing = timing; a.ruleVersion = candidate_.encounter.ruleVersion;
-  a.probability = captureProbability(catalogEntry(candidate_.encounter.species)->rare, timing);
-  a.roll = throwRoll(candidate_.encounter, key.attemptIndex);
+  if (rule < 3) ++candidate_.ballsSpent;
+  a.used = true; a.timing = timing; a.ruleVersion = rule;
+  a.probability = captureProbability(rule, catalogEntry(candidate_.encounter.species)->rare, timing);
+  a.roll = throwRoll(candidate_.encounter, key.attemptIndex, rule);
   a.captured = a.roll < a.probability;
   candidate_.encounter.usedBalls = key.attemptIndex;
   if (a.captured) {

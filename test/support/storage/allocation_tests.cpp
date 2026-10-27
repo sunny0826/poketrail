@@ -24,7 +24,7 @@ struct IO : SlotIO {
 static int checks;
 #define CHECK(x) do { ++checks; if (!(x)) { std::fprintf(stderr,"allocation line %d\n",__LINE__); std::exit(1); } } while (0)
 int main() {
-  IO io; Save a; a.sequence = 1; Save out; out.sequence = 99;
+  IO io; Save a; a.sequence = 1; a.encounterTarget = 300; Save out; out.sequence = 99;
   CHECK(codec::encode(a, io.bytes, sizeof(io.bytes), io.length));
   {
     FileStore store(io); budget = 0;

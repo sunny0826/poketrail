@@ -20,10 +20,10 @@ void iconAt(const data::Icon& icon, int x, int y, unsigned scale) {
 void pokemon(uint16_t id, int x, int y, unsigned scale = 1) {
   iconAt(data::kPokemonIcons[id - 1], x, y, scale);
 }
-void ball(uint64_t count, int y) {
-  char value[32]; std::snprintf(value, sizeof(value), "%llu", static_cast<unsigned long long>(count));
+void ball(int y) {
   iconAt(data::kPokeBallIcon, 312, y, 1);
-  check(glyph(value, y, theme::kText, 335, true), "ball inventory remains visible beside the icon");
+  check(!glyph("0", y, theme::kText, 335, true) && !glyph("5", y, theme::kText, 335, true),
+        "unlimited balls show the icon without a count");
 }
 void starters() {
   MemoryStore store; HostPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -51,7 +51,7 @@ void starters() {
   check(runtime.screen().page == Page::Home && runtime.engine().view().partner == 4,
         "touch thumbnail selects its visible starter row");
   screenshot(runtime, "home-starter");
-  openMenu(runtime); select(runtime, 4); ball(0, 110); screenshot(runtime, "resources-zero-balls");
+  openMenu(runtime); select(runtime, 4); ball(110); screenshot(runtime, "resources-unlimited-balls");
 }
 void collection() {
   MemoryStore store; std::vector<uint16_t> ids;
@@ -116,7 +116,7 @@ void throwEntry() {
   }
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   check(runtime.screen().page == Page::Throw, "saved victory opens throw entry");
-  ball(5, 109);
+  ball(109);
   const auto& sprite = data::kSprites[runtime.engine().view().encounter.species - 1];
   const unsigned scale = sprite.height * 2 > 110 ? 1 : 2;
   const unsigned width = sprite.width * scale, height = sprite.height * scale;
@@ -132,11 +132,11 @@ void throwEntry() {
   edge(runtime, true, false); edge(runtime, false, true);
   check(runtime.screen().page == Page::Home, "left switches and right confirms keep-walking option");
   screenshot(runtime, "home-saved-victory"); openMenu(runtime); select(runtime, 4);
-  ball(5, 110); screenshot(runtime, "resources-saved-victory");
+  ball(110); screenshot(runtime, "resources-saved-victory");
   tap(runtime, 233, 52); select(runtime, 0); edge(runtime, false, true);
-  check(runtime.engine().throwView().active && availableBalls(runtime.engine().view()) == 5,
+  check(runtime.engine().throwView().active,
         "right confirms prepare without spending a ball");
-  ball(5, 109); screenshot(runtime, "throw-active");
+  ball(109); screenshot(runtime, "throw-active");
 }
 void exhaustedRoutes() {
   MemoryStore store; std::vector<uint16_t> captured;
@@ -144,7 +144,8 @@ void exhaustedRoutes() {
   modernOwned(store, captured);
   Save old; check(store.load(old).status == LoadStatus::Loaded, "read exhausted fixture");
   old.captureCounts[0] = 1; old.firstCapture[0] = old.firstCapture[3]; old.firstCapture[0].species = 1;
-  ++old.nextEncounterId; old.totalSteps += kEncounterSteps; old.undatedSteps += kEncounterSteps;
+  ++old.nextEncounterId; old.totalSteps += kLegacyEncounterSteps; old.undatedSteps += kLegacyEncounterSteps;
+  old.explorationSpent += kLegacyEncounterSteps;
   check(store.commit(old) == CommitStatus::Committed, "starter previously captured in old save");
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   openMenu(runtime); select(runtime, 4); screenshot(runtime, "forest-exhausted");
@@ -155,7 +156,8 @@ void exhaustedRoutes() {
   captured.push_back(129); MemoryStore full; modernOwned(full, captured);
   check(full.load(old).status == LoadStatus::Loaded, "read all-captured fixture");
   old.captureCounts[0] = 1; old.firstCapture[0] = old.firstCapture[3]; old.firstCapture[0].species = 1;
-  ++old.nextEncounterId; old.totalSteps += kEncounterSteps; old.undatedSteps += kEncounterSteps;
+  ++old.nextEncounterId; old.totalSteps += kLegacyEncounterSteps; old.undatedSteps += kLegacyEncounterSteps;
+  old.explorationSpent += kLegacyEncounterSteps;
   check(full.commit(old) == CommitStatus::Committed, "all ordinary species have permanent records");
   Runtime complete(full, platform); start(complete); openMenu(complete); select(complete, 4);
   screenshot(complete, "all-captured");

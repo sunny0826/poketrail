@@ -89,6 +89,8 @@ template<class A, class T> void payload(A& a, T& s) {
     a.field(s.lastEvolution.request.rosterRevision); a.field(s.lastEvolution.cost);
     stamp(a, s.lastEvolution.at); a.field(s.encounter.legacyFreeAttempts);
   }
+  // Schema 4 adds the random encounter cadence account.
+  if (s.schema >= 4) { a.field(s.encounterTarget); a.field(s.explorationSpent); }
 }
 uint32_t updateCrc(uint32_t crc, const uint8_t* p, size_t n) {
   for (size_t i = 0; i < n; ++i) {

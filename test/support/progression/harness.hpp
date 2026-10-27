@@ -37,7 +37,7 @@ inline void total(Save& s,uint64_t n) {
 }
 inline std::unique_ptr<Save> fixture(uint16_t partner,uint64_t n=0) {
   std::unique_ptr<Save> s(new Save);s->sequence=1;s->bootGeneration=1;s->starter=1;s->partner=partner;
-  s->rosterRevision=1;setRegistered(*s,1);setRegistered(*s,partner);setOwned(*s,partner);total(*s,n);
+  s->rosterRevision=1;s->encounterTarget=300;setRegistered(*s,1);setRegistered(*s,partner);setOwned(*s,partner);total(*s,n);
   CHECK(validate(*s));return s;
 }
 inline EvolveRequest request(const Engine& e,uint16_t from,uint16_t to) {

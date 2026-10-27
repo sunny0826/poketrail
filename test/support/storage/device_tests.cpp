@@ -53,7 +53,7 @@ static int checks;
 #define CHECK(x) do { ++checks; if (!(x)) { std::fprintf(stderr,"device line %d: %s\n",__LINE__,#x); std::exit(1); } } while (0)
 static void lifecycle() {
   state = storage_test::State();
-  Save out; Save a; a.sequence = 1;
+  Save out; Save a; a.sequence = 1; a.encounterTarget = 300;
   DeviceStore d;
   CHECK(d.load(out).status == LoadStatus::NeedsProvisioning);
   CHECK(!d.capacity().valid);

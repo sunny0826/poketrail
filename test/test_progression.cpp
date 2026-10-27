@@ -1,5 +1,5 @@
 #include "support/progression/harness.hpp"
-static_assert(kSchemaVersion==3 && kRuleVersion==2 && kEncounterSteps==5000,"v3 save, v2 encounter rules");
+static_assert(kSchemaVersion==4 && kRuleVersion==3 && kEncounterMinSteps==200 && kEncounterMaxSteps==500,"v4 save, v3 encounter rules, random cadence");
 static void allEdges() {
   size_t count=0;const auto* rules=evolutionRules(count);CHECK(count==122);
   for(size_t i=0;i<count;++i)for(int delta=-1;delta<=1;++delta){
@@ -80,19 +80,23 @@ static void stepThresholds() {
   const auto commits=store.commits;CHECK(steps(e,1,0)==CommandResult::Applied&&store.commits==commits+1);
   CHECK(availableBalls(e.view())==1&&e.view().progress[0].walked==0);
   CHECK(e.chooseStarter(1)==CommandResult::Applied);
-  CHECK(steps(e,1,1)==CommandResult::Applied&&availableBalls(e.view())==1);
-  CHECK(steps(e,3998,1)==CommandResult::Applied&&e.view().phase==Phase::Walking&&availableBalls(e.view())==4);
-  CHECK(steps(e,1,1)==CommandResult::Applied&&e.view().encounter.id==1&&availableBalls(e.view())==5);
-  const auto target=e.view().encounter;CHECK(steps(e,1,1)==CommandResult::Applied&&e.view().explorationCredit==1);
-  CHECK(steps(e,4999,1)==CommandResult::Applied&&e.view().explorationCredit==5000&&availableBalls(e.view())==10);
-  CHECK(steps(e,5000,1)==CommandResult::Applied&&e.view().explorationCredit==10000&&availableBalls(e.view())==15);
-  CHECK(e.view().encounter.id==target.id&&e.view().encounter.seed==target.seed);
-  CHECK(e.retreat()==CommandResult::Applied);CHECK(e.acknowledgeResult(1,1)==CommandResult::Applied);
-  CHECK(e.view().encounter.id==2&&e.view().explorationCredit==5000);
+  CHECK(e.view().phase==Phase::EncounterReady&&e.view().encounter.id==1);
+  const uint64_t spent0=e.view().explorationSpent;
+  CHECK(spent0>=kEncounterMinSteps&&spent0<=kEncounterMaxSteps&&e.view().explorationCredit==1000-spent0);
+  const auto first=e.view().encounter;CHECK(steps(e,1,1)==CommandResult::Applied&&e.view().explorationCredit==1001-spent0);
+  CHECK(steps(e,3999,1)==CommandResult::Applied&&e.view().explorationCredit==5000-spent0&&availableBalls(e.view())==5);
+  CHECK(steps(e,5000,1)==CommandResult::Applied&&e.view().explorationCredit==10000-spent0&&availableBalls(e.view())==10);
+  CHECK(e.view().encounter.id==first.id&&e.view().encounter.seed==first.seed);
+  CHECK(e.view().explorationSpent==spent0&&e.view().explorationSpent+e.view().explorationCredit==e.view().totalSteps);
+  CHECK(e.retreat()==CommandResult::Applied);
+  const uint16_t next=e.view().encounterTarget;
+  CHECK(e.acknowledgeResult(1,1)==CommandResult::Applied);
+  CHECK(e.view().encounter.id==2&&e.view().explorationSpent==spent0+next);
+  CHECK(e.view().explorationSpent+e.view().explorationCredit==e.view().totalSteps);
   CHECK(e.acknowledgeResult(1,2)==CommandResult::InvalidPhase);
+  const uint16_t third=e.view().encounterTarget;
   CHECK(e.retreat()==CommandResult::Applied);CHECK(e.acknowledgeResult(2,1)==CommandResult::Applied);
-  CHECK(e.view().encounter.id==3&&e.view().explorationCredit==0);
-  auto s=fixture(1,7499);s->progress[0].walked=7499;
+  CHECK(e.view().encounter.id==3&&e.view().explorationCredit==10000-spent0-next-third);  auto s=fixture(1,7499);s->progress[0].walked=7499;
   MemoryStore threshold;threshold.disk=encoded(*s);Engine t(threshold);CHECK(t.begin()==CommandResult::Applied);
   threshold.before=true;CHECK(steps(t,1,1)==CommandResult::StorageError);
   CHECK(t.view().progress[0].walked==7499);threshold.before=false;CHECK(t.retrySave()==CommandResult::Applied);
@@ -101,31 +105,34 @@ static void stepThresholds() {
   CHECK(t.view().encounter.partner==2&&t.view().encounter.id==frozen.id&&t.view().encounter.seed==frozen.seed);
 }
 static void ballsAndRelease() {
-  MemoryStore store;Engine e(store);CHECK(e.begin()==CommandResult::Applied);CHECK(e.chooseStarter(1)==CommandResult::Applied);
-  CHECK(steps(e,5000,1)==CommandResult::Applied);win(e);
+  MemoryStore store;Engine e(store);CHECK(e.begin()==CommandResult::Applied);
+  CHECK(steps(e,1000,0)==CommandResult::Applied);
+  CHECK(e.chooseStarter(1)==CommandResult::Applied&&e.view().phase==Phase::EncounterReady);
+  win(e);
   const AttemptKey key(e.view().encounter.id,1);const auto old=store.disk;
-  CHECK(e.beginThrow(key,0)==CommandResult::Applied&&availableBalls(e.view())==5&&store.disk==old);
+  CHECK(e.beginThrow(key,0)==CommandResult::Applied&&availableBalls(e.view())==1&&store.disk==old);
   CHECK(e.giveUpCapture(key.encounterId)==CommandResult::InvalidPhase);
   store.before=true;CHECK(e.tick(e.throwView().targetMs+181,clockFor(e))==CommandResult::StorageError);
   CHECK(e.view().ballsSpent==0);const auto frozen=store.attempt;
   CHECK(e.pressThrow(key,0,clockFor(e))==CommandResult::SavePending);
-  store.before=false;CHECK(e.retrySave()==CommandResult::Applied&&store.disk==frozen&&availableBalls(e.view())==4);
-  CHECK(e.pressThrow(key,0,clockFor(e))==CommandResult::Duplicate&&e.view().ballsSpent==1);
+  store.before=false;CHECK(e.retrySave()==CommandResult::Applied&&store.disk==frozen&&availableBalls(e.view())==1);
+  CHECK(e.pressThrow(key,0,clockFor(e))==CommandResult::Duplicate&&e.view().ballsSpent==0);
   CHECK(e.giveUpCapture(key.encounterId)==CommandResult::Applied&&e.view().result==Result::Released);
   CHECK(e.giveUpCapture(key.encounterId)==CommandResult::Duplicate);
   CHECK(e.selectPartner(1)==CommandResult::InvalidPhase);
   CHECK(e.acknowledgeResult(key.encounterId,1)==CommandResult::Applied);
-  CHECK(steps(e,5000,1)==CommandResult::Applied);win(e);
+  while(e.view().phase==Phase::Walking)CHECK(steps(e,1,1)==CommandResult::Applied);
+  win(e);
   CHECK(e.giveUpCapture(e.view().encounter.id)==CommandResult::Applied&&e.view().encounter.usedBalls==0);
   CHECK(e.giveUpCapture(key.encounterId)==CommandResult::InvalidInput);
-  CHECK(e.view().ballsSpent==1);
+  CHECK(e.view().ballsSpent==0);
 }
 static void recaptureAndGuards() {
   auto initial=fixture(1,8000);initial->progress[0].walked=8000;
   MemoryStore store;store.disk=encoded(*initial);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   const auto req=request(e,1,2);CHECK(e.evolve(req,clockFor(e))==CommandResult::Applied);
   uint32_t seed=0;for(;seed<1000000;++seed){Encounter encounter;encounter.id=1;encounter.seed=seed;
-    if(chooseEncounter(e.view(),Route::Forest,seed)==1&&throwRoll(encounter,1)<85)break;}
+    if(chooseEncounter(e.view(),Route::Forest,seed)==1&&throwRoll(encounter,1,3)<98)break;}
   CHECK(seed<1000000);StepEvent event;event.batchId=1;event.clock=clockFor(e);event.partner=2;
   CHECK(e.observeSteps(&event,1,seed)==CommandResult::Applied);
   CHECK(e.view().encounter.species==1);

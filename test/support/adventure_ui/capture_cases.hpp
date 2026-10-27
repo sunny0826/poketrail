@@ -3,12 +3,14 @@
 namespace {
 void savedVictory(MemoryStore& store, Save& s, bool captured) {
   s.bootGeneration = 1; s.starter = s.partner = 1; setOwned(s, 1); setRegistered(s, 1);
-  s.rosterRevision = 1; s.totalSteps = 5000; s.undatedSteps = 4500; s.nextEncounterId = 2;
+  s.rosterRevision = 1; s.encounterTarget = 300;
+  s.totalSteps = 5000; s.undatedSteps = 4500; s.explorationSpent = 5000; s.nextEncounterId = 2;
   s.clock.calibrated = true; s.clock.offsetMinutes = 480; s.clock.dayHighWater = 20261022;
   s.today.dayKey = 20261022; s.today.steps = s.bestDaySteps = 500;
   s.phase = Phase::ThrowReady; s.result = Result::Won;
   s.encounter.id = 1; s.encounter.species = s.encounter.partner = 1;
-  while ((throwRoll(s.encounter, 1) >= captureProbability(catalogEntry(1)->rare, Timing::Perfect)) == captured)
+  while ((throwRoll(s.encounter, 1, s.encounter.ruleVersion) >=
+          captureProbability(s.encounter.ruleVersion, catalogEntry(1)->rare, Timing::Perfect)) == captured)
     ++s.encounter.seed;
   check(validate(s) && store.commit(s) == CommitStatus::Committed, "saved victory fixture validates and encodes");
 }

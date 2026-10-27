@@ -10,7 +10,7 @@ const char* progressionMessage(CommandResult result) {
     case CommandResult::InsufficientProgress: return "培养步数还不够";
     case CommandResult::Stale: return "伙伴已变化，请重新选择";
     case CommandResult::InvalidPhase: return "先携带它并完成当前流程";
-    case CommandResult::NoBalls: return "暂无精灵球，继续走路获取";
+    case CommandResult::NoBalls: return "升级前的遭遇仍按旧规则用球";
     case CommandResult::SavePending: case CommandResult::StorageError: return "等待保存成功";
     case CommandResult::InvalidInput: return "当前无法执行";
     case CommandResult::Applied: case CommandResult::Duplicate: return "";

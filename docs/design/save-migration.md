@@ -49,3 +49,15 @@ schema2 存档在同一启动事务里确定性升级到 schema3：先按 v2 语
 codec 按 `schema` 选择宽度：v1/v2 读 19 字节位图与 151 项数组，v3 读 32／251；解码后内存中的 `Save` 始终为 251 宽，旧版本未覆盖的部分保持空值。`Engine::begin()` 对 v1 依次执行 v1→v2→v3，对 v2 只执行 v2→v3，最终只写一次非当前槽，sequence 加一；写前、部分写、回读失败继续冻结同一 candidate 重试，不重新迁移或清零。旧固件不能读取 schema3。
 
 迁移不改变总步、探索余额、捕获历史、首捕卡、成就或校时待确认事务，也不发放新物种或活动入口。普通池、`captureCounts` 和唯一捕获规则随 v3 目录扩到 251，但已完成的旧捕获与保留物种（遗迹、龙穴试炼）不受影响。
+
+## schema3 迁移到 schema4
+
+schema3 存档在同一启动事务里确定性升级到 schema4：先按 v3 语义完整校验，再重建随机遭遇账目并切换到当前规则。codec 对 v4 在 payload 末尾追加 `encounterTarget`（下一场目标步数）与 `explorationSpent`（累计已扣探索步）两个字段；v1–v3 布局保持不变，`FileStore` 的 unknownHeader 同步接受 4。
+
+迁移账式：`explorationSpent = totalSteps - explorationCredit`，使 `spent + credit == totalSteps` 恒成立；这覆盖旧档按 5000 消耗的历史场次（每场实际扣除上界校验放宽到 5000）。首个 `encounterTarget` 由启动代与总步派生，落在 200–500 区间。总步、余额、捕获历史、培养账户和校时事务逐项保留，不退款、不追发。
+
+规则切换：`kRuleVersion` 升到 3。迁移把在途非 legacy 遭遇的 `ruleVersion` 从 2 升到 3，之后的新遭遇直接以当前规则创建；已投的 attempt 保留自己的 `ruleVersion`，其存储的概率与 roll 继续按投球时点的表复算，validate 要求 `attempt.ruleVersion <= encounter.ruleVersion`。规则 3 起：普通 85/92/98、稀有 70/80/90；概率按 attempt 的版本分表校验。
+
+精灵球不限量：规则 3 的投球不再检查库存、不再递增 `ballsSpent`，`NoBalls` 仅对规则 1–2 的在途遭遇保留。旧账目字段 `rewardBaseSteps`／`ballsSpent` 原样保留并可校验；`ballsSpent < usedBalls - legacyFreeAttempts` 下界仅对规则 1–2 的遭遇要求。schema4 的非 legacy 遭遇必须为当前规则版本；空遭遇（Walking）保持编码原值。
+
+写前、部分写、回读失败继续冻结同一 candidate 重试，不重新迁移、重抽目标或升级规则；旧固件不能读取 schema4。

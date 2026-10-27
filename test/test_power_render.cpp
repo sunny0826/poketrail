@@ -41,7 +41,14 @@ void endWake(PowerPlatform& platform) {
   M5.Display.endObservation(); platform.observeWake = false;
 }
 void autoSleepAndWalk() {
-  MemoryStore store; ready(store, 4997);
+  MemoryStore store;
+  uint64_t banked = 0;
+  {
+    Engine engine(store); check(engine.begin() == CommandResult::Applied, "power fixture boots");
+    engine.chooseStarter(1);
+    step(engine, 1, engine.view().encounterTarget - 3); engine.checkpoint();
+    banked = engine.view().totalSteps;
+  }
   PowerPlatform platform; platform.battery.percent = 67;
   Runtime runtime(store, platform); const uint32_t began = host_time_ms; start(runtime);
   idle(runtime, 29960);
@@ -51,7 +58,7 @@ void autoSleepAndWalk() {
   const unsigned reads = platform.reads, commits = store.commits;
   M5.Display.beginObservation(); walk(runtime, platform, 8); idle(runtime, 30000); M5.Display.endObservation();
   const auto& save = runtime.engine().view();
-  check(save.totalSteps >= 5004 && save.progress[0].walked == save.totalSteps, "asleep detector keeps counting and cultivating");
+  check(save.totalSteps >= banked + 7 && save.progress[0].walked == save.totalSteps, "asleep detector keeps counting and cultivating");
   check(save.phase == Phase::EncounterReady && save.encounter.id == 1, "walking asleep creates the encounter once");
   check(platform.feedbacks == 1 && runtime.dimmed(), "durable encounter vibrates without lighting screen");
   check(store.commits > commits && platform.reads == reads && platform.sleeps == 1, "sleep keeps checkpointing without battery reads or repeated commands");
@@ -125,7 +132,8 @@ void pausedAndActive() {
 void throwWaiting() {
   MemoryStore store; Save save;
   save.bootGeneration = 1; save.starter = save.partner = 1; setOwned(save, 1); setRegistered(save, 1);
-  save.rosterRevision = 1; save.totalSteps = save.undatedSteps = 5000; save.nextEncounterId = 2;
+  save.rosterRevision = 1; save.encounterTarget = 300;
+  save.totalSteps = save.undatedSteps = 5000; save.explorationSpent = 5000; save.nextEncounterId = 2;
   save.phase = Phase::ThrowReady; save.result = Result::Won;
   save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1;
   check(validate(save) && store.commit(save) == CommitStatus::Committed, "pending victory fixture validates");
@@ -140,8 +148,9 @@ void throwWaiting() {
   edge(runtime, false, true); check(runtime.engine().throwView().active, "fresh throw input still works");
   const unsigned reads = platform.reads, sleeps = platform.sleeps;
   while (runtime.engine().throwView().active) { frame(runtime); check(!runtime.dimmed(), "active throw remains visible"); }
-  check(platform.sleeps == sleeps && platform.reads == reads && availableBalls(runtime.engine().view()) == balls - 1,
-        "throw timeout spends exactly once without power I/O during timing");
+  check(platform.sleeps == sleeps && platform.reads == reads &&
+        runtime.engine().view().encounter.usedBalls == 1 && availableBalls(runtime.engine().view()) == balls,
+        "throw timeout spends once without power I/O during timing");
 }
 void viewerWakeInputs() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);

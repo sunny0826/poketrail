@@ -29,13 +29,14 @@ static void phases() {
     Slots slots;slots.files[0]=legacy(kind);const auto original=slots.files[0];auto old=decoded(original);
     CHECK(old->schema==1&&encoded(*old)==original&&original.size()==12139);
     FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied&&e.ready());const auto& s=e.view();
-    CHECK(s.schema==3&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
+    CHECK(s.schema==4&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
     CHECK(s.rewardBaseSteps==500&&availableBalls(s)==0&&s.captureCounts==old->captureCounts&&s.owned==old->owned);
+    CHECK(s.explorationSpent==s.totalSteps-s.explorationCredit&&s.encounterTarget>=kEncounterMinSteps&&s.encounterTarget<=kEncounterMaxSteps);
     CHECK(s.progress[0].walked==0&&registered(s,1)&&s.rosterRevision==1);
     CHECK(s.voidedLegacyCount==(kind==5||kind==6?1:0)&&s.legacyChargedCount==(kind==5||kind==6?0:1));
     CHECK(s.explorationCredit==(kind==5||kind==6?500:0));
     if(kind==5||kind==6)CHECK(s.phase==Phase::Resolved&&s.result==Result::MigrationRetired&&s.encounter.id==1);
-    else if(kind==7)CHECK(s.phase==Phase::Walking&&s.encounter.ruleVersion==2);
+    else if(kind==7)CHECK(s.phase==Phase::Walking&&s.encounter.id==0&&s.encounter.ruleVersion==kRuleVersion);
     else CHECK(s.encounter.ruleVersion==1&&s.encounter.id==1&&s.encounter.seed==old->encounter.seed);
     if(kind==1)CHECK(s.phase==Phase::EncounterReady);
     if(kind==3)CHECK(s.encounter.legacyFreeAttempts==1&&s.encounter.attempts[0].roll==old->encounter.attempts[0].roll);
@@ -61,7 +62,7 @@ static void failures() {
     Slots slots;slots.files[0]=legacy(6);slots.after=complete;slots.cut=complete?SIZE_MAX:100;
     {FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::StorageError);}
     slots.after=false;slots.cut=SIZE_MAX;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
-    CHECK(e.view().schema==3&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
+    CHECK(e.view().schema==4&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
     CHECK(e.view().sequence==(complete?12:11));
   }
 }
@@ -72,7 +73,7 @@ static void oldThrowsAndBase() {
   CHECK(e.beginThrow(second,0)==CommandResult::Applied&&e.view().ballsSpent==0);
   CHECK(e.tick(e.throwView().targetMs+181,clockFor(e))==CommandResult::Applied);
   CHECK(e.view().ballsSpent==1&&e.view().encounter.legacyFreeAttempts==1&&e.view().encounter.usedBalls==2&&e.view().result==Result::Escaped);
-  CHECK(e.view().encounter.attempts[1].ruleVersion==1&&e.view().encounter.attempts[1].roll==throwRoll(e.view().encounter,2));
+  CHECK(e.view().encounter.attempts[1].ruleVersion==1&&e.view().encounter.attempts[1].roll==throwRoll(e.view().encounter,2,1));
   CHECK(steps(e,1000,1)==CommandResult::Applied&&availableBalls(e.view())==1);
   Engine reboot(store);CHECK(reboot.begin()==CommandResult::Applied);
   CHECK(reboot.view().rewardBaseSteps==500&&availableBalls(reboot.view())==1&&reboot.view().progress[0].walked==2000);
@@ -90,8 +91,10 @@ static void creditAndBoundary() {
     CHECK(e.acknowledgeResult(count,17)==CommandResult::Applied);
     if(count==20)CHECK(e.view().phase==Phase::Walking&&e.view().explorationCredit==0);
     else {
-      CHECK(e.view().encounter.id==2&&e.view().encounter.ruleVersion==2&&e.view().encounter.legacyFreeAttempts==0);
-      CHECK(e.view().explorationCredit==(retire?5000:4500));
+      CHECK(e.view().encounter.id==2&&e.view().encounter.ruleVersion==3&&e.view().encounter.legacyFreeAttempts==0);
+      // The upgraded save consumed a random encounter target from the banked credit.
+      CHECK(e.view().explorationSpent+e.view().explorationCredit==e.view().totalSteps);
+      CHECK(e.view().encounterTarget>=kEncounterMinSteps&&e.view().encounterTarget<=kEncounterMaxSteps);
       CHECK(e.view().voidedLegacyCount==(retire?1:0));
       CHECK(validate(e.view()));
       auto corrupt=std::unique_ptr<Save>(new Save(e.view()));corrupt->encounter.ruleVersion=1;CHECK(!validate(*corrupt));
@@ -99,8 +102,8 @@ static void creditAndBoundary() {
     }
   }
   auto owned=decoded(legacy(4));owned->firstCapture[0]=Capture();owned->captureCounts[0]=0;
-  owned->encounter.species=2;owned->encounter.seed=0;while(throwRoll(owned->encounter,1)>=85)++owned->encounter.seed;
-  owned->encounter.attempts[0].roll=throwRoll(owned->encounter,1);owned->captureCounts[1]=1;setOwned(*owned,2);
+  owned->encounter.species=2;owned->encounter.seed=0;while(throwRoll(owned->encounter,1,1)>=85)++owned->encounter.seed;
+  owned->encounter.attempts[0].roll=throwRoll(owned->encounter,1,1);owned->captureCounts[1]=1;setOwned(*owned,2);
   Capture c;c.species=2;c.at.bootGeneration=1;c.at.totalSteps=500;owned->firstCapture[1]=owned->recent[0]=c;
   MemoryStore store;store.disk=encoded(*owned);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   CHECK(e.view().result==Result::Captured&&owns(e.view(),2)&&registered(e.view(),2)&&e.view().voidedLegacyCount==0);
@@ -117,22 +120,23 @@ static void schema2Upgrade() {
   CHECK(old->schema==2&&old->progress[3].walked==1000);
   Slots slots;slots.files[0]=bytes;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   const auto& s=e.view();
-  CHECK(s.schema==3&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
+  CHECK(s.schema==4&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
   CHECK(s.partner==4&&s.progress[3].walked==1000&&s.totalSteps==1000&&s.explorationCredit==1000);
+  CHECK(s.explorationSpent==0&&s.encounterTarget>=kEncounterMinSteps&&s.encounterTarget<=kEncounterMaxSteps);
   CHECK(s.rewardBaseSteps==0&&s.legacyChargedCount==0&&s.rosterRevision==1);
   for(uint16_t id=152;id<=251;++id)CHECK(!registered(s,id)&&!owns(s,id)&&!s.progress[id-1].walked&&!s.captureCounts[id-1]);
-  FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==3);
+  FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==4);
   CHECK(reboot.view().progress[3].walked==1000&&slots.writes==2);
   Save enc;CHECK(codec::decode(slots.files[0].data(),slots.files[0].size(),enc)==codec::DecodeStatus::Ok);
-  CHECK(enc.schema==3&&validate(enc));
+  CHECK(enc.schema==4&&validate(enc));
 }
 static void mixedSlots() {
   Slots slots;slots.files[0]=legacy(0);FileStore first(slots);Engine e(first);CHECK(e.begin()==CommandResult::Applied);
   const auto v2=slots.files[1];auto s=decoded(v2);s->sequence=10;slots.files[1]=encoded(*s);
   FileStore conflict(slots);std::unique_ptr<Save> out(new Save);CHECK(conflict.load(*out).status==LoadStatus::Corrupt);
-  slots.files[1]=v2;slots.files[1][4]=4;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
+  slots.files[1]=v2;slots.files[1][4]=5;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
   slots.files[1]=v2;slots.files[1].back()^=1;FileStore corrupt(slots);
   CHECK(corrupt.load(*out).status==LoadStatus::Loaded&&out->schema==1&&out->sequence==10);
-  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==3);
+  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==4);
 }
 int main(){phases();failures();oldThrowsAndBase();creditAndBoundary();schema2Upgrade();mixedSlots();std::printf("migration: %u checks passed\n",checks);}

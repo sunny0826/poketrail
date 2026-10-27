@@ -64,7 +64,8 @@ void captureFixture(World& w, int64_t utc) {
   for (; seed < 1000000; ++seed) {
     Encounter e; e.id = w.engine.view().nextEncounterId; e.seed = seed;
     e.species = chooseEncounter(w.engine.view(), w.engine.view().route, seed);
-    if (throwRoll(e, 1) < captureProbability(catalogEntry(e.species)->rare, Timing::Perfect)) break;
+    if (throwRoll(e, 1, kRuleVersion) <
+        captureProbability(kRuleVersion, catalogEntry(e.species)->rare, Timing::Perfect)) break;
   }
   REQUIRE(seed < 1000000);
   uint32_t ms = 1000;

@@ -46,7 +46,7 @@ static void checksum(std::vector<uint8_t>& b) {
   for (unsigned i = 0; i < 4; ++i) b[18+i] = uint8_t(c >> (8*i));
 }
 static void selection() {
-  Save one; one.sequence = 1;
+  Save one; one.sequence = 1; one.encounterTarget = 300;
   Save two = one; two.sequence = 2;
   Save out; out.sequence = 77;
   MemoryIO io; FileStore store(io);
@@ -76,7 +76,7 @@ static void selection() {
   io.put(1, one);
   CHECK(store.load(out).status == LoadStatus::Corrupt);
   CHECK(store.commit(two) == CommitStatus::IoError);
-  io.put(1, two); io.files[1][4] = 4; checksum(io.files[1]);
+  io.put(1, two); io.files[1][4] = 5; checksum(io.files[1]);
   CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
   CHECK(store.commit(two) == CommitStatus::IoError);
   io.files[1].resize(codec::maxEncodedSize+1);
@@ -95,7 +95,7 @@ static void selection() {
 static void unsupportedVersions() {
   // The header gate must reject unknown schemas before the TooLarge branch so an
   // oversized slot cannot be mistaken for a corrupt-but-overwritable copy.
-  Save one; one.sequence = 1;
+  Save one; one.sequence = 1; one.encounterTarget = 300;
   Save two = one; two.sequence = 2;
   Save out;
   MemoryIO io; FileStore store(io);
@@ -106,7 +106,7 @@ static void unsupportedVersions() {
   io.put(1, two); io.files[1].resize(codec::maxEncodedSize+1); io.files[1][4] = 0;
   CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
   CHECK(store.commit(two) == CommitStatus::IoError && io.writes == 0);
-  io.files[1][4] = 4;
+  io.files[1][4] = 5;
   CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
   CHECK(store.commit(two) == CommitStatus::IoError && io.writes == 0);
   io.files[1][4] = 1;
@@ -114,7 +114,7 @@ static void unsupportedVersions() {
   CHECK(store.commit(two) == CommitStatus::Committed && io.lastWrite == 1);
 }
 static void commits() {
-  Save one; one.sequence = 1;
+  Save one; one.sequence = 1; one.encounterTarget = 300;
   Save two = one; two.sequence = 2;
   Save out;
   MemoryIO io; FileStore store(io);
@@ -157,7 +157,7 @@ static void commits() {
   CHECK(store.commit(one) == CommitStatus::Conflict);
 }
 static void truncations() {
-  Save a; a.sequence = 1;
+  Save a; a.sequence = 1; a.encounterTarget = 300;
   Save b = a; b.sequence = 2;
   MemoryIO encoded; encoded.put(0, b);
   const size_t n = encoded.files[0].size();

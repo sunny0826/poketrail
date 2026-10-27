@@ -28,7 +28,7 @@ uint64_t availableBalls(const Save&);
 | 规则 JSON、目录生成器 | 唯一父关系、费用、普通资格与编译期表 |
 | save_codec、file_store | 版本解析、CRC、双槽选择和完整回读；不产生游戏奖励 |
 
-Save v2 新增 151 个培养账户、19 字节曾获得位图、rewardBaseSteps、ballsSpent、legacyChargedCount、voidedLegacyCount、rosterRevision、lastEvolution；Encounter 新增 legacyFreeAttempts。Save v3 把物种数组扩到 251：32 字节拥有／曾获得位图、251 个培养账户与捕获次数、251 张首捕卡，新增的 100 项初始为空。保存格式升 3，新遭遇规则仍为 2，规则版本与存档版本分开处理；schema1/2 的 151／19 字节布局保持可读。
+Save v2 新增 151 个培养账户、19 字节曾获得位图、rewardBaseSteps、ballsSpent、legacyChargedCount、voidedLegacyCount、rosterRevision、lastEvolution；Encounter 新增 legacyFreeAttempts。Save v3 把物种数组扩到 251：32 字节拥有／曾获得位图、251 个培养账户与捕获次数、251 张首捕卡，新增的 100 项初始为空。Save v4 追加 `encounterTarget`（下一场 200–500 步目标）与 `explorationSpent`（累计已扣探索步），维持 `spent + credit == totalSteps` 账目；新遭遇规则版本为 3（普通 85/92/98、稀有 70/80/90，球不限量），规则版本与存档版本分开处理；schema1/2/3 的旧布局保持可读。
 
 实现入口：[Engine冻结提交与启动迁移](../../firmware/apps/20_pokedex/adventure.cpp)、[双版本语义校验](../../firmware/apps/20_pokedex/adventure_model.cpp)、[计步队列与安全刷步](../../firmware/apps/20_pokedex/adventure_steps.cpp)、[进化事务](../../firmware/apps/20_pokedex/adventure_progression.cpp)、[投球准备与结算](../../firmware/apps/20_pokedex/adventure_capture.cpp)、[捕获练习](../../firmware/apps/20_pokedex/practice_capture.cpp)。新增字段和状态由这些实际调用路径统一处理，页面读取已发布状态。
 
@@ -42,21 +42,21 @@ Detector 在更新 `peakAt_` 时同时冻结本拍 `uint16_t` 不透明归属标
 
 ## 资源与验收
 
-schema1编码12139字节，schema2编码14672字节，schema3编码21498字节，均使用固定字段布局；本轮按实测把单槽上限设为24576字节（预留3078字节），双槽加候选缓冲共73728字节。codec日志会分别输出三种长度；v1 快照仍为12139，不能据此判断新版长度。`FileStore::Workspace` 继续整体堆分配，主机实测 103232 字节（含解码用 Save）；`sizeof(Save)=29456`、`sizeof(Engine)=66176` 只用于评估静态 RAM 增量，不代替设备堆峰值。
+schema1编码12139字节，schema2编码14672字节，schema4编码21508字节，均使用固定字段布局；本轮按实测把单槽上限设为24576字节（预留3068字节），双槽加候选缓冲共73728字节。codec日志会分别输出各版本长度；v1 快照仍为12139，不能据此判断新版长度。`FileStore::Workspace` 继续整体堆分配，主机实测 103232 字节（含解码用 Save）；`sizeof(Save)=29472`、`sizeof(Engine)=66208` 只用于评估静态 RAM 增量，不代替设备堆峰值。
 
 固件 Flash 和静态 RAM 占用以当前构建输出为准；主机 ABI 不能代替 Xtensa 目标大小。`check-startup-stack` 检查 Engine 启动局部栈帧，不能代替完整任务栈或全系统堆峰值测量。
 
 | 验证入口 | 必须观察到的行为 |
 | --- | --- |
 | 规则生成器和素材检查 | 122边（关都72＋城都50）、124普通根；关都路线38/22/24，两代合计62/32/43（其中城都24/10/19）；保留物种排除、地区形态排除；动画缩放读显式 [sprite-scales.json](../../assets/sprite-scales.json)，其 Gen1 集合与冻结的 evolution-gen1 父关系一致；不要求 251 parents 与现动画一致 |
-| Engine真实计步入口 | 999/1000/1001、4999/5000/5001、10000、15000；跨日、unknown和重放无丢余数或重复收益 |
+| Engine真实计步入口 | 目标-1/目标、1000、10000、15000；跨日、unknown和重放无丢余数或重复收益；`spent+credit==totalSteps` 恒成立 |
 | 122条边逐边门槛 | 费用−1拒绝，费用及费用+1正确替换；永久历史、赠送伙伴唯一捕获时复用余额、目标冲突、伊布五分支、无畏小子三分支和旧迷你龙培养 |
 | Detector → Runtime → Engine | 两旧峰后切换、两次切换、进化后迟到峰、保存失败；归属和日期不漂移；异常缺口仍可见 |
-| 实际页面与Button_Class | 全部拥有分页、携带标记、五分支分页和确认释放门；零球等待可留首页、采样和返回同场；251图鉴原操作保留 |
-| 实际投球时间线 | 准备零扣、按下/超时一球、重复键零扣、成功不能再投、Released与Escaped分开 |
-| 捕获练习 | 随机物种、真实对战与两次投球判定，独立对象不读写存档、不扣球、不写图鉴 |
-| codec与双槽故障注入 | 各phase v1字节fixture、schema2现场编码、v1/v2/v3混合槽、同序冲突、未知版本、旧首捕500步、旧免费前缀、V=1后的ID边界 |
-| 真实提交失败和重启 | 写前、部分写、写后回读失败；完整旧或新快照，重试无双扣/双进化；v2/v3再次启动保留已赚球 |
+| 实际页面与Button_Class | 全部拥有分页、携带标记、五分支分页和确认释放门；胜利等待可留首页、采样和返回同场；251图鉴原操作保留；球图标无数字 |
+| 实际投球时间线 | 准备零占用、按下/超时计一次、重复键零占用、成功不能再投、Released与Escaped分开；无限球不再返回NoBalls |
+| 捕获练习 | 随机物种、真实对战与两次投球判定，独立对象不读写存档、不写图鉴 |
+| codec与双槽故障注入 | 各phase v1字节fixture、schema2/3现场编码、v4迁移账目与在途规则升级、v1/v2/v3/v4混合槽、同序冲突、未知版本、旧首捕200步下界、旧免费前缀、V=1后的ID边界 |
+| 真实提交失败和重启 | 写前、部分写、写后回读失败；完整旧或新快照，重试无双扣/双进化；升级后再次启动保留账目 |
 | 溢出与资源 | 总步/培养/花费/ID/revision上界、128队列满、实际编码长度、全部Save副本峰值RAM、完整栈 |
 | 设备验收 | 四种携带误差、采样/输入/Flash时延、RTC保持与恢复、电流、满盘/物理掉电、挂载保留和初始化 |
 

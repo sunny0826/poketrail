@@ -28,6 +28,7 @@ static void reject(const Save& s) {
 }
 int main() {
   Save s; s.sequence = 0x0102030405060708ULL; s.bootGeneration = 1;
+  s.encounterTarget = 300; s.explorationSpent = 0;
   CHECK(validate(s)); const std::vector<uint8_t> original = encode(s);
   CHECK(original[0] == 0x41 && original[1] == 0x56 && original[2] == 0x44 && original[3] == 0x31);
   CHECK(original[6] == 8 && original[13] == 1);
@@ -41,7 +42,7 @@ int main() {
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
   data.resize(codec::maxEncodedSize + 1);
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
-  data = original; data[4] = 4;
+  data = original; data[4] = 5;
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::UnsupportedVersion);
   data.resize(codec::maxEncodedSize + 100);
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::UnsupportedVersion);
@@ -72,6 +73,7 @@ int main() {
   // where #200 is registered (bit 199 = byte 24, mask 0x80) and clear only that bit.
   Save gated; gated.sequence = 3; gated.bootGeneration = 1; gated.starter = gated.partner = 1;
   gated.rosterRevision = 1; setRegistered(gated, 1); setOwned(gated, 1);
+  gated.encounterTarget = 300;
   setRegistered(gated, 200); gated.totalSteps = gated.undatedSteps = gated.explorationCredit = 5000;
   Save owned200 = gated; setOwned(owned200, 200); CHECK(validate(owned200));
   bad = owned200; bad.registered[24] &= uint8_t(~0x80); reject(bad);
@@ -81,7 +83,7 @@ int main() {
   caught200.firstCapture[199].species = 200;
   caught200.firstCapture[199].at.bootGeneration = 1; caught200.firstCapture[199].at.totalSteps = 500;
   caught200.recent[0] = caught200.firstCapture[199]; caught200.recentSize = 1;
-  caught200.nextEncounterId = 2; caught200.explorationCredit = 0;
+  caught200.nextEncounterId = 2; caught200.explorationCredit = 0; caught200.explorationSpent = 5000;
   CHECK(validate(caught200));
   bad = caught200; bad.registered[24] &= uint8_t(~0x80); reject(bad);
   bad = s; bad.historySize = 15; reject(bad);
@@ -138,7 +140,7 @@ int main() {
   Save wide; wide.sequence = 0x1020304050607080ULL; wide.bootGeneration = 1;
   wide.starter = 1; wide.partner = 251; setRegistered(wide, 1); setRegistered(wide, 251); setOwned(wide, 251);
   wide.rosterRevision = 1; wide.totalSteps = wide.undatedSteps = 5000; wide.nextEncounterId = 2;
-  wide.explorationCredit = 0; wide.captureCounts[250] = 1;
+  wide.explorationSpent = 5000; wide.encounterTarget = 350; wide.explorationCredit = 0; wide.captureCounts[250] = 1;
   Capture last; last.species = 251; last.at.bootGeneration = 1; last.at.totalSteps = 5000;
   wide.firstCapture[250] = last; wide.recent[0] = last; wide.recentSize = 1;
   CHECK(validate(wide)); const auto wideBytes = encode(wide);
@@ -146,7 +148,8 @@ int main() {
   Save wideBack; CHECK(codec::decode(wideBytes.data(), wideBytes.size(), wideBack) == codec::DecodeStatus::Ok);
   CHECK(encode(wideBack) == wideBytes && wideBack.captureCounts[250] == 1 && wideBack.registered[31] == 0x04);
   Save full; full.sequence = 1; full.bootGeneration = 1; full.starter = full.partner = 1;
-  full.rosterRevision = 1; full.totalSteps = full.undatedSteps = 251 * kEncounterSteps;
+  full.rosterRevision = 1; full.totalSteps = full.undatedSteps = 251 * kLegacyEncounterSteps;
+  full.explorationSpent = full.totalSteps; full.encounterTarget = 400;
   full.nextEncounterId = 252; full.explorationCredit = 0;
   for (uint16_t id = 1; id <= kSpeciesCount; ++id) {
     setRegistered(full, id); setOwned(full, id);
@@ -155,7 +158,7 @@ int main() {
     c.at.bootGeneration = 1; c.at.totalSteps = uint64_t(id) * 500;
   }
   for (size_t i = 0; i < 3; ++i) {
-    full.lifetime[i].reached = true; full.lifetime[i].first.totalSteps = 251 * kEncounterSteps;
+    full.lifetime[i].reached = true; full.lifetime[i].first.totalSteps = 251 * kLegacyEncounterSteps;
     full.lifetime[i].first.bootGeneration = 1;
   }
   full.recentSize = 32;
@@ -171,9 +174,17 @@ int main() {
     for (unsigned r = 0; r < 3; ++r) if (e->routes & (1u << r)) ++routes[r];
   }
   CHECK(routes[0] && routes[1] && routes[2]);
-  CHECK(captureProbability(false, Timing::Normal) == 55 && captureProbability(false, Timing::Nice) == 70 && captureProbability(false, Timing::Perfect) == 85);
-  CHECK(captureProbability(true, Timing::Normal) == 30 && captureProbability(true, Timing::Nice) == 45 && captureProbability(true, Timing::Perfect) == 60);
-  CHECK(captureProbability(true, Timing::Miss) == 0);
+  CHECK(captureProbability(kRuleVersion, false, Timing::Normal) == 85 &&
+        captureProbability(kRuleVersion, false, Timing::Nice) == 92 &&
+        captureProbability(kRuleVersion, false, Timing::Perfect) == 98);
+  CHECK(captureProbability(kRuleVersion, true, Timing::Normal) == 70 &&
+        captureProbability(kRuleVersion, true, Timing::Nice) == 80 &&
+        captureProbability(kRuleVersion, true, Timing::Perfect) == 90);
+  CHECK(captureProbability(2, false, Timing::Normal) == 55 && captureProbability(2, false, Timing::Nice) == 70 &&
+        captureProbability(2, false, Timing::Perfect) == 85);
+  CHECK(captureProbability(2, true, Timing::Normal) == 30 && captureProbability(2, true, Timing::Nice) == 45 &&
+        captureProbability(2, true, Timing::Perfect) == 60);
+  CHECK(captureProbability(kRuleVersion, true, Timing::Miss) == 0);
   std::printf("codec: %u checks passed; v1=%zu, v2=%zu, v3=%zu (max=%zu); pools=%u/%u/%u\n",
               checks, data.size(), twoBytes.size(), fullBytes.size(), codec::maxEncodedSize,
               routes[0], routes[1], routes[2]);

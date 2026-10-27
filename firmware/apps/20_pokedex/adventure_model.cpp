@@ -43,15 +43,22 @@ bool consistentReading(const ClockReading& anchor, const ClockReading& r, bool a
 uint32_t mixRandom(uint32_t x) {
   x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; return x ^ (x >> 16);
 }
-uint8_t throwRoll(const Encounter& e, uint8_t index) {
+uint16_t nextEncounterTarget(uint32_t seed) {
+  return uint16_t(kEncounterMinSteps + mixRandom(seed) % (kEncounterMaxSteps - kEncounterMinSteps + 1));
+}
+uint8_t throwRoll(const Encounter& e, uint8_t index, uint16_t attemptRuleVersion) {
   uint32_t h = mixRandom(e.seed ^ uint32_t(e.id));
   h = mixRandom(h ^ uint32_t(e.id >> 32));
-  h = mixRandom(h ^ (uint32_t(index) * 0x9e3779b9u) ^ (uint32_t(e.ruleVersion) << 16));
+  h = mixRandom(h ^ (uint32_t(index) * 0x9e3779b9u) ^ (uint32_t(attemptRuleVersion) << 16));
   return uint8_t(h % 100);
 }
-uint8_t captureProbability(bool rare, Timing timing) {
+uint8_t captureProbability(uint16_t ruleVersion, bool rare, Timing timing) {
+  if (uint8_t(timing) > 3) return 0;
   static const uint8_t normal[] = {0,55,70,85}, special[] = {0,30,45,60};
-  return uint8_t(timing) <= 3 ? (rare ? special : normal)[uint8_t(timing)] : 0;
+  static const uint8_t boostedNormal[] = {0,85,92,98}, boostedSpecial[] = {0,70,80,90};
+  const uint8_t* table = ruleVersion >= 3 ? (rare ? boostedSpecial : boostedNormal)
+                                          : (rare ? special : normal);
+  return table[uint8_t(timing)];
 }
 Stamp makeStamp(const Save& s, const ClockReading& r) {
   Stamp a;
@@ -98,7 +105,7 @@ static bool cleanBitmap(const std::array<uint8_t, kSpeciesBytes>& bits, uint16_t
 }
 static bool validCapture(const Capture& c, const Save& s) {
   return c.species <= kSpeciesCount && uint8_t(c.route) <= 2 && c.achievementMask <= 63 &&
-         validStamp(c.at, s) && (c.species ? c.at.bootGeneration != 0 && c.at.totalSteps >= 500 :
+         validStamp(c.at, s) && (c.species ? c.at.bootGeneration != 0 && c.at.totalSteps >= kEncounterMinSteps :
          (emptyStamp(c.at) && c.route == Route::Forest && c.achievementMask == 0));
 }
 static bool validDay(const DayBucket& d, const Save& s) {
@@ -117,7 +124,7 @@ static bool validDay(const DayBucket& d, const Save& s) {
 bool validate(const Save& s) {
   if (s.schema < 1 || s.schema > kSchemaVersion || uint8_t(s.route) > 2 || uint8_t(s.phase) > 4 ||
       uint8_t(s.result) > (s.schema == 1 ? 5 : 7) ||
-      !cleanBitmap(s.owned, uint16_t(s.schema == 3 ? kSpeciesCount : 151)) || s.historySize > 14 ||
+      !cleanBitmap(s.owned, uint16_t(s.schema >= 3 ? kSpeciesCount : 151)) || s.historySize > 14 ||
       s.recentSize > 32 || !s.nextEncounterId || s.explorationCredit > s.totalSteps ||
       s.undatedSteps > s.totalSteps || s.bestDaySteps > s.totalSteps) return false;
   const uint64_t encounters = s.nextEncounterId - 1;
@@ -129,10 +136,16 @@ bool validate(const Save& s) {
         s.voidedLegacyCount > encounters - s.legacyChargedCount ||
         s.legacyChargedCount > s.totalSteps / 500 || s.rewardBaseSteps > s.totalSteps ||
         s.ballsSpent > (s.totalSteps - s.rewardBaseSteps) / 1000 ||
-        !cleanBitmap(s.registered, uint16_t(s.schema == 3 ? kSpeciesCount : 151))) return false;
+        !cleanBitmap(s.registered, uint16_t(s.schema >= 3 ? kSpeciesCount : 151))) return false;
     const uint64_t remaining = s.totalSteps - s.legacyChargedCount * 500;
     const uint64_t modern = encounters - s.legacyChargedCount - s.voidedLegacyCount;
-    if (modern > remaining / 5000 || s.explorationCredit != remaining - modern * 5000) return false;
+    if (s.schema >= 4) {
+      const uint64_t modernSpent = s.explorationSpent - s.legacyChargedCount * 500;
+      if (s.encounterTarget < kEncounterMinSteps || s.encounterTarget > kEncounterMaxSteps ||
+          s.explorationSpent > s.totalSteps || s.explorationCredit != s.totalSteps - s.explorationSpent ||
+          modernSpent / kEncounterMinSteps < modern || modernSpent > modern * kLegacyEncounterSteps) return false;
+    } else if (modern > remaining / kLegacyEncounterSteps ||
+               s.explorationCredit != remaining - modern * kLegacyEncounterSteps) return false;
     uint64_t walked = 0;
     for (size_t i = 0; i < kSpeciesCount; ++i) {
       const SpeciesProgress& p = s.progress[i];
@@ -205,19 +218,22 @@ bool validate(const Save& s) {
   if (s.today.dayKey && (s.today.epoch != c.calibrationEpoch || s.today.dayKey != c.dayHighWater)) return false;
   const Encounter& e = s.encounter;
   const uint64_t legacyBoundary = s.legacyChargedCount + s.voidedLegacyCount;
-  const uint16_t rule = s.schema == 1 || (e.id && e.id <= legacyBoundary) ? 1 : 2;
-  // Schema 1 stores neither ballsSpent nor legacyFreeAttempts; every later schema
-  // owns spent balls, so the lower bound and the retired/legacy encounter
-  // boundaries below must cover schema 2 and schema 3 alike.
-  if (uint8_t(e.route) > 2 || e.usedBalls > 2 || e.ruleVersion != rule ||
-      e.legacyFreeAttempts > e.usedBalls || (rule == 2 && e.legacyFreeAttempts) ||
-      (s.schema != 1 && s.ballsSpent < uint64_t(e.usedBalls - e.legacyFreeAttempts))) return false;
+  const bool legacyEncounter = s.schema == 1 || (e.id && e.id <= legacyBoundary);
+  // Schema 1/2/3 keep their frozen rule versions; schema 4 upgrades every
+  // non-legacy encounter to the current rules, while finished attempts stay
+  // verifiable under the table they were thrown with.
+  if (uint8_t(e.route) > 2 || e.usedBalls > 2 || !e.ruleVersion || e.ruleVersion > kRuleVersion ||
+      (legacyEncounter && e.ruleVersion != 1) ||
+      (s.schema >= 4 && e.id && !legacyEncounter && e.ruleVersion != kRuleVersion) ||
+      e.legacyFreeAttempts > e.usedBalls || (!legacyEncounter && e.legacyFreeAttempts) ||
+      (s.schema != 1 && e.ruleVersion < 3 &&
+       s.ballsSpent < uint64_t(e.usedBalls - e.legacyFreeAttempts))) return false;
   if (s.schema != 1 && e.id) {
-    if (rule == 2 && !ordinaryEncounter(e.species)) return false;
+    if (!legacyEncounter && !ordinaryEncounter(e.species)) return false;
     if (s.result == Result::MigrationRetired) {
       if (s.voidedLegacyCount != 1 || e.id != legacyBoundary || ordinaryEncounter(e.species)) return false;
     } else if (s.voidedLegacyCount && e.id == legacyBoundary) return false;
-    if (rule == 1 && s.phase != Phase::Resolved && !ordinaryEncounter(e.species)) return false;
+    if (legacyEncounter && s.phase != Phase::Resolved && !ordinaryEncounter(e.species)) return false;
   }
   if (s.phase == Phase::Walking) {
     if (e.id || e.species || e.partner || e.usedBalls || s.result != Result::None) return false;
@@ -233,11 +249,12 @@ bool validate(const Save& s) {
   }
   for (size_t i = 0; i < 2; ++i) {
     const ThrowAttempt& a = e.attempts[i];
-    if (a.used != (i < e.usedBalls) || uint8_t(a.timing) > 3 || a.ruleVersion != rule || a.roll > 99) return false;
+    if (a.used != (i < e.usedBalls) || uint8_t(a.timing) > 3 || !a.ruleVersion ||
+        a.ruleVersion > kRuleVersion || (a.used && a.ruleVersion > e.ruleVersion) || a.roll > 99) return false;
     if (a.used) {
       const CatalogEntry* entry = catalogEntry(e.species);
-      if (!entry || a.probability != captureProbability(entry->rare, a.timing) ||
-          a.roll != throwRoll(e, uint8_t(i + 1)) || a.captured != (a.roll < a.probability)) return false;
+      if (!entry || a.probability != captureProbability(a.ruleVersion, entry->rare, a.timing) ||
+          a.roll != throwRoll(e, uint8_t(i + 1), a.ruleVersion) || a.captured != (a.roll < a.probability)) return false;
       if (a.captured && (i + 1 != e.usedBalls || s.result != Result::Captured)) return false;
     } else if (a.captured || a.probability || a.roll || a.timing != Timing::Miss) return false;
   }
