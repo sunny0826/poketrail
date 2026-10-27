@@ -1,4 +1,7 @@
 #include "save_codec.hpp"
+#include "adventure_migration.hpp"
+#include "encounter_catalog.hpp"
+#include <cstdio>
 #include <memory>
 #include <new>
 #include <type_traits>
@@ -89,6 +92,8 @@ template<class A, class T> void payload(A& a, T& s) {
     a.field(s.lastEvolution.request.rosterRevision); a.field(s.lastEvolution.cost);
     stamp(a, s.lastEvolution.at); a.field(s.encounter.legacyFreeAttempts);
   }
+  // Schema 4 adds the random encounter cadence account.
+  if (s.schema >= 4) { a.field(s.encounterTarget); a.field(s.explorationSpent); }
 }
 uint32_t updateCrc(uint32_t crc, const uint8_t* p, size_t n) {
   for (size_t i = 0; i < n; ++i) {
@@ -129,7 +134,24 @@ DecodeStatus decode(const uint8_t* bytes, size_t length, Save& out) {
   if (!parsed) return DecodeStatus::IoError;
   parsed->schema = schema; parsed->sequence = sequence;
   Reader data(bytes + kHeaderSize, payloadLength); payload(data, *parsed);
-  if (!data.ok || data.pos != payloadLength || !validate(*parsed)) return DecodeStatus::Corrupt;
+  if (!data.ok) return DecodeStatus::Corrupt;
+  // Frames written by the unmerged activity-branch firmware (legendary-ruins,
+  // dragon-trial) append a 22-byte activity block to an otherwise ordinary
+  // schema-3 payload. Skip that block, retire any in-flight activity encounter
+  // (its species lies outside the ordinary pool), and upgrade to schema 4 on
+  // the spot: schema-3 bookkeeping cannot express encounters that consumed no
+  // exploration credit, while schema-4 accepts the zero-cost id range.
+  const bool activityTail = parsed->schema == 3 && data.pos + 22 == payloadLength;
+  if (!activityTail && data.pos != payloadLength) return DecodeStatus::Corrupt;
+  if (activityTail) {
+    if (parsed->encounter.id && !ordinaryEncounter(parsed->encounter.species)) {
+      parsed->encounter = Encounter();
+      parsed->phase = Phase::Walking;
+      parsed->result = Result::None;
+    }
+    upgradeToSchema4(*parsed);
+  }
+  if (!validate(*parsed)) return DecodeStatus::Corrupt;
   out = *parsed;
   return DecodeStatus::Ok;
 }

@@ -9,7 +9,8 @@ void fixture(MemoryStore& store, uint16_t partner = 4, uint16_t enemy = 25, Rout
   Save save; save.bootGeneration = 1; save.starter = 1; save.partner = partner;
   save.rosterRevision = 1; setOwned(save, 1); setRegistered(save, 1);
   setOwned(save, partner); setRegistered(save, partner);
-  save.totalSteps = save.undatedSteps = 5000; save.nextEncounterId = 2;
+  save.encounterTarget = 300;
+  save.totalSteps = save.undatedSteps = 5000; save.explorationSpent = 5000; save.nextEncounterId = 2;
   save.phase = Phase::EncounterReady; save.route = save.encounter.route = route;
   save.encounter.id = 1; save.encounter.species = enemy; save.encounter.partner = partner;
   check(validate(save) && store.commit(save) == CommitStatus::Committed, "battle fixture validates through production codec");

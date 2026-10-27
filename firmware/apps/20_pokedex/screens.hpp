@@ -74,7 +74,7 @@ class Screens {
   void item(const ScreenState&, unsigned index, const char*, int top = menu_layout::kTop,
             uint16_t species = 0, bool carried = false, const char* note = nullptr);
   void thumbnail(uint16_t species, int x, int y, unsigned scale = 1);
-  void ballCount(uint64_t count, int y, int x = 233);
+  void ballIcon(int y, int x = 233);
   void line(const char*, int y, uint16_t color = theme::kText, bool large = false);
   void fitLine(const char*, int y, int width, uint16_t color, bool large = true);
   void title(const char*, const char* subtitle, uint16_t accent);

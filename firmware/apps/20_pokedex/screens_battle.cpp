@@ -50,8 +50,8 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     scene(v.encounter.route, true);
     snprintf(text, sizeof(text), "本场剩余 %u 次", 2 - v.encounter.usedBalls);
     title(speciesName(v.encounter.species), s.capture.active ? "" : e.throwView().active ? "等待投球" :
-          availableBalls(v) ? text : "每 1000 步获得一球", theme::kGold);
-    ballCount(availableBalls(v), 109, 327);
+          text, theme::kGold);
+    ballIcon(109, 312);
     if (s.capture.active) {
       capture(s, v.encounter.species, now);
     } else if (e.throwView().active) {
@@ -67,11 +67,11 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
       else if (charge == 2) M5.Display.drawCircle(233, kHandY, (now / 200) % 2 ? 34 : 30, theme::kGold);
       ballAt(233, kHandY);
       line("按住蓄力 · 松手投球", 399, theme::kMint);
-      line("未投出也会消耗本球", 426, theme::kMuted);
+      line("未投出也计一次投球", 426, theme::kMuted);
     } else {
       actorShadow(233, 147);
       sprite(v.encounter.species, now, battlePlayback_, 147, 233, 0, 2, 110);
-      item(s, 0, availableBalls(v) ? "准备投球" : "暂无精灵球", menu_layout::kTop);
+      item(s, 0, "准备投球", menu_layout::kTop);
       item(s, 1, "保留遭遇 · 继续走路", menu_layout::kTop);
       item(s, 2, "放弃这次捕捉", menu_layout::kTop);
     }

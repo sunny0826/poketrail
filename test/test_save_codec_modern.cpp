@@ -62,14 +62,15 @@ static void rejectBytes(const std::vector<uint8_t>& bytes) {
 }
 // A rule-2 encounter in Forest with one failed first throw already paid for.
 static void failedFirstThrow(Save& s) {
-  const uint8_t probability = captureProbability(catalogEntry(s.encounter.species)->rare, Timing::Normal);
+  const uint16_t rule = s.encounter.ruleVersion;
+  const uint8_t probability = captureProbability(rule, catalogEntry(s.encounter.species)->rare, Timing::Normal);
   s.phase = Phase::ThrowReady; s.result = Result::Won; s.encounter.usedBalls = 1;
   s.encounter.seed = 0;
-  while (throwRoll(s.encounter, 1) < probability) ++s.encounter.seed;
+  while (throwRoll(s.encounter, 1, rule) < probability) ++s.encounter.seed;
   ThrowAttempt& a = s.encounter.attempts[0];
   a.used = true; a.timing = Timing::Normal; a.probability = probability;
-  a.roll = throwRoll(s.encounter, 1); a.captured = a.roll < probability;
-  a.ruleVersion = s.encounter.ruleVersion;
+  a.roll = throwRoll(s.encounter, 1, rule); a.captured = a.roll < probability;
+  a.ruleVersion = rule;
   CHECK(!a.captured);
 }
 static Save modernEncounter(uint16_t schema, uint16_t species) {
@@ -77,7 +78,9 @@ static Save modernEncounter(uint16_t schema, uint16_t species) {
   s.rosterRevision = 1; setRegistered(s, 1); setOwned(s, 1);
   s.totalSteps = s.undatedSteps = 5000; s.explorationCredit = 0; s.nextEncounterId = 2;
   s.encounter.id = 1; s.encounter.species = species; s.encounter.partner = 1;
-  s.encounter.route = Route::Forest; s.encounter.ruleVersion = 2; s.phase = Phase::EncounterReady;
+  s.encounter.route = Route::Forest; s.encounter.ruleVersion = 2;
+  for (auto& a : s.encounter.attempts) a.ruleVersion = 2;
+  s.phase = Phase::EncounterReady;
   return s;
 }
 // Schema 2 and 3 both own modern encounter state; schema 1 keeps its legacy exemption.
@@ -117,6 +120,18 @@ static void modernEncounterBoundaries(const Save& legacy1) {
     Save retiredBack;
     CHECK(codec::decode(retiredBytes.data(), retiredBytes.size(), retiredBack) == codec::DecodeStatus::Ok);
     rejectBytes(forgedAt(retiredBytes, fieldOffset(resolved, lost), uint8_t(Result::Released)));
+  }
+  // Schema 4: non-legacy encounters run current rules, unlimited balls mean a
+  // used throw no longer has to be paid for, and an unmigrated rule-2
+  // encounter is refused.
+  {
+    Save base = modernEncounter(4, 1);
+    base.explorationSpent = 5000; base.encounterTarget = 300; base.encounter.ruleVersion = 3;
+    CHECK(validate(base)); acceptAtStartup(base);
+    Save stale = base; stale.encounter.ruleVersion = 2; rejectAtStartup(stale);
+    Save thrown = base; failedFirstThrow(thrown);
+    CHECK(thrown.ballsSpent == 0 && thrown.encounter.ruleVersion == 3);
+    CHECK(validate(thrown)); acceptAtStartup(thrown);
   }
   // Schema 1 stores no ballsSpent and never owned modern encounters: a legacy
   // encounter with a non-ordinary species and a spent ball must still load.

@@ -159,10 +159,12 @@ void pauseAndResume(bool practice) {
 void throwTimingAndRelease() {
   MemoryStore store; Save save;
   save.bootGeneration = 1; save.starter = save.partner = 1; setOwned(save, 1); setRegistered(save, 1);
-  save.rosterRevision = 1; save.totalSteps = save.undatedSteps = 5000; save.nextEncounterId = 2;
+  save.rosterRevision = 1; save.encounterTarget = 300;
+  save.totalSteps = save.undatedSteps = 5000; save.explorationSpent = 5000; save.nextEncounterId = 2;
   save.phase = Phase::ThrowReady; save.result = Result::Won;
   save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1;
-  while (throwRoll(save.encounter, 1) < captureProbability(catalogEntry(1)->rare, Timing::Perfect)) ++save.encounter.seed;
+  while (throwRoll(save.encounter, 1, save.encounter.ruleVersion) <
+         captureProbability(save.encounter.ruleVersion, catalogEntry(1)->rare, Timing::Perfect)) ++save.encounter.seed;
   check(validate(save) && store.commit(save) == CommitStatus::Committed, "throw timing fixture validates and encodes");
   HostPlatform platform; Runtime r(store, platform); start(r);
   edge(r, false, true);

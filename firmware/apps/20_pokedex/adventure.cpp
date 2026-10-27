@@ -17,6 +17,7 @@ CommandResult Engine::begin() {
   if (loadResult_.status == LoadStatus::Empty) {
     candidate_.~Save();
     new (&candidate_) Save();
+    candidate_.encounterTarget = nextEncounterTarget(mixRandom(candidate_.sequence));
   }
   if (!validate(candidate_) || candidate_.bootGeneration == UINT32_MAX) {
     loadResult_.status = LoadStatus::Corrupt;
@@ -64,17 +65,19 @@ CommandResult Engine::checkpoint() {
   stage(); return submit();
 }
 void Engine::createEncounter(Save& s, uint32_t seed) {
-  if (s.phase != Phase::Walking || !s.starter || s.explorationCredit < kEncounterSteps ||
-      s.nextEncounterId == UINT64_MAX) return;
+  if (s.phase != Phase::Walking || !s.starter || s.nextEncounterId == UINT64_MAX) return;
+  if (s.encounterTarget < kEncounterMinSteps || s.explorationCredit < s.encounterTarget) return;
   const uint16_t species = chooseEncounter(s, s.route, seed);
   if (!species) return;
+  s.explorationSpent += s.encounterTarget;
+  s.explorationCredit -= s.encounterTarget;
   s.encounter = Encounter();
   s.encounter.id = s.nextEncounterId++;
   s.encounter.species = species;
   s.encounter.partner = s.partner;
   s.encounter.route = s.route;
   s.encounter.seed = seed;
-  s.explorationCredit -= kEncounterSteps;
+  s.encounterTarget = nextEncounterTarget(seed ^ uint32_t(s.nextEncounterId));
   s.phase = Phase::EncounterReady;
   s.result = Result::None;
 }

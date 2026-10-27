@@ -118,11 +118,11 @@ void loop() {
       (unsigned long)m.qualityGaps, (unsigned long)m.noSample,
       (unsigned long)m.rtcErrors, (unsigned long)m.maxRenderMs, (unsigned long)m.maxCommitMs);
     const auto& save = runtime.engine().view();
-    diagnostic("state page=%u row=%u ready=%u pending=%u starter=%u partner=%u phase=%u seq=%llu total=%llu balls=%llu\n",
+    diagnostic("state page=%u row=%u ready=%u pending=%u load=%u starter=%u partner=%u phase=%u seq=%llu total=%llu target=%u\n",
       unsigned(runtime.screen().page), unsigned(runtime.screen().selected), unsigned(runtime.engine().ready()),
-      unsigned(runtime.engine().savePending()), unsigned(save.starter), unsigned(save.partner), unsigned(save.phase),
-      (unsigned long long)save.sequence, (unsigned long long)save.totalSteps,
-      (unsigned long long)pokedex::adventure::availableBalls(save));
+      unsigned(runtime.engine().savePending()), unsigned(runtime.engine().loadResult().status),
+      unsigned(save.starter), unsigned(save.partner), unsigned(save.phase),
+      (unsigned long long)save.sequence, (unsigned long long)save.totalSteps, unsigned(save.encounterTarget));
     const auto& battery = runtime.screen().battery;
     diagnostic("power dim=%u battery=%d charge=%u displayerr=%lu\n",
       unsigned(runtime.dimmed()), int(battery.percent), unsigned(battery.charge), (unsigned long)m.displayErrors);

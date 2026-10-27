@@ -64,6 +64,10 @@ struct World {
       CHECK(e.observeSteps(&event, 1, seed) == CommandResult::Applied);
     }
   }
+  void walkToEncounter(uint32_t seed = 1) {
+    while (e.view().phase == Phase::Walking) steps(1, seed);
+    CHECK(e.view().phase == Phase::EncounterReady);
+  }
   void win() {
     CHECK(e.startBattle(now) == CommandResult::Applied);
     while (e.view().phase == Phase::Battle) {
@@ -86,8 +90,8 @@ static uint32_t seedFor(const Save& s, bool first, bool second, uint16_t species
   for (uint32_t seed = 0; seed < 1000000; ++seed) {
     Encounter e; e.seed = seed; e.id = s.nextEncounterId; e.species = chooseEncounter(s, s.route, seed);
     if (species && species != e.species) continue;
-    const uint8_t p = captureProbability(catalogEntry(e.species)->rare, Timing::Perfect);
-    if ((throwRoll(e, 1) < p) == first && (throwRoll(e, 2) < p) == second) return seed;
+    const uint8_t p = captureProbability(kRuleVersion, catalogEntry(e.species)->rare, Timing::Perfect);
+    if ((throwRoll(e, 1, kRuleVersion) < p) == first && (throwRoll(e, 2, kRuleVersion) < p) == second) return seed;
   }
   CHECK(false); return 0;
 }

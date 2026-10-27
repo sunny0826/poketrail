@@ -147,9 +147,9 @@ void legacyOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t 
   check(store.commit(save) == CommitStatus::Committed, "legacy collection has authentic versioned bytes");
 }
 void modernOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t partner = 1) {
-  // Schema 3 collection with Johto ownership; the legacy helper can only express 151 species.
+  // Schema 4 collection with Johto ownership; the legacy helper can only express 151 species.
   Save save; save.sequence = 1; save.bootGeneration = 1; save.starter = 1; save.partner = partner;
-  save.rosterRevision = 1; setRegistered(save, 1); setOwned(save, 1);
+  save.rosterRevision = 1; save.encounterTarget = 300; setRegistered(save, 1); setOwned(save, 1);
   setRegistered(save, partner); setOwned(save, partner);
   uint64_t captures = 0;
   for (uint16_t id : ids) {
@@ -160,9 +160,10 @@ void modernOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t 
     capture.at.totalSteps = captures * 500;
     save.firstCapture[id - 1] = capture;
   }
-  save.totalSteps = save.undatedSteps = captures * kEncounterSteps;
+  save.totalSteps = save.undatedSteps = captures * kLegacyEncounterSteps;
   save.nextEncounterId = captures + 1;
   save.explorationCredit = 0;
+  save.explorationSpent = save.totalSteps;
   const uint64_t thresholds[] = {10000, 50000, 100000};
   for (unsigned i = 0; i < 3; ++i) if (save.totalSteps >= thresholds[i]) {
     save.lifetime[i].reached = true; save.lifetime[i].first.bootGeneration = 1;

@@ -83,8 +83,8 @@ PracticeOutcome CapturePractice::resolve(uint32_t pressMs) {
   out.valid = true;
   out.attemptIndex = throw_.attemptIndex;
   out.timing = throwTiming(pressMs, throw_.targetMs);
-  out.probability = captureProbability(entry->rare, out.timing);
-  out.roll = throwRoll(encounter_, out.attemptIndex);
+  out.probability = captureProbability(encounter_.ruleVersion, entry->rare, out.timing);
+  out.roll = throwRoll(encounter_, out.attemptIndex, encounter_.ruleVersion);
   out.captured = out.roll < out.probability;
   out.at = pressMs;
   ThrowAttempt& attempt = encounter_.attempts[out.attemptIndex - 1];

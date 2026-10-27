@@ -26,15 +26,30 @@ bool migrateLegacy(Save& s) {
     }
     if (!validate(s)) return false;
   }
-  if (s.schema != 2) return false;
+  if (s.schema != 2 && s.schema != 3) return false;
   // Schema 3 widens the catalog. Existing fields and the current encounter stay
   // verbatim; species 152-251 start empty and unregistered.
-  for (size_t i = 151; i < kSpeciesCount; ++i) {
-    s.progress[i] = SpeciesProgress();
-    s.captureCounts[i] = 0;
-    s.firstCapture[i] = Capture();
+  if (s.schema == 2) {
+    for (size_t i = 151; i < kSpeciesCount; ++i) {
+      s.progress[i] = SpeciesProgress();
+      s.captureCounts[i] = 0;
+      s.firstCapture[i] = Capture();
+    }
+    s.schema = 3;
+    if (!validate(s)) return false;
   }
-  s.schema = kSchemaVersion;
+  // Schema 4 switches to random encounter cadence and unlimited balls. The
+  // modern encounter account is reconstructed from the invariant it must keep:
+  // spent + credit == totalSteps. Any non-legacy encounter still in play is
+  // upgraded to the current rules; finished attempts keep their own version so
+  // their stored probability and roll stay verifiable.
+  upgradeToSchema4(s);
   return validate(s);
+}
+void upgradeToSchema4(Save& s) {
+  s.explorationSpent = s.totalSteps - s.explorationCredit;
+  if (s.encounter.id && s.encounter.ruleVersion == 2) s.encounter.ruleVersion = 3;
+  s.encounterTarget = nextEncounterTarget(mixRandom(uint32_t(s.bootGeneration) ^ uint32_t(s.totalSteps)));
+  s.schema = kSchemaVersion;
 }
 } }

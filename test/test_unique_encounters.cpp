@@ -8,10 +8,11 @@ static std::unique_ptr<Save> collection(uint16_t missing = 0, Route route = Rout
     setRegistered(*s, id); setOwned(*s, id);
     s->captureCounts[id - 1] = 1;
     Capture& c = s->firstCapture[id - 1]; c.species = id;
-    c.at.bootGeneration = 1; c.at.totalSteps = ++captures * kEncounterSteps;
+    c.at.bootGeneration = 1; c.at.totalSteps = ++captures * kLegacyEncounterSteps;
   }
-  total(*s, (captures + 1) * kEncounterSteps);
-  s->explorationCredit = kEncounterSteps; s->nextEncounterId = captures + 1; s->route = route;
+  total(*s, (captures + 1) * kLegacyEncounterSteps);
+  s->explorationCredit = kLegacyEncounterSteps; s->nextEncounterId = captures + 1; s->route = route;
+  s->explorationSpent = s->totalSteps - s->explorationCredit;
   s->progress[0].walked = 8000;
   CHECK(validate(*s)); return s;
 }
@@ -55,7 +56,8 @@ static void exhaustionAndSwitch() {
   CHECK(remainingEncounters(coast.view(), Route::Forest) == 0);
   CHECK(coast.selectRoute(Route::Coast) == CommandResult::Applied);
   CHECK(coast.view().phase == Phase::EncounterReady && coast.view().encounter.species == 129);
-  CHECK(coast.view().explorationCredit == 0 && coast.view().nextEncounterId == coastal->nextEncounterId + 1);
+  CHECK(coast.view().explorationCredit == kLegacyEncounterSteps - coastal->encounterTarget &&
+        coast.view().nextEncounterId == coastal->nextEncounterId + 1);
 }
 static void failedEncountersRemain() {
   auto s = collection(1); MemoryStore store; store.disk = encoded(*s);
@@ -84,7 +86,7 @@ static void captureRetry() {
   auto s = collection(1); MemoryStore store; store.disk = encoded(*s);
   Engine e(store); CHECK(e.begin() == CommandResult::Applied);
   uint32_t seed = 0; Encounter encounter; encounter.id = e.view().nextEncounterId;
-  for (;; ++seed) { encounter.seed = seed; if (throwRoll(encounter, 1) < 85) break; }
+  for (;; ++seed) { encounter.seed = seed; if (throwRoll(encounter, 1, kRuleVersion) < 98) break; }
   StepEvent step; step.batchId = 1; step.partner = 1; step.clock = clockFor(e);
   CHECK(e.observeSteps(&step, 1, seed) == CommandResult::Applied); win(e);
   const AttemptKey key(e.view().encounter.id, 1);
@@ -114,26 +116,27 @@ static void pendingOldDuplicate() {
     auto s = collection();
     if (schema < 3) kantoOnly(*s);
     s->captureCounts[0] = 3;
-    s->nextEncounterId += 2; total(*s, s->totalSteps + 2 * kEncounterSteps);
-    s->explorationCredit = kEncounterSteps;
+    s->nextEncounterId += 2; total(*s, s->totalSteps + 2 * kLegacyEncounterSteps);
+    s->explorationCredit = kLegacyEncounterSteps;
     s->phase = phase; s->result = phase == Phase::ThrowReady ? Result::Won : Result::None;
     s->encounter.id = s->nextEncounterId++; s->encounter.species = s->encounter.partner = 1;
-    s->explorationCredit -= kEncounterSteps;
+    s->encounter.ruleVersion = schema == 1 ? 1 : 2;
+    for (auto& attempt : s->encounter.attempts) attempt.ruleVersion = s->encounter.ruleVersion;
+    s->explorationCredit -= kLegacyEncounterSteps;
     if (phase == Phase::ThrowReady) {
       s->ballsSpent = s->encounter.usedBalls = 1;
       auto& attempt = s->encounter.attempts[0]; attempt.used = true;
-      attempt.roll = throwRoll(s->encounter, 1);
+      attempt.roll = throwRoll(s->encounter, 1, s->encounter.ruleVersion);
     }
     if (schema == 1) {
-      s->schema = s->encounter.ruleVersion = 1;
-      for (auto& attempt : s->encounter.attempts) attempt.ruleVersion = 1;
-      if (s->encounter.usedBalls) s->encounter.attempts[0].roll = throwRoll(s->encounter, 1);
+      s->schema = 1;
       s->explorationCredit = s->totalSteps - (s->nextEncounterId - 1) * 500;
     } else {
       s->schema = schema;
-      total(*s, s->nextEncounterId * kEncounterSteps);
-      s->explorationCredit = kEncounterSteps;
+      total(*s, s->nextEncounterId * kLegacyEncounterSteps);
+      s->explorationCredit = kLegacyEncounterSteps;
     }
+    s->explorationSpent = s->schema == 1 ? 0 : s->totalSteps - s->explorationCredit;
     CHECK(validate(*s));
     MemoryStore store; store.disk = encoded(*s); store.before = true;
     Engine e(store); CHECK(e.begin() == CommandResult::StorageError && !e.ready());

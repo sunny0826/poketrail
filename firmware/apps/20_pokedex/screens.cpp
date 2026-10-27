@@ -106,16 +106,10 @@ void Screens::thumbnail(uint16_t id, int x, int y, unsigned scale) {
         M5.Display.fillRect(left + col * scale, top + row * scale, scale, scale, color);
     }
 }
-void Screens::ballCount(uint64_t count, int y, int x) {
-  char text[32]; snprintf(text, sizeof(text), "%llu", static_cast<unsigned long long>(count));
-  M5.Display.setFont(&fonts::efontCN_16);
-  const int right = 405 - 8 - M5.Display.textWidth(text);
-  if (x > right) x = right;
+void Screens::ballIcon(int y, int x) {
   const auto& icon = data::kPokeBallIcon;
-  M5.Display.pushImage(x - 15 - icon.width / 2, y - icon.height / 2, icon.width, icon.height,
+  M5.Display.pushImage(x - icon.width / 2, y - icon.height / 2, icon.width, icon.height,
                        icon.pixels, kTransparentKey);
-  M5.Display.setTextDatum(middle_left); M5.Display.setTextColor(theme::kText);
-  M5.Display.drawString(text, x + 8, y);
 }
 void Screens::item(const ScreenState& s, unsigned index, const char* label, int top,
                    uint16_t species, bool carried, const char* note) {
