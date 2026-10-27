@@ -90,10 +90,8 @@ void ruinsOrderAndCapture() {
   edge(r, p, true, false);
   check(r.screen().selected == 10, "last target is selectable on the last page");
   edge(r, p, true, true);
-  check(r.screen().page == Page::Ruins && r.engine().view().ruins.lastTarget == 251,
-        "selecting the last target returns to the hub without starting a fight");
-  select(r, p, 1);
-  check(r.screen().page == Page::RuinsBoss, "hub opens the boss detail page");
+  check(r.screen().page == Page::RuinsBoss && r.engine().view().ruins.lastTarget == 251,
+        "selecting a target opens its boss detail directly without starting a fight");
   published(r, "ruins-boss-251");
   check(ruinsHeading(speciesName(251)), "boss detail renders the catalog heading");
   ruinsBossSpec("生命 我方3 / 首领4", "节拍 1.4 秒 · 12 拍", "节奏 交替 · 判定 180/70ms");

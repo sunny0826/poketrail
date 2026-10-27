@@ -284,7 +284,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       if (item < kRuinsTargetTotal) {
         const CommandResult result = engine_.selectRuinsTarget(ruinsTargetAt(uint8_t(item)).species);
         screen_.command = result;
-        if (result == CommandResult::Applied || result == CommandResult::Duplicate) navigate(Page::Ruins);
+        if (result == CommandResult::Applied || result == CommandResult::Duplicate) navigate(Page::RuinsBoss);
       } else goBack();
       break;
     case Page::RuinsBoss:
