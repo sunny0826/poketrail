@@ -14,7 +14,7 @@
 
 ## 历史证据清理与重新检查
 
-截至 2026-10-27，本地各轮协调报告、审查交付、日志和渲染截图已清理。[历史验证轮次](verification/history.md)保留各轮检查摘要与设备观察，原证据文件已不可读取；检查数量、资源数字和设备观察只适用于对应版本，不能当作当前 HEAD 的验证结果。本次清理只核对文档差异与静态链接，没有重跑主机套件、构建或设备验收。
+2026-10-27 清理时，之前各轮的本地协调报告、审查交付、日志和渲染截图已删除。[历史验证轮次](verification/history.md)保留各轮检查摘要与设备观察，原证据文件已不可读取；检查数量、资源数字和设备观察只适用于对应版本，不能当作当前 HEAD 的验证结果。该次清理只核对文档差异与静态链接，没有重跑主机套件、构建或设备验收。
 
 按[开发指南](development.md#检查入口)准备依赖后，可用 `rtk proxy mise run test-adventure`、`rtk proxy mise run test-storage`、`rtk proxy mise run test-render` 等对应任务重新检查。渲染任务生成真实 Runtime/M5GFX 截图；需要命令日志时另行保存标准输出、标准错误和退出状态。输出目录由 `MYM5_VERIFICATION_DIR` 指定，未指定时使用任务新建的 `.pio/verification` 时间戳目录。新结果只反映运行时的代码与环境，不能恢复旧轮次报告、PNG 画廊或设备观察。
 
@@ -34,6 +34,27 @@
 
 该轮文档审计交付与配套日志已清理；可用 `rtk proxy mise run test-adventure` 和 `rtk proxy mise run test-storage` 重新检查并保存日志。页面检查命令为 `rtk proxy mise exec -- python3 -m unittest test.test_ui_design_previews.DesignPreviewTests.test_every_firmware_page_is_covered`。该轮只修改文档，未运行完整渲染、固件构建或目标栈检查，也未烧录、校时或初始化文件系统；以上主机数据不证明设备上的堆峰值、屏幕表现或断电恢复。
 
+## Issue #11 电源键短按（2026-10-27）
+
+电源键输入直接读取 M5PM1 的 `0x48` 按钮状态：bit0 为当前按下电平，bit7 为读后自清的按下标志。按下沿或仅保留标志的短按产生一次省电／唤醒事件，不执行页面动作；唤醒完成帧不会再次锁屏。
+
+验证对象为 `master`、HEAD `85d470c` 加上述 PM1 输入改动的工作树，主机检查结果如下：
+
+| 命令 | 结果 |
+| --- | --- |
+| `rtk proxy mise run test-render` | 13 套件零失败；power 13,168 + power pages 5,883 checks |
+| `rtk proxy mise run test-adventure` | adventure 151,996；codec 43,376；modern codec 119；regressions 48；progression 17,023；migration 373；unique encounters 38,377，均通过 |
+| `rtk proxy mise run build` | `SUCCESS`；RAM 29.8%，Flash 60.8% |
+| `rtk proxy mise run check-startup-stack` | PASS；`Engine::begin` 局部帧 48 字节 |
+
+证据目录为 `.pio/verification/issue11-powerdiag-20261027T181520Z/`：`test-render-final.log`、`test-adventure-final.log`、`build-final.log`、`check-startup-stack-final.log` 保留上述命令的完整输出；`flash-fix.log` 保留烧录记录；`power.log`、`power-fix.log` 保留串口诊断。`test-render-final.log` 含 4 条既有 unused-function 警告。`.pio/verification/verify-issue11-20261027T094702Z/` 是旧输入实现的历史主机验证，不能作为该实现的验收证据。
+
+主机覆盖短按省电与唤醒、唤醒不执行页面动作、活动流程保持亮屏，以及暂停、等待投球和校时草稿保留；还覆盖按住不重复触发、相邻按下和唤醒完成帧。
+
+真机已通过用户确认：首页短按电源键后熄屏，再短按亮屏且仍在首页，再短按再次熄屏。串口诊断保存在上述目录的 `power.log` 与 `power-fix.log`；`power.log` 可见按钮状态 `81`（按下及标志）、`01`（按住）、`00`（释放）。三次操作的屏幕结果来自用户观察，串口日志不提供逐次屏幕验收。
+
+尚未测量功耗与唤醒时延数值，也未逐帧验收屏幕观感。主机通过 PM1 寄存器替身验证输入，不执行设备输入适配器或真实 PMIC I/O；上述首页实测不代表所有页面和硬件边界均已验证，主机测试不能替代设备验收。
+
 ## 已知限制
 
 - 2026-10-25 的设备存档显示今日步数“--”：RTC 已校准且当日有 122 步，但时钟被标为异常。根因是重启清除锚点后，第一次同日读数仍按旧锚点做 120 秒偏差检查，从而把当天锁成异常。该状态已有回归；已有异常存档需重新校时后恢复今日统计，未知日期的步数不回填。
@@ -42,4 +63,4 @@
 - 当前没有首次 LittleFS 格式化入口。挂载失败保留已有数据并限制玩法，不能通过自动格式化掩盖问题。
 - 主机脚本当前在 macOS 验证；Linux 和 Windows 尚未实跑。端口自动探测仅支持 macOS，多个 USB 设备须显式指定目标。
 
-以下设备检查仍开放：实体按键／触摸与唤醒、圆屏观感和动画时延、四种携带方式计步误差、真实行走达到单场 200–500 步目标并完成遭遇／捕获／保存的全过程、RTC 保持、满盘与物理断电恢复、动态堆峰值、完整任务栈、采样时延和省电电流。
+以下设备检查仍开放：除上述首页电源键短按外的实体按键／触摸与唤醒场景、圆屏观感和动画时延、四种携带方式计步误差、真实行走达到单场 200–500 步目标并完成遭遇／捕获／保存的全过程、RTC 保持、满盘与物理断电恢复、动态堆峰值、完整任务栈、采样时延和省电电流。

@@ -32,6 +32,16 @@ class DevicePlatform : public pokedex::ui::Platform {
     c152::update();
     pokedex::ui::Input input;
     input.at = millis();
+    // M5Unified maps only PM1 IRQ bits 0/2 to BtnPWR, but this board reports the
+    // power key as bit 1 (wakeup), so installed versions never produce a click.
+    // Read the button status register instead: bit 0 is the live level and bit 7
+    // is a read-to-clear pressed flag that also catches presses shorter than one poll.
+    uint8_t button = 0;
+    if (M5.Power.M5pm1.readRegister(0x48, &button, 1)) {
+      const bool down = (button & 0x01) != 0;
+      input.power = (down && !powerWasDown_) || ((button & 0x80) != 0 && !down);
+      powerWasDown_ = down;
+    }
     buttons_.sample(input, M5.BtnA, M5.BtnB);
     input.touch = c152::touchWasPressed();
     const auto detail = M5.Touch.getDetail();
@@ -58,6 +68,7 @@ class DevicePlatform : public pokedex::ui::Platform {
   pokedex::device_clock::Clock clock_;
   pokedex::ui::Input lastInput_;
   pokedex::ui::ButtonInput buttons_;
+  bool powerWasDown_ = false;
 };
 class MountedStore : public pokedex::adventure::Store {
  public:

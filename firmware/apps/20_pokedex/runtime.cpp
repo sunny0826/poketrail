@@ -133,6 +133,7 @@ void Runtime::loop() {
     pendingStepCount_ = 0; dirty_ = true;
   }
   const bool waking = updateDisplayPower(input);
+  if (input.power && !waking && !dimmed() && safe()) sleepDisplay();
   if (engine_.ready() &&
       (start - lastClock_ >= 1000 || (clockDeferred_ && safe() && !engine_.savePending()))) pollClock(platform_.now());
   const bool blockedInput = releaseGate_;

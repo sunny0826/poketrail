@@ -9,6 +9,7 @@ namespace pokedex { namespace ui {
 struct Input {
   bool left = false, right = false, touch = false, click = false, pause = false, back = false;
   bool held = false, leftDown = false, rightDown = false;
+  bool power = false;
   int x = 0, y = 0, swipe = 0;
   uint32_t at = 0;
   bool any() const { return left || right || touch || click || swipe || pause || back; }
