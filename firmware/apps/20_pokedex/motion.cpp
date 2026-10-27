@@ -3,7 +3,7 @@
 
 namespace pokedex { namespace motion {
 namespace {
-const uint32_t kGapMs = 100;
+const uint32_t kGapMs = kMaxSampleGapMs;
 // Recall-first tuning: a step only has to be >=220 ms apart (273 steps/min) and
 // may be followed by up to 2.2 s of rest before its candidate is discarded.
 const uint32_t kMinStepMs = 220;
@@ -148,6 +148,15 @@ StepBatch Detector::sample(float x, float y, float z, uint32_t now, uint16_t tag
     clearCadence();
   if (filtered_ >= kWeakPeak && (armed_ || tracking_) && crestSamples_ < kWeakCrestSamples)
     ++crestSamples_;
+  // A crest that never returns to the valley would stay tracked forever and be
+  // released at an arbitrarily old timestamp once the signal finally dips.
+  // Bound that wait: confirm the tracked peak one cadence window after its apex
+  // and drop the cadence, so a sustained high load adds at most that one peak and
+  // cannot re-arm until the signal actually reaches the valley again.
+  if (tracking_ && now - peakAt_ > kMaxStepMs) {
+    acceptPeak(peakAt_, peak_, crestSamples_, result);
+    clearCadence();
+  }
   if (filtered_ <= kValley) {
     if (tracking_) acceptPeak(peakAt_, peak_, crestSamples_, result);
     armed_ = true;
