@@ -1,3 +1,4 @@
+#define STORAGE_TEST_IMPLEMENTATION
 #include "LittleFS.h"
 #include "sys/stat.h"
 #include "esp_littlefs.h"
@@ -8,47 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 using namespace pokedex::adventure;
-namespace storage_test { State state; }
-FakeLittleFS LittleFS;
 using storage_test::state;
-int stat(const char* path, struct stat* out) {
-  if (state.statError) { errno = EIO; return -1; }
-  const auto i = state.nodes.find(path);
-  if (i == state.nodes.end()) { errno = ENOENT; return -1; }
-  out->st_mode = i->second.directory ? 1 : 2;
-  out->st_size = long(i->second.bytes.size()); return 0;
-}
-int esp_littlefs_info(const char* label, size_t* total, size_t* used) {
-  if (!state.info || std::strcmp(label,"spiffs")) return -1;
-  *total = state.total; *used = state.used; return ESP_OK;
-}
-bool FakeLittleFS::begin(bool format, const char* base, uint8_t max, const char* label) {
-  state.correctMount = !format && std::strcmp(base,"/littlefs") == 0 && max == 10 && std::strcmp(label,"spiffs") == 0;
-  if (format) ++state.formats;
-  return state.mount;
-}
-bool FakeLittleFS::mkdir(const char* path) {
-  if (!state.mkdir) return false;
-  state.nodes[std::string("/littlefs") + path].directory = true; return true;
-}
-File FakeLittleFS::open(const char* path, const char* mode) {
-  if (!state.open) return File();
-  const std::string full = std::string("/littlefs") + path;
-  if (*mode == 'w') { state.nodes[full].bytes.clear(); ++state.writes; }
-  auto i = state.nodes.find(full);
-  return i == state.nodes.end() ? File() : File(&i->second);
-}
-size_t File::read(uint8_t* p, size_t n) {
-  if (!state.read) return 0;
-  n = std::min(n, node_->bytes.size());
-  std::copy(node_->bytes.begin(), node_->bytes.begin()+n, p); return n;
-}
-size_t File::write(const uint8_t* p, size_t n) {
-  if (state.shortWrite && n) --n;
-  node_->bytes.assign(p,p+n); return n;
-}
-void File::flush() { ++state.flushes; if (state.loseFlush) node_->bytes.clear(); }
-void File::close() { ++state.closes; node_ = nullptr; }
 static int checks;
 #define CHECK(x) do { ++checks; if (!(x)) { std::fprintf(stderr,"device line %d: %s\n",__LINE__,#x); std::exit(1); } } while (0)
 static void lifecycle() {

@@ -4,6 +4,7 @@
 #include "device_clock.hpp"
 #include "menu_buttons.hpp"
 #include "practice_capture.hpp"
+#include "test_mode.hpp"
 #include <algorithm>
 namespace pokedex { namespace ui {
 struct Input {
@@ -51,10 +52,28 @@ class TimedStore : public adventure::Store {
 };
 class Runtime {
  public:
-  Runtime(adventure::Store& store, Platform& platform);
-  bool begin();
+  enum class TestRequest : uint8_t {
+    None, EnterSnapshot, EnterBlank, ResetSnapshot, ResetBlank,
+    ScenarioAccount, ScenarioNearEncounter, ScenarioCurrentThrow, ScenarioLegacy, Exit
+  };
+  Runtime(adventure::Store& store, Platform& platform,
+          adventure::TestModeHost* testHost = nullptr);
+  bool begin(bool persistBoot = true);
   void loop();
+  // Mode changes run from main.cpp after loop() returns; handle() only records
+  // the request so Runtime is never destroyed from inside its own call stack.
+  TestRequest takeTestRequest() { const TestRequest r = testRequest_; testRequest_ = TestRequest::None; return r; }
+  void openTestPage(Page, bool failure = false);
+  // Mode switches destroy and rebuild this object; the caller checkpoints the
+  // official engine first. This only reports eligibility and flushes.
+  bool canSwitchMode() const { return safe() && !engine_.savePending(); }
+  adventure::CommandResult checkpoint() { return engine_.checkpoint(); }
+  // Test-mode primitive: queue events through the same pending path as IMU
+  // steps. Large counts drain across frames; Engine always receives
+  // observeSteps from the main loop.
+  bool injectSteps(unsigned count);
   const adventure::Engine& engine() const { return engine_; }
+  adventure::Engine& engine() { return engine_; }
   const ScreenState& screen() const { return screen_; }
   const Metrics& metrics() const { return metrics_; }
   const adventure::BattleView& practiceView() const { return practiceCapture_.battleView(); }
@@ -75,11 +94,14 @@ class Runtime {
   void feedback(uint16_t duration);
  private:
   void navigate(Page);
+  void syncTestMode();
   void waitForRelease();
   void syncPage();
   void handle(const Input&);
+  bool handleTestHold(const Input&);
   void activate(unsigned item, uint32_t at);
   void activateProgression(unsigned item, uint32_t at);
+  void activateTest(unsigned item);
   void handleThrow(const Input&);
   void handlePracticeThrow(const Input&);
   void beginPractice(uint32_t at);
@@ -99,6 +121,7 @@ class Runtime {
   void goBack();
   void sample(uint32_t now);
   bool safe() const;
+  void fillTestSteps();
   void pollClock(uint32_t now);
   adventure::ClockReading readingAt(uint32_t at) const;
   adventure::ClockReading makeReading(const device_clock::Reading&, uint32_t at, int offset, bool transaction = false) const;
@@ -111,6 +134,7 @@ class Runtime {
   bool updateDisplayPower(const Input&);
   void pollBattery(uint32_t now, bool force = false);
   Platform& platform_;
+  adventure::TestModeHost* testHost_ = nullptr;
   Metrics metrics_;
   TimedStore store_;
   adventure::Engine engine_;
@@ -122,12 +146,17 @@ class Runtime {
   adventure::ClockReading anchor_;
   adventure::StepEvent pendingSteps_[131];
   unsigned pendingStepCount_ = 0;
+  unsigned testStepsRemaining_ = 0;
   uint32_t lastSamplePoll_ = 0, lastSample_ = 0, lastInput_ = 0;
   uint32_t lastClock_ = 0, lastCheckpoint_ = 0, lastRender_ = 0, lastActivity_ = 0;
   uint32_t lastStepEventMs_ = 0;
   uint64_t batchId_ = 0, notifiedEncounter_ = 0, pendingClockWrite_ = 0;
   uint64_t deferredThrow_ = 0;
+  TestRequest testRequest_ = TestRequest::None;
+  Page testEntryReturn_ = Page::Resources;
+  uint32_t testHoldStarted_ = 0;
   uint8_t lastCaptureCue_ = 0;
+  bool testHoldActive_ = false;
   enum class PendingRoster : uint8_t { None, Select, Evolve };
   PendingRoster pendingRoster_ = PendingRoster::None;
   bool hasSample_ = false, gapReported_ = false, wasVibrating_ = false;

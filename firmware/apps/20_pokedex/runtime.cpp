@@ -18,13 +18,19 @@ CommitStatus TimedStore::commit(const Save& s) {
   metrics_.maxCommitMs = std::max(metrics_.maxCommitMs, platform_.now() - start);
   ++metrics_.commits; return result;
 }
-Runtime::Runtime(Store& store, Platform& platform)
-    : platform_(platform), store_(store, platform, metrics_), engine_(store_) {}
-bool Runtime::begin() {
+Runtime::Runtime(Store& store, Platform& platform, TestModeHost* testHost)
+    : platform_(platform), testHost_(testHost), store_(store, platform, metrics_), engine_(store_) {}
+bool Runtime::begin(bool persistBoot) {
   graphicsReady_ = screens_.begin();
   viewer_screen::setFeedback([](uint16_t d, void* context) { static_cast<Runtime*>(context)->feedback(d); }, this);
-  engine_.begin();
+  engine_.begin(persistBoot);
   uint32_t now = platform_.now();
+  if (!persistBoot && engine_.ready()) {
+    const auto reading = makeReading(platform_.readClock(), now,
+                                     engine_.view().clock.offsetMinutes, false);
+    if (reading.trusted) engine_.adoptClock(reading);
+  }
+  syncTestMode();
   lastActivity_ = lastSamplePoll_ = lastInput_ = lastCheckpoint_ = now;
   pollBattery(now, true);
   batchId_ = engine_.view().lastStepBatch;
@@ -33,11 +39,61 @@ bool Runtime::begin() {
   if (engine_.ready()) pollClock(now);
   return graphicsReady_;
 }
+bool Runtime::injectSteps(unsigned count) {
+  if (!testHost_ || !testHost_->testMode() || !engine_.ready() || engine_.savePending()) return false;
+  if (count > UINT32_MAX - testStepsRemaining_) return false;
+  testStepsRemaining_ += count;
+  fillTestSteps();
+  return true;
+}
+void Runtime::openTestPage(Page page, bool failure) {
+  navigate(page);
+  if (page == Page::TestEntry && screen_.testMode) testEntryReturn_ = Page::TestHub;
+  screen_.testFailure = failure;
+  dirty_ = true;
+}
+void Runtime::fillTestSteps() {
+  if (!testStepsRemaining_ || engine_.savePending()) return;
+  if (!testHost_ || !testHost_->testMode() || !engine_.ready()) {
+    testStepsRemaining_ = 0;
+    return;
+  }
+  // Keep one injection batch within the Engine step queue (128) so a failed
+  // commit can retain the tail instead of overflowing it.
+  const unsigned capacity = 128;
+  const unsigned queued = unsigned(engine_.bufferedSteps());
+  if (queued >= capacity) return;
+  const unsigned room = capacity - queued;
+  const uint32_t now = platform_.now();
+  while (testStepsRemaining_ && pendingStepCount_ < capacity && pendingStepCount_ < room) {
+    StepEvent event;
+    event.batchId = ++batchId_;
+    event.clock = readingAt(now);
+    event.partner = engine_.view().partner;
+    pendingSteps_[pendingStepCount_++] = event;
+    --testStepsRemaining_;
+  }
+}
+void Runtime::syncTestMode() {
+  if (!testHost_) return;
+  const bool wasTest = screen_.testMode;
+  screen_.testMode = testHost_->testMode();
+  if (screen_.testMode) {
+    const auto& clock = engine_.view().clock;
+    if (clock.calibrated && !clock.pending.active && clock.anchor.utcSeconds)
+      testHost_->mode().beginSimulation(platform_.now(), clock.anchor.utcSeconds, clock.offsetMinutes);
+  }
+  if (screen_.testMode == wasTest) return;
+  screens_.invalidate();
+  dirty_ = true;
+}
+
 void Runtime::waitForRelease() {
   menuButtons_.reset(); releaseGate_ = true;
 }
 void Runtime::navigate(Page page) {
   screen_.page = page; screen_.selected = 0; screen_.editing = false;
+  screen_.testFailure = false;
   screens_.invalidate(); dirty_ = true; waitForRelease();
   screen_.command = CommandResult::Applied;
   if (page == Page::Viewer) {
@@ -54,10 +110,17 @@ bool Runtime::safe() const {
          !practiceBusy && screen_.page != Page::Evolution && screen_.page != Page::EvolutionPreview;
 }
 void Runtime::syncPage() {
+  if (screen_.testMode && testHost_ &&
+      (screen_.page == Page::TestHub || screen_.page == Page::TestFaults ||
+       screen_.page == Page::TestDiagnostics)) {
+    screen_.testFault = testHost_->fault();
+    screen_.testDiagnostics = testHost_->diagnostics();
+  }
   const auto& v = engine_.view();
   if (engine_.ready() && !engine_.savePending() && v.phase == Phase::EncounterReady && v.encounter.id != notifiedEncounter_) {
     notifiedEncounter_ = v.encounter.id; feedback(35);
   }
+  if (isTestPage(screen_.page)) return;
   if (screen_.page == Page::Viewer || screen_.page == Page::EvolutionPreviewTargets ||
       screen_.page == Page::EvolutionPreview) return;
   if (screen_.page == Page::Throw && screen_.capture.active) return;
@@ -132,6 +195,9 @@ void Runtime::loop() {
     engine_.observeSteps(pendingSteps_, pendingStepCount_, platform_.randomSeed());
     pendingStepCount_ = 0; dirty_ = true;
   }
+  if (!pendingStepCount_ && !engine_.savePending() && engine_.bufferedSteps() && safe())
+    engine_.flushBufferedSteps();
+  fillTestSteps();
   const bool waking = updateDisplayPower(input);
   if (input.power && !waking && !dimmed() && safe()) sleepDisplay();
   if (engine_.ready() &&
@@ -169,8 +235,10 @@ void Runtime::loop() {
       dirty_ |= screens_.advanceResult(practiceCapture_.species(), now);
     if (screen_.page == Page::Viewer && waking) {
       if (!viewer_screen::redraw(now)) { drawGraphicsError(screen_.battery); ++metrics_.displayErrors; }
+      if (screen_.testMode) viewer_screen::paintTestBadge();
     } else if (screen_.page == Page::Viewer && viewerWasActive && !releaseGate_ && !blockedInput) {
       viewer_screen::update(now);
+      if (screen_.testMode) viewer_screen::paintTestBadge();
     } else if (screen_.page != Page::Viewer && (dirty_ || now - lastRender_ >= (timedPage ? 40u : 500u))) {
       if (!screens_.draw(screen_, engine_, practiceCapture_.battleView(), now)) ++metrics_.displayErrors;
       lastRender_ = now; dirty_ = false;

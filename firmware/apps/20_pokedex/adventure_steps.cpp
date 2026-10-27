@@ -19,6 +19,11 @@ CommandResult Engine::enqueue(const StepEvent* events, size_t count, uint32_t se
   }
   return full ? CommandResult::BufferFull : added ? CommandResult::Applied : CommandResult::Duplicate;
 }
+CommandResult Engine::flushBufferedSteps() {
+  if (pending_) return CommandResult::SavePending;
+  if (!queueSize_ && !overflow_) return CommandResult::Duplicate;
+  return flushSteps();
+}
 CommandResult Engine::observeSteps(const StepEvent* events, size_t count, uint32_t seed) {
   if (!ready_) return CommandResult::NotReady;
   if (count && !events) return CommandResult::InvalidInput;
