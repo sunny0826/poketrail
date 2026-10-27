@@ -5,10 +5,14 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageSequence
 
-from tools.design_preview import GeneratedAssets, pixel_scene_source
+from tools.design_preview import GeneratedAssets, SPECIES_COUNT, pixel_scene_source
 from tools.design_preview_battle import (
     ANIMATIONS, DURATION_MS, FRAME_MS, battle_state, source_frame,
 )
+from tools.design_preview_details import (
+    RECORDS_FIRST_CAPTURES_LABEL, first_capture_footer, viewer_counter,
+)
+from tools.design_preview_screens import MENU_ITEMS, render_frame
 from tools.design_preview_walk import (
     FRAME_COUNT as WALK_FRAME_COUNT, FRAME_MS as WALK_FRAME_MS, sprite_frame_at, visual_steps_at,
 )
@@ -64,6 +68,33 @@ class DesignPreviewTests(unittest.TestCase):
                 self.assertEqual(image.mode, "RGB")
                 self.assertIsNotNone(image.getbbox())
                 self.assertIsNone(ImageChops.multiply(image, outside.convert("RGB")).getbbox())
+
+    def test_generated_assets_cover_all_251_species(self):
+        self.assertEqual(SPECIES_COUNT, 251)
+        self.assertEqual(sorted(self.assets.meta), list(range(1, SPECIES_COUNT + 1)))
+        self.assertEqual(self.assets.name(SPECIES_COUNT), "时拉比")
+        self.assertEqual(self.assets.icon(SPECIES_COUNT, 2).size, (80, 60))
+        sprite = self.assets.sprite(SPECIES_COUNT)
+        self.assertGreater(sprite.width, 0)
+        self.assertGreater(sprite.height, 0)
+
+    def test_dex_labels_use_all_251_species(self):
+        self.assertEqual(MENU_ITEMS[3]["label"], f"{SPECIES_COUNT} 图鉴")
+        self.assertEqual(RECORDS_FIRST_CAPTURES_LABEL, f"永久首捕 · {SPECIES_COUNT}种")
+        self.assertEqual(viewer_counter(SPECIES_COUNT), "#251 / 251")
+        self.assertEqual(first_capture_footer(SPECIES_COUNT), "251 / 252 · 轻触下方返回")
+        for label in (MENU_ITEMS[3]["label"], RECORDS_FIRST_CAPTURES_LABEL,
+                      viewer_counter(SPECIES_COUNT), first_capture_footer(SPECIES_COUNT)):
+            self.assertNotIn("151", label)
+            self.assertNotIn("152", label)
+
+    def test_last_species_renders_in_viewer_and_first_capture(self):
+        for page in ("Viewer", "FirstCaptures"):
+            with self.subTest(page=page):
+                image = render_frame(dict(id=f"{page.lower()}-251", page=page, title="", group="partners",
+                                          species=SPECIES_COUNT), self.assets)
+                self.assertEqual(image.size, (466, 466))
+                self.assertIsNotNone(image.getbbox())
 
     def test_home_uses_exact_generated_sprite_pixels(self):
         expected = self.assets.sprite(4)

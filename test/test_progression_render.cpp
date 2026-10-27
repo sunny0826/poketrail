@@ -57,7 +57,7 @@ void eeveeAndCollection() {
   }
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   openMenu(runtime); select(runtime, 2); select(runtime, 1);
-  check(runtime.screen().species == 133 && menuCount(runtime.screen(), runtime.engine()) == 5, "three branches and back are pageable");
+  check(runtime.screen().species == 133 && menuCount(runtime.screen(), runtime.engine()) == 7, "five branches, carry and back are pageable");
   screenshot(runtime, "eevee-branches");
   select(runtime, 1);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().command == CommandResult::TargetOwned,
@@ -79,11 +79,11 @@ void eeveeAndCollection() {
         "legacy Dratini may be carried and cultivated");
   screenshot(runtime, "dratini-progress");
   MemoryStore full; std::vector<uint16_t> all;
-  for (unsigned id = 1; id <= 151; ++id) all.push_back(id);
-  legacyOwned(full, all);
+  for (unsigned id = 1; id <= 251; ++id) all.push_back(id);
+  modernOwned(full, all);
   Runtime collection(full, platform); start(collection); openMenu(collection); select(collection, 2);
-  check(menuCount(collection.screen(), collection.engine()) == 152, "all 151 owned species plus back");
-  select(collection, 150); check(collection.screen().species == 151, "last owned species is reachable using actual keys");
+  check(menuCount(collection.screen(), collection.engine()) == 252, "all 251 owned species plus back");
+  select(collection, 250); check(collection.screen().species == 251, "last Johto species is reachable using actual keys");
   screenshot(collection, "collection-last");
 }
 void peakOwnership() {

@@ -4,10 +4,10 @@
 #include <limits>
 namespace pokedex { namespace adventure {
 bool registered(const Save& s, uint16_t id) {
-  return id >= 1 && id <= 151 && (s.registered[(id - 1) / 8] & (1u << ((id - 1) % 8)));
+  return id >= 1 && id <= kSpeciesCount && (s.registered[(id - 1) / 8] & (1u << ((id - 1) % 8)));
 }
 void setRegistered(Save& s, uint16_t id) {
-  if (id >= 1 && id <= 151) s.registered[(id - 1) / 8] |= uint8_t(1u << ((id - 1) % 8));
+  if (id >= 1 && id <= kSpeciesCount) s.registered[(id - 1) / 8] |= uint8_t(1u << ((id - 1) % 8));
 }
 uint64_t availableBalls(const Save& s) {
   if (s.rewardBaseSteps > s.totalSteps) return 0;
@@ -15,10 +15,10 @@ uint64_t availableBalls(const Save& s) {
   return s.ballsSpent <= earned ? earned - s.ballsSpent : 0;
 }
 bool owns(const Save& s, uint16_t id) {
-  return id >= 1 && id <= 151 && (s.owned[(id - 1) / 8] & (1u << ((id - 1) % 8)));
+  return id >= 1 && id <= kSpeciesCount && (s.owned[(id - 1) / 8] & (1u << ((id - 1) % 8)));
 }
 void setOwned(Save& s, uint16_t id) {
-  if (id >= 1 && id <= 151) s.owned[(id - 1) / 8] |= uint8_t(1u << ((id - 1) % 8));
+  if (id >= 1 && id <= kSpeciesCount) s.owned[(id - 1) / 8] |= uint8_t(1u << ((id - 1) % 8));
 }
 bool validDayKey(uint32_t day) {
   const unsigned y = day / 10000, m = day / 100 % 100, d = day % 100;
@@ -86,8 +86,18 @@ static bool emptyStamp(const Stamp& a) {
 static bool validAchievement(const Achievement& a, const Save& s) {
   return validStamp(a.first, s) && (a.reached ? a.first.bootGeneration != 0 : emptyStamp(a.first));
 }
+static bool cleanBitmap(const std::array<uint8_t, kSpeciesBytes>& bits, uint16_t count) {
+  for (size_t byte = 0; byte < kSpeciesBytes; ++byte) {
+    const uint16_t first = uint16_t(byte * 8 + 1);
+    if (first > count) { if (bits[byte]) return false; continue; }
+    const uint16_t used = uint16_t(count - first + 1);
+    const uint8_t mask = used >= 8 ? 0xFF : uint8_t((1u << used) - 1);
+    if (bits[byte] & uint8_t(~mask)) return false;
+  }
+  return true;
+}
 static bool validCapture(const Capture& c, const Save& s) {
-  return c.species <= 151 && uint8_t(c.route) <= 2 && c.achievementMask <= 63 &&
+  return c.species <= kSpeciesCount && uint8_t(c.route) <= 2 && c.achievementMask <= 63 &&
          validStamp(c.at, s) && (c.species ? c.at.bootGeneration != 0 && c.at.totalSteps >= 500 :
          (emptyStamp(c.at) && c.route == Route::Forest && c.achievementMask == 0));
 }
@@ -105,8 +115,9 @@ static bool validDay(const DayBucket& d, const Save& s) {
   return true;
 }
 bool validate(const Save& s) {
-  if ((s.schema != 1 && s.schema != 2) || uint8_t(s.route) > 2 || uint8_t(s.phase) > 4 ||
-      uint8_t(s.result) > (s.schema == 1 ? 5 : 7) || (s.owned[18] & 0x80) || s.historySize > 14 ||
+  if (s.schema < 1 || s.schema > kSchemaVersion || uint8_t(s.route) > 2 || uint8_t(s.phase) > 4 ||
+      uint8_t(s.result) > (s.schema == 1 ? 5 : 7) ||
+      !cleanBitmap(s.owned, uint16_t(s.schema == 3 ? kSpeciesCount : 151)) || s.historySize > 14 ||
       s.recentSize > 32 || !s.nextEncounterId || s.explorationCredit > s.totalSteps ||
       s.undatedSteps > s.totalSteps || s.bestDaySteps > s.totalSteps) return false;
   const uint64_t encounters = s.nextEncounterId - 1;
@@ -117,12 +128,13 @@ bool validate(const Save& s) {
     if (s.voidedLegacyCount > 1 || s.legacyChargedCount > encounters ||
         s.voidedLegacyCount > encounters - s.legacyChargedCount ||
         s.legacyChargedCount > s.totalSteps / 500 || s.rewardBaseSteps > s.totalSteps ||
-        s.ballsSpent > (s.totalSteps - s.rewardBaseSteps) / 1000 || (s.registered[18] & 0x80)) return false;
+        s.ballsSpent > (s.totalSteps - s.rewardBaseSteps) / 1000 ||
+        !cleanBitmap(s.registered, uint16_t(s.schema == 3 ? kSpeciesCount : 151))) return false;
     const uint64_t remaining = s.totalSteps - s.legacyChargedCount * 500;
     const uint64_t modern = encounters - s.legacyChargedCount - s.voidedLegacyCount;
     if (modern > remaining / 5000 || s.explorationCredit != remaining - modern * 5000) return false;
     uint64_t walked = 0;
-    for (size_t i = 0; i < 151; ++i) {
+    for (size_t i = 0; i < kSpeciesCount; ++i) {
       const SpeciesProgress& p = s.progress[i];
       if (p.spent > p.walked || p.walked > s.totalSteps - walked ||
           (!registered(s, uint16_t(i + 1)) && (p.walked || owns(s, uint16_t(i + 1)) || s.captureCounts[i]))) return false;
@@ -142,7 +154,7 @@ bool validate(const Save& s) {
   if (s.starter != 0 && s.starter != 1 && s.starter != 4 && s.starter != 7) return false;
   if (s.starter ? ((s.schema == 1 && !owns(s, s.starter)) || !owns(s, s.partner)) : s.partner != 0) return false;
   uint64_t captures = 0;
-  for (size_t i = 0; i < 151; ++i) {
+  for (size_t i = 0; i < kSpeciesCount; ++i) {
     if (!validCapture(s.firstCapture[i], s) ||
         (s.captureCounts[i] ? s.firstCapture[i].species != i + 1 : s.firstCapture[i].species != 0) ||
         (s.schema == 1 && owns(s, uint16_t(i + 1)) != (s.captureCounts[i] != 0 || s.starter == i + 1))) return false;
@@ -194,10 +206,13 @@ bool validate(const Save& s) {
   const Encounter& e = s.encounter;
   const uint64_t legacyBoundary = s.legacyChargedCount + s.voidedLegacyCount;
   const uint16_t rule = s.schema == 1 || (e.id && e.id <= legacyBoundary) ? 1 : 2;
+  // Schema 1 stores neither ballsSpent nor legacyFreeAttempts; every later schema
+  // owns spent balls, so the lower bound and the retired/legacy encounter
+  // boundaries below must cover schema 2 and schema 3 alike.
   if (uint8_t(e.route) > 2 || e.usedBalls > 2 || e.ruleVersion != rule ||
       e.legacyFreeAttempts > e.usedBalls || (rule == 2 && e.legacyFreeAttempts) ||
-      (s.schema == 2 && s.ballsSpent < uint64_t(e.usedBalls - e.legacyFreeAttempts))) return false;
-  if (s.schema == 2 && e.id) {
+      (s.schema != 1 && s.ballsSpent < uint64_t(e.usedBalls - e.legacyFreeAttempts))) return false;
+  if (s.schema != 1 && e.id) {
     if (rule == 2 && !ordinaryEncounter(e.species)) return false;
     if (s.result == Result::MigrationRetired) {
       if (s.voidedLegacyCount != 1 || e.id != legacyBoundary || ordinaryEncounter(e.species)) return false;

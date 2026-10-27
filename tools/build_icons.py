@@ -2,8 +2,8 @@
 """离线生成宝可梦与精灵球静态缩略图：固定来源 PNG 转 RGB565 常量数组。
 
 平时完全离线：从 assets/sprites/icons 缓存读取并按 assets/icons-gen1.json
-核对 SHA256，哈希不符立即失败。首次或补图时使用 --download 显式联网下载，
---write-manifest 根据缓存重建清单。
+与 assets/icons-gen2.json 核对 SHA256，任一清单缺失或哈希不符立即失败。首次或补图时使用 --download 显式联网下载，
+--write-manifests 根据缓存重建 Gen1/Gen2 清单。
 """
 
 from __future__ import annotations
@@ -21,7 +21,10 @@ from PIL import Image
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_HEADER = REPO_ROOT / "firmware/apps/20_pokedex/icons_generated.hpp"
 CACHE_DIR = REPO_ROOT / "assets/sprites/icons"
-MANIFEST = REPO_ROOT / "assets/icons-gen1.json"
+MANIFESTS = {
+    1: REPO_ROOT / "assets/icons-gen1.json",
+    2: REPO_ROOT / "assets/icons-gen2.json",
+}
 SPRITE_REVISION = "97a7832d307311c0e1c6ea9035308bf80cc94f81"
 SOURCE_REPO = f"https://github.com/PokeAPI/sprites/tree/{SPRITE_REVISION}"
 ICON_URL = (
@@ -34,7 +37,8 @@ POKE_BALL_URL = (
 )
 POKE_BALL_CACHE = "poke-ball.png"
 TRANSPARENT_KEY = 0xF81F  # 与 firmware/apps/20_pokedex/sprite.hpp kTransparentKey 一致
-POKEMON_COUNT = 151
+GEN1_COUNT = 151
+POKEMON_COUNT = 251
 
 
 def cache_path(name: str) -> Path:
@@ -82,19 +86,30 @@ def build_icon(data: bytes, name: str) -> dict:
                 sha256=hashlib.sha256(data).hexdigest())
 
 
-def load_manifest() -> dict:
-    manifest = json.loads(MANIFEST.read_text())
-    if manifest["revision"] != SPRITE_REVISION:
-        raise ValueError("icon manifest revision differs from generator")
-    entries = {entry["id"]: entry for entry in manifest["icons"]}
-    if set(entries) != set(range(1, POKEMON_COUNT + 1)):
-        raise ValueError("icon manifest must contain exactly IDs 1-151")
-    for entry in manifest["icons"]:
-        if len(entry["sha256"]) != 64 or "width" not in entry or "height" not in entry:
-            raise ValueError(f"#{entry['id']}: incomplete manifest entry")
-    if "poke_ball" not in manifest:
-        raise ValueError("icon manifest missing poke_ball entry")
-    return manifest
+def load_manifests() -> tuple[dict[int, dict], set[int]]:
+    """读取 Gen1/Gen2 图标清单；任一缺失即失败，只有 --write-manifests 可重建。"""
+    entries = {}
+    present = set()
+    for generation, path in MANIFESTS.items():
+        if not path.exists():
+            raise ValueError(
+                f"generation {generation} icon manifest missing: {path.name}；"
+                "使用 --write-manifests 重建清单")
+        present.add(generation)
+        manifest = json.loads(path.read_text())
+        if manifest["revision"] != SPRITE_REVISION:
+            raise ValueError(f"generation {generation} icon manifest revision differs")
+        first, last = (1, GEN1_COUNT) if generation == 1 else (GEN1_COUNT + 1, POKEMON_COUNT)
+        ids = [entry["id"] for entry in manifest["icons"]]
+        if sorted(ids) != list(range(first, last + 1)):
+            raise ValueError(f"generation {generation}: incomplete icon manifest")
+        for entry in manifest["icons"]:
+            if len(entry["sha256"]) != 64 or "width" not in entry or "height" not in entry:
+                raise ValueError(f"#{entry['id']}: incomplete manifest entry")
+            entries[entry["id"]] = entry
+        if generation == 1 and "poke_ball" not in manifest:
+            raise ValueError("generation 1 icon manifest missing poke_ball entry")
+    return entries, present
 
 
 def verify_hash(name: str, data: bytes, expected: str) -> None:
@@ -103,19 +118,22 @@ def verify_hash(name: str, data: bytes, expected: str) -> None:
         raise ValueError(f"{name}: SHA256 differs from assets/icons-gen1.json")
 
 
-def load_icons(download: bool, write_manifest: bool) -> tuple[list[dict], dict]:
-    """返回 (151只宝可梦图标, 精灵球图标)，按清单核对或重建清单。"""
-    manifest = None if write_manifest else load_manifest()
-    entries = ({entry["id"]: entry for entry in manifest["icons"]}
-               if manifest else {})
+def generation_of(number: int) -> int:
+    return 1 if number <= GEN1_COUNT else 2
+
+
+def load_icons(download: bool, write_manifests: bool) -> tuple[list[dict], dict]:
+    """返回 (251只宝可梦图标, 精灵球图标)，按清单核对或重建清单。"""
+    entries, present = ({}, set()) if write_manifests else load_manifests()
+    manifest = json.loads(MANIFESTS[1].read_text()) if 1 in present else None
     pokemon = []
     for number in range(1, POKEMON_COUNT + 1):
         name = f"{number:04d}.png"
         data = fetch(name, ICON_URL.format(id=number), download)
-        if manifest:
+        if generation_of(number) in present:
             verify_hash(name, data, entries[number]["sha256"])
         icon = build_icon(data, name)
-        if manifest:
+        if generation_of(number) in present:
             entry = entries[number]
             if (icon["width"], icon["height"]) != (entry["width"], entry["height"]):
                 raise ValueError(f"{name}: size differs from manifest")
@@ -147,7 +165,7 @@ struct Icon {
   const uint16_t* pixels;
 };
 
-extern const Icon kPokemonIcons[151];
+extern const Icon kPokemonIcons[251];
 extern const Icon kPokeBallIcon;
 
 }  // namespace data
@@ -171,7 +189,7 @@ def generate_source(pokemon: list[dict], poke_ball: dict) -> str:
         emit_pixels(lines, f'kIcon{icon["id"]:04d}Pixels', icon["pixels"])
     lines.append(f'// poke-ball, {poke_ball["width"]}x{poke_ball["height"]}')
     emit_pixels(lines, 'kPokeBallPixels', poke_ball["pixels"])
-    lines.extend(['}  // namespace', '', 'const Icon kPokemonIcons[151] = {'])
+    lines.extend(['}  // namespace', '', 'const Icon kPokemonIcons[251] = {'])
     for icon in pokemon:
         ident = f'kIcon{icon["id"]:04d}Pixels'
         lines.append(f'    {{{icon["width"]}, {icon["height"]}, {ident}}},')
@@ -182,33 +200,37 @@ def generate_source(pokemon: list[dict], poke_ball: dict) -> str:
     return '\n'.join(lines)
 
 
-def generate_manifest(pokemon: list[dict], poke_ball: dict) -> str:
+def generate_manifest(pokemon: list[dict], poke_ball: dict | None) -> str:
     entries = [dict(id=icon["id"], sha256=icon["sha256"],
                     width=icon["width"], height=icon["height"]) for icon in pokemon]
-    return json.dumps(dict(
+    data = dict(
         source=SOURCE_REPO,
         pokemon_path="sprites/pokemon/versions/generation-vii/icons/{id}.png",
-        poke_ball_path="sprites/items/poke-ball.png",
-        revision=SPRITE_REVISION,
-        icons=entries,
-        poke_ball=dict(sha256=poke_ball["sha256"],
-                       width=poke_ball["width"], height=poke_ball["height"]),
-    ), ensure_ascii=False, indent=2) + '\n'
+    )
+    if poke_ball:
+        data["poke_ball_path"] = "sprites/items/poke-ball.png"
+    data["revision"] = SPRITE_REVISION
+    data["icons"] = entries
+    if poke_ball:
+        data["poke_ball"] = dict(sha256=poke_ball["sha256"],
+                                 width=poke_ball["width"], height=poke_ball["height"])
+    return json.dumps(data, ensure_ascii=False, indent=2) + '\n'
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--download', action='store_true',
                         help='允许联网下载缓存中缺失的 PNG')
-    parser.add_argument('--write-manifest', action='store_true',
-                        help='根据缓存重建 assets/icons-gen1.json（隐含 --download）')
+    parser.add_argument('--write-manifests', '--write-manifest', dest='write_manifests',
+                        action='store_true',
+                        help='根据缓存重建 Gen1/Gen2 图标清单（隐含 --download）')
     parser.add_argument('--check', action='store_true',
                         help='只校验生成物与清单一致，不写任何文件')
     args = parser.parse_args()
-    download = args.download or args.write_manifest
-    if args.check and (download or args.write_manifest):
-        parser.error('--check 不能与 --download/--write-manifest 同时使用')
-    pokemon, poke_ball = load_icons(download, args.write_manifest)
+    download = args.download or args.write_manifests
+    if args.check and (download or args.write_manifests):
+        parser.error('--check 不能与 --download/--write-manifests 同时使用')
+    pokemon, poke_ball = load_icons(download, args.write_manifests)
     header = generate_header()
     source = generate_source(pokemon, poke_ball)
     if args.check:
@@ -221,8 +243,12 @@ def main() -> int:
             raise ValueError('icons_generated.cpp 与生成器输出不一致')
         print(f'check ok: {len(pokemon)} pokemon icons + poke-ball match manifest')
         return 0
-    if args.write_manifest:
-        MANIFEST.write_text(generate_manifest(pokemon, poke_ball), encoding='utf-8')
+    if args.write_manifests:
+        for generation, path in MANIFESTS.items():
+            first, last = (1, GEN1_COUNT) if generation == 1 else (GEN1_COUNT + 1, POKEMON_COUNT)
+            selected = [icon for icon in pokemon if first <= icon["id"] <= last]
+            path.write_text(generate_manifest(selected, poke_ball if generation == 1 else None),
+                            encoding='utf-8')
     OUT_HEADER.write_text(header, encoding='utf-8')
     OUT_HEADER.with_suffix('.cpp').write_text(source, encoding='utf-8')
     total = sum(len(icon["pixels"]) for icon in pokemon) + len(poke_ball["pixels"])

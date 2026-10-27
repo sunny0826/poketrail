@@ -52,7 +52,7 @@ description = "验证双槽存档与设备文件系统故障恢复"
 run = "bash scripts/run_file_store_tests.sh"
 
 [tasks.check-adventure-catalog]
-description = "核对151种遭遇目录与生成物"
+description = "核对251种遭遇目录、显式普通池与122条进化边"
 run = ["python3 tools/build_adventure_catalog.py --check", "python3 tools/build_evolution_rules.py --check", "python3 -m unittest test/test_adventure_catalog.py test/test_progression_catalog.py"]
 
 [tasks.scenes]
@@ -72,12 +72,20 @@ description = "下载并校验固定版本缩略图缓存，生成缩略图"
 run = "python3 tools/build_icons.py --download"
 
 [tasks.test-icons]
-description = "核对缩略图来源哈希、透明像素与生成数组"
+description = "核对251只缩略图来源哈希、透明像素与生成数组"
 run = ["python3 tools/build_icons.py --check", "python3 -m unittest test/test_icons.py"]
 
 [tasks.test-sprites]
-description = "校验151只动画及固件解码与原GIF逐帧一致性"
+description = "校验251只动画及固件解码与原GIF逐帧一致性"
 run = "python3 -m unittest test/test_sprites.py"
+
+[tasks.pokedex]
+description = "用固定来源CSV生成第二世代中文图鉴资料"
+run = "python3 tools/build_pokedex.py"
+
+[tasks.test-pokedex]
+description = "核对第二世代资料、来源哈希、Gen1快照与生成器"
+run = ["python3 tools/build_pokedex.py --check", "python3 -m unittest test/test_pokedex.py"]
 
 [tasks.flash]
 description = "烧录固件到连接的设备"
@@ -88,8 +96,8 @@ description = "备份设备当前 Flash（16MB 全片）"
 run = "./scripts/backup.sh"
 
 [tasks.sprites]
-description = "生成151只动画；缺少缓存时下载并核对固定来源"
-run = "python3 tools/build_sprites.py --generation 1"
+description = "生成251只动画；缺少缓存时下载并核对固定来源"
+run = "python3 tools/build_sprites.py --generation 2"
 
 [tasks.monitor]
 description = "打开串口监视器"

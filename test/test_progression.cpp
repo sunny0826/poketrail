@@ -1,12 +1,12 @@
 #include "support/progression/harness.hpp"
-static_assert(kSchemaVersion==2 && kRuleVersion==2 && kEncounterSteps==5000,"v2 rules");
+static_assert(kSchemaVersion==3 && kRuleVersion==2 && kEncounterSteps==5000,"v3 save, v2 encounter rules");
 static void allEdges() {
-  size_t count=0;const auto* rules=evolutionRules(count);CHECK(count==72);
+  size_t count=0;const auto* rules=evolutionRules(count);CHECK(count==122);
   for(size_t i=0;i<count;++i)for(int delta=-1;delta<=1;++delta){
     const auto& rule=rules[i];auto s=fixture(rule.from,rule.steps+delta);s->progress[rule.from-1].walked=rule.steps+delta;
     MemoryStore store;store.disk=encoded(*s);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
     const auto req=request(e,rule.from,rule.to);const auto old=encoded(e.view());const auto view=e.evolutionView(rule.from);
-    CHECK(view.count>=1 && view.count<=3 && view.available==uint64_t(rule.steps+delta));
+    CHECK(view.count>=1 && view.count<=kEvolutionOptions && view.available==uint64_t(rule.steps+delta));
     CHECK(e.evolve(req,clockFor(e))==(delta<0?CommandResult::InsufficientProgress:CommandResult::Applied));
     if(delta<0){CHECK(encoded(e.view())==old);continue;}
     CHECK(!owns(e.view(),rule.from)&&owns(e.view(),rule.to)&&registered(e.view(),rule.from)&&registered(e.view(),rule.to));
@@ -44,9 +44,35 @@ static void accountsAndFailure() {
   CHECK(c.evolve(request(c,1,2),clockFor(c))==CommandResult::InvalidInput);
   auto eevee=fixture(133,10000);eevee->progress[132].walked=10000;setOwned(*eevee,134);setRegistered(*eevee,134);
   MemoryStore es;es.disk=encoded(*eevee);Engine ev(es);CHECK(ev.begin()==CommandResult::Applied);
-  const auto view=ev.evolutionView(133);CHECK(view.count==3);
+  const auto view=ev.evolutionView(133);CHECK(view.count==5);
   for(const auto& option:view.options)CHECK(option.status==(option.target==134?CommandResult::TargetOwned:CommandResult::Applied));
   CHECK(ev.evolutionView(134).count==0);
+}
+static void johtoRules() {
+  struct Case{uint16_t from,to;uint64_t cost;};
+  const Case cases[]={{152,153,7500},{153,154,8000},{155,156,6500},{156,157,11000},
+                      {158,159,8500},{159,160,6000},{161,162,7000},{188,189,4500},
+                      {204,205,15000},{172,25,10000},{42,169,10000},{44,182,10000},
+                      {133,196,10000},{133,197,10000},{95,208,10000},{113,242,10000},
+                      {238,124,14500},{246,247,14500},{247,248,12500}};
+  for(const Case& c:cases){const auto* rule=evolutionRule(c.from,c.to);
+    CHECK(rule&&rule->steps==c.cost);}
+  for(uint16_t target:{106,107,237}){const auto* rule=evolutionRule(236,target);
+    CHECK(rule&&rule->steps==10000);}
+  auto tyrogue=fixture(236,10000);tyrogue->progress[235].walked=10000;
+  MemoryStore ts;ts.disk=encoded(*tyrogue);Engine te(ts);CHECK(te.begin()==CommandResult::Applied);
+  const auto three=te.evolutionView(236);CHECK(three.count==3);
+  for(unsigned i=0;i<3;++i){const auto& option=three.options[i];
+    CHECK((option.target==106||option.target==107||option.target==237)&&option.cost==10000&&
+          option.status==CommandResult::Applied);}
+  const uint16_t eeveeTargets[]={134,135,136,196,197};
+  auto eevee=fixture(133,10000);eevee->progress[132].walked=10000;
+  MemoryStore es;es.disk=encoded(*eevee);Engine ev(es);CHECK(ev.begin()==CommandResult::Applied);
+  const auto five=ev.evolutionView(133);CHECK(five.count==5);
+  for(unsigned i=0;i<5;++i)CHECK(five.options[i].target==eeveeTargets[i]&&five.options[i].cost==10000);
+  CHECK(ev.evolve(request(ev,133,197),clockFor(ev))==CommandResult::Applied&&owns(ev.view(),197));
+  CHECK(registered(ev.view(),133)&&!owns(ev.view(),133)&&ev.view().progress[132].spent==10000);
+  CHECK(ev.evolutionView(196).count==0&&ev.evolutionView(197).count==0);
 }
 static void stepThresholds() {
   MemoryStore store;Engine e(store);CHECK(e.begin()==CommandResult::Applied);
@@ -144,4 +170,4 @@ static void limitsAndValidation() {
   bad->progress[0].spent=0;bad->ballsSpent=2;CHECK(!validate(*bad));bad->ballsSpent=0;bad->rewardBaseSteps=1001;CHECK(!validate(*bad));
   bad->rewardBaseSteps=0;bad->registered[0]=0;CHECK(!validate(*bad));
 }
-int main(){allEdges();accountsAndFailure();stepThresholds();ballsAndRelease();recaptureAndGuards();limitsAndValidation();std::printf("progression: %u checks passed\n",checks);}
+int main(){allEdges();johtoRules();accountsAndFailure();stepThresholds();ballsAndRelease();recaptureAndGuards();limitsAndValidation();std::printf("progression: %u checks passed\n",checks);}

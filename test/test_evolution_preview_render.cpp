@@ -12,7 +12,7 @@ void viewer(Runtime& runtime, uint16_t species) {
   else if (runtime.screen().page == Page::DateWelcome) select(runtime, 2);
   frame(runtime);
   check(runtime.screen().page == Page::Viewer, "real menu input opens the free Pokedex");
-  for (unsigned i = 0; i < 151 && !glyph(speciesName(species), 72, theme::kText, 233, false, true); ++i)
+  for (unsigned i = 0; i < 251 && !glyph(speciesName(species), 72, theme::kText, 233, false, true); ++i)
     edge(runtime, false, true);
   check(glyph(speciesName(species), 72, theme::kText, 233, false, true), "real navigation selects requested species");
 }
@@ -75,13 +75,14 @@ void branchesAndHeldSkip() {
   MemoryStore store; legacyOwned(store, {133, 134}, 1);
   HostPlatform platform; Runtime runtime(store, platform); start(runtime); viewer(runtime, 133);
   const auto state = encoded(runtime), bytes = store.bytes; const unsigned commits = store.commits;
-  for (unsigned branch = 0; branch < 3; ++branch) {
+  const uint16_t branches[] = {134, 135, 136, 196, 197};
+  for (unsigned branch = 0; branch < 5; ++branch) {
     tap(runtime, 233, 423); frame(runtime);
-    check(menuCount(runtime.screen(), runtime.engine()) == 4, "Eevee offers three targets and return");
+    check(menuCount(runtime.screen(), runtime.engine()) == 6, "Eevee offers five targets and return");
     if (!branch) screenshot(runtime, "preview-eevee-targets");
     for (unsigned i = 0; i < branch; ++i) edge(runtime, false, true);
     buttons(true, true); frame(runtime);
-    check(runtime.screen().evolutionAnim.from == 133 && runtime.screen().evolutionAnim.to == 134 + branch,
+    check(runtime.screen().evolutionAnim.from == 133 && runtime.screen().evolutionAnim.to == branches[branch],
           "all branches preview regardless of ownership or cultivation");
     idle(runtime, 400);
     check(evolutionFrameAt(runtime.screen().evolutionAnim, host_time_ms).stage == EvolutionStage::Gather,
@@ -90,6 +91,8 @@ void branchesAndHeldSkip() {
     check(evolutionFrameAt(runtime.screen().evolutionAnim, host_time_ms).stage == EvolutionStage::Reveal,
           "fresh touch skips to the evolved form");
     if (branch == 2) screenshot(runtime, "preview-eevee-flareon", 40);
+    if (branch == 3) screenshot(runtime, "preview-eevee-espeon", 40);
+    if (branch == 4) screenshot(runtime, "preview-eevee-umbreon", 40);
     frame(runtime); buttons(false, true); frame(runtime);
     check(runtime.screen().page == Page::Viewer && glyph("伊布", 72, theme::kText, 233, false, true),
           "second skip returns to the source entry without switching species");
@@ -100,8 +103,8 @@ void branchesAndHeldSkip() {
   check(store.commits == commits && store.bytes == bytes && encoded(runtime) == state,
         "all Eevee previews preserve roster, progress, capture history and save");
   tap(runtime, 233, 423); frame(runtime); swipe(runtime, 300, 300, 160, 300);
-  check(runtime.screen().selected == 3, "branch menu last page reaches return");
-  screenshot(runtime, "preview-eevee-return"); select(runtime, 3); frame(runtime);
+  check(runtime.screen().selected == 3, "branch menu second page starts on the fourth target");
+  screenshot(runtime, "preview-eevee-return"); select(runtime, 5); frame(runtime);
   check(runtime.screen().page == Page::Viewer, "branch menu return preserves free viewer");
   tap(runtime, 233, 423); frame(runtime); tap(runtime, 233, 52);
   check(runtime.screen().page == Page::Viewer, "branch menu top returns to viewer");
@@ -163,7 +166,7 @@ void everyEvolutionEdge() {
       unsigned selected = 0;
       while (selected < choices.count && choices.options[selected].target != rules[i].to) ++selected;
       check(selected < choices.count, "catalog target is reachable in the branch menu");
-      tap(runtime, 233, menu_layout::center(selected));
+      select(runtime, selected);
     }
     check(runtime.screen().page == Page::EvolutionPreview && runtime.screen().evolutionAnim.from == rules[i].from &&
           runtime.screen().evolutionAnim.to == rules[i].to, "each catalog edge opens through real viewer input");
@@ -177,8 +180,8 @@ void everyEvolutionEdge() {
   Save expected;
   check(codec::decode(state.data(), state.size(), expected) == codec::DecodeStatus::Ok, "initial preview snapshot decodes");
   expected.sequence = runtime.engine().view().sequence;
-  check(count == 72 && encoded(runtime) == encoded(expected) && !runtime.metrics().displayErrors,
-        "all 72 previews change only the normal checkpoint sequence and decode successfully");
+  check(count == 122 && encoded(runtime) == encoded(expected) && !runtime.metrics().displayErrors,
+        "all 122 previews change only the normal checkpoint sequence and decode successfully");
 }
 void pendingEvolutionSurvivesPreview() {
   MemoryStore store; fresh(store);

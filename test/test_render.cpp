@@ -231,16 +231,16 @@ void checkButtonLoop() {
   M5.Display.beginObservation();
   setButtons(true, false);
   M5.Display.endObservation();
-  check(g_state.sprite_index == 150, "left button wraps first to last");
-  check(M5.Display.framebuffer() != first && g_label_sprite == 150,
+  check(g_state.sprite_index == pokedex::data::kSpriteCount - 1, "left button wraps first to last");
+  check(M5.Display.framebuffer() != first && g_label_sprite == pokedex::data::kSpriteCount - 1,
         "button redraws selected sprite and label");
   const auto& submitted = M5.Display.publishedFrames();
   check(submitted.size() == 1 && submitted[0] == M5.Display.framebuffer(),
         "button navigation submits one complete frame");
   setButtons(true, false, 600);
-  check(g_state.sprite_index == 150, "holding left does not repeatedly navigate");
+  check(g_state.sprite_index == pokedex::data::kSpriteCount - 1, "holding left does not repeatedly navigate");
   setButtons(false, false);
-  check(g_state.sprite_index == 150, "release after hold does not navigate again");
+  check(g_state.sprite_index == pokedex::data::kSpriteCount - 1, "release after hold does not navigate again");
   setButtons(false, true);
   check(g_state.sprite_index == 0, "right button wraps last to first");
   setButtons(false, false);
@@ -350,7 +350,7 @@ void writeAnimationEvidence() {
   if (!raw) return;
   const auto& s = pokedex::data::kSprites[24];
   for (uint32_t t = 0; t < 2400; t += 100) {
-    if (t == 800) pokedex::viewer::applyInput(g_state, Input::React, 151, t);
+    if (t == 800) pokedex::viewer::applyInput(g_state, Input::React, pokedex::data::kSpriteCount, t);
     pokedex::viewer::update(g_state, s, t);
     render();
     for (int y=0; y<468; ++y) {

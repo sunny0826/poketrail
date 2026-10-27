@@ -49,10 +49,13 @@ template<class A, class T> void reading(A& a, T& s) {
   a.field(s.bootGeneration); a.field(s.monotonicMs); a.field(s.calibrationEpoch);
 }
 template<class A, class T> void payload(A& a, T& s) {
+  // Schema 1/2 keep their frozen 151-species, 19-byte layout. Schema 3 widens to 251/32.
+  const size_t bits = s.schema >= 3 ? kSpeciesBytes : 19;
+  const size_t count = s.schema >= 3 ? kSpeciesCount : 151;
   a.field(s.starter); a.field(s.partner); a.field(s.route);
-  for (size_t i = 0; i < 19; ++i) a.field(s.owned[i]);
-  for (size_t i = 0; i < 151; ++i) a.field(s.captureCounts[i]);
-  for (size_t i = 0; i < 151; ++i) capture(a, s.firstCapture[i]);
+  for (size_t i = 0; i < bits; ++i) a.field(s.owned[i]);
+  for (size_t i = 0; i < count; ++i) a.field(s.captureCounts[i]);
+  for (size_t i = 0; i < count; ++i) capture(a, s.firstCapture[i]);
   a.field(s.totalSteps); a.field(s.explorationCredit); a.field(s.undatedSteps); a.field(s.stepsIncomplete);
   day(a, s.today);
   for (size_t i = 0; i < 14; ++i) day(a, s.history[i]);
@@ -77,9 +80,9 @@ template<class A, class T> void payload(A& a, T& s) {
     a.field(s.encounter.attempts[i].probability); a.field(s.encounter.attempts[i].roll);
     a.field(s.encounter.attempts[i].captured); a.field(s.encounter.attempts[i].ruleVersion);
   }
-  if (s.schema == 2) {
-    for (size_t i = 0; i < 19; ++i) a.field(s.registered[i]);
-    for (size_t i = 0; i < 151; ++i) { a.field(s.progress[i].walked); a.field(s.progress[i].spent); }
+  if (s.schema >= 2) {
+    for (size_t i = 0; i < bits; ++i) a.field(s.registered[i]);
+    for (size_t i = 0; i < count; ++i) { a.field(s.progress[i].walked); a.field(s.progress[i].spent); }
     a.field(s.rewardBaseSteps); a.field(s.ballsSpent); a.field(s.legacyChargedCount);
     a.field(s.voidedLegacyCount); a.field(s.rosterRevision);
     a.field(s.lastEvolution.request.from); a.field(s.lastEvolution.request.to);
@@ -118,7 +121,7 @@ DecodeStatus decode(const uint8_t* bytes, size_t length, Save& out) {
   uint32_t magic = 0, payloadLength = 0, crc = 0; uint16_t schema = 0; uint64_t sequence = 0;
   header.field(magic); header.field(schema); header.field(sequence); header.field(payloadLength); header.field(crc);
   if (magic != kMagic) return DecodeStatus::Corrupt;
-  if (schema != 1 && schema != kSchemaVersion) return DecodeStatus::UnsupportedVersion;
+  if (schema < 1 || schema > kSchemaVersion) return DecodeStatus::UnsupportedVersion;
   if (length > maxEncodedSize) return DecodeStatus::Corrupt;
   if (payloadLength != length - kHeaderSize || crc != frameCrc(bytes, length)) return DecodeStatus::Corrupt;
   // A Save exceeds a typical embedded task stack. Decode transactionally on the heap.

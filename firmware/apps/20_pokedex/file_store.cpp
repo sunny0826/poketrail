@@ -27,10 +27,11 @@ const char* FileStore::slotPath(unsigned slot) {
 }
 namespace {
 bool unknownHeader(const uint8_t* p, size_t n) {
-  return n >= codec::kHeaderSize && p[0] == 'A' && p[1] == 'V' &&
-    p[2] == 'D' && p[3] == '1' &&
-    (unsigned(p[4]) | (unsigned(p[5]) << 8)) != 1 &&
-    (unsigned(p[4]) | (unsigned(p[5]) << 8)) != kSchemaVersion;
+  if (n < codec::kHeaderSize || p[0] != 'A' || p[1] != 'V' || p[2] != 'D' || p[3] != '1') return false;
+  const unsigned schema = unsigned(p[4]) | (unsigned(p[5]) << 8);
+  // Keep the same supported set as codec::decode (1..kSchemaVersion) so older
+  // and future saves are refused before the size check can mask them as corrupt.
+  return schema < 1 || schema > kSchemaVersion;
 }
 }
 LoadResult FileStore::scan(int& current) {

@@ -3,10 +3,10 @@
 #include "progression_catalog_generated.hpp"
 namespace pokedex { namespace adventure {
 const CatalogEntry* catalogEntry(uint16_t species) {
-  return species >= 1 && species <= 151 ? &kCatalog[species - 1] : nullptr;
+  return species >= 1 && species <= kSpeciesCount ? &kCatalog[species - 1] : nullptr;
 }
 bool ordinaryEncounter(uint16_t species) {
-  return species >= 1 && species <= 151 && kOrdinaryEncounter[species - 1];
+  return species >= 1 && species <= kSpeciesCount && kOrdinaryEncounter[species - 1];
 }
 const EvolutionRule* evolutionRules(size_t& count) {
   count = sizeof(kEvolutionRules) / sizeof(kEvolutionRules[0]);
@@ -30,14 +30,14 @@ unsigned remainingEncounters(const Save& s, Route route) {
 uint16_t chooseEncounter(const Save& s, Route route, uint32_t seed) {
   if (uint8_t(route) > 2) return 0;
   uint32_t total = 0;
-  for (uint16_t i = 1; i <= 151; ++i) {
+  for (uint16_t i = 1; i <= kSpeciesCount; ++i) {
     if (!eligible(s, route, i)) continue;
     const CatalogEntry& e = kCatalog[i - 1];
     total += uint32_t(e.weight) * (owns(s, i) ? 1 : 3);
   }
   if (!total) return 0;
   uint32_t draw = mixRandom(seed) % total;
-  for (uint16_t i = 1; i <= 151; ++i) {
+  for (uint16_t i = 1; i <= kSpeciesCount; ++i) {
     if (!eligible(s, route, i)) continue;
     const CatalogEntry& e = kCatalog[i - 1];
     const uint32_t weight = uint32_t(e.weight) * (owns(s, i) ? 1 : 3);

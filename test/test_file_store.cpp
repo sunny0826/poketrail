@@ -76,7 +76,7 @@ static void selection() {
   io.put(1, one);
   CHECK(store.load(out).status == LoadStatus::Corrupt);
   CHECK(store.commit(two) == CommitStatus::IoError);
-  io.put(1, two); io.files[1][4] = 3; checksum(io.files[1]);
+  io.put(1, two); io.files[1][4] = 4; checksum(io.files[1]);
   CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
   CHECK(store.commit(two) == CommitStatus::IoError);
   io.files[1].resize(codec::maxEncodedSize+1);
@@ -91,6 +91,27 @@ static void selection() {
   r = store.load(out);
   CHECK(r.status == LoadStatus::Loaded && r.degraded && out.sequence == 1);
   CHECK(store.commit(two) == CommitStatus::Committed);
+}
+static void unsupportedVersions() {
+  // The header gate must reject unknown schemas before the TooLarge branch so an
+  // oversized slot cannot be mistaken for a corrupt-but-overwritable copy.
+  Save one; one.sequence = 1;
+  Save two = one; two.sequence = 2;
+  Save out;
+  MemoryIO io; FileStore store(io);
+  io.put(0, one);
+  io.put(1, two); io.files[1][4] = 0; checksum(io.files[1]);
+  CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
+  CHECK(store.commit(two) == CommitStatus::IoError && io.writes == 0);
+  io.put(1, two); io.files[1].resize(codec::maxEncodedSize+1); io.files[1][4] = 0;
+  CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
+  CHECK(store.commit(two) == CommitStatus::IoError && io.writes == 0);
+  io.files[1][4] = 4;
+  CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
+  CHECK(store.commit(two) == CommitStatus::IoError && io.writes == 0);
+  io.files[1][4] = 1;
+  CHECK(store.load(out).status == LoadStatus::Loaded && store.load(out).degraded);
+  CHECK(store.commit(two) == CommitStatus::Committed && io.lastWrite == 1);
 }
 static void commits() {
   Save one; one.sequence = 1;
@@ -166,7 +187,7 @@ static void truncations() {
               n, 2*n, sizeof(Save), FileStore::workspaceBytes(), FileStore::workspaceBytes()+sizeof(Save));
 }
 int main() {
-  selection(); commits(); truncations();
+  selection(); unsupportedVersions(); commits(); truncations();
   CHECK(FileStore::slotPath(2) == nullptr);
   std::printf("PASS file_store: %d checks\n", checks);
 }

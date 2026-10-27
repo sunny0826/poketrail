@@ -4,10 +4,12 @@
 #include <cstdint>
 
 namespace pokedex { namespace adventure {
-constexpr size_t kSpeciesCount = 151;
+constexpr size_t kSpeciesCount = 251;
+constexpr size_t kSpeciesBytes = 32;
+constexpr size_t kEvolutionOptions = 5;
 constexpr size_t kRecentCount = 32;
 constexpr size_t kHistoryCount = 14;
-constexpr uint16_t kSchemaVersion = 2;
+constexpr uint16_t kSchemaVersion = 3;
 constexpr uint16_t kRuleVersion = 2;
 constexpr uint32_t kEncounterSteps = 5000;
 enum class Route : uint8_t { Forest, Coast, Cave };
@@ -47,7 +49,7 @@ struct EvolutionReceipt { EvolveRequest request; uint64_t cost = 0; Stamp at; };
 struct EvolutionOption { uint16_t target = 0; uint32_t cost = 0; CommandResult status = CommandResult::InvalidInput; };
 struct EvolutionView {
   uint16_t from = 0; uint64_t revision = 0, walked = 0, available = 0;
-  std::array<EvolutionOption, 3> options; uint8_t count = 0;
+  std::array<EvolutionOption, kEvolutionOptions> options; uint8_t count = 0;
 };
 struct Achievement { bool reached = false; Stamp first; };
 struct Capture {
@@ -106,7 +108,7 @@ struct Encounter {
   std::array<ThrowAttempt, 2> attempts;
 };
 struct Save {
-  std::array<uint8_t, 19> registered = {{0}};
+  std::array<uint8_t, kSpeciesBytes> registered = {{0}};
   std::array<SpeciesProgress, kSpeciesCount> progress;
   uint64_t rewardBaseSteps = 0, ballsSpent = 0, legacyChargedCount = 0;
   uint8_t voidedLegacyCount = 0;
@@ -117,7 +119,7 @@ struct Save {
   uint16_t starter = 0;
   uint16_t partner = 0;
   Route route = Route::Forest;
-  std::array<uint8_t, 19> owned = {{0}};
+  std::array<uint8_t, kSpeciesBytes> owned = {{0}};
   std::array<uint32_t, kSpeciesCount> captureCounts = {{0}};
   std::array<Capture, kSpeciesCount> firstCapture;
   uint64_t totalSteps = 0;

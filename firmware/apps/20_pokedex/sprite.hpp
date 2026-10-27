@@ -6,7 +6,7 @@
 namespace pokedex {
 
 constexpr uint16_t kTransparentKey = 0xF81F;
-constexpr uint16_t kMaxSourceSize = 128;
+constexpr uint16_t kMaxSourceSize = 160;  // Gen2 Lugia is 153x94; still below display limits.
 constexpr uint16_t kMaxDisplayWidth = 336;
 constexpr uint16_t kMaxDisplayHeight = 270;
 

@@ -37,7 +37,7 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::Starter: return 4;
     case Page::Routes: return 4;
     case Page::Partners: {
-      unsigned n = 1; for (unsigned id = 1; id <= 151; ++id) n += owns(e.view(), id); return n;
+      unsigned n = 1; for (unsigned id = 1; id <= kSpeciesCount; ++id) n += owns(e.view(), id); return n;
     }
     case Page::Encounter: return 4;
     case Page::Pause: return 2;
@@ -49,7 +49,7 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::EvolutionPreviewTargets: return 1 + e.evolutionView(s.evolutionAnim.from).count;
     case Page::Result: return 1;
     case Page::Records: return 5;
-    case Page::FirstCaptures: return 152;
+    case Page::FirstCaptures: return kSpeciesCount + 1;
     case Page::Recent: return e.view().recentSize + 1;
     case Page::Days: return e.view().historySize + 2;
     case Page::Achievements: return 7;

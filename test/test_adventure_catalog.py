@@ -1,4 +1,4 @@
-"""Validate the encounter catalog and its generated representation offline."""
+"""Validate the 251 encounter catalog and its generated representation offline."""
 import copy
 import json
 from pathlib import Path
@@ -10,16 +10,43 @@ ROOT = Path(__file__).resolve().parent.parent
 CATALOG = runpy.run_path(str(ROOT / "tools/build_adventure_catalog.py"))
 GENERATE = CATALOG["generate"]
 LOAD = CATALOG["load_catalog"]
+PROGRESSION = json.loads((ROOT / "assets/evolution-251.json").read_text())
 
 
 class AdventureCatalogTests(unittest.TestCase):
     def setUp(self):
         self.data = LOAD()
 
+    def manifest(self, files):
+        return {
+            "ruleVersion": 2,
+            "speciesFiles": files,
+            "ordinaryRoots": self.data["ordinaryRoots"],
+            "reserved": self.data["reserved"],
+        }
+
     def test_deterministic_generated_header(self):
-        generated = GENERATE(self.data)
-        self.assertEqual(generated, GENERATE(copy.deepcopy(self.data)))
-        self.assertEqual(generated, (ROOT / "firmware/apps/20_pokedex/adventure_catalog_generated.hpp").read_text())
+        generated = GENERATE(self.data, PROGRESSION)
+        self.assertEqual(generated, GENERATE(copy.deepcopy(self.data), PROGRESSION))
+        self.assertEqual(generated,
+                         (ROOT / "firmware/apps/20_pokedex/adventure_catalog_generated.hpp").read_text())
+
+    def test_ordinary_and_reserved_accounting(self):
+        ordinary = self.data["ordinaryRoots"]
+        self.assertEqual(len(ordinary), 124)
+        self.assertEqual(len([i for i in ordinary if i <= 151]), 73)
+        self.assertEqual(len([i for i in ordinary if i > 151]), 51)
+        ruins = self.data["reserved"]["ruins"]
+        self.assertEqual(ruins, [144, 145, 146, 147, 148, 149, 150, 151,
+                                 243, 244, 245, 249, 250, 251])
+        self.assertEqual(self.data["reserved"]["dragonCave"], [246])
+        self.assertFalse(set(ordinary) & set(ruins))
+        self.assertNotIn(246, ordinary)
+        targets = {r["to"] for r in PROGRESSION["rules"]}
+        held = set(ruins) | {246}
+        for species in range(1, 252):
+            self.assertTrue(species in ordinary or species in held or species in targets,
+                            f"#{species} has no acquisition owner")
 
     def test_invalid_catalogs_are_rejected(self):
         mutations = [
@@ -34,25 +61,33 @@ class AdventureCatalogTests(unittest.TestCase):
             ("empty route", lambda d: d["species"][0].update(routes=[])),
             ("duplicate route", lambda d: d["species"][0].update(routes=["Forest", "Forest"])),
             ("empty pools", lambda d: [e.update(routes=["Forest"]) for e in d["species"]]),
-            ("ordinary route mismatch", lambda d: d["species"][0].update(routes=["Cave"])),
-            ("unknown rule", lambda d: d.update(ruleVersion=2)),
+            ("unknown rule", lambda d: d.update(ruleVersion=1)),
+            ("ordinary unsorted", lambda d: d["ordinaryRoots"].reverse()),
+            ("ordinary duplicate", lambda d: d["ordinaryRoots"].append(d["ordinaryRoots"][0])),
+            ("ordinary non-int", lambda d: d["ordinaryRoots"].append(True)),
+            ("ordinary out of range", lambda d: d["ordinaryRoots"].append(252)),
+            ("ordinary missing Kanto root", lambda d: d["ordinaryRoots"].remove(1)),
+            ("ordinary Johto evolved", lambda d: d["ordinaryRoots"].append(153)),
+            ("ordinary reserved", lambda d: d["ordinaryRoots"].append(243)),
+            ("reserved drift", lambda d: d["reserved"]["ruins"].append(246)),
+            ("reserved missing", lambda d: d["reserved"].pop("dragonCave")),
         ]
         for label, mutate in mutations:
             with self.subTest(label=label):
                 damaged = copy.deepcopy(self.data)
                 mutate(damaged)
                 with self.assertRaises(ValueError):
-                    GENERATE(damaged)
+                    GENERATE(damaged, PROGRESSION)
 
     def test_partition_order_does_not_change_generated_catalog(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            manifest = {"ruleVersion": 1, "speciesFiles": ["even.json", "odd.json"]}
-            (root / "catalog.json").write_text(json.dumps(manifest))
+            (root / "catalog.json").write_text(json.dumps(self.manifest(["even.json", "odd.json"])))
             for name, species in (("even.json", self.data["species"][1::2]),
                                   ("odd.json", self.data["species"][::2])):
                 (root / name).write_text(json.dumps({"species": list(reversed(species))}))
-            self.assertEqual(GENERATE(LOAD(root / "catalog.json")), GENERATE(self.data))
+            self.assertEqual(GENERATE(LOAD(root / "catalog.json"), PROGRESSION),
+                             GENERATE(self.data, PROGRESSION))
 
     def test_invalid_partition_inputs_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -60,7 +95,7 @@ class AdventureCatalogTests(unittest.TestCase):
             path = root / "catalog.json"
             manifests = [
                 [], None,
-                {"ruleVersion": 1},
+                {"ruleVersion": 2},
                 {"speciesFiles": []},
                 {"speciesFiles": ["part.json", "part.json"]},
                 {"speciesFiles": [False]},

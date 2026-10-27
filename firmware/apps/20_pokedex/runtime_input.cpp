@@ -203,7 +203,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       break;
     case Page::Partners: {
       unsigned row = 0;
-      for (unsigned id = 1; id <= 151; ++id) if (owns(v, id)) {
+      for (unsigned id = 1; id <= kSpeciesCount; ++id) if (owns(v, id)) {
         if (row++ == item) { openPartner(id); return; }
       }
       goBack(); break;

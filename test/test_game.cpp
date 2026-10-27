@@ -108,10 +108,10 @@ void testDisplayScale() {
   check(displayScale(evolved) == 2, "Fearow keeps its complete tall animation at two-times");
   evolved.height = 117;
   check(displayScale(evolved) == 2, "Pidgeotto intermediate keeps its tall full animation");
-  evolved.width = 128;
+  evolved.width = pokedex::kMaxSourceSize;
   evolved.height = 117;
   check(displayScale(evolved) == 2, "largest source canvas fits without clipping");
-  evolved.width = 129;
+  evolved.width = pokedex::kMaxSourceSize + 1;
   check(displayScale(evolved) == 0, "oversized canvas fails rather than changing relative proportions");
   small.width = 0;
   check(displayScale(small) == 0, "zero-width canvas has no valid scale");

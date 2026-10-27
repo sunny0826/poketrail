@@ -7,14 +7,14 @@ from PIL import ImageEnhance
 if __package__:
     from tools.design_preview import (
         BG, BLUE, CENTER, GOLD, MINT, MUTED, PANEL, PANEL_2, PURPLE, RED,
-        ROUTE_COLORS, ROUTE_NAMES, TEXT, Canvas, GeneratedAssets, alert, battery,
-        glyph, menu, pixel_scene, poke_count, prepare, progress, title,
+        ROUTE_COLORS, ROUTE_NAMES, SPECIES_COUNT, TEXT, Canvas, GeneratedAssets, alert,
+        battery, glyph, menu, pixel_scene, poke_count, prepare, progress, title,
     )
 else:
     from design_preview import (
         BG, BLUE, CENTER, GOLD, MINT, MUTED, PANEL, PANEL_2, PURPLE, RED,
-        ROUTE_COLORS, ROUTE_NAMES, TEXT, Canvas, GeneratedAssets, alert, battery,
-        glyph, menu, pixel_scene, poke_count, prepare, progress, title,
+        ROUTE_COLORS, ROUTE_NAMES, SPECIES_COUNT, TEXT, Canvas, GeneratedAssets, alert,
+        battery, glyph, menu, pixel_scene, poke_count, prepare, progress, title,
     )
 
 
@@ -85,7 +85,7 @@ def home(spec: dict, assets: GeneratedAssets) -> Canvas:
 
 MENU_ITEMS = [
     {"label": "暂无遭遇", "icon": "practice"}, {"label": "选择路线", "icon": "route"},
-    {"label": "我的伙伴", "icon": "partner"}, {"label": "151 图鉴", "icon": "book"},
+    {"label": "我的伙伴", "icon": "partner"}, {"label": f"{SPECIES_COUNT} 图鉴", "icon": "book"},
     {"label": "捕捉与步行记录", "icon": "records"}, {"label": "日期与时间", "icon": "clock"},
     {"label": "免费练习", "icon": "practice"}, {"label": "立即省电", "icon": "sleep"},
     {"label": "返回探索", "icon": "home"},
