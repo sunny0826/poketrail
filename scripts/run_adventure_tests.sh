@@ -5,10 +5,13 @@ build_dir="${MYM5_VERIFICATION_DIR:-${repo_root}/.pio/verification/adventure-$(d
 mkdir -p "${build_dir}"
 cd "${repo_root}"
 python3 tools/build_adventure_catalog.py --check
+python3 tools/build_dragon_trials.py --check
 sources=(firmware/apps/20_pokedex/adventure_progression.cpp
   firmware/apps/20_pokedex/adventure_migration.cpp
   firmware/apps/20_pokedex/adventure.cpp firmware/apps/20_pokedex/adventure_steps.cpp
   firmware/apps/20_pokedex/adventure_clock.cpp firmware/apps/20_pokedex/adventure_capture.cpp
+  firmware/apps/20_pokedex/adventure_dragon.cpp
+  firmware/apps/20_pokedex/dragon_trial_catalog_generated.cpp
   firmware/apps/20_pokedex/adventure_model.cpp
   firmware/apps/20_pokedex/adventure_model_activity.cpp
   firmware/apps/20_pokedex/adventure_model_save.cpp firmware/apps/20_pokedex/battle.cpp

@@ -47,7 +47,7 @@ static bool validDay(const DayBucket& d, const Save& s) {
 }
 bool validate(const Save& s) {
   if (s.schema < 1 || s.schema > kSchemaVersion || uint8_t(s.route) > 2 || uint8_t(s.phase) > 4 ||
-      uint8_t(s.result) > (s.schema == 1 ? 5 : s.schema == 2 ? 7 : uint8_t(Result::RuinsCleared)) ||
+      uint8_t(s.result) > (s.schema == 1 ? 5 : s.schema == 2 ? 7 : uint8_t(Result::DragonCleared)) ||
       uint8_t(s.encounter.origin) > uint8_t(EncounterOrigin::DragonTrial) ||
       s.encounter.opponent > kSpeciesCount || (s.schema < 3 && !noActivityHistory(s)) ||
       !cleanBitmap(s.owned, uint16_t(s.schema == 3 ? kSpeciesCount : 151)) || s.historySize > 14 ||
@@ -175,7 +175,8 @@ bool validate(const Save& s) {
     if (s.phase == Phase::Resolved && s.result != Result::Lost && s.result != Result::Retreated &&
         s.result != Result::Captured && s.result != Result::Escaped &&
         s.result != Result::Released && s.result != Result::MigrationRetired &&
-        s.result != Result::RuinsClue && s.result != Result::RuinsCleared) return false;
+        s.result != Result::RuinsClue && s.result != Result::RuinsCleared &&
+        s.result != Result::DragonUpgrade && s.result != Result::DragonCleared) return false;
   }
   for (size_t i = 0; i < 2; ++i) {
     const ThrowAttempt& a = e.attempts[i];
@@ -190,9 +191,13 @@ bool validate(const Save& s) {
   if (s.result == Result::Captured && (!e.usedBalls || !e.attempts[e.usedBalls - 1].captured || !s.captureCounts[e.species - 1])) return false;
   if ((s.result == Result::RuinsClue || s.result == Result::RuinsCleared) &&
       (e.origin != EncounterOrigin::Ruins || e.usedBalls)) return false;
+  if ((s.result == Result::DragonUpgrade || s.result == Result::DragonCleared) &&
+      (e.origin != EncounterOrigin::DragonTrial || e.usedBalls)) return false;
   if ((s.result == Result::Released || s.result == Result::MigrationRetired) && e.usedBalls > 1) return false;
   if (s.result == Result::Escaped && e.usedBalls != 2) return false;
-  if ((s.result == Result::Lost || s.result == Result::Retreated) && e.usedBalls) return false;
+  if ((s.result == Result::Lost || s.result == Result::Retreated ||
+       s.result == Result::DragonUpgrade || s.result == Result::DragonCleared) && e.usedBalls)
+    return false;
   return true;
 }
 } }

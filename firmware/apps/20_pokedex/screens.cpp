@@ -18,7 +18,9 @@ uint16_t accentFor(Page page) {
       return theme::kGold;
     case Page::Ruins: case Page::RuinsClues: case Page::RuinsOrder:
     case Page::RuinsTargets: case Page::RuinsBoss:
+    case Page::Dragon: case Page::DragonStage:
       return theme::kPurple;
+    case Page::DragonUpgrade: return theme::kGold;
     case Page::Error: case Page::ReleaseConfirm: return theme::kRed;
     case Page::Clock: return theme::kBlue;
     default: return theme::kMint;
@@ -34,7 +36,7 @@ const char* speciesName(uint16_t id) {
 }
 unsigned menuCount(const ScreenState& s, const Engine& e) {
   switch (s.page) {
-    case Page::Menu: return 9;
+    case Page::Menu: return 10;
     case Page::Resources: return 3;
     case Page::DateWelcome: return 3;
     case Page::Starter: return 4;
@@ -51,12 +53,17 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::EvolutionConfirm: case Page::ReleaseConfirm: return 2;
     case Page::EvolutionPreviewTargets: return 1 + e.evolutionView(s.evolutionAnim.from).count;
     case Page::Result:
+      if (e.view().encounter.origin == EncounterOrigin::DragonTrial)
+        return dragonActivityRetryable(e.view().encounter, e.view().result) ? 2 : 1;
       return ruinsActivityRetryable(e.view().encounter, e.view().result) ? 2 : 1;
     case Page::Ruins: return 3;
     case Page::RuinsClues: return kRuinsClueTotal + 1;
     case Page::RuinsOrder: return kRuinsClueTotal + 1;
     case Page::RuinsTargets: return kRuinsTargetTotal + 1;
     case Page::RuinsBoss: return 2;
+    case Page::Dragon: return dragongen::kTrialCount + 1;
+    case Page::DragonStage: return 2;
+    case Page::DragonUpgrade: return 3;
     case Page::Records: return 5;
     case Page::FirstCaptures: return kSpeciesCount + 1;
     case Page::Recent: return e.view().recentSize + 1;
@@ -71,11 +78,15 @@ int menuTop(const ScreenState& s, const Engine& e) {
   if (s.page == Page::Menu) return menu_layout::kMainTop;
   if (s.page != Page::Result) return menu_layout::kTop;
   const auto& v = e.view();
-  if (v.encounter.origin == EncounterOrigin::Ruins) {
+  if (v.encounter.origin == EncounterOrigin::Ruins ||
+      v.encounter.origin == EncounterOrigin::DragonTrial) {
     // The capture card keeps the taller row clear of its badges.
     if (v.result == Result::Captured) return 372;
+    const bool retry = v.encounter.origin == EncounterOrigin::DragonTrial
+                           ? dragonActivityRetryable(v.encounter, v.result)
+                           : ruinsActivityRetryable(v.encounter, v.result);
     // Two result actions need the 306/374 rows to stay inside the round screen.
-    return ruinsActivityRetryable(v.encounter, v.result) ? 306 : 355;
+    return retry ? 306 : 355;
   }
   return v.result == Result::Captured ? 372 : 355;
 }
@@ -86,7 +97,8 @@ bool touchBackEnabled(Page page) {
     case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
     case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets:
     case Page::Ruins: case Page::RuinsClues: case Page::RuinsOrder:
-    case Page::RuinsTargets: case Page::RuinsBoss: return true;
+    case Page::RuinsTargets: case Page::RuinsBoss:
+    case Page::Dragon: case Page::DragonStage: return true;
     default: return false;
   }
 }
@@ -141,15 +153,15 @@ void Screens::ballCount(uint64_t count, int y, int x) {
   M5.Display.drawString(text, x + 8, y);
 }
 void Screens::item(const ScreenState& s, unsigned index, const char* label, int top,
-                   uint16_t species, bool carried, const char* note) {
+                   uint16_t species, bool carried, const char* note, bool disabled) {
   const unsigned first = menu_layout::first(s.selected);
   if (index < first || index >= first + menu_layout::kPageSize) return;
   const auto bounds = menu_layout::rowBounds(index - first, top);
   const int y = menu_layout::center(index - first, top);
   const bool active = index == s.selected;
-  const uint16_t accent = accentFor(s.page);
+  const uint16_t accent = disabled ? theme::kMuted : accentFor(s.page);
   const uint16_t background = active ? theme::kPanelActive : theme::kPanel;
-  const uint16_t color = active ? accent : theme::kText;
+  const uint16_t color = disabled ? theme::kMuted : active ? accent : theme::kText;
   M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 16, background);
   if (active) {
     M5.Display.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 16, accent);
@@ -246,6 +258,8 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     case Page::Ruins: case Page::RuinsClues: case Page::RuinsOrder:
     case Page::RuinsTargets: case Page::RuinsBoss:
       ruins(s, e, now); break;
+    case Page::Dragon: case Page::DragonStage: case Page::DragonUpgrade:
+      dragon(s, e, now); break;
     case Page::Evolution: case Page::EvolutionPreview: rendered = evolution(s, now); break;
     case Page::EvolutionPreviewTargets: evolutionPreviewTargets(s, e); break;
     case Page::FirstCaptures: case Page::Recent: case Page::Days: case Page::Achievements:

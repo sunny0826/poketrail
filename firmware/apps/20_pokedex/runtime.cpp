@@ -78,12 +78,15 @@ void Runtime::syncPage() {
     if (deferredThrow_ != v.encounter.id && screen_.page != Page::Throw && screen_.page != Page::ReleaseConfirm)
       navigate(Page::Throw);
   } else if (v.phase == Phase::Resolved) {
-    if (screen_.page != Page::Result) navigate(Page::Result);
+    if (v.encounter.origin == EncounterOrigin::DragonTrial && v.result == Result::DragonUpgrade) {
+      if (screen_.page != Page::DragonUpgrade) navigate(Page::DragonUpgrade);
+    } else if (screen_.page != Page::Result) navigate(Page::Result);
   }
   else if (v.phase == Phase::Battle) {
     Page page = engine_.battleView().paused ? Page::Pause : Page::Battle;
     if (screen_.page != page) navigate(page);
-  } else if (screen_.page == Page::Error || screen_.page == Page::Battle || screen_.page == Page::Throw || screen_.page == Page::Result) navigate(Page::Home);
+  } else if (screen_.page == Page::Error || screen_.page == Page::Battle || screen_.page == Page::Throw ||
+             screen_.page == Page::Result || screen_.page == Page::DragonUpgrade) navigate(Page::Home);
 }
 void Runtime::feedback(uint16_t duration) {
   platform_.feedback(duration);

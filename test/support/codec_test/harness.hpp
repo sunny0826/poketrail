@@ -51,9 +51,31 @@ static Save activityModern() {
   s.encounter.species = 251; s.encounter.opponent = 251;
   s.encounter.origin = EncounterOrigin::Ruins;
   s.ruins.clueMask = kRuinsAllClues; s.ruins.unlocked = true; s.ruins.lastTarget = 251;
+  return s;
+}
+// A dragon trial stage issued on the same activity ledger. The snapshot points
+// at the stage that follows one chosen window upgrade, so it stays inside the
+// one-choice-per-stage budget.
+static Save dragonModern() {
+  Save s = ordinaryModern();
+  s.activityEncounterCount = 1; s.explorationCredit = 5000;
+  s.encounter.species = 147; s.encounter.opponent = 147;
+  s.encounter.origin = EncounterOrigin::DragonTrial;
   s.dragonTrial.active = true; s.dragonTrial.trialId = 1;
-  s.dragonTrial.stageIndex = 0; s.dragonTrial.stageStartHp = 3;
-  s.dragonTrial.normalBonus = 20; s.dragonTrial.perfectBonus = 10;
+  s.dragonTrial.stageIndex = 1; s.dragonTrial.stageStartHp = 2;
+  s.dragonTrial.normalBonus = 30; s.dragonTrial.perfectBonus = 10;
+  s.dragonTrial.guard = 0;
+  return s;
+}
+// The same trial waiting for the second upgrade choice: guard was bought after
+// stage 0, and the full-HP stage 1 win leaves only the window row selectable.
+static Save dragonUpgradeModern() {
+  Save s = dragonModern();
+  s.encounter.species = 246; s.encounter.opponent = 246;
+  s.dragonTrial.trialId = 2; s.dragonTrial.stageIndex = 2;
+  s.dragonTrial.stageStartHp = 3;
+  s.dragonTrial.normalBonus = 0; s.dragonTrial.perfectBonus = 0;
   s.dragonTrial.guard = 1;
+  s.phase = Phase::Resolved; s.result = Result::DragonUpgrade;
   return s;
 }

@@ -53,7 +53,11 @@ run = "bash scripts/run_file_store_tests.sh"
 
 [tasks.check-adventure-catalog]
 description = "核对251种遭遇目录、显式普通池与122条进化边"
-run = ["python3 tools/build_adventure_catalog.py --check", "python3 tools/build_evolution_rules.py --check", "python3 -m unittest test/test_adventure_catalog.py test/test_progression_catalog.py"]
+run = ["python3 tools/build_adventure_catalog.py --check", "python3 tools/build_evolution_rules.py --check", "python3 tools/build_dragon_trials.py --check", "python3 -m unittest test/test_adventure_catalog.py test/test_progression_catalog.py test/test_dragon_trials.py"]
+
+[tasks.check-dragon-trials]
+description = "核对龙穴试炼固定来源与生成物"
+run = ["python3 tools/build_dragon_trials.py --check", "python3 -m unittest test/test_dragon_trials.py"]
 
 [tasks.scenes]
 description = "生成定稿的森林、海边和洞窟场景"

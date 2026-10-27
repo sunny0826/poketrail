@@ -22,7 +22,7 @@ void Screens::menu(const ScreenState& s, const Engine& e, int top) {
   if (s.page == Page::Menu) top = menu_layout::kMainTop;
   const auto& save = e.view();
   const auto phase = save.phase;
-  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", "251 图鉴", "资源与数据", "捕获练习", "立即省电", "传说遗迹", "返回探索"};
+  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", "251 图鉴", "资源与数据", "捕获练习", "立即省电", "传说遗迹", "龙穴试炼", "返回探索"};
   const char* const resources[] = {"捕捉与步行记录", "日期与时间", "返回"};
   const char* const date[] = {"设置日期时间", "暂不设置", "浏览图鉴"};
   const char* const starters[] = {"妙蛙种子", "小火龙", "杰尼龟", "返回"};
@@ -34,6 +34,7 @@ void Screens::menu(const ScreenState& s, const Engine& e, int top) {
   const char* const error[] = {"重试保存 / 读取", "浏览图鉴"};
   const char* const order[] = {"森林", "海边", "洞窟", "返回"};
   const char* const boss[] = {"开始挑战", "返回"};
+  const char* const dragonStage[] = {"开始对战", "返回龙穴"};
   const char* const* labels = nullptr;
   switch (s.page) {
     case Page::Menu: labels = home; break;
@@ -88,6 +89,46 @@ void Screens::menu(const ScreenState& s, const Engine& e, int top) {
       return;
     }
     case Page::RuinsBoss: labels = boss; break;
+    case Page::Dragon: {
+      const DragonTrialState& trial = save.dragonTrial;
+      const uint8_t need = dragonCapturesUntilOpen(save);
+      const bool open = dragonTicketOpen(save);
+      for (uint8_t index = 0; index < dragongen::kTrialCount; ++index) {
+        const uint8_t trialId = uint8_t(index + 1);
+        const uint16_t species = dragonTrialSpecies(trialId);
+        char note[24];
+        if (save.captureCounts[species - 1]) snprintf(note, sizeof(note), "已完成");
+        else if (trial.active && trial.trialId == trialId)
+          snprintf(note, sizeof(note), "进行中 %u/%u", unsigned(trial.stageIndex) + 1,
+                   unsigned(dragonTrialStageCount(trialId)));
+        else if (trial.active) snprintf(note, sizeof(note), "先完成当前");
+        else if (open) snprintf(note, sizeof(note), "可挑战");
+        else snprintf(note, sizeof(note), "还差 %u 次", unsigned(need));
+        item(s, index, speciesName(species), top, species, false, note);
+      }
+      item(s, dragongen::kTrialCount, "返回", top);
+      return;
+    }
+    case Page::DragonStage: labels = dragonStage; break;
+    case Page::DragonUpgrade: {
+      const DragonTrialState& trial = save.dragonTrial;
+      const bool heal = dragonHealAvailable(trial.stageStartHp);
+      const bool window = dragonWindowUpgradeAvailable(trial);
+      const bool guard = dragonGuardAvailable(trial);
+      char healNote[16], windowNote[16], guardNote[16];
+      snprintf(healNote, sizeof(healNote), "%s", heal ? "可选" : "已满");
+      if (window)
+        snprintf(windowNote, sizeof(windowNote), "%u/%u",
+                 unsigned(dragonNormalWindow(trial.normalBonus) + dragongen::kNormalBonusStepMs),
+                 unsigned(dragonPerfectWindow(trial.perfectBonus) +
+                          dragongen::kPerfectBonusStepMs));
+      else snprintf(windowNote, sizeof(windowNote), "已达上限");
+      snprintf(guardNote, sizeof(guardNote), "%s", guard ? "可选" : "已获得");
+      item(s, 0, "恢复 1 生命", top, 0, false, healNote, !heal);
+      item(s, 1, "窗口 +30/10", top, 0, false, windowNote, !window);
+      item(s, 2, "首次漏防保护", top, 0, false, guardNote, !guard);
+      return;
+    }
     case Page::Partners: {
       unsigned row = 0;
       for (unsigned id = 1; id <= kSpeciesCount; ++id) if (owns(e.view(), id)) {
@@ -96,13 +137,21 @@ void Screens::menu(const ScreenState& s, const Engine& e, int top) {
       item(s, row, "返回", top); return;
     }
     case Page::Result: {
-      const bool activity = save.encounter.origin == EncounterOrigin::Ruins;
-      if (!activity) { item(s, 0, "确认结果 · 继续探索", top); return; }
+      const bool ruins = save.encounter.origin == EncounterOrigin::Ruins;
+      const bool dragon = save.encounter.origin == EncounterOrigin::DragonTrial;
+      if (!ruins && !dragon) { item(s, 0, "确认结果 · 继续探索", top); return; }
+      const bool retry = dragon ? dragonActivityRetryable(save.encounter, save.result)
+                                : ruinsActivityRetryable(save.encounter, save.result);
+      const char* back = dragon ? "返回龙穴" : "返回遗迹";
       // The rows, their count and the key handling all ask the same question.
-      if (ruinsActivityRetryable(save.encounter, save.result)) {
+      if (retry) {
         item(s, 0, "重试本阶段", top);
-        item(s, 1, "返回遗迹", top);
-      } else item(s, 0, "确认结果 · 返回遗迹", top);
+        item(s, 1, back, top);
+      } else {
+        char label[32];
+        snprintf(label, sizeof(label), "确认结果 · %s", back);
+        item(s, 0, label, top);
+      }
       return;
     }
     default: return;
@@ -187,8 +236,11 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
       M5.Display.fillRect(239, 120, 13, 44, theme::kGold);
       break;
     case Page::Result:
-      if (v.encounter.origin == EncounterOrigin::Ruins && v.result != Result::Captured) {
-        ruinsResult(s, e, now);
+      if ((v.encounter.origin == EncounterOrigin::Ruins ||
+           v.encounter.origin == EncounterOrigin::DragonTrial) &&
+          v.result != Result::Captured) {
+        if (v.encounter.origin == EncounterOrigin::DragonTrial) dragonResult(s, e, now);
+        else ruinsResult(s, e, now);
         menu(s, e, menuTop(s, e));
         return;
       }
@@ -221,8 +273,10 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
             line(text, 270, theme::kMuted);
           }
         } else line("捕捉时间未知", 270, theme::kMuted);
-        line(routeName(c.route), 290, theme::kMint);
-        badges(c.achievementMask, 312);
+        line(routeName(c.route), 286, theme::kMint);
+        // The confirm panel starts at y = 342; keeping the route row and both
+        // milestone rows above it avoids clipping the lifetime line.
+        badges(c.achievementMask, 304);
       } else {
         M5.Display.drawCircle(233, 164, 52, theme::kOutline);
         thumbnail(v.encounter.species, 233, 164, 2);

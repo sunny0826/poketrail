@@ -79,6 +79,25 @@ bool ruinsHeading(const char* text) { return ruinsText(text, 52, theme::kText, t
 bool ruinsLine(const char* text, int y, uint16_t color, bool large = false) {
   return ruinsText(text, y, color, large, 10000);
 }
+// The shared capture card stacks a mint route row and two 16 px milestone rows
+// above the confirm panel (top edge y = 342). Every lit glyph pixel is compared
+// against a fresh oracle, so a later row painted over the route cannot pass; the
+// joint check also covers frames where both milestone rows are still empty.
+void captureCardBadges(Runtime& r, uint8_t mask) {
+  char daily[64], lifetime[64];
+  const auto& v = r.engine().view();
+  const char* route = routeName(v.recent[v.recentSize - 1].route);
+  std::snprintf(daily, sizeof(daily), "每日：%s%s%s%s", mask & 1 ? "1千 " : "",
+                mask & 2 ? "3千 " : "", mask & 4 ? "5千步" : "",
+                mask & 7 ? "" : "尚无里程碑");
+  std::snprintf(lifetime, sizeof(lifetime), "累计：%s%s%s%s", mask & 8 ? "1万 " : "",
+                mask & 16 ? "5万 " : "", mask & 32 ? "10万步" : "",
+                mask & 56 ? "" : "尚无里程碑");
+  check(ruinsLine(route, 286, theme::kMint), "capture card keeps the whole route row");
+  check(ruinsLine(daily, 304, theme::kGold), "capture card keeps the daily milestone row");
+  check(ruinsLine(lifetime, 330, theme::kGold),
+        "capture card keeps the whole lifetime milestone row above the confirm panel");
+}
 // The boss sheet stacks three 16 px spec lines. Every lit glyph pixel is compared
 // against a freshly drawn oracle, so the two-item menu panel (top edge y = 208)
 // cannot hide a row of the last line without failing these checks.

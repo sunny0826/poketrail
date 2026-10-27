@@ -19,19 +19,19 @@ void openingGestures() {
     settle(runtime); edge(runtime, false, true);
     check(runtime.screen().page == Page::Menu && runtime.screen().selected == 1,
           "a new released single key navigates after full release");
-    select(runtime, 8); settle(runtime); home(runtime);
+    select(runtime, 9); settle(runtime); home(runtime);
   }
 }
 void ninthItem() {
   MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); check(menuCount(runtime.screen(), runtime.engine()) == 9, "menu has nine entries");
+  openMenu(runtime); check(menuCount(runtime.screen(), runtime.engine()) == 10, "menu has ten entries");
   edge(runtime, true, false);
-  check(runtime.screen().selected == 8, "left from first item wraps to return on page three");
+  check(runtime.screen().selected == 9, "left from first item wraps to return on page four");
   const auto bytes = store.bytes;
-  screenshot(runtime, "home-menu-third-page");
-  tap(runtime, 233, 286); frame(runtime);
+  screenshot(runtime, "home-menu-fourth-page");
+  tap(runtime, 233, 150); frame(runtime);
   check(runtime.screen().page == Page::Home && store.bytes == bytes,
-        "third-page return row leaves the menu without writing a save");
+        "fourth-page return row leaves the menu without writing a save");
   openMenu(runtime);
   tap(runtime, 298, 430); frame(runtime); check(runtime.screen().selected == 3, "page control reaches second page");
   tap(runtime, 298, 430); frame(runtime); check(runtime.screen().selected == 6, "page control reaches third page");
@@ -43,11 +43,11 @@ void ninthItem() {
         "wake touch cannot activate a menu row");
   tap(runtime, 168, 430); frame(runtime);
   check(runtime.screen().selected == 3, "previous page control returns to page two");
-  tap(runtime, 298, 430); tap(runtime, 298, 430); frame(runtime);
-  check(runtime.screen().selected == 0, "page control wraps from the last page to the first");
+  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 298, 430); frame(runtime);
+  check(runtime.screen().selected == 0, "page control wraps from the fourth page to the first");
   tap(runtime, 168, 430); frame(runtime);
-  check(runtime.screen().selected == 6, "previous page control wraps to the last page");
-  select(runtime, 8); settle(runtime); home(runtime);
+  check(runtime.screen().selected == 9, "previous page control wraps to the last page");
+  select(runtime, 9); settle(runtime); home(runtime);
   // A partial page still ignores its blank row: Partners shows one owned partner
   // plus return, so row three must neither activate nor write.
   openMenu(runtime); select(runtime, 2);
@@ -57,7 +57,7 @@ void ninthItem() {
   check(runtime.screen().page == Page::Partners && runtime.screen().selected == partnerSelection &&
         store.bytes == partnerBytes, "blank list row neither activates nor changes selection or save");
   select(runtime, 1);
-  select(runtime, 8);
+  select(runtime, 9);
   settle(runtime); home(runtime);
 }
 void routesAndPartner() {
@@ -78,7 +78,7 @@ void routesAndPartner() {
   openMenu(runtime); select(runtime, 2); select(runtime, 1);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 4, "partner list opens Charmander detail");
   select(runtime, 0); settle(runtime); check(runtime.engine().view().partner == 4, "carry action selects Charmander");
-  select(runtime, menuCount(runtime.screen(), runtime.engine()) - 1); select(runtime, 3); select(runtime, 8);
+  select(runtime, menuCount(runtime.screen(), runtime.engine()) - 1); select(runtime, 3); select(runtime, 9);
   settle(runtime); home(runtime);
   screenshot(runtime, "home-partner-switched");
   check(textLine(speciesName(4), 52, theme::kText, 240), "home name follows the current carried partner");

@@ -125,6 +125,7 @@ void ruinsOrderAndCapture() {
   check(r.engine().view().captureCounts[250] == 1 && r.engine().view().ballsSpent == 1,
         "boss capture raises the counter and spends one ball");
   published(r, "ruins-boss-captured");
+  captureCardBadges(r, 0);
   select(r, p, 0);
   check(r.screen().page == Page::Ruins && r.engine().view().phase == Phase::Walking,
         "capture result confirms back to the ruins hub");

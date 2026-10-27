@@ -1,5 +1,6 @@
 #include "adventure.hpp"
 #include "adventure_migration.hpp"
+#include "dragon_trial_catalog.hpp"
 #include "encounter_catalog.hpp"
 #include "ruins_catalog.hpp"
 #include <limits>
@@ -132,7 +133,15 @@ CommandResult Engine::startBattle(uint32_t now) {
   if (state_.encounter.origin == EncounterOrigin::Ordinary) battle_.begin(now, state_.encounter.seed);
   else if (state_.encounter.origin == EncounterOrigin::Ruins)
     battle_.begin(now, state_.encounter.seed, ruinsBattleSpec(state_.encounter));
-  else return CommandResult::InvalidPhase;
+  else if (state_.encounter.origin == EncounterOrigin::DragonTrial) {
+    // The saved stage snapshot, not the default or stage 1, supplies start HP,
+    // actual windows and the guard after any restart.
+    if (!state_.dragonTrial.active ||
+        state_.dragonTrial.trialId != dragonTrialForSpecies(state_.encounter.species) ||
+        state_.dragonTrial.stageIndex >= dragonTrialStageCount(state_.dragonTrial.trialId))
+      return CommandResult::InvalidPhase;
+    battle_.begin(now, state_.encounter.seed, dragonBattleSpec(state_.dragonTrial));
+  } else return CommandResult::InvalidPhase;
   state_.phase = Phase::Battle; dirty_ = true;
   return CommandResult::Applied;
 }
@@ -140,6 +149,8 @@ CommandResult Engine::finishBattle() {
   const Result outcome = battle_.view().result;
   if (outcome == Result::None) return CommandResult::Applied;
   const Encounter current = state_.encounter;
+  if (current.origin == EncounterOrigin::DragonTrial)
+    return finishDragonBattle(current, outcome);
   stage();
   if (current.origin == EncounterOrigin::Ruins) {
     const uint8_t clue = ruinsClueIndexForEncounter(current);
@@ -219,7 +230,8 @@ CommandResult Engine::acknowledgeResult(uint64_t id, uint32_t seed) {
   candidate_.encounter = Encounter(); createEncounter(candidate_, seed);
   return submit();
 }
-void Engine::openActivity(Save& s, uint16_t species, uint16_t opponent, Route route, uint32_t seed) {
+void Engine::openActivity(Save& s, uint16_t species, uint16_t opponent, Route route, uint32_t seed,
+                          EncounterOrigin origin) {
   Encounter e;
   e.id = s.nextEncounterId++;
   e.species = species;
@@ -227,7 +239,7 @@ void Engine::openActivity(Save& s, uint16_t species, uint16_t opponent, Route ro
   e.partner = s.partner;
   e.route = route;
   e.seed = seed;
-  e.origin = EncounterOrigin::Ruins;
+  e.origin = origin;
   s.encounter = e;
   ++s.activityEncounterCount;
   s.phase = Phase::EncounterReady;
@@ -241,7 +253,7 @@ CommandResult Engine::startActivity(uint16_t species, uint16_t opponent, Route r
   if (state_.nextEncounterId == UINT64_MAX || state_.activityEncounterCount == UINT64_MAX)
     return CommandResult::InvalidInput;
   stage();
-  openActivity(candidate_, species, opponent, route, seed);
+  openActivity(candidate_, species, opponent, route, seed, EncounterOrigin::Ruins);
   return submit();
 }
 CommandResult Engine::beginRuinsClue(uint8_t clueIndex, uint32_t seed) {
@@ -317,7 +329,8 @@ CommandResult Engine::retryRuinsActivity(uint64_t id, uint32_t seed) {
   // Retrying closes the finished encounter first; the new attempt gets its own
   // ID and seed and never overwrites an unclosed fight.
   stage();
-  openActivity(candidate_, current.species, current.opponent, current.route, seed);
+  openActivity(candidate_, current.species, current.opponent, current.route, seed,
+               EncounterOrigin::Ruins);
   return submit();
 }
 CommandResult Engine::acknowledgeActivityResult(uint64_t id) {
@@ -325,7 +338,12 @@ CommandResult Engine::acknowledgeActivityResult(uint64_t id) {
   if (state_.phase != Phase::Resolved) return CommandResult::InvalidPhase;
   if (!id || id != state_.encounter.id) return CommandResult::InvalidInput;
   if (state_.encounter.origin == EncounterOrigin::Ordinary) return CommandResult::InvalidPhase;
+  // A pending upgrade is not a result: it must be chosen, never acknowledged away.
+  if (state_.result == Result::DragonUpgrade) return CommandResult::InvalidPhase;
   stage();
+  // Returning from a dragon result abandons that run; a retry keeps the snapshot.
+  if (state_.encounter.origin == EncounterOrigin::DragonTrial)
+    candidate_.dragonTrial = DragonTrialState();
   candidate_.phase = Phase::Walking;
   candidate_.result = Result::None;
   candidate_.encounter = Encounter();

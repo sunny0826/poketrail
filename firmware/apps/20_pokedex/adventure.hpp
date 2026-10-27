@@ -55,6 +55,11 @@ class Engine {
   CommandResult beginRuinsBoss(uint32_t seedForEncounter);
   CommandResult retryRuinsActivity(uint64_t encounterId, uint32_t seedForEncounter);
   CommandResult acknowledgeActivityResult(uint64_t encounterId);
+  // Dragon cave trials. The catalog decides species, stage HP, beats and upgrade
+  // ceilings; the Engine owns qualification, stage advancement and retries.
+  CommandResult beginDragonTrial(uint8_t trialId, uint32_t seedForEncounter);
+  CommandResult chooseDragonUpgrade(uint8_t choice);
+  CommandResult retryDragonTrial(uint64_t encounterId, uint32_t seedForEncounter);
  private:
   CommandResult guard() const;
   void stage();
@@ -65,9 +70,11 @@ class Engine {
   bool applyClock(Save&, const ClockReading&);
   void archiveDay(Save&);
   void createEncounter(Save&, uint32_t seed);
-  void openActivity(Save&, uint16_t species, uint16_t opponent, Route, uint32_t seed);
+  void openActivity(Save&, uint16_t species, uint16_t opponent, Route, uint32_t seed,
+                    EncounterOrigin origin);
   CommandResult startActivity(uint16_t species, uint16_t opponent, Route, uint32_t seed);
   CommandResult finishBattle();
+  CommandResult finishDragonBattle(const Encounter&, Result outcome);
   CommandResult resolveThrow(AttemptKey, Timing, const ClockReading&);
   void awardCapture(Save&, const ClockReading&);
   void updateAchievements(Save&, const ClockReading&);

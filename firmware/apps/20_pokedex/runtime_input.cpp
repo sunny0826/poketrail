@@ -21,6 +21,8 @@ void Runtime::goBack() {
   else if (screen_.page == Page::Ruins) navigate(Page::Menu);
   else if (screen_.page == Page::RuinsClues || screen_.page == Page::RuinsOrder ||
            screen_.page == Page::RuinsTargets || screen_.page == Page::RuinsBoss) navigate(Page::Ruins);
+  else if (screen_.page == Page::Dragon) navigate(Page::Menu);
+  else if (screen_.page == Page::DragonStage) navigate(Page::Dragon);
   else navigate(Page::Home);
 }
 void Runtime::handle(const Input& raw) {
@@ -197,6 +199,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       else if (item == 5) beginPractice(at);
       else if (item == 6) sleepDisplay();
       else if (item == 7) navigate(Page::Ruins);
+      else if (item == 8) navigate(Page::Dragon);
       else navigate(Page::Home);
       break;
     case Page::Resources:
@@ -294,6 +297,36 @@ void Runtime::activate(unsigned item, uint32_t at) {
         if (result == CommandResult::Applied) navigate(Page::Encounter);
       } else goBack();
       break;
+    case Page::Dragon:
+      if (item < dragongen::kTrialCount) {
+        const uint8_t trialId = uint8_t(item + 1);
+        if (v.encounter.origin == EncounterOrigin::DragonTrial) {
+          // A waiting trial is resumed, never replaced by a second activity.
+          if (v.dragonTrial.trialId != trialId) { screen_.command = CommandResult::InvalidPhase; break; }
+          if (v.phase == Phase::ThrowReady) {
+            if (deferredThrow_ == v.encounter.id) deferredThrow_ = 0;
+            navigate(Page::Throw);
+          } else if (v.phase == Phase::Resolved) {
+            navigate(v.result == Result::DragonUpgrade ? Page::DragonUpgrade : Page::Result);
+          } else navigate(Page::DragonStage);
+        } else {
+          const CommandResult result = engine_.beginDragonTrial(trialId, platform_.randomSeed());
+          screen_.command = result;
+          if (result == CommandResult::Applied) navigate(Page::DragonStage);
+        }
+      } else goBack();
+      break;
+    case Page::DragonStage:
+      if (item == 0) {
+        if (engine_.startBattle(at) == CommandResult::Applied) navigate(Page::Battle);
+      } else navigate(Page::Dragon);
+      break;
+    case Page::DragonUpgrade: {
+      const CommandResult result = engine_.chooseDragonUpgrade(uint8_t(item));
+      screen_.command = result;
+      if (result == CommandResult::Applied) navigate(Page::DragonStage);
+      break;
+    }
     case Page::Pause:
       if (screen_.practice) {
         if (item == 0) { practiceCapture_.resume(at); navigate(Page::Practice); }
@@ -305,7 +338,18 @@ void Runtime::activate(unsigned item, uint32_t at) {
       if (item == 0) beginPractice(at); else endPractice();
       break;
     case Page::Result:
-      if (v.encounter.origin == EncounterOrigin::Ruins) {
+      if (v.encounter.origin == EncounterOrigin::DragonTrial) {
+        // Same predicate as the drawn rows and menuCount.
+        if (dragonActivityRetryable(v.encounter, v.result) && item == 0) {
+          const CommandResult result = engine_.retryDragonTrial(v.encounter.id, platform_.randomSeed());
+          screen_.command = result;
+          if (result == CommandResult::Applied) navigate(Page::DragonStage);
+        } else {
+          const CommandResult result = engine_.acknowledgeActivityResult(v.encounter.id);
+          screen_.command = result;
+          if (result == CommandResult::Applied) navigate(Page::Dragon);
+        }
+      } else if (v.encounter.origin == EncounterOrigin::Ruins) {
         // Same predicate as the drawn rows and menuCount.
         if (ruinsActivityRetryable(v.encounter, v.result) && item == 0) {
           const CommandResult result = engine_.retryRuinsActivity(v.encounter.id, platform_.randomSeed());

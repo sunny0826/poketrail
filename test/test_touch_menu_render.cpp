@@ -116,9 +116,11 @@ void pagination() {
         "wake touch cannot activate a menu row");
   screenshot(runtime, "menu-last-page");
   tap(runtime, 298, 430);
+  check(runtime.screen().selected == 9, "menu reaches fourth page");
+  tap(runtime, 298, 430);
   check(runtime.screen().selected == 0, "menu last page wraps without carrying row offset");
   tap(runtime, 168, 430);
-  check(runtime.screen().selected == 6, "menu previous button wraps from first to last");
+  check(runtime.screen().selected == 9, "menu previous button wraps from first to last");
   tap(runtime, 298, 430);
   swipe(runtime, 233, 150, 120, 150);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 3,
@@ -126,7 +128,7 @@ void pagination() {
   swipe(runtime, 233, 218, 380, 218);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 0,
         "right swipe returns without activating its start button");
-  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 286);
+  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 150);
   check(runtime.screen().page == Page::Home, "menu return restores exploration");
   openMenu(runtime);
   tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 218);

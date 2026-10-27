@@ -1,5 +1,6 @@
 #pragma once
 #include "adventure.hpp"
+#include "dragon_trial_catalog.hpp"
 #include "ruins_catalog.hpp"
 #include "calendar.hpp"
 #include "capture_anim.hpp"
@@ -15,7 +16,8 @@ enum class Page : uint8_t {
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
   Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, ReleaseConfirm, Evolution,
   EvolutionPreviewTargets, EvolutionPreview,
-  Ruins, RuinsClues, RuinsOrder, RuinsTargets, RuinsBoss
+  Ruins, RuinsClues, RuinsOrder, RuinsTargets, RuinsBoss,
+  Dragon, DragonStage, DragonUpgrade
 };
 struct ScreenState {
   Page page = Page::Home;
@@ -75,13 +77,16 @@ class Screens {
   void practiceResult(const ScreenState&, uint32_t now);
   void ruins(const ScreenState&, const adventure::Engine&, uint32_t now);
   void ruinsResult(const ScreenState&, const adventure::Engine&, uint32_t now);
+  void dragon(const ScreenState&, const adventure::Engine&, uint32_t now);
+  void dragonResult(const ScreenState&, const adventure::Engine&, uint32_t now);
   void capture(const ScreenState&, uint16_t species, uint32_t now);
   void ballAt(int x, int y, float angle = 0);
   void records(const ScreenState&, const adventure::Engine&);
   void clock(const ScreenState&);
   void menu(const ScreenState&, const adventure::Engine&, int top = menu_layout::kTop);
   void item(const ScreenState&, unsigned index, const char*, int top = menu_layout::kTop,
-            uint16_t species = 0, bool carried = false, const char* note = nullptr);
+            uint16_t species = 0, bool carried = false, const char* note = nullptr,
+            bool disabled = false);
   void thumbnail(uint16_t species, int x, int y, unsigned scale = 1);
   void ballCount(uint64_t count, int y, int x = 233);
   void line(const char*, int y, uint16_t color = theme::kText, bool large = false);

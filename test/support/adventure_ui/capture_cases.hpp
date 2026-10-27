@@ -1,4 +1,5 @@
 #pragma once
+#include "ruins_harness.hpp"
 
 namespace {
 void savedVictory(MemoryStore& store, Save& s, bool captured) {
@@ -32,6 +33,7 @@ void firstBallSuccess() {
   check(r.engine().view().recent[0].at.timeKnown && r.engine().view().recent[0].at.offsetMinutes == 480,
         "capture card uses verified current clock and original timezone offset");
   published(r, "first-ball-capture");
+  captureCardBadges(r, 0);
 }
 void captureAnimation() {
   {

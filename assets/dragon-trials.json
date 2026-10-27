@@ -1,0 +1,36 @@
+{
+  "ruleVersion": 1,
+  "note": "龙穴试炼固定来源。两条试炼互不前置，共享玩家生命、12 拍上限、交替节奏与强化规则；数值是待实机平衡的初始参数，不是官方数据。",
+  "ticketStep": 6,
+  "playerHp": 3,
+  "cuesPerStage": 12,
+  "normalWindowMs": 180,
+  "perfectWindowMs": 70,
+  "telegraph": "Alternate",
+  "upgrades": {
+    "normalStepMs": 30,
+    "perfectStepMs": 10,
+    "maxNormalBonusMs": 180,
+    "maxPerfectBonusMs": 60,
+    "maxGuard": 1
+  },
+  "trials": [
+    {
+      "id": 1,
+      "species": 147,
+      "stages": [
+        { "enemyHp": 3, "beatMs": 1500 },
+        { "enemyHp": 4, "beatMs": 1450 }
+      ]
+    },
+    {
+      "id": 2,
+      "species": 246,
+      "stages": [
+        { "enemyHp": 3, "beatMs": 1500 },
+        { "enemyHp": 4, "beatMs": 1450 },
+        { "enemyHp": 5, "beatMs": 1350 }
+      ]
+    }
+  ]
+}

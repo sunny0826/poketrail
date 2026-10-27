@@ -16,7 +16,7 @@ void animationContinuity() {
   for (unsigned i = 1; i < std::min<unsigned>(sprite.frame_count, 24); ++i) {
     frame(runtime, sprite.frames[i].duration_ms); spritePixels(1, origin, true);
   }
-  openMenu(runtime); idle(runtime, 380); select(runtime, 8); frame(runtime); home(runtime); spritePixels(1, origin, true);
+  openMenu(runtime); idle(runtime, 380); select(runtime, 9); frame(runtime); home(runtime); spritePixels(1, origin, true);
   openMenu(runtime); select(runtime, 1); select(runtime, 1); frame(runtime); home(runtime); spritePixels(1, origin);
   openMenu(runtime); select(runtime, 3); frame(runtime); idle(runtime, 240); tap(runtime, 233, 30); frame(runtime);
   home(runtime); spritePixels(1, origin);
@@ -141,7 +141,7 @@ void sleepContinuity() {
   home(runtime); check(!runtime.dimmed(), "wake settles without opening menu");
   buttons(false, true); frame(runtime); home(runtime); settle(runtime); spritePixels(1, origin, true);
   screenshot(runtime, "home-after-wake"); spritePixels(1, origin, true);
-  openMenu(runtime); select(runtime, 8); frame(runtime); home(runtime);
+  openMenu(runtime); select(runtime, 9); frame(runtime); home(runtime);
 }
 void saveFailure() {
   MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -196,7 +196,7 @@ void animationWraparound() {
   const uint32_t origin = host_time_ms;
   idle(runtime, 700); home(runtime);
   check(host_time_ms < 1000, "home animation crosses millis wrap"); spritePixels(1, origin, true);
-  openMenu(runtime); select(runtime, 8); frame(runtime); home(runtime); spritePixels(1, origin, true);
+  openMenu(runtime); select(runtime, 9); frame(runtime); home(runtime); spritePixels(1, origin, true);
 }
 void allPartners() {
   const std::vector<uint16_t> representatives = {1, 4, 7, 6, 42, 122, 139, 149,

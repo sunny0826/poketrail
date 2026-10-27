@@ -28,8 +28,11 @@ enum class Action : uint8_t { Attack, Dodge, Both };
 enum class Result : uint8_t {
   None, Won, Lost, Retreated, Captured, Escaped, Released, MigrationRetired,
   // Terminal activity outcomes. They reuse the one-byte result slot and only
-  // appear in schema-3 saves with a Ruins encounter.
-  RuinsClue, RuinsCleared
+  // appear in schema-3 saves with a Ruins or DragonTrial encounter.
+  RuinsClue, RuinsCleared,
+  // DragonTrial: awaiting the stage-upgrade choice, and a replay win that owes
+  // no throw or reward.
+  DragonUpgrade, DragonCleared
 };
 enum class ClockChangeMode : uint8_t { Normal, TimezoneChange, RepairWrongDate };
 enum class CommandResult : uint8_t {
