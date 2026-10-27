@@ -58,9 +58,9 @@ class GeneratedAssets:
         for line in table.group(1).splitlines():
             match = row.search(line)
             if match:
-                name, types, number, width, height, frames, evolved = match.groups()
+                name, types, number, width, height, frames, enlarged = match.groups()
                 self.meta[int(number)] = dict(name=name, types=types, width=int(width),
-                    height=int(height), frames=int(frames), evolved=evolved == "true")
+                    height=int(height), frames=int(frames), enlarged=enlarged == "true")
         if set(self.meta) != set(range(1, SPECIES_COUNT + 1)):
             raise ValueError(f"generated sprite table must contain IDs 1-{SPECIES_COUNT}")
 
@@ -96,7 +96,7 @@ class GeneratedAssets:
 
     def sprite(self, number: int, frame: int = 0, scale: int | None = None) -> Image.Image:
         meta = self.meta[number]
-        scale = scale or (3 if meta["evolved"] and meta["width"] * 3 <= 336
+        scale = scale or (3 if meta["enlarged"] and meta["width"] * 3 <= 336
                           and meta["height"] * 3 <= 270 else 2)
         cache_key = ("frame", number, frame % meta["frames"], scale)
         if cache_key not in self._cache:

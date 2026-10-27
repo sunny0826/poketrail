@@ -151,28 +151,53 @@ class SpriteTests(unittest.TestCase):
         self.assertEqual([s['id'] for s in self.sprites].count(201), 1)
 
     def test_frozen_scaling_keeps_generation_one_results_and_gen2_categories(self):
-        evolved = {s['id'] for s in self.sprites if s['has_evolved']}
+        scales = json.loads(SCALE_CACHE.read_text())['generations']
+        enlarged = {s['id'] for s in self.sprites if s['enlarged']}
         parents = json.loads((ROOT / 'assets/evolution-gen1.json').read_text())['parents']
         frozen_gen1 = {int(i) for i, parent in parents.items() if parent is not None}
         self.assertEqual(len(frozen_gen1), 72)
-        self.assertEqual({i for i in evolved if i <= GEN1_COUNT}, frozen_gen1)
-        gen2 = {i for i in evolved if i > GEN1_COUNT}
-        self.assertEqual(len(gen2), 42)
+        gen1, gen2 = scales['1'], scales['2']
+        self.assertEqual(set(gen1['evolved']), frozen_gen1)
+        self.assertEqual(set(gen1['standalone']), {
+            83, 108, 114, 115, 122, 127, 128, 131, 132, 142, 143, 144, 145, 146, 150, 151})
+        self.assertEqual(len(gen2['evolved']), 42)
+        self.assertEqual(len(gen2['standalone']), 27)
+        self.assertEqual(set(gen2['standalone']), {
+            185, 190, 193, 198, 200, 201, 202, 203, 206, 207, 211, 213, 214, 215, 222,
+            225, 226, 227, 234, 235, 241, 243, 244, 245, 249, 250, 251})
+        self.assertEqual(len(gen2['base']), 31)
+        self.assertEqual(set(gen2['base']) | set(gen2['evolved']) | set(gen2['standalone']),
+                         set(range(GEN1_COUNT + 1, POKEMON_COUNT + 1)))
+        self.assertEqual(set(gen2['evolved']).isdisjoint(gen2['standalone']), True)
         self.assertTrue({153, 169, 176, 186, 196, 197, 199, 208, 212, 230, 233, 242,
-                         247, 248} <= gen2)
-        self.assertTrue(gen2.isdisjoint({152, 155, 158, 161, 172, 175, 183, 185, 201,
-                                         202, 226, 249, 250, 251}))
+                         247, 248} <= set(gen2['evolved']))
+        self.assertTrue(set(gen2['base']).isdisjoint({185, 201, 202, 226, 249, 250, 251}))
+        self.assertEqual(enlarged, set(gen1['evolved']) | set(gen1['standalone']) |
+                         set(gen2['evolved']) | set(gen2['standalone']))
+        self.assertEqual(load_scales(), enlarged)
 
     def test_scale_metadata_rejects_invalid_partitions(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'scales.json'
             original = json.loads(SCALE_CACHE.read_text())
-            for mutate in ('overlap', 'outside', 'missing'):
+            for mutate in ('overlap', 'outside', 'missing', 'standalone_overlap',
+                           'standalone_duplicate', 'standalone_outside',
+                           'standalone_missing', 'standalone_base_overlap'):
                 broken = json.loads(json.dumps(original))
                 if mutate == 'overlap':
                     broken['generations']['2']['base'].append(153)
                 elif mutate == 'outside':
                     broken['generations']['1']['evolved'].append(152)
+                elif mutate == 'standalone_overlap':
+                    broken['generations']['2']['standalone'].append(153)
+                elif mutate == 'standalone_duplicate':
+                    broken['generations']['2']['standalone'].append(185)
+                elif mutate == 'standalone_outside':
+                    broken['generations']['1']['standalone'].append(152)
+                elif mutate == 'standalone_missing':
+                    del broken['generations']['2']['standalone']
+                elif mutate == 'standalone_base_overlap':
+                    broken['generations']['2']['standalone'].append(152)
                 else:
                     broken['generations']['2']['base'].pop()
                 path.write_text(json.dumps(broken))

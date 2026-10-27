@@ -127,28 +127,39 @@ def build_animation(data: bytes) -> dict:
                 sha256=hashlib.sha256(data).hexdigest())
 
 
+def _unique_ids(entry: dict, key: str, field: str, first: int, last: int) -> set[int]:
+    ids = entry.get(field)
+    if not isinstance(ids, list) or not all(type(i) is int for i in ids):
+        raise ValueError(f"generation {key}: {field} must be an integer list")
+    if len(set(ids)) != len(ids) or any(not first <= i <= last for i in ids):
+        raise ValueError(f"generation {key}: invalid {field} IDs")
+    return set(ids)
+
+
 def load_scales(path: Path = SCALE_CACHE) -> set[int]:
+    """返回优先 3 倍的编号：中间／最终形态与无进化链物种。"""
     data = json.loads(path.read_text())["generations"]
     if set(data) != {"1", "2"}:
         raise ValueError("sprite scales must describe generations 1 and 2")
-    evolved = set()
+    enlarged = set()
     for key, first, last in (("1", 1, GEN1_COUNT), ("2", GEN1_COUNT + 1, POKEMON_COUNT)):
         entry = data[key]
         if (entry.get("first"), entry.get("last")) != (first, last):
             raise ValueError(f"generation {key}: unexpected ID range")
-        ids = entry.get("evolved")
-        if not isinstance(ids, list) or not all(type(i) is int for i in ids):
-            raise ValueError(f"generation {key}: evolved must be an integer list")
-        if len(set(ids)) != len(ids) or any(not first <= i <= last for i in ids):
-            raise ValueError(f"generation {key}: invalid evolved IDs")
+        evolved = _unique_ids(entry, key, "evolved", first, last)
+        standalone = _unique_ids(entry, key, "standalone", first, last)
+        if evolved & standalone:
+            raise ValueError(f"generation {key}: standalone and evolved must not overlap")
+        base = _unique_ids(entry, key, "base", first, last) if "base" in entry else None
+        if base is not None and base & (evolved | standalone):
+            raise ValueError(f"generation {key}: base must not overlap evolved or standalone")
         if key == "2":
-            base = entry.get("base")
-            if (not isinstance(base, list) or not all(type(i) is int for i in base)
-                    or len(set(base)) != len(base)
-                    or set(base) != set(range(first, last + 1)) - set(ids)):
-                raise ValueError("generation 2: base and evolved must partition 152-251")
-        evolved.update(ids)
-    return evolved
+            expected = set(range(first, last + 1)) - evolved - standalone
+            if base != expected:
+                raise ValueError(
+                    "generation 2: base, evolved and standalone must partition 152-251")
+        enlarged |= evolved | standalone
+    return enlarged
 
 
 def load_metadata() -> dict[int, dict]:
@@ -186,7 +197,7 @@ def load_manifests() -> tuple[dict[int, str], set[int]]:
 
 
 def load_sprites(wanted: list[int]) -> list[dict]:
-    evolved_species = load_scales()
+    enlarged_species = load_scales()
     by_id = load_metadata()
     hashes, present = load_manifests()
     sprites = []
@@ -201,7 +212,7 @@ def load_sprites(wanted: list[int]) -> list[dict]:
                             types=entry["pokemon_type_name"],
                             height_text=entry.get("height") or "-",
                             weight_text=entry.get("weight") or "-",
-                            has_evolved=number in evolved_species))
+                            enlarged=number in enlarged_species))
     return sprites
 
 
@@ -248,7 +259,7 @@ def generate_source(sprites: list[dict]) -> str:
                      f'{s["width"]}, {s["height"]}, {ident}Palette, {ident}Data, '
                      f'sizeof({ident}Data), {ident}Frames, {len(s["frames"])}, '
                      f'{s["duration"]}, {text("height_text")}, {text("weight_text")}, '
-                     f'{text("has_evolved")}}},')
+                     f'{text("enlarged")}}},')
     lines.extend(['};', f'const size_t kSpriteCount = {len(sprites)};',
                   '}  // namespace data', '}  // namespace pokedex', ''])
     return '\n'.join(lines)

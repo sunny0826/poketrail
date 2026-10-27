@@ -79,40 +79,63 @@ void testDisplayScale() {
   Sprite small = sample;
   small.width = 41;
   small.height = 42;
-  Sprite evolved = sample;
-  evolved.width = 87;
-  evolved.height = 89;
-  check(displayScale(small) == 2 && displayScale(evolved) == 2,
-        "unevolved forms keep two-pixel blocks");
-  evolved.has_evolved = true;
-  check(displayScale(evolved) == 3 && evolved.width * displayScale(evolved) == 261 &&
-        evolved.height * displayScale(evolved) == 267,
+  Sprite enlarged = sample;
+  enlarged.width = 87;
+  enlarged.height = 89;
+  check(displayScale(small) == 2 && displayScale(enlarged) == 2,
+        "forms outside the enlarged category keep two-pixel blocks");
+  enlarged.enlarged = true;
+  check(displayScale(enlarged) == 3 && enlarged.width * displayScale(enlarged) == 261 &&
+        enlarged.height * displayScale(enlarged) == 267,
         "Charizard-sized final evolution enlarges to 261 by 267");
-  check(small.height * displayScale(small) < evolved.height * displayScale(evolved),
+  check(small.height * displayScale(small) < enlarged.height * displayScale(enlarged),
         "final evolution stays larger than its base form");
-  evolved.width = 86;
-  evolved.height = 71;
-  check(displayScale(evolved) == 3, "Venusaur-sized final evolution enlarges");
-  evolved.width = 66;
-  evolved.height = 56;
-  check(displayScale(evolved) == 3 && evolved.width * displayScale(evolved) == 198 &&
-        evolved.height * displayScale(evolved) == 168,
+  enlarged.width = 86;
+  enlarged.height = 71;
+  check(displayScale(enlarged) == 3, "Venusaur-sized final evolution enlarges");
+  enlarged.width = 66;
+  enlarged.height = 56;
+  check(displayScale(enlarged) == 3 && enlarged.width * displayScale(enlarged) == 198 &&
+        enlarged.height * displayScale(enlarged) == 168,
         "Charmeleon-sized intermediate form also enlarges to 198 by 168");
-  evolved.width = 112;
-  evolved.height = 90;
-  check(displayScale(evolved) == 3, "largest safe three-times canvas is accepted");
-  evolved.width = 113;
-  check(displayScale(evolved) == 2, "wide final evolution falls back without clipping");
-  evolved.width = 82;
-  evolved.height = 105;
-  check(displayScale(evolved) == 2, "Fearow keeps its complete tall animation at two-times");
-  evolved.height = 117;
-  check(displayScale(evolved) == 2, "Pidgeotto intermediate keeps its tall full animation");
-  evolved.width = pokedex::kMaxSourceSize;
-  evolved.height = 117;
-  check(displayScale(evolved) == 2, "largest source canvas fits without clipping");
-  evolved.width = pokedex::kMaxSourceSize + 1;
-  check(displayScale(evolved) == 0, "oversized canvas fails rather than changing relative proportions");
+  enlarged.width = 112;
+  enlarged.height = 90;
+  check(displayScale(enlarged) == 3, "largest safe three-times canvas is accepted");
+  enlarged.width = 113;
+  check(displayScale(enlarged) == 2, "wide final evolution falls back without clipping");
+  enlarged.width = 82;
+  enlarged.height = 105;
+  check(displayScale(enlarged) == 2, "Fearow keeps its complete tall animation at two-times");
+  enlarged.height = 117;
+  check(displayScale(enlarged) == 2, "Pidgeotto intermediate keeps its tall full animation");
+  enlarged.width = 45;
+  enlarged.height = 49;
+  check(displayScale(enlarged) == 3 && enlarged.width * displayScale(enlarged) == 135 &&
+        enlarged.height * displayScale(enlarged) == 147,
+        "Farfetch'd-sized standalone species enlarges to 135 by 147");
+  enlarged.width = 78;
+  enlarged.height = 61;
+  check(displayScale(enlarged) == 3 && enlarged.width * displayScale(enlarged) == 234 &&
+        enlarged.height * displayScale(enlarged) == 183,
+        "Kangaskhan-sized standalone species enlarges to 234 by 183");
+  enlarged.width = 90;
+  enlarged.height = 69;
+  check(displayScale(enlarged) == 3 && enlarged.width * displayScale(enlarged) == 270 &&
+        enlarged.height * displayScale(enlarged) == 207,
+        "Mewtwo-sized standalone species enlarges to 270 by 207");
+  enlarged.width = 128;
+  enlarged.height = 97;
+  check(displayScale(enlarged) == 2 && enlarged.width * displayScale(enlarged) == 256 &&
+        enlarged.height * displayScale(enlarged) == 194,
+        "Moltres-sized standalone species falls back to 256 by 194");
+  enlarged.width = 153;
+  enlarged.height = 94;
+  check(displayScale(enlarged) == 2, "Lugia keeps its wide standalone animation at two-times");
+  enlarged.width = pokedex::kMaxSourceSize;
+  enlarged.height = 117;
+  check(displayScale(enlarged) == 2, "largest source canvas fits without clipping");
+  enlarged.width = pokedex::kMaxSourceSize + 1;
+  check(displayScale(enlarged) == 0, "oversized canvas fails rather than changing relative proportions");
   small.width = 0;
   check(displayScale(small) == 0, "zero-width canvas has no valid scale");
   small.width = 41;
