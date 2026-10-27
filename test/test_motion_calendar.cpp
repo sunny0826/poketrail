@@ -28,9 +28,10 @@ struct Feed {
     const float y = axis == 1 ? -magnitude : (axis == 3 ? magnitude * 0.8f : 0);
     const float z = axis == 2 ? magnitude : 0;
     StepBatch b = detector.sample(x, y, z, now, tag);
-    check(b.count <= 4, "bounded batch");
+    check(b.count <= pokedex::motion::kConfirmPeaks, "bounded batch");
     for (unsigned i = 0; i < b.count; ++i) {
-      check(now - b.events[i].monotonicMs < 6000, "peak time precedes confirmation");
+      check(now - b.events[i].monotonicMs <= pokedex::motion::kMaxConfirmationDelayMs,
+            "confirmed peak stays inside the clock attribution window");
       if (!steps.empty()) check(b.events[i].monotonicMs - steps.back() >= 220,
                                 "ordered distinct events, including wrap");
       steps.push_back(b.events[i].monotonicMs);
@@ -74,6 +75,29 @@ void motionTests() {
     for (int i = 0; i < 10; ++i) light.cycleAmp(500, amplitude);
     check(light.steps.size() >= 9, "light gait still counted");
   }
+  // 混合档位：证据按档位向下兼容，弱峰不能截断更强峰的待确认候选。
+  for (float companion : {0.30f, 0.10f}) {
+    Feed mixed;
+    mixed.rest(200);
+    for (int i = 0; i < 40; ++i) mixed.cycleAmp(500, i % 2 ? companion : 0.08f);
+    check(mixed.steps.size() >= 38, "alternating weak/stronger peaks keep counting");
+    check(mixed.gaps == 0, "alternating tier gait keeps sampling continuous");
+  }
+  Feed mixedThree;
+  mixedThree.rest(200);
+  mixedThree.cycleAmp(500, 0.08f);
+  mixedThree.cycleAmp(500, 0.10f);
+  mixedThree.cycleAmp(500, 0.08f);
+  check(mixedThree.steps.size() == 3, "mixed tiers confirm on the third peak");
+  // 间隔放大到 140% 的候选峰仍被接受，但不构成节奏，需要下一次复检才确认。
+  Feed irregularStart;
+  irregularStart.rest(200);
+  irregularStart.cycleAmp(500, 0.10f);
+  irregularStart.cycleAmp(500, 0.10f);
+  irregularStart.cycleAmp(900, 0.10f);
+  check(irregularStart.steps.empty(), "off-rhythm candidate peaks do not confirm a cadence");
+  irregularStart.cycleAmp(900, 0.10f);
+  check(irregularStart.steps.size() == 3, "regular rhythm releases the waiting peaks");
   // 口袋/背包佩戴：信号是脚步冲击谐波（~9Hz 衰减振荡），低通滤波必须放行
   // 足够的冲击能量让谷值压过阈值，否则步数大量丢失。
   for (float impact : {0.15f, 0.20f, 0.30f}) {

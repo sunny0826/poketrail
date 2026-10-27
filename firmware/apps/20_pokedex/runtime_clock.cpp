@@ -1,6 +1,12 @@
 #include "runtime.hpp"
 namespace pokedex { namespace ui {
 using namespace adventure;
+namespace {
+// Steps are dated from the newest trusted clock anchor, which is refreshed by a
+// 1 s clock poll. A batch released by a multi-peak confirmation can predate that
+// anchor by the detector's worst-case confirmation delay plus one poll interval.
+constexpr int32_t kPastAnchorMs = int32_t(motion::kMaxConfirmationDelayMs) + 1000;
+}
 ClockReading Runtime::makeReading(const device_clock::Reading& candidate, uint32_t at, int offset, bool transaction) const {
   const auto& s = engine_.view(); ClockReading r;
   r.bootGeneration = s.bootGeneration; r.monotonicMs = at;
@@ -18,7 +24,7 @@ ClockReading Runtime::readingAt(uint32_t at) const {
   if (!anchor_.trusted || !s.clock.trusted || s.clock.pending.active || s.clock.anomaly ||
       anchor_.calibrationEpoch != r.calibrationEpoch || anchor_.offsetMinutes != r.offsetMinutes) return r;
   int32_t ms = int32_t(at - anchor_.monotonicMs);
-  if (ms < -4000 || ms > 2500) return r;
+  if (ms < -kPastAnchorMs || ms > 2500) return r;
   // A delayed confirmed peak may precede the newest anchor, within the same epoch.
   r.utcSeconds = anchor_.utcSeconds + (ms >= 0 ? ms / 1000 : (ms - 999) / 1000);
   calendar::CivilTime local;

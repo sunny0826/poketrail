@@ -7,19 +7,21 @@ const uint32_t kGapMs = 100;
 // Recall-first tuning: a step only has to be >=220 ms apart (273 steps/min) and
 // may be followed by up to 2.2 s of rest before its candidate is discarded.
 const uint32_t kMinStepMs = 220;
-const uint32_t kMaxStepMs = 2200;
 const float kValley = 0.97f;
 // Evidence required scales down as the impact grows: a faint crest must stay
-// above kWeakPeak for ~100 ms, a medium crest needs a longer run, and a strong
-// impact confirms on two peaks. Weak pocket harmonics clear the medium tier.
+// above kWeakPeak for ~100 ms, a medium crest is accepted whatever its width,
+// and a strong impact confirms on two peaks. Any accepted crest is at least
+// weak evidence, so a mixed tier gait confirms on kConfirmPeaks peaks.
 const float kWeakPeak = 1.05f;
 const float kMediumPeak = 1.08f;
 const float kStrongPeak = 1.12f;
 const uint8_t kWeakCrestSamples = 5;
 const uint8_t kStrongConfirm = 2;
-const uint8_t kMediumConfirm = 4;
-const uint8_t kWeakConfirm = 3;
-const uint8_t kPendingMax = 4;
+// Starting a cadence from ambiguous crests needs a rhythm, not just three
+// excursions: bounded IMU noise can also produce three candidate peaks close
+// together. Confirmed cadence keeps the wider tracking tolerance below.
+const uint32_t kConfirmLowPct = 65;
+const uint32_t kConfirmHighPct = 135;
 const uint32_t kIrregularLowPct = 60;
 const uint32_t kIrregularHighPct = 165;
 bool before(uint32_t now, uint32_t end) {
@@ -72,28 +74,36 @@ void Detector::acceptPeak(uint32_t at, float peak, uint8_t crest, StepBatch& res
   pending_[pendingCount_] = {at, peakTag_};
   pendingTier_[pendingCount_++] = tier;
   for (;;) {
-    uint8_t strongRun = 0, mediumRun = 0;
-    for (int8_t i = (int8_t)pendingCount_ - 1; i >= 0 && pendingTier_[i] >= 1; --i) {
-      ++mediumRun;
-      if (pendingTier_[i] >= 2) ++strongRun;
-    }
-    bool allWeak = true;
-    for (uint8_t i = 0; i < pendingCount_; ++i) allWeak = allWeak && pendingTier_[i] == 0;
-    if (strongRun >= kStrongConfirm || mediumRun >= kMediumConfirm ||
-        (allWeak && pendingCount_ >= kWeakConfirm)) {
+    // Evidence counts monotonically towards weaker tiers: a strong crest also
+    // proves medium and weak cadence, a medium crest also proves weak cadence.
+    // Counting the whole pending window, instead of a contiguous medium/strong
+    // suffix, keeps alternating tiers from being dropped before confirmation.
+    uint8_t strongCount = 0;
+    for (uint8_t i = 0; i < pendingCount_; ++i)
+      if (pendingTier_[i] >= 2) ++strongCount;
+    if (strongCount >= kStrongConfirm ||
+        (pendingCount_ >= kConfirmPeaks && regularRhythm())) {
       for (uint8_t i = 0; i < pendingCount_; ++i) result.events[result.count++] = pending_[i];
       pendingCount_ = 0;
       confirmed_ = true;
       return;
     }
-    if (pendingCount_ < kPendingMax) return;
-    // Mixed strong/weak evidence that cannot confirm: keep the newest peaks.
+    if (pendingCount_ < kConfirmPeaks) return;
+    // Irregular candidate chain: keep the newest peaks and re-check the rest.
     for (uint8_t i = 1; i < pendingCount_; ++i) {
       pending_[i - 1] = pending_[i];
       pendingTier_[i - 1] = pendingTier_[i];
     }
     --pendingCount_;
   }
+}
+bool Detector::regularRhythm() const {
+  const uint32_t first = pending_[1].monotonicMs - pending_[0].monotonicMs;
+  for (uint8_t i = 2; i < pendingCount_; ++i) {
+    const uint32_t gap = pending_[i].monotonicMs - pending_[i - 1].monotonicMs;
+    if (gap * 100u < first * kConfirmLowPct || gap * 100u > first * kConfirmHighPct) return false;
+  }
+  return true;
 }
 StepBatch Detector::sample(float x, float y, float z, uint32_t now, uint16_t tag) {
   StepBatch result = {};
