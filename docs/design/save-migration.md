@@ -2,6 +2,8 @@
 
 当前玩法见[玩法契约](walking-progression.md)，状态归属和验证矩阵见[状态与验收](walking-state.md)。
 
+下文按版本保留迁移阶段的规则：schema1→2、schema2→3 中的 500／5000 步账式和发球规则适用于那些历史版本。当前启动会在同一事务中继续升级到 schema4，最终规则见 [schema3→4](#schema3-迁移到-schema4)，不会把中间版本单独写入存档。
+
 ## schema1 迁移到 schema2
 
 先以各自版本的长度、CRC和语义验证两槽，再选择有效最高 sequence。旧校验继续按 500，不能直接把常量改为 5000 后读旧档。同序号内容不同、未知 schema、I/O 错误继续阻断并保留文件，不自动格式化。FileStore 的 unknownHeader 和 codec 都要支持 1、2、3，普通空档初始化条件保持不变。
@@ -32,7 +34,7 @@ credit = T - 500*L - 5000*(N-L-V)
 
 旧普通场的 `legacyFreeAttempts` 等于迁移前已提交次数，过去免费不追扣，新尝试扣新库存。保留原 rule1 和 roll，不能用 rule2 重算。`0<=free<=used<=2`；仅 ID<=K 的旧场允许 rule1 与免费前缀，新场必须 rule2、free=0。新规则普通资格只作用于新场，不误杀已完成的旧高级／活动捕获。空 Encounter 规范化为 v2 空值。MigrationRetired 仅允许被退款的旧当前场（V=1、ID=K），不可带成功捕获；Released 允许0或1次失败尝试，Escaped仍要求两次。
 
-历史首捕在总步 500–4999 仍合法，校验下界继续为 500。新建场入口保证新捕获来自 5000 消费；不能用全局提高首捕下界破坏真实历史。捕获、赠送与进化仍是不同来源。
+schema1 的历史首捕可发生在总步 500–4999，schema2 新场则消耗 5000 探索步。这些历史捕获升级后仍合法；当前首捕校验下界和新场消费见 schema4 规则。捕获、赠送与进化仍是不同来源。
 
 若已存在有效 v2，不能再次迁移、重置 base、培养或余额。普通 bootGeneration 更新仍按原事务进行。迁移写前／部分写失败保留旧快照；完整写入但回执失败，重启选择新 v2。此启动冻结同一 candidate、sequence 和字节重试，不重新计算退款或随机。旧固件不能忽略新版槽继续玩。未持久化的按键与 RAM 队列不猜测补写；未完成校时仍走原恢复流程。
 
@@ -56,7 +58,9 @@ schema3 存档在同一启动事务里确定性升级到 schema4：先按 v3 语
 
 迁移账式：`explorationSpent = totalSteps - explorationCredit`，使 `spent + credit == totalSteps` 恒成立；这覆盖旧档按 5000 消耗的历史场次（每场实际扣除上界校验放宽到 5000）。首个 `encounterTarget` 由启动代与总步派生，落在 200–500 区间。总步、余额、捕获历史、培养账户和校时事务逐项保留，不退款、不追发。
 
-规则切换：`kRuleVersion` 升到 3。迁移把在途非 legacy 遭遇的 `ruleVersion` 从 2 升到 3，之后的新遭遇直接以当前规则创建；已投的 attempt 保留自己的 `ruleVersion`，其存储的概率与 roll 继续按投球时点的表复算，validate 要求 `attempt.ruleVersion <= encounter.ruleVersion`。规则 3 起：普通 85/92/98、稀有 70/80/90；概率按 attempt 的版本分表校验。
+当前 `validCapture` 对捕获记录使用 200 总步下界，保留旧档的 500 步首捕；schema4 新场在创建时实际扣除 200–500 探索步的随机目标，不再按 5000 步建场。
+
+规则切换：`kRuleVersion` 升到 3。迁移把已有规则 2 遭遇的 `ruleVersion` 升到 3，之后的新遭遇直接以当前规则创建；已投的 attempt 保留自己的 `ruleVersion`，其存储的概率与 roll 继续按投球时点的表复算，validate 要求 `attempt.ruleVersion <= encounter.ruleVersion`。规则 3 起：普通 85/92/98、稀有 70/80/90；概率按 attempt 的版本分表校验。
 
 精灵球不限量：规则 3 的投球不再检查库存、不再递增 `ballsSpent`，`NoBalls` 仅对规则 1–2 的在途遭遇保留。旧账目字段 `rewardBaseSteps`／`ballsSpent` 原样保留并可校验；`ballsSpent < usedBalls - legacyFreeAttempts` 下界仅对规则 1–2 的遭遇要求。schema4 的非 legacy 遭遇必须为当前规则版本；空遭遇（Walking）保持编码原值。
 
@@ -64,4 +68,6 @@ schema3 存档在同一启动事务里确定性升级到 schema4：先按 v3 语
 
 ### 活动分支固件存档的兼容读取
 
-未合并的活动分支固件（legendary-ruins、dragon-trial）在 schema3 payload 末尾追加了 22 字节活动块，并可能持有超出普通池的在途活动遭遇：这些遭遇消耗遭遇 ID 但不消耗探索步，schema3 账目等式对它们不成立。解码器识别「schema3 + 恰好 22 字节尾部」的帧时跳过活动块、关闭在途活动遭遇（回到 Walking、清空结果），并就地升级 schema4；schema4 的每场 0–5000 步账目上界吸收零消耗的 ID 区间，总步、培养账户、捕获历史与伙伴全部保留，活动进度（遗迹线索、试炼阶段）随尾部块一起丢弃。真实活动固件产物见 `test/fixtures/progression/schema3-activity.bin`。该兼容只针对历史固件产物；活动功能正式合并时会按新的迁移契约重新设计字段。
+未合并的活动分支固件（legendary-ruins、dragon-trial）在 schema3 payload 末尾追加了 22 字节活动块，并可能持有超出普通池的当前遭遇：这些活动遭遇消耗遭遇 ID 但不消耗探索步，schema3 的固定扣步账式对它们不成立。解码器识别「schema3 + 恰好 22 字节尾部」的帧时跳过活动块；若当前遭遇不在普通池，就清空该遭遇、回到 Walking 并清空结果，然后就地升级 schema4。总步、培养账户、捕获历史与伙伴保留，活动进度（遗迹线索、试炼阶段）随尾部块一起丢弃。
+
+升级后仍须通过 v4 语义校验。令 `modern = nextEncounterId - 1 - legacyChargedCount - voidedLegacyCount`、`modernSpent = explorationSpent - 500 × legacyChargedCount`，当前校验要求 `200 × modern <= modernSpent <= 5000 × modern`；这是累计账目区间，并非允许每场零消耗。已纳入测试的[活动固件字节样本](../../test/fixtures/progression/schema3-activity.bin)满足该区间，[迁移测试](../../test/test_migration.cpp)验证其 6293 总步、1293 探索余额、培养与伙伴保留。不能据此承诺任意活动分支存档都能迁移；未来活动格式需另订迁移契约。

@@ -112,6 +112,6 @@ rtk proxy mise exec -- python3 tools/build_sprites.py --ids 1,4,7 --out /tmp/spr
 
 单 app 分区表 [partitions_single_app_16MB.csv](../partitions_single_app_16MB.csv) 把 factory app 放在 `0x10000`、大小 `0xC80000`，SPIFFS 保持 `0xC90000`／`0x360000`，coredump 保持 `0xFF0000`／`0x10000`。素材仍编入 app，不迁移到文件系统。
 
-发布范围为当前源码、生成数据、测试与 fixture、资料清单、文档和许可。`.pio/`、原始素材缓存、Flash 备份、本地报告和系统缓存由 [.gitignore](../.gitignore) 排除。历史验收记录保存在本地证据目录，不作为新用户构建前置条件。
+发布范围为当前源码、生成数据、测试与 fixture、资料清单、文档和许可。`.pio/`、原始素材缓存、Flash 备份、本地报告和系统缓存由 [.gitignore](../.gitignore) 排除。本地历史验收证据已清理，不作为新用户构建前置条件；历史摘要与重新检查方式见[验证说明](verification.md#历史证据清理与重新检查)。
 
 发布前核对 `git status` 和实际暂存内容，避免把旧版本索引当作当前工作树。不要上传个人备份或设备存档，也不要覆盖旧备份。代码 MIT 许可不能代替宝可梦图像和名称的权利授权。

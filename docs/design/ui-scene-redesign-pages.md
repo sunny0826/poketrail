@@ -1,6 +1,6 @@
 # 全场景页面覆盖
 
-返回[视觉设计](ui-scene-redesign.md)。下表按 `firmware/apps/20_pokedex/screens.hpp` 的 `Page` 枚举核对。联系表展示同组全部状态。
+返回[视觉设计](ui-scene-redesign.md)。下表按 [screens.hpp](../../firmware/apps/20_pokedex/screens.hpp) 的 `Page` 枚举列出当前 29 页。历史设计画廊只覆盖原 26 页，三张进化动画／预览页尚无设计帧，表中链接到对应行为契约与主机测试。联系表和设计帧保留旧规则示例，不表示当前 Runtime 的完整页面覆盖。
 
 | Page | 设计帧与状态 |
 | --- | --- |
@@ -17,7 +17,7 @@
 | `PracticeThrow` | [练习投球 · 不消耗精灵球](ui-scene-redesign/frames/practice-throw.png) |
 | `PracticeResult` | [练习成功 · 未收入图鉴](ui-scene-redesign/frames/practice-result.png) |
 | `Pause` | [实战](ui-scene-redesign/frames/pause.png) · [练习](ui-scene-redesign/frames/pause-practice.png) |
-| `Throw` | [准备](ui-scene-redesign/frames/throw-menu.png) · [零球](ui-scene-redesign/frames/throw-zero.png) · [蓄力](ui-scene-redesign/frames/throw-active.png) · [捕获规格](ui-scene-redesign-motion.md) |
+| `Throw` | [准备](ui-scene-redesign/frames/throw-menu.png) · [零球旧稿](ui-scene-redesign/frames/throw-zero.png)（旧库存规则示例；规则 3 不限球） · [蓄力](ui-scene-redesign/frames/throw-active.png) · [捕获规格](ui-scene-redesign-motion.md) |
 | `Result` | [首捕](ui-scene-redesign/frames/result-captured.png) · [失败](ui-scene-redesign/frames/result-lost.png) · [撤退](ui-scene-redesign/frames/result-retreated.png) · [已捕获后放弃](ui-scene-redesign/frames/result-released-owned.png) · [放弃新捕捉](ui-scene-redesign/frames/result-released-new.png) · [迁移结清](ui-scene-redesign/frames/result-migration.png) · [离开](ui-scene-redesign/frames/result-left.png) |
 | `Records` | [目录](ui-scene-redesign/frames/records.png) · [末页](ui-scene-redesign/frames/records-last.png) |
 | `FirstCaptures` | [首捕卡](ui-scene-redesign/frames/first-capture.png) · [初始赠送空态](ui-scene-redesign/frames/first-capture-empty.png) |
@@ -30,5 +30,8 @@
 | `PartnerDetail` | [进化就绪](ui-scene-redesign/frames/partner-ready.png) · [进化已保存](ui-scene-redesign/frames/partner-saved.png) · [最终形态](ui-scene-redesign/frames/partner-final.png) · [目标已拥有](ui-scene-redesign/frames/partner-owned.png) · [步数不足](ui-scene-redesign/frames/partner-unready.png) |
 | `EvolutionConfirm` | [进化确认](ui-scene-redesign/frames/evolution-confirm.png) |
 | `ReleaseConfirm` | [放弃捕捉确认](ui-scene-redesign/frames/release-confirm.png) |
+| `Evolution` | 无独立设计帧；保存成功后的真实进化动画，见[动画契约](evolution-animation.md)与[渲染测试](../../test/test_evolution_render.cpp) |
+| `EvolutionPreviewTargets` | 无独立设计帧；伊布五分支、无畏小子三分支的预览选择，见[预览契约](evolution-animation.md)与[预览测试](../../test/test_evolution_preview_render.cpp) |
+| `EvolutionPreview` | 无独立设计帧；不改变账户、结束返回原图鉴条目的预览动画，见[预览契约](evolution-animation.md)与[预览测试](../../test/test_evolution_preview_render.cpp) |
 
 分组联系表：[探索与菜单](ui-scene-redesign/contacts/exploration.png) · [遭遇与捕捉](ui-scene-redesign/contacts/capture.png) · [伙伴与图鉴](ui-scene-redesign/contacts/partners.png) · [步行记录](ui-scene-redesign/contacts/records.png) · [日期与异常](ui-scene-redesign/contacts/system.png) · [步行纵深关键帧](ui-scene-redesign/contacts/walking-animation.png) · [战斗动画分镜](ui-scene-redesign/contacts/battle-animation.png)

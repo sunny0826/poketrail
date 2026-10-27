@@ -1,18 +1,2 @@
-# Generated firmware tables and source manifests.
-firmware/apps/20_pokedex/*_generated.hpp linguist-generated=true
-firmware/apps/20_pokedex/*_generated.cpp linguist-generated=true
-assets/animations-gen1.json linguist-generated=true
-assets/animations-gen2.json linguist-generated=true
-assets/evolution-gen1.json linguist-generated=true
-assets/evolution-251.json linguist-generated=true
-assets/icons-gen1.json linguist-generated=true
-assets/icons-gen2.json linguist-generated=true
-assets/pokedex-gen2.json linguist-generated=true
-assets/adventure-251.json linguist-generated=true
-assets/adventure-routes/*-gen2.json linguist-generated=true
-docs/design/ui-scene-redesign/manifest.json linguist-generated=true
-
-# Upstream data snapshots; provenance and licenses are in THIRD_PARTY_NOTICES.md.
-assets/evolution-source/*.csv linguist-vendored=true linguist-generated=true
-assets/pokedex-gen1.json linguist-vendored=true linguist-generated=true
-assets/pokedex-source/*.csv linguist-vendored=true linguist-generated=true
+# 归档的设备资源快照为单页静态文档，不按 5000 token 上限拆分
+docs/verification/stopwatch-c152-dev-resources.html token-limit-ignore

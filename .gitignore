@@ -17,9 +17,5 @@ __pycache__/
 # 设备备份
 backups/
 
-# 报告（不属于固件）
-report.html
-stopwatch-contact-sheet.png
-
 # macOS
 .DS_Store

@@ -1,76 +1,38 @@
 # 验证范围与已知限制
 
-自动检查入口见[开发指南](development.md#检查入口)。主机测试使用实际 Engine、Runtime、codec、RX8130 驱动及 M5GFX；它们覆盖合成输入和故障注入，不等同于实体设备验收。
+自动检查入口见[开发指南](development.md#检查入口)。主机测试使用实际 Engine、Runtime、codec、RX8130 驱动及 M5GFX；它们覆盖合成输入和故障注入，不等同于实体设备验收。设备硬件概况、开发路径与社区项目见 [StopWatch 开发资源汇总](verification/stopwatch-c152-dev-resources.html)。
 
 ## 自动检查覆盖
 
 - 玩法：随机遭遇账目与投球次数、122 条进化边、永久账户、目标冲突、唯一捕获、重放与失败重试。
-- 存档：schema1 字节 fixture、schema2 现场编码、v1/v2/v3 混合槽、CRC／语义校验、未知版本拒绝、部分写入和回读故障。
+- 存档：schema1 字节 fixture、schema2/v4 现场编解码、schema2/3 边界造档、schema3 活动尾部 fixture、v1/v4 混合槽与 v2 单槽升级、CRC／语义校验、未知版本拒绝、部分写入和回读故障。
 - 计步与时钟：合成连续步态、峰值归属、跨日、回拨、RTC 寄存器错误、启动与校时恢复。
 - 输入与页面：真实 `Button_Class` 消抖、双键确认与释放门、触摸、投球等待、图鉴重进、省电与伙伴首页。
 - 进化动画：提交后播放、形态交替、跳过、重试与重启、播放中计步；图鉴预览覆盖全部 122 条进化边、伊布五分支与无畏小子三分支、账户不变及存储错误下的返回。
 - 素材：来源哈希、生成物一致性、全部 13,496 个 GIF 帧（关都 151 只 8,165＋城都 100 只 5,331）与固件解码及帧时长一致。
 - 构建：ESP32-S3 固件与 `Engine::begin()` 局部栈帧。静态 RAM 和局部帧不代表运行时堆峰值或完整任务栈水位。
 
-## 开源整理检查（2026-10-23）
+## 历史证据清理与重新检查
 
-从公开文件清单复制到新的临时目录，不带项目 `.pio`、素材缓存、备份或历史证据，在 macOS 上完成固件构建和上述全部检查。随后重新下载原始 GIF／PNG、生成并核对：所有生成数据与发布副本一致。八套渲染回归通过，132 张输出与整理前的对应帧字节一致。
+截至 2026-10-27，本地各轮协调报告、审查交付、日志和渲染截图已清理。[历史验证轮次](verification/history.md)保留各轮检查摘要与设备观察，原证据文件已不可读取；检查数量、资源数字和设备观察只适用于对应版本，不能当作当前 HEAD 的验证结果。本次清理只核对文档差异与静态链接，没有重跑主机套件、构建或设备验收。
 
-这次检查复用了本机已安装的 mise 工具、Python 包与 PlatformIO 全局工具链缓存；验证的是干净项目目录，不是全新操作系统安装。Linux／Windows、实际烧录和设备行为没有在本轮重测。备份和烧录脚本仅通过隔离的模拟工具检查了命名、大小、校验和、构建次数与写入偏移。
+按[开发指南](development.md#检查入口)准备依赖后，可用 `rtk proxy mise run test-adventure`、`rtk proxy mise run test-storage`、`rtk proxy mise run test-render` 等对应任务重新检查。渲染任务生成真实 Runtime/M5GFX 截图；需要命令日志时另行保存标准输出、标准错误和退出状态。输出目录由 `MYM5_VERIFICATION_DIR` 指定，未指定时使用任务新建的 `.pio/verification` 时间戳目录。新结果只反映运行时的代码与环境，不能恢复旧轮次报告、PNG 画廊或设备观察。
 
-## 场景与 UI 实现检查（2026-10-24）
+## schema4 文档复核与主机检查（2026-10-27）
 
-森林、海边和洞窟精细场景已进入固件，菜单、记录、培养、日期、错误页与 Viewer 使用统一主题。双角色战斗加入前冲、闪避残影、受击白闪和完美攻击碎光。Engine 立即结算，最终动作保留 450ms；保存失败优先显示错误。捕获的飞行、白闪、落地、摇摆、成功和挣脱沿用原时序。
+在 `master`、HEAD `e3d6397` 上运行 `rtk proxy mise run test-adventure` 和 `rtk proxy mise run test-storage`，两项退出状态均为 0。环境为 macOS arm64、mise Python 3.14.2、Apple Clang 21.0.0；主机套件默认启用 AddressSanitizer／UndefinedBehaviorSanitizer，启动栈检查单独运行。
 
-本轮完成 `test`、`test-adventure`、`test-motion`、`test-rtc`、`test-storage`、`check-adventure-catalog`、`test-scenes`、`test-icons`、`test-sprites`。缺少的原图缓存已按固定来源下载并校验，图标和动画生成物与原数据一致。十套 M5GFX 渲染覆盖以下场景：
-
-- 三路线首页与冻结遭遇路线、长名称、最大 `uint64_t` 步数、菜单末页和返回入口。
-- 双角色原始帧时长、整数像素、攻击恢复跨拍、躲避与 Miss、即时 HP、最后一击、暂停恢复、计时回绕。
-- 胜利提交后重载、保存失败优先级、按住胜利键不准备投球、练习不授予奖励。
-- 捕获六阶段、保存重试、培养进化、未知日期、坏档与电量显示。
-
-最终十套渲染检查均为零失败，156 张原始截图保存在 `.pio/verification/ui-release-20261024/ui/`，原像素 PNG 画廊位于 `.pio/verification/ui-release-20261024/gallery/index.html`，清单记录每张原图的 SHA-256。固件构建与启动局部栈检查通过：静态 RAM 为 78,152 / 327,680 字节（23.9%），Flash 为 5,327,065 / 6,553,600 字节（81.3%），`Engine::begin()` 局部栈帧为 48 字节（阈值 512）。
-
-随后根据截图复核调整了角色接地：保持地面影子原位，将首页伙伴下移 10 像素，并接平林间小径；妙蛙种子前脚和后脚与同一影子接触，不再通过上移影子对齐。最新首页回归为 134,154 项检查，全部 151 位伙伴的原始像素和圆屏边界通过。最新原像素画廊位于 `.pio/verification/lowered-contact-release-20261024/gallery/index.html`。修正后的固件静态 RAM 不变，Flash 为 5,327,069 字节。
-
-首页已改为默认纵深动画：每 100ms 推进一次，不要求走路输入，走路不加速；菜单和熄屏暂停，返回后从原位置继续。最新首页为 134,080 项检查，覆盖无输入移动、停止走路后继续、完整循环和暂停恢复；完整十套渲染位于 `.pio/verification/default-scene-final-20261024T130447Z/ui/`。玩法、场景、设计预览、固件构建和启动局部栈检查通过。静态 RAM 为 78,248 / 327,680 字节（23.9%），Flash 为 5,885,433 / 6,553,600 字节（89.8%），`Engine::begin()` 局部栈帧仍为 48 字节。
-
-当前默认动画版本已烧录 `/dev/cu.usbmodem1101`，bootloader、分区表和应用的写入哈希均由 esptool 验证通过。随后串口显示 `ready=1`、首页运行、`rtc=0`、`displayerr=0`，未执行文件系统初始化。截图、单次串口日志和模拟时钟不能证明真实场景观感、绘制耗时、计步精度或断电安全；静态内存数值不能证明运行时堆峰值或完整任务栈水位。设计图与实际实现差异见[设计文档](design/ui-scene-redesign.md)。
-
-## 进化动画与图鉴预览检查（2026-10-25）
-
-真实进化在保存成功后播放；图鉴提供独立预览，未拥有、零培养步、新档及存储错误时均可使用。单目标直接播放，伊布可选三支，结束返回原图鉴条目。预览不调用进化命令，后台采样、培养归账和必要保存继续运行。
-
-本轮 `test`、`test-adventure` 与全部十二套 `test-render` 均通过。其中真实进化 88,369 项检查，预览 8,063 项检查，覆盖全部 72 条进化边、跳过与按住释放、自然结束后立即接受新按键、保存失败后穿插预览再重试、播放期间重启和采样、时钟回绕、40ms 重绘调度及白闪时名称可读。检查数量包含循环和像素断言，不等同于独立场景数。短时无事件预览的存档字节和提交次数不变；长时间遍历全部进化边允许正常 checkpoint 更新序号，其余存档字段仍逐字节一致。
-
-固件构建与启动局部栈检查通过：静态 RAM 为 78,264 / 327,680 字节（23.9%），Flash 为 5,887,881 / 6,553,600 字节（89.8%），`Engine::begin()` 局部栈帧为 48 字节。玩法和图鉴逻辑日志位于 `.pio/verification/evolution-preview-20261025/final/`，输入修复后的全部渲染、构建、栈检查与真实 Runtime/M5GFX 截图位于同级 `final-r2/`。40ms 是主机模拟时间下的调度验证，不代表实体屏幕达到相同帧率。
-
-## 城都目录与 schema3 检查（2026-10-26）
-
-本轮的玩法目录扩到 1～251：122 条进化边（关都 72 条冻结不变，城都新增 50 条金／银默认记录）、124 个显式普通根（关都 73、城都 51）；普通路线分布为森林 62、海边 32、洞窟 43，三路线去重后共 124 种。schema3 把培养账户、捕获次数与首捕卡扩到 251，位图扩到 32 字节；schema1/2 的 151／19 字节布局继续可读，启动时按 1→2→3 确定性迁移。
-
-| 检查 | 结果 |
+| 检查 | 本轮结果 |
 | --- | --- |
-| `check-adventure-catalog` | 251 条目、122 边、124 普通根、关都 38/22/24、保留物种排除、两枚生成头一致 |
-| `test-adventure` | adventure 418,503；codec 43,464（修复轮 43,440 加新增 legacy 边界 decode 探针）；progression 17,037；migration 348；unique 38,377；启动局部栈通过 |
-| `test-storage` | file_store 124、device_store 30、allocation 8；`workspace_bytes=103232`、`peak_owned_heap=132688` |
-| `test`／`test-sprites`／`test-icons`／`test-pokedex` | 201 项 viewer、13,496 帧解码、251 图标、第二世代资料全部通过 |
-| `test-render` | 十二套全部零失败，含 122 条边预览、伊布五分支、251 伙伴，以及 251 项首捕卡目录（抽样 #1/#151/#251 可达） |
-| `build`／`check-startup-stack` | 固件构建成功；`Engine::begin()` 局部帧 48 字节 |
+| `test-adventure` | adventure 151,996；codec 43,376；modern codec 119；regressions 48；progression 17,023；migration 373；unique 38,377，均通过；启动可放入带保护页的 16,384 字节主机栈 |
+| `test-storage` | file_store 124、device_store 30、allocation 8，均通过；文件系统由主机替身提供 |
+| 设计页面覆盖单测 | 失败：画廊缺 `Evolution`、`EvolutionPreviewTargets`、`EvolutionPreview`，固件为 29 页；测试还保留 26 页断言。本轮仅记录，未修改测试或生成器 |
 
-实测编码长度：schema1 12,139、schema2 14,672、schema3 21,498 字节；单槽上限按证据从候选 28,672 收紧到 24,576（余量 3,078），双槽加候选共 73,728 字节，`FileStore::Workspace` 仍整体堆分配。主机 ABI 为 `sizeof(Save)=29,456`、`sizeof(Engine)=66,176`；构建静态 RAM 97,604 / 327,680 字节（29.8%），Flash 7,971,417 / 13,107,200 字节（60.8%），`firmware.bin` 7,971,824 字节。
+实测编码长度为 schema1 12,139、schema2 14,672、schema4 21,508 字节；单槽上限仍为 24,576，v4 余量 3,068 字节。主机 `sizeof(Save)=29,472`、`sizeof(Engine)=66,208`、`workspace_bytes=103248`、`peak_owned_heap=132720`；最后一项是测试按 Workspace 加一个 codec 解码用 Save 计算的存储层占用，不是整机动态堆峰值。`test/test_save_codec.cpp` 的输出标签仍写 `v3=21508`，实际来自默认 schema4 的编码；这是日志标签错误，不是 schema3 长度变更。
 
-修复轮日志位于 `.pio/agent-coordination/johto/evidence/j2-fix/`：`test-*.log` 记录各命令的检查计数与输出（该目录不含退出状态行），`check-adventure-catalog.log`、`build.log` 与 `check-startup-stack.log` 记录对应轮次，`tracked-diff.sha256` 记录修复前快照哈希；文档与 decode 覆盖补漏轮的命令日志位于 `.pio/agent-coordination/johto/evidence/j2-docs-fix/`，其末尾以 `[exit=N]` 记录对应命令的退出状态；`status.log` 和 `text-checks.log` 是文本与状态摘录，其中局部 `[exit=0]` 或 `[diff-check exit=0]` 只代表对应检查，不代表整轮结果；存储边界修复轮日志位于 `.pio/agent-coordination/johto/j2-storage-fix/`。首轮截图与渲染输出保留在 `.pio/agent-coordination/johto/evidence/j2-final/`（`render/ui/` 全部 PPM、`png/` 转码截图），作为历史证据不改写；首轮 codec 43,349 与修复轮 43,440 的计数同样只作历史记录。主会话与独立 Reviewer 已目视 `j2-final/png/` 的关键 PNG（首捕卡、伙伴末页、伊布分支与预览、首页伙伴），未逐张检查全部输出；其余截图内容由渲染套件内的逐像素断言（`glyph`、`spritePixels`、圆形边界）核对，不能替代维护者的完整视觉判断。
+迁移测试实际覆盖 v1/v4 混合槽、v2 单槽升级和 schema3 活动字节样本；`test_save_codec_modern.cpp` 另覆盖 schema2/3 的现场造档与语义边界。旧首捕样本断言为 500 总步，不应记为 200 步首捕边界测试。活动样本在当前 v4 累计账目约束内可读，不代表任意零消耗活动存档均兼容。
 
-## 当前设备观察
-
-2026-10-25 的进化动画与图鉴预览版本已通过项目脚本烧录至 `/dev/cu.usbmodem1101`，esptool 验证 bootloader、分区表和应用写入哈希通过。烧录脚本重建后的应用哈希与 `final-r2` 验收产物一致。现有 16MB 出厂备份校验通过；本次未写入或格式化文件系统。
-
-烧录前后串口均显示伙伴为妙蛙种子、累计 1182 步、1 个球，存档序号由 4120 变为 4121。重启后观察 35 秒，三次状态报告均为 `ready=1`、`pending=0`、`rtc=0`、`displayerr=0`，采样计数持续增加，未见崩溃日志。证据位于 `.pio/verification/evolution-flash-push-20261025-120110/`；这次仅检查烧录和启动，尚未实测进化动画的连续画面、按键与触摸体验。
-
-2026-10-23 的伙伴首页版本曾写入 C152，整片读回确认应用一致、存档区保持不变。启动重载了原伙伴、累计步数和球数，自动休眠后采样继续。这是此前版本的有限启动观察，不能作为后续源码变更的实机通过结论。
-
-历史原始日志、截图、Flash 读回和独立审查保存在维护者本地 `.pio/verification/`，备份在 `backups/`；不随源码公开，也不是构建前置条件。
+该轮文档审计交付与配套日志已清理；可用 `rtk proxy mise run test-adventure` 和 `rtk proxy mise run test-storage` 重新检查并保存日志。页面检查命令为 `rtk proxy mise exec -- python3 -m unittest test.test_ui_design_previews.DesignPreviewTests.test_every_firmware_page_is_covered`。该轮只修改文档，未运行完整渲染、固件构建或目标栈检查，也未烧录、校时或初始化文件系统；以上主机数据不证明设备上的堆峰值、屏幕表现或断电恢复。
 
 ## 已知限制
 
@@ -80,4 +42,4 @@
 - 当前没有首次 LittleFS 格式化入口。挂载失败保留已有数据并限制玩法，不能通过自动格式化掩盖问题。
 - 主机脚本当前在 macOS 验证；Linux 和 Windows 尚未实跑。端口自动探测仅支持 macOS，多个 USB 设备须显式指定目标。
 
-以下设备检查仍开放：实体按键／触摸与唤醒、圆屏观感和动画时延、四种携带方式计步误差、真实 5000 步全过程、RTC 保持、满盘与物理断电恢复、动态堆峰值、完整任务栈、采样时延和省电电流。
+以下设备检查仍开放：实体按键／触摸与唤醒、圆屏观感和动画时延、四种携带方式计步误差、真实行走达到单场 200–500 步目标并完成遭遇／捕获／保存的全过程、RTC 保持、满盘与物理断电恢复、动态堆峰值、完整任务栈、采样时延和省电电流。

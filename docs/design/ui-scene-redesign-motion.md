@@ -1,6 +1,6 @@
 # 步行、战斗与捕获设计规格
 
-返回[视觉设计](ui-scene-redesign.md)和[26 个页面覆盖](ui-scene-redesign-pages.md)。
+返回[视觉设计](ui-scene-redesign.md)和[29 个页面清单](ui-scene-redesign-pages.md)。
 
 ## 步行纵深
 
