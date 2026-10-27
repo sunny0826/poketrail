@@ -47,7 +47,7 @@
 | `rtk proxy mise run build` | `SUCCESS`；RAM 29.8%，Flash 60.8% |
 | `rtk proxy mise run check-startup-stack` | PASS；`Engine::begin` 局部帧 48 字节 |
 
-证据目录为 `.pio/verification/issue11-powerdiag-20261027T181520Z/`：`test-render-final.log`、`test-adventure-final.log`、`build-final.log`、`check-startup-stack-final.log` 保留上述命令的完整输出；`flash-fix.log` 保留烧录记录；`power.log`、`power-fix.log` 保留串口诊断。`test-render-final.log` 含 4 条既有 unused-function 警告。`.pio/verification/verify-issue11-20261027T094702Z/` 是旧输入实现的历史主机验证，不能作为该实现的验收证据。
+证据目录为 `.pio/verification/issue11-powerdiag-20261027T181520Z/`：`test-render-final.log`、`test-adventure-final.log`、`build-final.log`、`check-startup-stack-final.log` 保留上述命令的完整输出；`flash-fix.log` 保留烧录记录；`power.log`、`power-fix.log` 保留串口诊断。`test-render-final.log` 含 4 条既有 unused-function 警告。
 
 主机覆盖短按省电与唤醒、唤醒不执行页面动作、活动流程保持亮屏，以及暂停、等待投球和校时草稿保留；还覆盖按住不重复触发、相邻按下和唤醒完成帧。
 
