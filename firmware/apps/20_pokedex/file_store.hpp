@@ -18,6 +18,9 @@ class FileStore : public Store {
   ~FileStore();
   LoadResult load(Save& out) override;
   CommitStatus commit(const Save& candidate) override;
+  // Drop workspace and any pending retry candidate. Used when the caller
+  // retargets the store to another root.
+  void reset();
   static const char* slotPath(unsigned slot);
   static size_t workspaceBytes();
   FileStore(const FileStore&) = delete;

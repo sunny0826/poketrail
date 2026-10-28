@@ -33,6 +33,16 @@ bool Engine::applyClock(Save& s, const ClockReading& r) {
   c.trusted = true; c.anchor = r;
   return changed;
 }
+void Engine::adoptClock(const ClockReading& r) {
+  if (!ready_ || !r.trusted || !state_.clock.calibrated ||
+      r.bootGeneration != state_.bootGeneration ||
+      r.calibrationEpoch != state_.clock.calibrationEpoch ||
+      r.offsetMinutes != state_.clock.offsetMinutes) return;
+  // A test-mode reboot must not make the restored official clock look like a
+  // backward jump. Refresh only the RAM anchor; the next save can persist it.
+  state_.clock.anchor = r;
+  state_.clock.trusted = true;
+}
 CommandResult Engine::observeClock(const ClockReading& r) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
   if (!validReading(r) || r.bootGeneration != state_.bootGeneration) return CommandResult::InvalidInput;
