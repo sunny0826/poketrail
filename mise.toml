@@ -47,6 +47,10 @@ run = "bash scripts/run_motion_calendar_tests.sh"
 description = "验证真实RX8130驱动的寄存器故障与校时恢复"
 run = "bash scripts/run_rtc_register_tests.sh"
 
+[tasks.test-clock-sync]
+description = "验证烧录后串口校时协议、事务重试与主机脚本"
+run = "bash scripts/run_clock_sync_tests.sh"
+
 [tasks.test-storage]
 description = "验证双槽存档与设备文件系统故障恢复"
 run = "bash scripts/run_file_store_tests.sh"

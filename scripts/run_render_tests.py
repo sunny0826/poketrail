@@ -60,7 +60,8 @@ def main():
               str(app / "game.cpp"), str(app / "sprite.cpp"),
               str(app / "sprites_generated.cpp"), str(app / "battery_screen.cpp")]
     adventure_sources = [
-        "runtime.cpp", "runtime_clock.cpp", "runtime_input.cpp", "runtime_progression.cpp", "runtime_power.cpp", "screens.cpp",
+        "runtime.cpp", "runtime_clock.cpp", "runtime_input.cpp", "runtime_progression.cpp", "runtime_power.cpp",
+        "clock_sync.cpp", "screens.cpp",
         "screens_home.cpp", "screens_exploration.cpp", "screens_battle.cpp", "screens_capture.cpp", "screens_practice.cpp", "screens_records.cpp", "screens_clock.cpp", "screens_progression.cpp", "screens_evolution.cpp", "screens_components.cpp", "screens_test.cpp", "scene_backgrounds_generated.cpp",
         "test_mode.cpp", "test_mode_platform.cpp", "test_console.cpp",
         "viewer_screen.cpp", "adventure.cpp", "adventure_steps.cpp", "adventure_clock.cpp",
@@ -83,7 +84,8 @@ def main():
               ("test_power_render", [str(app / name) for name in adventure_sources]),
               ("test_power_pages_render", [str(app / name) for name in adventure_sources]),
               ("test_home_render", [str(app / name) for name in adventure_sources]),
-              ("test_test_mode_render", [str(app / name) for name in adventure_sources])]
+              ("test_test_mode_render", [str(app / name) for name in adventure_sources]),
+              ("test_clock_sync_render", [str(app / name) for name in adventure_sources])]
     if len(sys.argv) > 1:
         selected = set(sys.argv[1:])
         unknown = selected - {name for name, _ in suites}

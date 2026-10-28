@@ -4,9 +4,11 @@
 #include <cstdlib>
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <memory>
 #include "board.hpp"
 #include "runtime.hpp"
+#include "clock_sync.hpp"
 #include "button_input.hpp"
 #include "device_store.hpp"
 #include "device_clock_hw.hpp"
@@ -90,7 +92,71 @@ bool rebuildRuntime(bool persistBoot = true) {
   return ready;
 }
 
+char clockTx[256];
+size_t clockTxLength = 0, clockTxSent = 0;
+pokedex::clock_sync::Parser clockParser;
+
+bool clockReplyPending() { return clockTxSent < clockTxLength; }
+
+void queueClockReply(const char* line, size_t length) {
+  if (clockReplyPending() || !length || length + 2 > sizeof clockTx) return;
+  // A leading newline terminates any partially written diagnostic line so the
+  // host can always discard it as non-protocol output.
+  clockTx[0] = '\n';
+  std::memcpy(clockTx + 1, line, length);
+  clockTx[1 + length] = '\n';
+  clockTxLength = length + 2;
+  clockTxSent = 0;
+}
+
+void pumpClockSerial() {
+  // isPlugged() can be false before the host asserts the CDC control line;
+  // still drain bytes so a late attach cannot leave a stale partial command.
+  static bool wasPlugged = false;
+  const bool plugged = Serial.isPlugged();
+  if (!plugged && wasPlugged) clockParser.reset();
+  wasPlugged = plugged;
+  if (!plugged) clockTxLength = clockTxSent = 0;
+  if (clockReplyPending()) return;
+  // Bound the work per main-loop pass so serial traffic cannot starve sampling.
+  for (unsigned budget = 0; budget < 64; ++budget) {
+    const int value = Serial.read();
+    if (value < 0) break;
+    const auto request = clockParser.feed(uint8_t(value));
+    if (request.kind == pokedex::clock_sync::CommandKind::None) continue;
+    char line[224];
+    size_t length = 0;
+    if (request.kind == pokedex::clock_sync::CommandKind::Query && runtime) {
+      length = pokedex::clock_sync::formatQuery(line, sizeof line, runtime->clockSyncStatus());
+    } else if (request.kind == pokedex::clock_sync::CommandKind::Set && runtime) {
+      const char* result = runtime->syncClockFromHost(
+        request.id, request.utcSeconds, request.offsetMinutes);
+      length = pokedex::clock_sync::formatSet(line, sizeof line, request.id, result,
+                                              runtime->clockSyncStatus());
+    } else {
+      const char* code = request.kind == pokedex::clock_sync::CommandKind::Error
+                           ? pokedex::clock_sync::errorName(request.error) : "unavailable";
+      length = pokedex::clock_sync::formatError(line, sizeof line, code);
+    }
+    queueClockReply(line, length);
+    if (clockReplyPending()) break;
+  }
+}
+
+void pumpClockTransmit() {
+  while (clockTxSent < clockTxLength) {
+    const int room = Serial.availableForWrite();
+    if (room <= 0) break;
+    size_t chunk = clockTxLength - clockTxSent;
+    if (chunk > size_t(room)) chunk = size_t(room);
+    const size_t written = Serial.write(reinterpret_cast<const uint8_t*>(clockTx + clockTxSent), chunk);
+    clockTxSent += written;
+    if (written < chunk) break;
+  }
+}
+
 void diagnostic(const char* format, ...) {
+  if (clockReplyPending()) return;
   char line[256];
   va_list args; va_start(args, format);
   const int length = vsnprintf(line, sizeof(line), format, args);
@@ -201,12 +267,15 @@ void setup() {
   }
 }
 void loop() {
+  pumpClockSerial();
   const auto beforePage = runtime->screen().page;
   const auto beforeSelected = runtime->screen().selected;
   runtime->loop();
+  pumpClockTransmit();
   const auto request = runtime->takeTestRequest();
   if (request != pokedex::ui::Runtime::TestRequest::None) {
     pokedex::app::handleTestRequest(request);
+    pumpClockTransmit();
     return;
   }
   static bool leftDown = false, rightDown = false;

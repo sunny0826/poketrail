@@ -2,8 +2,9 @@
 # 烧录宝可梦像素应用到 M5Stack StopWatch。
 #
 # 用法：
-#   rtk proxy mise exec -- ./scripts/flash.sh              # 自动探测端口
+#   rtk proxy mise exec -- ./scripts/flash.sh              # 自动探测端口并校时
 #   rtk proxy mise exec -- ./scripts/flash.sh /dev/cu.usbmodemXXXX
+#   rtk proxy mise exec -- ./scripts/flash.sh --no-sync    # 只烧录，不校时
 #
 # 烧录前请确认：
 #   1. 已用数据线连接 USB Type-C
@@ -13,7 +14,24 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-port="${1:-}"
+port=""
+skip_sync=0
+for arg in "$@"; do
+  case "${arg}" in
+    --no-sync) skip_sync=1 ;;
+    -*)
+      echo "未知参数：${arg}" >&2
+      exit 2
+      ;;
+    *)
+      if [[ -n "${port}" ]]; then
+        echo "只能指定一个串口" >&2
+        exit 2
+      fi
+      port="${arg}"
+      ;;
+  esac
+done
 
 if [[ -z "${port}" ]]; then
   echo "探测串口 ..."
@@ -77,4 +95,24 @@ rtk proxy mise exec -- "${repo_root}/scripts/esptool.sh" \
   0x10000 "${build_dir}/firmware.bin"
 
 echo
-echo "完成。串口输出用：rtk proxy mise exec -- pio device monitor -p ${port} --baud 115200"
+if [[ "${skip_sync}" == 0 ]]; then
+  echo "等待设备启动并同步时钟 ..."
+  # Do not silently switch to another visible serial device: the clock must be
+  # set on the board that was just flashed. Allow the same CDC path to return.
+  for _ in $(seq 1 50); do
+    [[ -e "${port}" ]] && break
+    sleep 0.2
+  done
+  if ! rtk proxy mise exec -- python3 "${repo_root}/scripts/sync_clock.py" \
+      --port "${port}" --timeout 30; then
+    echo >&2
+    echo "固件已写入 ${port}，但校时失败。" >&2
+    echo "设备可能仍在使用旧日期。确认 USB 串口后重试：" >&2
+    echo "  rtk proxy mise exec -- python3 scripts/sync_clock.py --port ${port}" >&2
+    exit 3
+  fi
+  echo
+  echo "完成。串口输出用：rtk proxy mise exec -- pio device monitor -p ${port} --baud 115200"
+else
+  echo "已跳过校时。串口输出用：rtk proxy mise exec -- pio device monitor -p ${port} --baud 115200"
+fi
