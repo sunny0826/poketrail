@@ -19,12 +19,18 @@ int main() {
   for (unsigned bit : {2u,128u}) {
     restart(); bank[0x1d]=bit;
     Reading r=rtc->read();
-    expect(!r.valid && !r.ioError,"preexisting voltage/oscillation invalidity");
     expect(r.lowVoltage==(bit==128),"VBLF distinct from VLF");
-    if (bit==2) expect(dateReads==0,"VLF blocks unchecked date access");
+    if (bit==2) {
+      expect(!r.valid && !r.ioError,"oscillator stop invalidates the candidate");
+      expect(dateReads==0,"VLF blocks unchecked date access");
+    } else {
+      expect(r.valid && !r.ioError,"low-VBAT flag keeps valid date data");
+    }
     for (unsigned op : {2u,3u}) {
       restart(); injectAt=op; injectBits=bit;
-      expect(!rtc->read().valid,"flag during or after burst invalidates candidate");
+      Reading injected=rtc->read();
+      if (bit==2) expect(!injected.valid,"VLF during or after burst invalidates candidate");
+      else expect(injected.valid && injected.lowVoltage,"late VBLF remains visible without hiding data");
     }
   }
   for (unsigned control : {0x40u,0x80u,0xc0u}) {
@@ -52,7 +58,8 @@ int main() {
   }
   restart(); bank[0x1d]=0x80;
   Reading low=rtc->read();
-  expect(!low.valid && low.lowVoltage && low.utcSeconds==target,"low battery retains safe candidate");
+  expect(low.valid && low.lowVoltage && low.utcSeconds==target,
+         "latched low-VBAT flag keeps the running clock usable");
   for (unsigned flags : {0u,0x80u,2u,0x82u,0xbfu}) {
     restart(); bank[0x1d]=flags;
     Reading r=rtc->setAndVerify(target);
@@ -76,7 +83,12 @@ int main() {
   for (unsigned bit : {2u,128u}) {
     restart(); bank[0x1d]=bit; stickyFlags=bit;
     Reading r=rtc->setAndVerify(target);
-    expect(!r.valid && !r.ioError && dateWrites==0,"unclearable flag refuses time write");
+    if (bit==2) {
+      expect(!r.valid && !r.ioError && dateWrites==0,"unclearable VLF refuses time write");
+    } else {
+      expect(r.valid && r.lowVoltage && dateWrites==1,
+             "unclearable VBLF still accepts a verified date write");
+    }
     expect(r.lowVoltage==(bit==128),"unclearable VLF and VBLF classified separately");
   }
   restart(); bank[0x1d]=2; stickStop=true;
@@ -93,7 +105,9 @@ int main() {
     for(unsigned i=dateOp;i<=successful.size();++i) for(unsigned bit:{2u,128u}) {
       restart(); bank[0x1d]=initial; injectAt=i; injectBits=bit;
       Reading r=rtc->setAndVerify(target);
-      expect(!r.valid && (bank[0x1d]&bit),"new flag during write/readback retained and invalid");
+      expect(bank[0x1d]&bit,"new flag during write/readback retained");
+      if (bit==2) expect(!r.valid,"new VLF during write/readback invalidates the result");
+      else expect(r.valid && r.lowVoltage,"new VBLF during write/readback stays a warning");
     }
     if(clearOp) {
       restart(); bank[0x1d]=initial; injectAt=clearOp; injectBits=0x3d;

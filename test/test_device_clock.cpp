@@ -36,11 +36,13 @@ int main() {
       expect(r.valid && !r.lowVoltage && r.utcSeconds==target+advance,
              "set, clear low flag, tolerate elapsed seconds");
       expect(bank[0x1d]==0x18,"other flag bits retained");
+    } else if (scenario==8) {
+      expect(r.valid && r.lowVoltage && r.utcSeconds==target,
+             "sticky low flag warns but an explicit date write still verifies");
     } else {
       expect(!r.valid,"failed operation never valid");
       if (scenario==1) expect(r.unavailable,"disabled");
       if (scenario>=2 && scenario<=7) expect(r.ioError,"I/O errors distinguished");
-      if (scenario==8) expect(r.lowVoltage,"sticky low flag read back");
       if (scenario==9) expect(r.invalidDate,"bad date");
       if (scenario==11) expect(r.verificationFailed,"outside tolerance");
     }
@@ -50,8 +52,8 @@ int main() {
   const uint8_t epoch[]={0,0,0,0x40,1,1,0};
   std::memcpy(bank+0x10,epoch,7); bank[0x1d]=0x80;
   const Reading low=rtc.read();
-  expect(!low.valid && low.lowVoltage && !low.ioError && low.utcSeconds==946684800,
-         "low voltage retains candidate but not validity");
+  expect(low.valid && low.lowVoltage && !low.ioError && low.utcSeconds==946684800,
+         "low voltage keeps the candidate valid while warning");
   failAt=trace.size()+1;
   const Reading io=rtc.read();
   expect(!io.valid && io.ioError,"failed read distinct from no low voltage");

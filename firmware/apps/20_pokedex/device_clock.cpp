@@ -148,7 +148,10 @@ Reading Clock::sampleRaw() {
   if (extension & 0xFE) result.verificationFailed = true;
   // Keep Flag last so faults raised during the extension read are visible too.
   if (!status(base, state, result)) return result;
-  result.valid = decoded && !result.lowVoltage && !result.verificationFailed;
+  // VLF (data loss) and STOP/TEST are handled by status(). VBLF only reports
+  // that the VBAT rail went low; it stays latched until an explicit
+  // calibration clears it, so it must not hide a clock whose data is valid.
+  result.valid = decoded && !result.verificationFailed;
   return result;
 }
 
@@ -201,7 +204,9 @@ Reading Clock::setAndVerify(int64_t utcSeconds) {
     return result;
   }
   uint8_t state[2] = {};
-  if (!status(base, state, result) || result.lowVoltage) return result;
+  // A low backup rail does not stop the date write from being verified while
+  // VDD is present; VLF/STOP/TEST still fail through status().
+  if (!status(base, state, result)) return result;
   uint8_t weekday = 0;
   calendar::weekday(value, weekday);
   const m5::rtc_date_t date(value.year, value.month, value.day, weekday);

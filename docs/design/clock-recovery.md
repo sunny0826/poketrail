@@ -2,6 +2,8 @@
 
 启动会清除上一进程的时钟锚点，但保留已校准状态、日期高水位和当日记录。
 
+RTC 的 VLF（振荡停止）表示日期数据不可信，必须重新校时。VBLF（VBAT 低电压检测）是锁存警告，写 0 清除；本项目在显式校时中尝试清除。其他日期、事务与有效性校验通过时，VBLF 本身不使读数无效，也不隐藏今日统计。VBLF 的原始状态保留在 `device_clock::Reading.lowVoltage` 供诊断使用。标志定义见 [Epson RX8130CE 手册](https://download.epsondevice.com/td/pdf/app/RX8130CE_en.pdf)的 Table 31 和 Table 41。
+
 重启后第一次读到同一天或更新的日期时，恢复今日统计。以下情况仍记为异常：
 
 - 日期低于已保存的日期高水位。
