@@ -7,13 +7,15 @@
 #include "menu_layout.hpp"
 #include "board_power.hpp"
 #include "screen_theme.hpp"
+#include "test_mode.hpp"
 namespace pokedex { namespace ui {
 enum class Page : uint8_t {
   Home, Menu, Resources, DateWelcome, Starter, Routes, Partners, Encounter, Battle, Practice,
   PracticeThrow, PracticeResult,
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
   Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, ReleaseConfirm, Evolution,
-  EvolutionPreviewTargets, EvolutionPreview
+  EvolutionPreviewTargets, EvolutionPreview,
+  TestEntry, TestHub, TestSteps, TestScenarios, TestFaults, TestDiagnostics, TestExit
 };
 struct ScreenState {
   Page page = Page::Home;
@@ -22,6 +24,10 @@ struct ScreenState {
   bool editing = false;
   bool clockError = false;
   bool practice = false;
+  bool testMode = false;
+  bool testFailure = false;
+  adventure::TestFault testFault = adventure::TestFault::None;
+  adventure::TestDiagnostics testDiagnostics;
   uint16_t species = 0;
   adventure::EvolveRequest evolution;
   EvolutionAnim evolutionAnim;
@@ -44,6 +50,7 @@ const char* speciesName(uint16_t id);
 const char* progressionMessage(adventure::CommandResult);
 unsigned menuCount(const ScreenState&, const adventure::Engine&);
 bool touchBackEnabled(Page);
+bool isTestPage(Page);
 void drawGraphicsError(const c152::BatteryStatus&);
 class Screens {
  public:
@@ -70,6 +77,15 @@ class Screens {
   void ballAt(int x, int y, float angle = 0);
   void records(const ScreenState&, const adventure::Engine&);
   void clock(const ScreenState&);
+  void testEntry(const ScreenState&);
+  void testHub(const ScreenState&, const adventure::Engine&);
+  void testSteps(const ScreenState&);
+  void testScenarios(const ScreenState&);
+  void testFaults(const ScreenState&);
+  void testDiagnostics(const ScreenState&, const adventure::Engine&);
+  void testExit(const ScreenState&);
+  void testMenu(const ScreenState&, const char* const* labels,
+                unsigned count, int top = menu_layout::kTop);
   void menu(const ScreenState&, const adventure::Engine&, int top = menu_layout::kTop);
   void item(const ScreenState&, unsigned index, const char*, int top = menu_layout::kTop,
             uint16_t species = 0, bool carried = false, const char* note = nullptr);

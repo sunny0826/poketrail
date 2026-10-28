@@ -16,6 +16,7 @@ struct FileStore::Workspace {
 };
 FileStore::FileStore(SlotIO& io) : io_(io) {}
 FileStore::~FileStore() {}
+void FileStore::reset() { work_.reset(); }
 bool FileStore::allocate() {
   if (!work_) work_.reset(new (std::nothrow) Workspace());
   return bool(work_);

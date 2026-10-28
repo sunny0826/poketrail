@@ -10,7 +10,9 @@ struct ThrowView {
 class Engine {
  public:
   explicit Engine(Store& store) : store_(store) {}
-  CommandResult begin();
+  CommandResult begin(bool persistBoot = true);
+  // Re-anchor the in-memory clock after a mode switch without writing the save.
+  void adoptClock(const ClockReading&);
   const Save& view() const { return state_; }
   const BattleView& battleView() const { return battle_.view(); }
   const ThrowView& throwView() const { return throw_; }
@@ -19,6 +21,7 @@ class Engine {
   bool savePending() const { return pending_; }
   bool stepsIncomplete() const { return overflow_ || state_.stepsIncomplete || (pending_ && candidate_.stepsIncomplete); }
   size_t bufferedSteps() const { return queueSize_; }
+  CommandResult flushBufferedSteps();
   EvolutionView evolutionView(uint16_t species) const;
   CommandResult evolve(EvolveRequest, const ClockReading&);
   CommandResult giveUpCapture(uint64_t encounterId);

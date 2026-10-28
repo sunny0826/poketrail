@@ -14,5 +14,8 @@ sources=(firmware/apps/20_pokedex/file_store.cpp firmware/apps/20_pokedex/save_c
 "${CXX:-clang++}" "${flags[@]}" -Itest/support/storage test/support/storage/device_tests.cpp \
   firmware/apps/20_pokedex/device_store.cpp "${sources[@]}" -o "${build_dir}/test_device_store"
 "${build_dir}/test_device_store"
+"${CXX:-clang++}" "${flags[@]}" -Itest/support/storage test/support/storage/test_mode_storage.cpp \
+  firmware/apps/20_pokedex/device_store.cpp "${sources[@]}" -o "${build_dir}/test_mode_storage"
+"${build_dir}/test_mode_storage"
 "${CXX:-clang++}" "${flags[@]}" test/support/storage/allocation_tests.cpp "${sources[@]}" -o "${build_dir}/test_storage_allocation"
 "${build_dir}/test_storage_allocation"

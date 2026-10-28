@@ -3,8 +3,33 @@
 #include "viewer_screen.hpp"
 namespace pokedex { namespace ui {
 using namespace adventure;
+bool Runtime::handleTestHold(const Input& input) {
+  const bool entryPage = screen_.page == Page::Resources || screen_.page == Page::Error;
+  if (!entryPage) { testHoldActive_ = false; return false; }
+  const bool inTitle = input.x >= 40 && input.x <= 426 && input.y < 80 &&
+                       !input.leftDown && !input.rightDown;
+  if (input.held && inTitle) {
+    if (!testHoldActive_) { testHoldActive_ = true; testHoldStarted_ = input.at; }
+    return true;
+  }
+  if (!testHoldActive_) return false;
+  if (input.held) { testHoldActive_ = false; return false; }
+  const bool longEnough = input.at - testHoldStarted_ >= 2000;
+  testHoldActive_ = false;
+  if (longEnough) {
+    testEntryReturn_ = screen_.page;
+    navigate(screen_.testMode ? Page::TestHub : Page::TestEntry);
+    return true;
+  }
+  return false;
+}
 void Runtime::goBack() {
-  if (screen_.page == Page::PracticeThrow || screen_.page == Page::PracticeResult) endPractice();
+  if (screen_.page == Page::TestEntry) navigate(testEntryReturn_);
+  else if (screen_.page == Page::TestHub) navigate(screen_.testMode ? Page::Home : Page::Resources);
+  else if (screen_.page == Page::TestSteps || screen_.page == Page::TestScenarios ||
+           screen_.page == Page::TestFaults || screen_.page == Page::TestDiagnostics ||
+           screen_.page == Page::TestExit) navigate(Page::TestHub);
+  else if (screen_.page == Page::PracticeThrow || screen_.page == Page::PracticeResult) endPractice();
   else if (screen_.page == Page::Viewer) {
     navigate(Page::Home); syncPage();
   } else if (screen_.page == Page::Resources) navigate(Page::Menu);
@@ -21,6 +46,7 @@ void Runtime::goBack() {
   else navigate(Page::Home);
 }
 void Runtime::handle(const Input& raw) {
+  if (handleTestHold(raw)) return;
   if (screen_.page == Page::Evolution || screen_.page == Page::EvolutionPreview) {
     if (raw.left || raw.right || raw.click) {
       skipEvolution(screen_.evolutionAnim, raw.at);
@@ -155,13 +181,63 @@ void Runtime::handle(const Input& raw) {
   }
   if (confirm) activate(screen_.selected, input.at);
 }
+void Runtime::activateTest(unsigned item) {
+  switch (screen_.page) {
+    case Page::TestEntry:
+      if (item == 2) goBack();
+      else if (item == 0) testRequest_ = screen_.testMode ? TestRequest::ResetSnapshot : TestRequest::EnterSnapshot;
+      else if (item == 1) testRequest_ = screen_.testMode ? TestRequest::ResetBlank : TestRequest::EnterBlank;
+      break;
+    case Page::TestHub:
+      if (item == 0) navigate(Page::TestSteps);
+      else if (item == 1) openClock();
+      else if (item == 2) navigate(Page::TestScenarios);
+      else if (item == 3) navigate(Page::TestFaults);
+      else if (item == 4) navigate(Page::TestDiagnostics);
+      else if (item == 5) { testEntryReturn_ = Page::TestHub; navigate(Page::TestEntry); }
+      else if (item == 6) navigate(Page::TestExit);
+      else navigate(Page::Home);
+      break;
+    case Page::TestSteps: {
+      static const unsigned counts[] = {1, 10, 100, 1000, 5000};
+      if (item < 5 && injectSteps(counts[item])) navigate(Page::TestHub);
+      else if (item < 5) screen_.testFailure = true;
+      else goBack();
+      break;
+    }
+    case Page::TestScenarios:
+      if (item == 0) testRequest_ = TestRequest::ScenarioAccount;
+      else if (item == 1) testRequest_ = TestRequest::ScenarioNearEncounter;
+      else if (item == 2) testRequest_ = TestRequest::ScenarioCurrentThrow;
+      else if (item == 3) testRequest_ = TestRequest::ScenarioLegacy;
+      else goBack();
+      break;
+    case Page::TestFaults:
+      if (item < 4) {
+        if (testHost_) {
+          testHost_->setFault(TestFault(item));
+          screen_.testFailure = false;
+        }
+      } else goBack();
+      break;
+    case Page::TestExit:
+      if (item == 0) testRequest_ = TestRequest::Exit;
+      else goBack();
+      break;
+    default: break;
+  }
+}
 void Runtime::activate(unsigned item, uint32_t at) {
   const auto& v = engine_.view();
   switch (screen_.page) {
+    case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
+    case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit:
+      activateTest(item); break;
     case Page::Error:
       if (item == 1) navigate(Page::Viewer);
       else {
         if (engine_.savePending()) engine_.retrySave(); else engine_.begin();
+        syncTestMode();
         if (!engine_.savePending() && engine_.ready()) {
           batchId_ = v.lastStepBatch > batchId_ ? v.lastStepBatch : batchId_;
           if (pendingClockWrite_) continueClockWrite();

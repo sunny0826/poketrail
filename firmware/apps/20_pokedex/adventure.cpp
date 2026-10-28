@@ -8,7 +8,7 @@ CommandResult Engine::guard() const {
   return pending_ ? CommandResult::SavePending : !ready_ ? CommandResult::NotReady : CommandResult::Applied;
 }
 void Engine::stage() { candidate_ = state_; }
-CommandResult Engine::begin() {
+CommandResult Engine::begin(bool persistBoot) {
   if (pending_) return CommandResult::SavePending;
   if (ready_) return CommandResult::Duplicate;
   loadResult_ = store_.load(candidate_);
@@ -28,6 +28,16 @@ CommandResult Engine::begin() {
       candidate_.captureCounts[candidate_.encounter.species - 1]) {
     candidate_.phase = Phase::Resolved;
     candidate_.result = Result::Released;
+  }
+  if (!persistBoot) {
+    // Mode switches are not device boots. Load the official slot without the
+    // normal boot-generation write so a test session cannot change its bytes.
+    state_ = candidate_;
+    ready_ = true;
+    dirty_ = false;
+    pending_ = false;
+    bootPending_ = false;
+    return CommandResult::Applied;
   }
   ++candidate_.bootGeneration;
   candidate_.lastStepBatch = 0;

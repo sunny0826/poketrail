@@ -17,6 +17,8 @@ uint16_t accentFor(Page page) {
     case Page::EvolutionPreviewTargets:
       return theme::kGold;
     case Page::Error: case Page::ReleaseConfirm: return theme::kRed;
+    case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
+    case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit: return theme::kPurple;
     case Page::Clock: return theme::kBlue;
     default: return theme::kMint;
   }
@@ -55,6 +57,12 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::Achievements: return 7;
     case Page::Clock: return 9;
     case Page::Error: return 2;
+    case Page::TestEntry: return 3;
+    case Page::TestHub: return 8;
+    case Page::TestSteps: return 6;
+    case Page::TestScenarios: return 5;
+    case Page::TestFaults: return 5;
+    case Page::TestExit: return 2;
     default: return 0;
   }
 }
@@ -63,9 +71,16 @@ bool touchBackEnabled(Page page) {
     case Page::Menu: case Page::Resources: case Page::Routes: case Page::Partners:
     case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
     case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
-    case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets: return true;
+    case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets:
+    case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
+    case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit: return true;
     default: return false;
   }
+}
+bool isTestPage(Page page) {
+  return page == Page::TestEntry || page == Page::TestHub || page == Page::TestSteps ||
+         page == Page::TestScenarios || page == Page::TestFaults ||
+         page == Page::TestDiagnostics || page == Page::TestExit;
 }
 void drawGraphicsError(const c152::BatteryStatus& battery) {
   M5.Display.startWrite();
@@ -219,13 +234,22 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     case Page::FirstCaptures: case Page::Recent: case Page::Days: case Page::Achievements:
       records(s, e); break;
     case Page::Clock: clock(s); break;
+    case Page::TestEntry: testEntry(s); break;
+    case Page::TestHub: testHub(s, e); break;
+    case Page::TestSteps: testSteps(s); break;
+    case Page::TestScenarios: testScenarios(s); break;
+    case Page::TestFaults: testFaults(s); break;
+    case Page::TestDiagnostics: testDiagnostics(s, e); break;
+    case Page::TestExit: testExit(s); break;
     case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
       progression(s, e); break;
     default: home(s, e, now); break;
   }
   const bool listPage = s.page == Page::Menu || s.page == Page::Resources || s.page == Page::Clock ||
                         s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::Records ||
-                        s.page == Page::EvolutionPreviewTargets;
+                        s.page == Page::EvolutionPreviewTargets || s.page == Page::TestHub ||
+                        s.page == Page::TestSteps || s.page == Page::TestScenarios ||
+                        s.page == Page::TestFaults;
   if (listPage && menuCount(s, e) > menu_layout::kPageSize) {
     M5.Display.fillCircle(168, 430, 20, theme::kPanel);
     M5.Display.fillCircle(298, 430, 20, theme::kPanel);
@@ -246,6 +270,12 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     }
   }
   drawBattery(s.battery);
+  if (s.testMode) {
+    M5.Display.setTextDatum(middle_center);
+    M5.Display.setFont(&fonts::efontCN_16);
+    M5.Display.setTextColor(theme::kGold);
+    M5.Display.drawString("测试", 233, 452);
+  }
   M5.Display.endWrite();
   return rendered;
 }

@@ -4,11 +4,14 @@
 #include <cstdlib>
 #include <cstdarg>
 #include <cstdio>
+#include <memory>
 #include "board.hpp"
 #include "runtime.hpp"
 #include "button_input.hpp"
 #include "device_store.hpp"
 #include "device_clock_hw.hpp"
+#include "test_mode_platform.hpp"
+#include "test_console.hpp"
 
 namespace {
 class DevicePlatform : public pokedex::ui::Platform {
@@ -70,24 +73,23 @@ class DevicePlatform : public pokedex::ui::Platform {
   pokedex::ui::ButtonInput buttons_;
   bool powerWasDown_ = false;
 };
-class MountedStore : public pokedex::adventure::Store {
- public:
-  void begin() { device_.begin(); }
-  pokedex::adventure::LoadResult load(pokedex::adventure::Save& out) override {
-    const auto status = device_.begin();
-    if (status != pokedex::adventure::LoadStatus::Loaded) return pokedex::adventure::LoadResult(status);
-    return device_.load(out);
-  }
-  pokedex::adventure::CommitStatus commit(const pokedex::adventure::Save& save) override {
-    return device_.commit(save);
-  }
- private:
-  pokedex::adventure::DeviceStore device_;
-};
-MountedStore store;
+pokedex::adventure::DeviceStore store;
 DevicePlatform platform;
-pokedex::ui::Runtime runtime(store, platform);
+pokedex::ui::TestModePlatform testPlatform(platform, store);
+std::unique_ptr<pokedex::ui::Runtime> runtime;
 bool ready = false;
+
+bool rebuildRuntime(bool persistBoot = true) {
+  runtime.reset();
+  // Always pass the delegating platform. It reads the final store identity
+  // after any mount/marker retry, so a late transition to test mode cannot
+  // bind the test save to real IMU sampling or hardware RTC writes.
+  runtime.reset(new pokedex::ui::Runtime(
+    store, static_cast<pokedex::ui::Platform&>(testPlatform), &store));
+  ready = runtime->begin(persistBoot);
+  return ready;
+}
+
 void diagnostic(const char* format, ...) {
   char line[256];
   va_list args; va_start(args, format);
@@ -97,47 +99,144 @@ void diagnostic(const char* format, ...) {
     Serial.write(reinterpret_cast<const uint8_t*>(line), size_t(length));
 }
 }
+
+namespace pokedex { namespace app {
+// UI tasks call these entry points. The old Runtime is destroyed before the
+// storage root changes so a rebuild never keeps two Screen buffers or Engines.
+bool enterTestMode(adventure::TestSeed seed) {
+  if (!runtime || store.testMode()) return false;
+  if (runtime->engine().savePending()) {
+    const adventure::CommandResult retried = runtime->engine().retrySave();
+    if (retried != adventure::CommandResult::Applied &&
+        retried != adventure::CommandResult::Duplicate) return false;
+  }
+  if (runtime->engine().ready()) {
+    if (!runtime->canSwitchMode()) return false;
+    const adventure::CommandResult saved = runtime->checkpoint();
+    if (saved != adventure::CommandResult::Applied &&
+        saved != adventure::CommandResult::Duplicate) return false;
+  }
+  runtime.reset();
+  if (!store.enterTest(seed)) { rebuildRuntime(false); return false; }
+  rebuildRuntime();
+  return store.testMode();
+}
+bool leaveTestMode() {
+  if (!runtime || !store.testMode()) return false;
+  runtime.reset();
+  if (!store.leaveTest()) { rebuildRuntime(); return false; }
+  rebuildRuntime(false);
+  return !store.testMode();
+}
+bool reseedTestMode(adventure::TestSeed seed) {
+  if (!runtime || !store.testMode()) return false;
+  runtime.reset();
+  const bool accepted = store.enterTest(seed);
+  const bool seeded = accepted && !store.mode().seedFailed;
+  rebuildRuntime();
+  return seeded;
+}
+bool seedTestScenario(adventure::TestScenario scenario) {
+  if (!runtime || !store.testMode()) return false;
+  runtime.reset();
+  const bool seeded = adventure::TestConsole::seed(store, store, scenario);
+  rebuildRuntime();
+  return seeded;
+}
+void handleTestRequest(pokedex::ui::Runtime::TestRequest request) {
+  using Request = pokedex::ui::Runtime::TestRequest;
+  if (!runtime) return;
+  switch (request) {
+    case Request::EnterSnapshot:
+    case Request::EnterBlank: {
+      const bool entered = enterTestMode(request == Request::EnterSnapshot ?
+        adventure::TestSeed::Snapshot : adventure::TestSeed::Blank);
+      runtime->openTestPage(entered ? pokedex::ui::Page::TestHub : pokedex::ui::Page::TestEntry, !entered);
+      break;
+    }
+    case Request::ResetSnapshot:
+    case Request::ResetBlank: {
+      const bool reset = reseedTestMode(request == Request::ResetSnapshot ?
+        adventure::TestSeed::Snapshot : adventure::TestSeed::Blank);
+      runtime->openTestPage(reset ? pokedex::ui::Page::TestHub : pokedex::ui::Page::TestEntry, !reset);
+      break;
+    }
+    case Request::ScenarioAccount: {
+      const bool seeded = seedTestScenario(adventure::TestScenario::AccountBalls);
+      runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
+      break;
+    }
+    case Request::ScenarioNearEncounter: {
+      const bool seeded = seedTestScenario(adventure::TestScenario::NearEncounter);
+      runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
+      break;
+    }
+    case Request::ScenarioCurrentThrow: {
+      const bool seeded = seedTestScenario(adventure::TestScenario::CurrentThrow);
+      runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
+      break;
+    }
+    case Request::ScenarioLegacy: {
+      const bool seeded = seedTestScenario(adventure::TestScenario::LegacyEncounter);
+      runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
+      break;
+    }
+    case Request::Exit: {
+      const bool left = leaveTestMode();
+      if (!left && runtime && store.testMode())
+        runtime->openTestPage(pokedex::ui::Page::TestExit, true);
+      break;
+    }
+    case Request::None: break;
+  }
+}
+}}
 void setup() {
   c152::begin("ADVENTURE");
   platform.beginClock();
   store.begin();
-  ready = runtime.begin();
+  rebuildRuntime();
   if (!ready) {
-    pokedex::ui::drawGraphicsError(runtime.screen().battery);
+    pokedex::ui::drawGraphicsError(runtime->screen().battery);
   }
 }
 void loop() {
-  const auto beforePage = runtime.screen().page;
-  const auto beforeSelected = runtime.screen().selected;
-  runtime.loop();
+  const auto beforePage = runtime->screen().page;
+  const auto beforeSelected = runtime->screen().selected;
+  runtime->loop();
+  const auto request = runtime->takeTestRequest();
+  if (request != pokedex::ui::Runtime::TestRequest::None) {
+    pokedex::app::handleTestRequest(request);
+    return;
+  }
   static bool leftDown = false, rightDown = false;
   const auto& input = platform.lastInput();
   if (input.any() || input.leftDown != leftDown || input.rightDown != rightDown) {
     diagnostic("ui t=%lu touch=%u xy=%d,%d keys=%u,%u down=%u,%u held=%u page=%u>%u row=%u>%u dim=%u ready=%u pending=%u\n",
       (unsigned long)input.at, unsigned(input.touch), int(input.x), int(input.y),
       unsigned(input.left), unsigned(input.right), unsigned(input.leftDown), unsigned(input.rightDown), unsigned(input.held),
-      unsigned(beforePage), unsigned(runtime.screen().page), unsigned(beforeSelected),
-      unsigned(runtime.screen().selected), unsigned(runtime.dimmed()),
-      unsigned(runtime.engine().ready()), unsigned(runtime.engine().savePending()));
+      unsigned(beforePage), unsigned(runtime->screen().page), unsigned(beforeSelected),
+      unsigned(runtime->screen().selected), unsigned(runtime->dimmed()),
+      unsigned(runtime->engine().ready()), unsigned(runtime->engine().savePending()));
   }
   leftDown = input.leftDown; rightDown = input.rightDown;
   static uint32_t report = 0;
   if (millis() - report >= 10000) {
-    report = millis(); const auto& m = runtime.metrics();
+    report = millis(); const auto& m = runtime->metrics();
     diagnostic("sample=%lu maxgap=%lu input=%lu gaps=%lu noaccel=%lu imuio=not-exposed rtc=%lu render=%lu commit=%lu\n",
       (unsigned long)m.samples, (unsigned long)m.maxSampleGapMs, (unsigned long)m.maxInputGapMs,
       (unsigned long)m.qualityGaps, (unsigned long)m.noSample,
       (unsigned long)m.rtcErrors, (unsigned long)m.maxRenderMs, (unsigned long)m.maxCommitMs);
-    const auto& save = runtime.engine().view();
+    const auto& save = runtime->engine().view();
     diagnostic("state page=%u row=%u ready=%u pending=%u load=%u starter=%u partner=%u phase=%u seq=%llu total=%llu target=%u\n",
-      unsigned(runtime.screen().page), unsigned(runtime.screen().selected), unsigned(runtime.engine().ready()),
-      unsigned(runtime.engine().savePending()), unsigned(runtime.engine().loadResult().status),
+      unsigned(runtime->screen().page), unsigned(runtime->screen().selected), unsigned(runtime->engine().ready()),
+      unsigned(runtime->engine().savePending()), unsigned(runtime->engine().loadResult().status),
       unsigned(save.starter), unsigned(save.partner), unsigned(save.phase),
       (unsigned long long)save.sequence, (unsigned long long)save.totalSteps, unsigned(save.encounterTarget));
-    const auto& battery = runtime.screen().battery;
+    const auto& battery = runtime->screen().battery;
     diagnostic("power dim=%u battery=%d charge=%u displayerr=%lu\n",
-      unsigned(runtime.dimmed()), int(battery.percent), unsigned(battery.charge), (unsigned long)m.displayErrors);
+      unsigned(runtime->dimmed()), int(battery.percent), unsigned(battery.charge), (unsigned long)m.displayErrors);
   }
-  const uint32_t wait = runtime.nextSampleMs(millis());
-  if (!(runtime.pocketIdle() && wait > 0 && c152::restUntilInput(wait))) delay(1);
+  const uint32_t wait = runtime->nextSampleMs(millis());
+  if (!(runtime->pocketIdle() && wait > 0 && c152::restUntilInput(wait))) delay(1);
 }

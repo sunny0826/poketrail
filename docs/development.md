@@ -31,16 +31,16 @@ rtk proxy mise run icons-download
 | 任务（`rtk proxy mise run …`） | 覆盖范围 |
 | --- | --- |
 | `test` | 图鉴时序、手势、解码和整数缩放 |
-| `test-adventure` | 玩法、培养、迁移、日期、codec 与重试 |
+| `test-adventure` | 玩法、培养、迁移、日期、codec 与重试；测试时钟、IMU／RTC 隔离、手动步数事件触发遭遇与退出加载不写正式档 |
 | `test-motion` | 合成步态、日期和设备时钟适配 |
 | `test-rtc` | 真实 RX8130 驱动、初始化与校时故障 |
-| `test-storage` | 双槽、I/O、文件系统与分配失败 |
+| `test-storage` | 双槽、I/O、文件系统与分配失败；测试目录隔离、模式标记、重启恢复、清理失败、RAM-only 与存储故障开关 |
 | `check-adventure-catalog` | 251 目录、124 普通根与 122 进化边 |
 | `test-pokedex` | 251 资料、Gen2 来源哈希与 Gen1 快照一致性 |
 | `test-sprites` | 251 个 GIF 哈希、完整帧和固件逐像素解码 |
 | `test-icons` | 251 个 PNG 哈希、透明规则与生成像素 |
 | `test-scenes` | 三路线场景来源、RGB565 像素与生成物 |
-| `test-render` | 十二套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归 |
+| `test-render` | 14 套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归；含测试模式入口、控制台、场景、标识与退出 |
 | `build` | ESP32-S3 固件 |
 | `check-startup-stack` | 构建后 Engine 启动局部栈帧 |
 
@@ -51,9 +51,12 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_home_render
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_battle_render
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_render
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_preview_render
+rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 ```
 
 `test_battle_render` 通过真实按键、Runtime 和 M5GFX 核对双角色原帧时长、攻击与躲避位移、即时 HP、最终动作窗口、暂停恢复和保存失败。`test_evolution_render` 覆盖保存后播放、形态交替、跳过与释放门、重试与重启、播放中计步及圆屏边界。`test_evolution_preview_render` 遍历全部 122 条进化边，核对新档、坏档、未拥有和零培养步下的预览、伊布五分支与无畏小子三分支、连续刷新、原条目返回、账户不变及真实进化重试隔离。输出是主机截图，不表示设备已达到目标帧率。
+
+`test_test_mode_render` 覆盖资源页和错误页顶部长按、来源确认、控制台翻页与返回、四种固定场景、手动 +1 步触发遭遇、模拟校时、故障选择、重置和退出。测试使用主机输入与存储替身，不执行 `main.cpp` 的完整设备切换链。操作入口见[设备内测试模式](usage-test-mode.md)，已有日志和未覆盖边界见[Issue #7 验证记录](verification.md#issue-7-设备内测试模式2026-10-27)。
 
 详细覆盖与限制见[验证说明](verification.md)。提交前按变更范围运行相关检查；固件变更还应运行 `build`。UI 变更须读取真实渲染截图，交互变更须验证实际输入路径。
 
@@ -61,10 +64,15 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_previe
 
 | 位置 | 职责 |
 | --- | --- |
-| [main.cpp](../firmware/apps/20_pokedex/main.cpp) | 设备输入、IMU、时钟、存档装配；熄屏空闲时在下一次采样前 light sleep |
+| [main.cpp](../firmware/apps/20_pokedex/main.cpp) | 设备输入、IMU、时钟、存档装配与测试模式切换时的 Runtime 重建；熄屏空闲时在下一次采样前 light sleep |
 | [runtime.cpp](../firmware/apps/20_pokedex/runtime.cpp) 及同名前缀文件 | 采样、页面、输入、省电和保存调度 |
 | [adventure.hpp](../firmware/apps/20_pokedex/adventure.hpp) 及同名前缀文件 | Engine 唯一修改玩法状态，提交与重试 |
 | [save_codec.cpp](../firmware/apps/20_pokedex/save_codec.cpp)、[file_store.cpp](../firmware/apps/20_pokedex/file_store.cpp) | 版本、语义校验、CRC、双槽和回读 |
+| [device_store.cpp](../firmware/apps/20_pokedex/device_store.cpp) | LittleFS 所有者；正式／测试路径、模式标记、快照、清理、RAM-only 与存储故障注入 |
+| [test_mode.hpp](../firmware/apps/20_pokedex/test_mode.hpp)、[test_mode.cpp](../firmware/apps/20_pokedex/test_mode.cpp) | 测试模式、模拟时钟状态、故障类型、诊断数据与宿主接口 |
+| [test_mode_platform.hpp](../firmware/apps/20_pokedex/test_mode_platform.hpp)、[test_mode_platform.cpp](../firmware/apps/20_pokedex/test_mode_platform.cpp) | 测试模式使用静止合成 IMU 样本与模拟时钟，隔离真实 IMU 读取和硬件 RTC 写入 |
+| [test_console.hpp](../firmware/apps/20_pokedex/test_console.hpp)、[test_console.cpp](../firmware/apps/20_pokedex/test_console.cpp) | 构造四种固定测试场景，经 codec 往返与语义校验后提交测试档 |
+| [runtime_input.cpp](../firmware/apps/20_pokedex/runtime_input.cpp)、[screens_test.cpp](../firmware/apps/20_pokedex/screens_test.cpp) | 隐藏入口与测试控制请求、测试页面绘制；模式切换请求交给 `main.cpp`，页面不直接写档 |
 | [screens.cpp](../firmware/apps/20_pokedex/screens.cpp) 及同名前缀文件 | 从已发布状态绘制页面；公共组件位于 `screens_components.cpp` |
 | [screen_theme.hpp](../firmware/apps/20_pokedex/screen_theme.hpp) | 页面与 Viewer 的颜色和图标类型 |
 | [battle_presentation.hpp](../firmware/apps/20_pokedex/battle_presentation.hpp) | 从 `BattleView` 判定动作及 450ms 显示窗口，不结算玩法 |

@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 
-SYMBOL = "_ZN7pokedex9adventure6Engine5beginEv"
+SYMBOL = "_ZN7pokedex9adventure6Engine5beginEb"
 ROOT = Path(__file__).resolve().parents[1]
 
 

@@ -61,6 +61,10 @@ void drawLabels(const pokedex::Sprite& sprite) {
   } else text("互动 · 按键切换 · 顶部返回", 423, theme::kMuted, &fonts::efontCN_16);
 }
 
+void paintTestBadge() {
+  text("测试", 452, theme::kGold, &fonts::efontCN_16);
+}
+
 void drawHeart() {
   constexpr uint16_t pink = 0xF81B;
   constexpr int32_t x = 416;
