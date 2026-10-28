@@ -33,6 +33,7 @@ rtk proxy mise run icons-download
 | `test` | 图鉴时序、手势、解码和整数缩放 |
 | `test-adventure` | 玩法、培养、迁移、日期、codec 与重试；测试时钟、IMU／RTC 隔离、手动步数事件触发遭遇与退出加载不写正式档 |
 | `test-motion` | 合成步态、日期和设备时钟适配 |
+| `test-clock-sync` | USB 校时协议、主机重试、Runtime 校时事务与存档保护 |
 | `test-rtc` | 真实 RX8130 驱动、初始化与校时故障 |
 | `test-storage` | 双槽、I/O、文件系统与分配失败；测试目录隔离、模式标记、重启恢复、清理失败、RAM-only 与存储故障开关 |
 | `check-adventure-catalog` | 251 目录、属性推导路线掩码、124 普通根与 122 进化边 |
@@ -59,6 +60,8 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 `test_test_mode_render` 覆盖资源页和错误页顶部长按、来源确认、控制台翻页与返回、四种固定场景、手动 +1 步触发遭遇、模拟校时、故障选择、重置和退出。测试使用主机输入与存储替身，不执行 `main.cpp` 的完整设备切换链。操作入口见[设备内测试模式](usage-test-mode.md)，已有日志和未覆盖边界见[Issue #7 验证记录](verification.md#issue-7-设备内测试模式2026-10-27)。
 
 详细覆盖与限制见[验证说明](verification.md)。提交前按变更范围运行相关检查；固件变更还应运行 `build`。UI 变更须读取真实渲染截图，交互变更须验证实际输入路径。
+
+烧录后自动校时、单独校时与只读查询的命令见[时钟恢复](design/clock-recovery.md#单独校时与查询)。
 
 ## 模块归属
 

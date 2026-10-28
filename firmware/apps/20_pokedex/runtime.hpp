@@ -2,6 +2,7 @@
 #include "screens.hpp"
 #include "motion.hpp"
 #include "device_clock.hpp"
+#include "clock_sync.hpp"
 #include "menu_buttons.hpp"
 #include "practice_capture.hpp"
 #include "test_mode.hpp"
@@ -92,7 +93,16 @@ class Runtime {
     return std::min<uint32_t>(60 - elapsed, 20);
   }
   void feedback(uint16_t duration);
+  // Host calibration over the bounded serial protocol. The query is read-only;
+  // the set path reuses the manual clock transaction and its save retries.
+  clock_sync::Status clockSyncStatus();
+  const char* syncClockFromHost(uint32_t id, int64_t utcSeconds, int16_t offsetMinutes);
  private:
+  enum class HostClockStage : uint8_t { None, BeginSave, RtcWrite, ConfirmSave };
+  clock_sync::Status clockStatus(const device_clock::Reading&) const;
+  const char* resumeHostClock();
+  bool hostClockVerified(int64_t targetUtc, int16_t offset);
+  void clearHostClock();
   void navigate(Page);
   void syncTestMode();
   void waitForRelease();
@@ -151,6 +161,12 @@ class Runtime {
   uint32_t lastClock_ = 0, lastCheckpoint_ = 0, lastRender_ = 0, lastActivity_ = 0;
   uint32_t lastStepEventMs_ = 0;
   uint64_t batchId_ = 0, notifiedEncounter_ = 0, pendingClockWrite_ = 0;
+  uint64_t hostClockId_ = 0;
+  int64_t hostClockTargetUtc_ = 0;
+  uint32_t hostClockReceivedAt_ = 0;
+  int16_t hostClockOffset_ = 0;
+  HostClockStage hostClockStage_ = HostClockStage::None;
+  bool hostClockWriteAttempted_ = false;
   uint64_t deferredThrow_ = 0;
   TestRequest testRequest_ = TestRequest::None;
   Page testEntryReturn_ = Page::Resources;

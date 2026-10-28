@@ -1,4 +1,5 @@
 #include "runtime.hpp"
+#include "calendar.hpp"
 namespace pokedex { namespace ui {
 using namespace adventure;
 namespace {
@@ -81,12 +82,14 @@ void Runtime::editClock(int delta) {
   dirty_ = true;
 }
 void Runtime::saveClock(uint32_t now) {
+  if (engine_.savePending()) return;
   int64_t utc;
   if (!calendar::toUtc(screen_.civil, screen_.offset, utc)) { screen_.clockError = true; return; }
   device_clock::Reading candidate = {}; candidate.valid = true; candidate.utcSeconds = utc;
   auto target = makeReading(candidate, now, screen_.offset, true);
   uint64_t id = engine_.view().clock.pending.transactionId;
   if (id == UINT64_MAX) { screen_.clockError = true; return; }
+  clearHostClock();
   pendingClockWrite_ = id + 1;
   discardAnchors();
   auto result = engine_.beginClockChange(pendingClockWrite_, screen_.clockMode, target);
@@ -94,6 +97,21 @@ void Runtime::saveClock(uint32_t now) {
   else if (!engine_.savePending()) { pendingClockWrite_ = 0; screen_.clockError = true; }
 }
 void Runtime::continueClockWrite() {
+  if (hostClockStage_ != HostClockStage::None) {
+    resumeHostClock();
+    if (!engine_.savePending()) {
+      pollClock(platform_.now());
+      const auto status = clockSyncStatus();
+      if (status.trusted && !status.pending && !status.anomaly) {
+        dateSkipped_ = true;
+        navigate(engine_.view().starter ? Page::Home : Page::Starter);
+      } else {
+        openClock();
+        screen_.clockError = true;
+      }
+    }
+    return;
+  }
   const auto pending = engine_.view().clock.pending;
   if (!pendingClockWrite_ || !pending.active || pending.transactionId != pendingClockWrite_ || engine_.savePending()) return;
   auto candidate = platform_.writeClock(pending.targetUtcSeconds);
@@ -106,5 +124,193 @@ void Runtime::continueClockWrite() {
   if (result == CommandResult::Applied) { dateSkipped_ = true; navigate(engine_.view().starter ? Page::Home : Page::Starter); }
   else if (!engine_.savePending()) screen_.clockError = true;
   clockDeferred_ = true;
+}
+clock_sync::Status Runtime::clockStatus(const device_clock::Reading& reading) const {
+  const auto& s = engine_.view();
+  clock_sync::Status status;
+  status.testMode = testHost_ && testHost_->testMode();
+  status.ready = engine_.ready();
+  status.busy = !safe();
+  status.savePending = engine_.savePending();
+  status.rtcValid = reading.valid;
+  status.rtcLowVoltage = reading.lowVoltage;
+  status.rtcIoError = reading.ioError;
+  status.utcSeconds = reading.valid ? reading.utcSeconds : 0;
+  status.offsetMinutes = s.clock.offsetMinutes;
+  status.calibrated = s.clock.calibrated;
+  status.trusted = reading.valid && s.clock.trusted;
+  status.pending = s.clock.pending.active;
+  status.anomaly = s.clock.anomaly;
+  status.transactionId = s.clock.pending.transactionId;
+  status.sequence = s.sequence;
+  calendar::CivilTime local;
+  uint32_t dayKey = 0;
+  if (reading.valid && calendar::fromUtc(reading.utcSeconds, s.clock.offsetMinutes, local) &&
+      calendar::dayKey(local, dayKey)) status.dayKey = dayKey;
+  return status;
+}
+clock_sync::Status Runtime::clockSyncStatus() { return clockStatus(platform_.readClock()); }
+bool Runtime::hostClockVerified(int64_t targetUtc, int16_t offset) {
+  const auto reading = platform_.readClock();
+  const auto status = clockStatus(reading);
+  return reading.valid && status.calibrated && status.trusted && !status.pending &&
+         !status.anomaly && status.offsetMinutes == offset &&
+         reading.utcSeconds >= targetUtc && reading.utcSeconds - targetUtc <= 5;
+}
+void Runtime::clearHostClock() {
+  if (pendingClockWrite_ == hostClockId_) pendingClockWrite_ = 0;
+  hostClockStage_ = HostClockStage::None;
+  hostClockId_ = 0;
+  hostClockTargetUtc_ = 0;
+  hostClockReceivedAt_ = 0;
+  hostClockOffset_ = 0;
+  hostClockWriteAttempted_ = false;
+  clockDeferred_ = true;
+}
+const char* Runtime::resumeHostClock() {
+  if (hostClockStage_ == HostClockStage::BeginSave) {
+    CommandResult result = CommandResult::Applied;
+    if (engine_.savePending()) result = engine_.retrySave();
+    if (engine_.savePending()) return "save";
+    if (result != CommandResult::Applied && result != CommandResult::Duplicate) {
+      clearHostClock();
+      return result == CommandResult::Deferred ? "busy" : "save";
+    }
+    const auto& pending = engine_.view().clock.pending;
+    if (pending.active && pending.transactionId == hostClockId_) {
+      hostClockStage_ = HostClockStage::RtcWrite;
+      hostClockWriteAttempted_ = false;
+    } else if (!pending.active && pending.transactionId == hostClockId_) {
+      const bool ok = hostClockVerified(hostClockTargetUtc_, hostClockOffset_);
+      clearHostClock();
+      return ok ? "ok" : "stale";
+    } else {
+      clearHostClock();
+      return "stale";
+    }
+  }
+  if (hostClockStage_ == HostClockStage::RtcWrite) {
+    if (uint32_t(platform_.now() - hostClockReceivedAt_) > 5000) {
+      clearHostClock();
+      return "stale";
+    }
+    const int64_t target = hostClockTargetUtc_;
+    const int16_t offset = hostClockOffset_;
+    auto current = platform_.readClock();
+    bool landed = current.valid && current.utcSeconds >= target && current.utcSeconds - target <= 5;
+    if (!landed && hostClockWriteAttempted_) {
+      // A retry must never move the clock back to a stale target.
+      clearHostClock();
+      return "stale";
+    }
+    if (!landed) {
+      hostClockWriteAttempted_ = true;
+      current = platform_.writeClock(target);
+      if (!current.valid || current.utcSeconds < target || current.utcSeconds - target > 5) {
+        ++metrics_.rtcErrors;
+        return "rtc";
+      }
+    }
+    const auto verified = makeReading(current, platform_.now(), offset, true);
+    const auto result = engine_.finishClockChange(hostClockId_, verified);
+    if (result == CommandResult::Applied) {
+      const bool ok = hostClockVerified(target, offset);
+      clearHostClock();
+      if (!ok) return "verify";
+      dateSkipped_ = true;
+      if (screen_.page == Page::DateWelcome || screen_.page == Page::Clock)
+        navigate(engine_.view().starter ? Page::Home : Page::Starter);
+      return "ok";
+    }
+    if (engine_.savePending()) {
+      hostClockStage_ = HostClockStage::ConfirmSave;
+      return "save";
+    }
+    clearHostClock();
+    return "verify";
+  }
+  if (hostClockStage_ == HostClockStage::ConfirmSave) {
+    const int64_t target = hostClockTargetUtc_;
+    const int16_t offset = hostClockOffset_;
+    const auto result = engine_.retrySave();
+    if (engine_.savePending()) return "save";
+    if (result != CommandResult::Applied && result != CommandResult::Duplicate) {
+      clearHostClock();
+      return "save";
+    }
+    const bool ok = hostClockVerified(target, offset);
+    clearHostClock();
+    if (!ok) return "verify";
+    dateSkipped_ = true;
+    if (screen_.page == Page::DateWelcome || screen_.page == Page::Clock)
+      navigate(engine_.view().starter ? Page::Home : Page::Starter);
+    return "ok";
+  }
+  clearHostClock();
+  return "stale";
+}
+const char* Runtime::syncClockFromHost(uint32_t id, int64_t utcSeconds, int16_t offsetMinutes) {
+  if (!id) return "id";
+  if (testHost_ && testHost_->testMode()) return "test";
+  if (!engine_.ready()) return "notready";
+
+  const bool same = hostClockStage_ != HostClockStage::None && hostClockId_ == id;
+  if (same) {
+    if (pendingClockWrite_ != id ||
+        (engine_.view().clock.pending.active && engine_.view().clock.pending.transactionId != id)) {
+      clearHostClock();
+      return "stale";
+    }
+    if (utcSeconds != hostClockTargetUtc_ || offsetMinutes != hostClockOffset_) return "id";
+    return resumeHostClock();
+  }
+
+  if (engine_.savePending()) return "save";
+  // A host transaction without a pending commit may be superseded by a fresh
+  // id. A manual transaction still in flight must not be hijacked.
+  const bool ownHostTransaction = hostClockStage_ != HostClockStage::None &&
+                                  pendingClockWrite_ == hostClockId_;
+  if (pendingClockWrite_ && !ownHostTransaction) return "pending";
+
+  const auto& clock = engine_.view().clock;
+  const auto& pending = clock.pending;
+  if (clock.calibrated && offsetMinutes != clock.offsetMinutes) return "offset";
+  const int16_t offset = clock.calibrated ? clock.offsetMinutes : offsetMinutes;
+  if (!pending.active && pending.transactionId == id) {
+    if (pending.targetUtcSeconds != utcSeconds || pending.targetOffsetMinutes != offset) return "id";
+    return hostClockVerified(utcSeconds, offset) ? "ok" : "stale";
+  }
+  if (pending.active && pending.transactionId == id) return "stale";
+  if (id <= pending.transactionId) return "id";
+  if (!safe()) return "busy";
+
+  // An older host attempt without a pending commit may be superseded.
+  if (hostClockStage_ != HostClockStage::None) clearHostClock();
+
+  device_clock::Reading candidate = {};
+  candidate.valid = true;
+  candidate.utcSeconds = utcSeconds;
+  auto target = makeReading(candidate, platform_.now(), offset, true);
+  if (!target.trusted) return "range";
+
+  hostClockStage_ = HostClockStage::BeginSave;
+  hostClockId_ = id;
+  hostClockTargetUtc_ = utcSeconds;
+  hostClockReceivedAt_ = platform_.now();
+  hostClockOffset_ = offset;
+  hostClockWriteAttempted_ = false;
+  pendingClockWrite_ = id;
+  discardAnchors();
+  const auto result = engine_.beginClockChange(id, ClockChangeMode::Normal, target);
+  if (engine_.savePending()) return "save";
+  if (result != CommandResult::Applied && result != CommandResult::Duplicate) {
+    clearHostClock();
+    if (result == CommandResult::Deferred) return "busy";
+    if (result == CommandResult::NotReady) return "notready";
+    return "id";
+  }
+  hostClockStage_ = HostClockStage::RtcWrite;
+  hostClockWriteAttempted_ = false;
+  return resumeHostClock();
 }
 } }
