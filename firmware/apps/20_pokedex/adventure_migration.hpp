@@ -3,4 +3,5 @@
 namespace pokedex { namespace adventure {
 bool migrateLegacy(Save&);
 void upgradeToSchema4(Save&);
+void upgradeToSchema5(Save&);
 } }

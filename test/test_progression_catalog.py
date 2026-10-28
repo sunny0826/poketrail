@@ -12,8 +12,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = runpy.run_path(str(ROOT / "tools/build_adventure_catalog.py"))
 LOAD_CATALOG = CATALOG["load_catalog"]
-ROUTE_SIZES = {"Forest": 62, "Coast": 32, "Cave": 43}
-KANTO_ROUTE_SIZES = {"Forest": 38, "Coast": 22, "Cave": 24}
+ROUTE_SIZES = {"Forest": 65, "Coast": 50, "Cave": 42}
 
 
 class ProgressionCatalogTests(unittest.TestCase):
@@ -91,7 +90,7 @@ int main() {
           total += e->weight * (owns(s, id) ? 1 : 3); ++pool;
         }
       }
-      const unsigned sizes[] = {62, 32, 43};
+      const unsigned sizes[] = {65, 50, 42};
       assert(pool == sizes[route]);
       for (unsigned seed = 0; seed < 20000; ++seed) {
         unsigned draw = mixRandom(seed) % total, want = 0;
@@ -111,7 +110,7 @@ int main() {
   }
   assert(!catalogEntry(0) && !catalogEntry(252) && catalogEntry(1) && catalogEntry(251));
   assert(chooseEncounter(s, Route(3), 42) == 0);
-  puts("180000 deterministic weighted draws over 251 species; 124 roots; pools 62/32/43 passed");
+  puts("180000 deterministic weighted draws over 251 species; 124 roots; pools 65/50/42 passed");
 }
 '''.replace("ROOTS", ",".join(map(str, ordinary))))
         binary = output / "sampling"

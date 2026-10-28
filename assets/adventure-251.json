@@ -1,6 +1,26 @@
 {
-  "ruleVersion": 2,
-  "note": "本游戏手工配置的 1-251 普通遭遇目录。路线、稀有度与权重是虚构探索地图，不是官方栖息地或捕捉率。普通资格由 ordinaryRoots 显式声明，不从进化父关系推导；reserved 记录留给后续独立活动的物种，不进入普通池。",
+  "ruleVersion": 3,
+  "note": "本游戏 1-251 普通遭遇目录。路线由 routeTypes 按官方属性推导，稀有度与权重是虚构探索地图，不是官方栖息地或捕捉率。普通资格由 ordinaryRoots 显式声明，不从进化父关系推导；reserved 记录留给后续独立活动的物种，不进入普通池。",
+  "routeTypes": {
+    "草": "Forest",
+    "虫": "Forest",
+    "毒": "Forest",
+    "妖精": "Forest",
+    "一般": "Forest",
+    "格斗": "Forest",
+    "水": "Coast",
+    "冰": "Coast",
+    "飞行": "Coast",
+    "电": "Coast",
+    "火": "Cave",
+    "岩石": "Cave",
+    "地面": "Cave",
+    "钢": "Cave",
+    "恶": "Cave",
+    "幽灵": "Cave",
+    "超能力": "Cave",
+    "龙": "Cave"
+  },
   "speciesFiles": [
     "adventure-routes/forest.json",
     "adventure-routes/coast.json",

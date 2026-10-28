@@ -3,181 +3,120 @@
     {
       "id": 158,
       "name": "小锯鳄",
-      "routes": [
-        "Coast"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 159,
       "name": "蓝鳄",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 160,
       "name": "大力鳄",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 170,
       "name": "灯笼鱼",
-      "routes": [
-        "Coast"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 171,
       "name": "电灯怪",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 173,
       "name": "皮宝宝",
-      "routes": [
-        "Cave",
-        "Coast"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 183,
       "name": "玛力露",
-      "routes": [
-        "Coast"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 184,
       "name": "玛力露丽",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 186,
       "name": "蚊香蛙皇",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 194,
       "name": "乌波",
-      "routes": [
-        "Coast"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 195,
       "name": "沼王",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 199,
       "name": "呆呆王",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 211,
       "name": "千针鱼",
-      "routes": [
-        "Coast"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 222,
       "name": "太阳珊瑚",
-      "routes": [
-        "Coast"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 223,
       "name": "铁炮鱼",
-      "routes": [
-        "Coast"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 224,
       "name": "章鱼桶",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 226,
       "name": "巨翅飞鱼",
-      "routes": [
-        "Coast"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 230,
       "name": "刺龙王",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 245,
       "name": "水君",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 249,
       "name": "洛奇亚",
-      "routes": [
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     }

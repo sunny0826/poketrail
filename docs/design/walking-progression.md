@@ -73,11 +73,11 @@ flowchart LR
 
 ## 进化规则与普通遭遇
 
-完整进化规则、费用公式、来源快照与普通遭遇池见[进化规则与普通遭遇](evolution-catalog.md)。稀有物种集合（`rare`）与基础遭遇权重（`weight`）以[路线配置](../../assets/adventure-routes)为唯一来源，由[目录入口](../../assets/adventure-251.json)的 `speciesFiles` 汇总；实际抽样还受普通资格、捕获历史和当前拥有状态影响。
+完整进化规则、费用公式、来源快照与普通遭遇池见[进化规则与普通遭遇](evolution-catalog.md)。稀有物种集合（`rare`）与基础遭遇权重（`weight`）以[物种配置](../../assets/adventure-routes)为唯一来源，由[目录入口](../../assets/adventure-251.json)的 `speciesFiles` 汇总；路线资格来自同一入口的 `routeTypes`，按官方属性推导，schema 5 起生效。实际抽样还受普通资格、捕获历史和当前拥有状态影响。
 
 ## 总步、球和探索
 
-规则 3 的球不限量，每场最多投两次，不检查库存，也不增加 `ballsSpent`。旧存档的 `rewardBaseSteps`／`ballsSpent` 保留并可校验；仅仍保留 `ruleVersion < 3` 的在途场按旧规则检查和扣球，规则 2 的当前场会在升级 schema4 时切换为规则 3。相对 `rewardBaseSteps` 每累计 1000 总步仍触发保存；在规则 3 下只用于保存节奏，不发球。
+规则 3 的球不限量，每场最多投两次，不检查库存，也不增加 `ballsSpent`。旧存档的 `rewardBaseSteps`／`ballsSpent` 保留并可校验；仅仍保留 `ruleVersion < 3` 的在途场按旧规则检查和扣球，规则 2 的当前场会在升级 schema4 时切换为规则 3，再随同一次启动升级到 schema5。相对 `rewardBaseSteps` 每累计 1000 总步仍触发保存；在规则 3 下只用于保存节奏，不发球。
 
 探索账目：新档起每场遭遇消耗一个 200–500 之间的随机目标步数，`explorationSpent + explorationCredit == totalSteps` 恒成立，下一场目标持久化在 `encounterTarget`。累计扣步校验仍兼容迁移前按 5000 步消费的历史场次，具体边界见[迁移契约](save-migration.md#schema3-迁移到-schema4)。午夜、时区变化、进化和换伙伴均不重置余额或目标。
 

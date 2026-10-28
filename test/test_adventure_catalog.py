@@ -19,7 +19,8 @@ class AdventureCatalogTests(unittest.TestCase):
 
     def manifest(self, files):
         return {
-            "ruleVersion": 2,
+            "ruleVersion": 3,
+            "routeTypes": self.data["routeTypes"],
             "speciesFiles": files,
             "ordinaryRoots": self.data["ordinaryRoots"],
             "reserved": self.data["reserved"],
@@ -30,6 +31,28 @@ class AdventureCatalogTests(unittest.TestCase):
         self.assertEqual(generated, GENERATE(copy.deepcopy(self.data), PROGRESSION))
         self.assertEqual(generated,
                          (ROOT / "firmware/apps/20_pokedex/adventure_catalog_generated.hpp").read_text())
+
+    def test_route_masks_derive_from_types(self):
+        types = CATALOG["load_types"]()
+        masks, ordinary = CATALOG["ownership"](self.data, PROGRESSION)
+        table = self.data["routeTypes"]
+        bits = {"Forest": 1, "Coast": 2, "Cave": 4}
+        for species in range(1, 252):
+            expected = 0
+            for name in types[species]:
+                expected |= bits[table[name]]
+            self.assertEqual(masks[species], expected, f"#{species} mask")
+            self.assertTrue(masks[species], f"#{species} needs a route")
+        expected_ordinary = {"Forest": 65, "Coast": 50, "Cave": 42}
+        for route, count in expected_ordinary.items():
+            pool = [i for i in ordinary if masks[i] & bits[route]]
+            self.assertEqual(len(pool), count, f"{route} ordinary pool")
+        legacy = CATALOG["generate_legacy_masks"]()
+        self.assertEqual(legacy, (ROOT / "firmware/apps/20_pokedex/route_masks_v4_generated.hpp").read_text())
+        frozen = CATALOG["FROZEN_V4_ROUTES"]
+        self.assertEqual(len(frozen), 251)
+        self.assertEqual(frozen[3], 1)  # 小火龙 sat in Forest before schema 5.
+        self.assertEqual(masks[4], 4)   # Fire now belongs to Cave only.
 
     def test_ordinary_and_reserved_accounting(self):
         ordinary = self.data["ordinaryRoots"]
@@ -57,11 +80,16 @@ class AdventureCatalogTests(unittest.TestCase):
             ("negative weight", lambda d: d["species"][0].update(weight=-1)),
             ("weight overflow", lambda d: d["species"][0].update(weight=65536)),
             ("invalid rarity", lambda d: d["species"][0].update(rare=1)),
-            ("unknown route", lambda d: d["species"][0].update(routes=["Mountain"])),
-            ("empty route", lambda d: d["species"][0].update(routes=[])),
-            ("duplicate route", lambda d: d["species"][0].update(routes=["Forest", "Forest"])),
-            ("empty pools", lambda d: [e.update(routes=["Forest"]) for e in d["species"]]),
-            ("unknown rule", lambda d: d.update(ruleVersion=1)),
+            ("handwritten routes", lambda d: d["species"][0].update(routes=["Mountain"])),
+            ("missing routeTypes", lambda d: d.pop("routeTypes")),
+            ("empty routeTypes", lambda d: d.update(routeTypes={})),
+            ("routeTypes not a mapping", lambda d: d.update(routeTypes=["Forest"])),
+            ("unknown type", lambda d: d["routeTypes"].update({"月光": "Forest"})),
+            ("unknown route", lambda d: d["routeTypes"].update({"草": "Mountain"})),
+            ("missing type", lambda d: d["routeTypes"].pop("钢")),
+            ("empty route", lambda d: [d["routeTypes"].pop(name) for name, route in
+                                       list(d["routeTypes"].items()) if route == "Cave"]),
+            ("unknown rule", lambda d: d.update(ruleVersion=2)),
             ("ordinary unsorted", lambda d: d["ordinaryRoots"].reverse()),
             ("ordinary duplicate", lambda d: d["ordinaryRoots"].append(d["ordinaryRoots"][0])),
             ("ordinary non-int", lambda d: d["ordinaryRoots"].append(True)),

@@ -2,11 +2,11 @@
 
 当前玩法见[玩法契约](walking-progression.md)，状态归属和验证矩阵见[状态与验收](walking-state.md)。
 
-下文按版本保留迁移阶段的规则：schema1→2、schema2→3 中的 500／5000 步账式和发球规则适用于那些历史版本。当前启动会在同一事务中继续升级到 schema4，最终规则见 [schema3→4](#schema3-迁移到-schema4)，不会把中间版本单独写入存档。
+下文按版本保留迁移阶段的规则：schema1→2、schema2→3 中的 500／5000 步账式和发球规则适用于那些历史版本。当前启动会在同一事务中继续升级到 schema5，最终规则见 [schema4→5](#schema4-迁移到-schema5)，不会把中间版本单独写入存档。
 
 ## schema1 迁移到 schema2
 
-先以各自版本的长度、CRC和语义验证两槽，再选择有效最高 sequence。旧校验继续按 500，不能直接把常量改为 5000 后读旧档。同序号内容不同、未知 schema、I/O 错误继续阻断并保留文件，不自动格式化。FileStore 的 unknownHeader 和 codec 都要支持 1、2、3，普通空档初始化条件保持不变。
+先以各自版本的长度、CRC和语义验证两槽，再选择有效最高 sequence。旧校验继续按 500，不能直接把常量改为 5000 后读旧档。同序号内容不同、未知 schema、I/O 错误继续阻断并保留文件，不自动格式化。FileStore 的 unknownHeader 和 codec 都要支持 1 至 5，普通空档初始化条件保持不变。
 
 从选中的完整 v1 快照确定性生成 v2，sequence 加一写非当前槽，完整回读成功才开放玩法。保留旧拥有（含高级与活动）、partner、starter、捕获次数、首捕、近期、日桶、累计和校时待确认事务。曾获得由旧拥有与捕获记录建立；培养从 0 开始，无法推测过去携带归属。球采用 base=迁移时旧总步、spent=0，从升级后新走的 1000 步开始发，不追发历史或赠球；升级说明须写清。
 
@@ -26,7 +26,7 @@ credit = T - 500*L - 5000*(N-L-V)
 | 迁移时当前状态 | 处理 |
 | --- | --- |
 | 无当前场 | 保留原探索余额，后续安全时机按 5000 建场 |
-| 未结算普通根 | 迁移保留 ID、seed、路线、rule1 和已投记录；之后按下文唯一捕获兼容规则处理 |
+| 未结算普通根 | 迁移保留 ID、seed、路线、rule1 和已投记录；schema5 若新掩码不含该路线则改到首个命中的路线，之后按下文唯一捕获兼容规则处理 |
 | 未结算高级或活动种 | 写 Resolved／MigrationRetired，保留 ID及失败尝试，退原先消耗的 500 探索步 |
 | 已 Resolved | 原捕获或失败原样保留，不退款、不撤销既有成果 |
 
@@ -66,8 +66,18 @@ schema3 存档在同一启动事务里确定性升级到 schema4：先按 v3 语
 
 写前、部分写、回读失败继续冻结同一 candidate 重试，不重新迁移、重抽目标或升级规则；旧固件不能读取 schema4。
 
+## schema4 迁移到 schema5
+
+schema4 存档在同一启动事务里确定性升级到 schema5：先按 v4 语义完整校验，再把 `schema` 写成 5。payload 不增加字段，`encounterTarget` 与 `explorationSpent` 继续读写，编码长度与 schema4 相同。
+
+schema5 把路线资格从物种文件的手写 `routes` 改为按属性推导。为使旧档继续按当时的目录校验，schema 1–4 的路线校验使用基线 `8ea8653` 冻结的旧掩码（由生成器写到 `route_masks_v4_generated.hpp`），schema 5 使用新掩码。非法旧路线在 1–4 校验中仍然失败，迁移不能靠关掉校验通过。
+
+4 到 5 只做一件事：当前遭遇不在 Walking 且 `encounter.id` 非 0 时，若其路线不在新掩码里，就按 Forest、Coast、Cave 的顺序改成第一个命中位。EncounterReady、Battle、ThrowReady、Resolved 与 MigrationRetired 都同样修正路线；物种、seed、已投记录、结果、账目、玩家选定的 `Save.route`、历史 `Capture.route`、培养账户和伙伴都不改。Walking 没有当前场，不处理。例：小火龙原为森林遭遇，Fire 只属洞窟，升级后该场改到洞窟，捕获历史中的森林记录保持原值。
+
+写入后仍须通过 v5 语义校验；schema5 存档中不合法的路线会被拒绝，而不是在加载时自动改写。写前、部分写、回读失败继续冻结同一 candidate 重试；旧固件不能读取 schema5。
+
 ### 活动分支固件存档的兼容读取
 
-未合并的活动分支固件（legendary-ruins、dragon-trial）在 schema3 payload 末尾追加了 22 字节活动块，并可能持有超出普通池的当前遭遇：这些活动遭遇消耗遭遇 ID 但不消耗探索步，schema3 的固定扣步账式对它们不成立。解码器识别「schema3 + 恰好 22 字节尾部」的帧时跳过活动块；若当前遭遇不在普通池，就清空该遭遇、回到 Walking 并清空结果，然后就地升级 schema4。总步、培养账户、捕获历史与伙伴保留，活动进度（遗迹线索、试炼阶段）随尾部块一起丢弃。
+未合并的活动分支固件（legendary-ruins、dragon-trial）在 schema3 payload 末尾追加了 22 字节活动块，并可能持有超出普通池的当前遭遇：这些活动遭遇消耗遭遇 ID 但不消耗探索步，schema3 的固定扣步账式对它们不成立。解码器识别「schema3 + 恰好 22 字节尾部」的帧时跳过活动块；若当前遭遇不在普通池，就清空该遭遇、回到 Walking 并清空结果，然后就地升级 schema4，再进入 schema5。总步、培养账户、捕获历史与伙伴保留，活动进度（遗迹线索、试炼阶段）随尾部块一起丢弃。
 
-升级后仍须通过 v4 语义校验。令 `modern = nextEncounterId - 1 - legacyChargedCount - voidedLegacyCount`、`modernSpent = explorationSpent - 500 × legacyChargedCount`，当前校验要求 `200 × modern <= modernSpent <= 5000 × modern`；这是累计账目区间，并非允许每场零消耗。已纳入测试的[活动固件字节样本](../../test/fixtures/progression/schema3-activity.bin)满足该区间，[迁移测试](../../test/test_migration.cpp)验证其 6293 总步、1293 探索余额、培养与伙伴保留。不能据此承诺任意活动分支存档都能迁移；未来活动格式需另订迁移契约。
+升级到 schema4 后仍须通过 v4 语义校验，再按上文进入 4 到 5 并通过 v5 校验。令 `modern = nextEncounterId - 1 - legacyChargedCount - voidedLegacyCount`、`modernSpent = explorationSpent - 500 × legacyChargedCount`，当前校验要求 `200 × modern <= modernSpent <= 5000 × modern`；这是累计账目区间，并非允许每场零消耗。已纳入测试的[活动固件字节样本](../../test/fixtures/progression/schema3-activity.bin)满足该区间，[迁移测试](../../test/test_migration.cpp)验证其 6293 总步、1293 探索余额、培养与伙伴保留。不能据此承诺任意活动分支存档都能迁移；未来活动格式需另订迁移契约。

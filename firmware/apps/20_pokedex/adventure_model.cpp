@@ -239,7 +239,8 @@ bool validate(const Save& s) {
     if (e.id || e.species || e.partner || e.usedBalls || s.result != Result::None) return false;
   } else {
     const CatalogEntry* entry = catalogEntry(e.species);
-    if (!e.id || e.id != s.nextEncounterId - 1 || !entry || !(entry->routes & (1u << uint8_t(e.route))) ||
+    if (!e.id || e.id != s.nextEncounterId - 1 || !entry ||
+        !(savedRouteMask(e.species, s.schema) & (1u << uint8_t(e.route))) ||
         !owns(s, e.partner)) return false;
     if ((s.phase == Phase::EncounterReady || s.phase == Phase::Battle) && (e.usedBalls || s.result != Result::None)) return false;
     if (s.phase == Phase::ThrowReady && (s.result != Result::Won || e.usedBalls > 1)) return false;

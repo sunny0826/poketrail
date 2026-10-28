@@ -1,5 +1,5 @@
 #include "support/progression/harness.hpp"
-static_assert(kSchemaVersion==4 && kRuleVersion==3 && kEncounterMinSteps==200 && kEncounterMaxSteps==500,"v4 save, v3 encounter rules, random cadence");
+static_assert(kSchemaVersion==5 && kRuleVersion==3 && kEncounterMinSteps==200 && kEncounterMaxSteps==500,"v5 save, v3 encounter rules, random cadence");
 static void allEdges() {
   size_t count=0;const auto* rules=evolutionRules(count);CHECK(count==122);
   for(size_t i=0;i<count;++i)for(int delta=-1;delta<=1;++delta){

@@ -138,9 +138,10 @@ DecodeStatus decode(const uint8_t* bytes, size_t length, Save& out) {
   // Frames written by the unmerged activity-branch firmware (legendary-ruins,
   // dragon-trial) append a 22-byte activity block to an otherwise ordinary
   // schema-3 payload. Skip that block, retire any in-flight activity encounter
-  // (its species lies outside the ordinary pool), and upgrade to schema 4 on
-  // the spot: schema-3 bookkeeping cannot express encounters that consumed no
-  // exploration credit, while schema-4 accepts the zero-cost id range.
+  // (its species lies outside the ordinary pool), and upgrade to schema 4 and
+  // then 5 on the spot: schema-3 bookkeeping cannot express encounters that
+  // consumed no exploration credit, while schema-4 accepts the zero-cost id
+  // range and schema 5 repairs the route of an in-play ordinary encounter.
   const bool activityTail = parsed->schema == 3 && data.pos + 22 == payloadLength;
   if (!activityTail && data.pos != payloadLength) return DecodeStatus::Corrupt;
   if (activityTail) {
@@ -150,6 +151,7 @@ DecodeStatus decode(const uint8_t* bytes, size_t length, Save& out) {
       parsed->result = Result::None;
     }
     upgradeToSchema4(*parsed);
+    upgradeToSchema5(*parsed);
   }
   if (!validate(*parsed)) return DecodeStatus::Corrupt;
   out = *parsed;

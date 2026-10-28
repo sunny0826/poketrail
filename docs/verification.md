@@ -17,7 +17,7 @@
 
 2026-10-27 清理时，之前各轮的本地协调报告、审查交付、日志和渲染截图已删除。[历史验证轮次](verification/history.md)保留各轮检查摘要与设备观察，原证据文件已不可读取；检查数量、资源数字和设备观察只适用于对应版本，不能当作当前 HEAD 的验证结果。该次清理只核对文档差异与静态链接，没有重跑主机套件、构建或设备验收。
 
-按[开发指南](development.md#检查入口)准备依赖后，可用 `rtk proxy mise run test-adventure`、`rtk proxy mise run test-storage`、`rtk proxy mise run test-render` 等对应任务重新检查。渲染任务生成真实 Runtime/M5GFX 截图；需要命令日志时另行保存标准输出、标准错误和退出状态。输出目录由 `MYM5_VERIFICATION_DIR` 指定，未指定时使用任务新建的 `.pio/verification` 时间戳目录。新结果只反映运行时的代码与环境，不能恢复旧轮次报告、PNG 画廊或设备观察。
+按[开发指南](development.md#检查入口)准备依赖后，可用 `rtk proxy mise run test-adventure`、`rtk proxy mise run test-storage`、`rtk proxy mise run test-render` 等对应任务重新检查。渲染任务生成真实 Runtime/M5GFX 截图；需要命令日志时另行保存标准输出、标准错误和退出状态。输出目录由 `MYM5_VERIFICATION_DIR` 指定，未指定时使用任务新建的 `.pio/verification` 时间戳目录。新结果只反映运行时的代码与环境，不能恢复旧轮次报告、PNG 画廊或设备观察。按属性划分路线（Issue #9）的检查记录见 [Issue #9 验证](verification/issue-09-route-types.md)。
 
 ## schema4 文档复核与主机检查（2026-10-27）
 

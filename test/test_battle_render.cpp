@@ -5,7 +5,7 @@
 #include <algorithm>
 using namespace progression_ui;
 namespace {
-void fixture(MemoryStore& store, uint16_t partner = 4, uint16_t enemy = 25, Route route = Route::Forest) {
+void fixture(MemoryStore& store, uint16_t partner = 4, uint16_t enemy = 25, Route route = Route::Coast) {
   Save save; save.bootGeneration = 1; save.starter = 1; save.partner = partner;
   save.rosterRevision = 1; setOwned(save, 1); setRegistered(save, 1);
   setOwned(save, partner); setRegistered(save, partner);
@@ -94,7 +94,7 @@ void attackAndDodge() {
   snapshot("battle-dodge-recovered");
 }
 void perfectAndFinal() {
-  MemoryStore store; fixture(store, 4, 41, Route::Cave); HostPlatform platform; Runtime r(store, platform); start(r);
+  MemoryStore store; fixture(store, 4, 41, Route::Forest); HostPlatform platform; Runtime r(store, platform); start(r);
   const uint32_t origin = enter(r), target = r.engine().battleView().targetMs;
   action(r, Action::Attack, target); hp(3, 1);
   at(r, target + 125); hp(3, 1); actor(4, origin, 188, 232, 2);
@@ -151,7 +151,7 @@ void timingAndPause() {
   b.resume(pause + 1); check(!battleEffectActive(b.view(), pause + 1), "resume does not replay prior cue");
   b.begin(UINT32_MAX - 1700); b.press(Action::Attack, UINT32_MAX - 200); b.tick(50);
   check(battleEffectActive(b.view(), 100) && battleEffectAction(b.view()) == Action::Attack, "effect timing survives millis rollover");
-  MemoryStore store; fixture(store, 17, 25); HostPlatform platform; Runtime r(store, platform); start(r);
+  MemoryStore store; fixture(store, 17, 25, Route::Coast); HostPlatform platform; Runtime r(store, platform); start(r);
   const uint32_t origin = enter(r); at(r, r.engine().battleView().targetMs - 400);
   actor(17, origin, 155, 232, 1); actor(25, origin, 311, 226, 2); snapshot("battle-tall-partner");
   tap(r, 233, 30); at(r, r.engine().battleView().targetMs + 181);
