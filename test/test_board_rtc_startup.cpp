@@ -40,7 +40,10 @@ int main(int argc,char** argv) {
       expect(injectionHits==1,"new flag injected at actual startup I/O");
       expect(trace[i-1].reg==successful[i-1].reg
              && trace[i-1].write==successful[i-1].write,"injection trace matches success operation");
-      expect((bank[0x1d]&bit) && !rtc.read().valid,"new startup flag survives strict read");
+      const auto r=rtc.read();
+      expect(bank[0x1d]&bit,"new startup flag survives strict read");
+      if (bit==2) expect(!r.valid,"startup VLF invalidates the clock");
+      else expect(r.valid && r.lowVoltage,"startup VBLF only warns");
       expect(dateWrites==0 && busBegins==0 && delays==0,"startup has no date writes/bus begin/delay");
       for(const auto& op:trace) expect(!op.write || (op.reg!=0x1d && op.reg!=0x1c),
                                      "startup never clears Flag or runs full recovery");

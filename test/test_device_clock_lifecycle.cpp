@@ -121,8 +121,11 @@ void startupMatrix() {
     for(unsigned i=1;i<=good.size();++i) for(unsigned bit:{2u,128u}) {
       reset(); fault(kind); injectAt=i; injectBits=bit;
       Clock rtc; rtc.begin(m5::In_I2C); expectPrefix(good,i);
-      expect(injectionHits==1 && (bank[0x1d]&bit) && !rtc.read().valid,
+      const Reading r=rtc.read();
+      expect(injectionHits==1 && (bank[0x1d]&bit),
              "every startup I/O preserves injected VLF/VBLF");
+      if (bit==2 || kind != 0) expect(!r.valid,"startup fault or VLF stays invalid");
+      else expect(r.valid && r.lowVoltage,"injected VBLF stays a visible warning");
     }
   }
 }
@@ -133,7 +136,9 @@ void readMatrix() {
     reset(); Clock rtc; rtc.begin(m5::In_I2C); clearTrace(); injectAt=i; injectBits=bit;
     const Reading r=rtc.read();
     expectPrefix(good,i);
-    expect(injectionHits==1 && !r.valid && (bank[0x1d]&bit),"flag at every ordinary read I/O visible");
+    expect(injectionHits==1 && (bank[0x1d]&bit),"flag at every ordinary read I/O visible");
+    if (bit==2) expect(!r.valid,"injected VLF at read I/O invalidates");
+    else expect(r.valid && r.lowVoltage,"injected VBLF at read I/O keeps valid data");
     expect(delays==0 && writes(0x20)==0,"read faults do not recover or mark");
   }
   reset(); Clock rtc; rtc.begin(m5::In_I2C); bank[0x31]=0x80;
@@ -216,8 +221,14 @@ void setMatrix() {
       reset(); fault(kind); Clock rtc; rtc.begin(m5::In_I2C); clearTrace();
       injectAt=i; injectBits=bit;
       const Reading r=rtc.setAndVerify(target); expectPrefix(good,i);
-      expect(injectionHits==1 && !r.valid && (bank[0x1d]&bit),"new post-write flags survive all final I/O");
-      expect(bank[0x20]==0xa5,"post-write fault leaves/restores dirty marker");
+      expect(injectionHits==1 && (bank[0x1d]&bit),"new post-write flags survive all final I/O");
+      if (bit==2) {
+        expect(!r.valid,"post-write VLF invalidates");
+        expect(bank[0x20]==0xa5,"post-write VLF leaves/restores dirty marker");
+      } else {
+        expect(r.valid && r.lowVoltage,"post-write VBLF only warns");
+        expect(bank[0x20]==0,"post-write VBLF still completes the clean marker");
+      }
       bool afterDate=false;
       for(const auto& op:trace) {
         if(op.write && op.reg==0x10) afterDate=true;
@@ -240,8 +251,10 @@ void finalConfirmation() {
   for(unsigned i=2;i<=6;++i) for(unsigned bit:{2u,128u}) {
     reset(); Clock rtc; rtc.begin(m5::In_I2C); clearTrace(); injectAt=i; injectBits=bit;
     const Reading r=rtc.setAndVerify(target); expectPrefix(good,i);
-    expect(injectionHits==1 && !r.valid && (bank[0x1d]&bit),
-           "new flag after initial snapshot including dirty marker cannot be cleared");
+    expect(injectionHits==1 && (bank[0x1d]&bit),
+           "new flag after initial snapshot including dirty marker survives");
+    if (bit==2) expect(!r.valid,"late VLF still blocks calibration");
+    else expect(r.valid && r.lowVoltage,"late VBLF is only a warning");
   }
   for(unsigned power=0;power<256;++power) {
     reset(); Clock rtc; rtc.begin(m5::In_I2C); clearTrace();
