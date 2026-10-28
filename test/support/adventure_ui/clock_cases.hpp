@@ -73,6 +73,61 @@ void midnightAndSampling() {
   check(!r.engine().view().clock.trusted && r.engine().view().undatedSteps == 3,
         "invalid RTC candidate keeps walking but does not fabricate today dates");
 }
+void slowGaitAttribution() {
+  // 慢步确认会释放早于最新时钟锚点的峰值，它们仍必须归属当天。
+  // 1600 ms 是 reviewer 的复现场景；2200 ms 是最慢允许步态，确认批次里最老的峰
+  // 早于锚点超过 4 s，覆盖日期回溯窗口的真实上界。
+  for (unsigned period : {1600u, 2200u}) {
+    MemoryStore store; TestPlatform p;
+    {
+      Engine e(store);
+      check(e.begin() == CommandResult::Applied && e.chooseStarter(1) == CommandResult::Applied,
+            "slow gait fixture boots through public commands");
+      ClockReading target; target.trusted = true; target.utcSeconds = p.utc;
+      target.dayKey = 20261022; target.bootGeneration = e.view().bootGeneration;
+      target.monotonicMs = host_time_ms;
+      check(e.beginClockChange(1, ClockChangeMode::Normal, target) == CommandResult::Applied &&
+            e.finishClockChange(1, target) == CommandResult::Applied, "slow gait fixture is calibrated");
+    }
+    Runtime r(store, p); start(r); idle(r, 200);
+    for (unsigned i = 0; i < 4; ++i)
+      for (unsigned t = 0; t < period; t += 20) {
+        p.z = 1 - 0.10f * std::cos(6.28318530718f * float(t) / float(period)); frame(r);
+      }
+    const auto& s = r.engine().view();
+    check(s.totalSteps == 4 && s.today.steps == 4 && s.undatedSteps == 0 && s.clock.trusted,
+          period == 1600u ? "slow medium cadence keeps all four delayed peaks in today's bucket"
+                          : "slowest cadence keeps every peak inside the attribution window");
+  }
+}
+void stallAttribution() {
+  // 末峰后长时间不落谷：两个中峰落谷后，第三峰回到 1.0g 并保持 10 s（始终 ≥ 谷值），
+  // 再落谷。跟踪时限必须让末峰在推导窗口内确认，事件仍归属当天，而不是释放超龄
+  // 的未知日期事件。
+  MemoryStore store; TestPlatform p;
+  {
+    Engine e(store);
+    check(e.begin() == CommandResult::Applied && e.chooseStarter(1) == CommandResult::Applied,
+          "stall fixture boots through public commands");
+    ClockReading target; target.trusted = true; target.utcSeconds = p.utc;
+    target.dayKey = 20261022; target.bootGeneration = e.view().bootGeneration;
+    target.monotonicMs = host_time_ms;
+    check(e.beginClockChange(1, ClockChangeMode::Normal, target) == CommandResult::Applied &&
+          e.finishClockChange(1, target) == CommandResult::Applied, "stall fixture is calibrated");
+  }
+  Runtime r(store, p); start(r); idle(r, 200);
+  for (unsigned i = 0; i < 2; ++i)
+    for (unsigned t = 0; t < 1600; t += 20) {
+      p.z = 1 - 0.10f * std::cos(6.28318530718f * float(t) / 1600.0f); frame(r);
+    }
+  for (unsigned t = 0; t < 900; t += 20) {
+    p.z = 1 - 0.10f * std::cos(6.28318530718f * float(t) / 1600.0f); frame(r);
+  }
+  p.z = 1; idle(r, 10000); p.z = 0.9f; frame(r); frame(r);
+  const auto& s = r.engine().view();
+  check(s.totalSteps == 3 && s.today.steps == 3 && s.undatedSteps == 0 && s.clock.trusted,
+        "held final crest is confirmed inside the attribution window and dated today");
+}
 void practiceMidnightAchievement() {
   MemoryStore store; TestPlatform p;
   {

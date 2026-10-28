@@ -181,7 +181,7 @@ void viewerWakeAndPractice() {
 }
 int main() {
   c152::begin("ADVENTURE TEST");
-  bootAndCapture(); clockAndErrors(); midnightAndSampling(); practiceMidnightAchievement();
+  bootAndCapture(); clockAndErrors(); midnightAndSampling(); slowGaitAttribution(); stallAttribution(); practiceMidnightAchievement();
   fullRecordRestart(); viewerWakeAndPractice(); firstBallSuccess(); captureAnimation(); captureEscape();
   std::printf("%u adventure UI checks, 0 failures\n", checks);
 }
