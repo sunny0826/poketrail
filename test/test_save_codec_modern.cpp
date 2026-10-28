@@ -145,6 +145,30 @@ static void modernEncounterBoundaries(const Save& legacy1) {
   Save legacyBack; CHECK(codec::decode(legacyBytes.data(), legacyBytes.size(), legacyBack) == codec::DecodeStatus::Ok);
   CHECK(legacyBack.encounter.usedBalls == 1 && legacyBack.ballsSpent == 0);
 }
+// Schema 1-4 validate routes against the frozen masks; schema 5 uses the typed
+// masks and validation never repairs an illegal route on its own.
+static void routeMasks() {
+  for (uint16_t schema : {2, 3}) {
+    Save base = modernEncounter(schema, 4); CHECK(validate(base));
+    Save moved = base; moved.encounter.route = Route::Cave; reject(moved);
+  }
+  Save modern = modernEncounter(4, 4);
+  modern.explorationSpent = 5000; modern.encounterTarget = 300; modern.encounter.ruleVersion = 3;
+  CHECK(validate(modern));
+  Save oldIllegal = modern; oldIllegal.encounter.route = Route::Cave; reject(oldIllegal);
+  // #4 小火龙 is Cave-only once types define eligibility.
+  Save typed = modernEncounter(5, 4);
+  typed.explorationSpent = 5000; typed.encounterTarget = 300; typed.encounter.ruleVersion = 3;
+  typed.encounter.route = Route::Cave; CHECK(validate(typed)); acceptAtStartup(typed);
+  Save newIllegal = typed; newIllegal.encounter.route = Route::Forest; rejectAtStartup(newIllegal);
+  // #92 鬼斯通 is Forest or Cave; painting its stored route to Coast must be
+  // rejected by decode instead of being repaired to a legal route.
+  Save both = modernEncounter(5, 92);
+  both.explorationSpent = 5000; both.encounterTarget = 300; both.encounter.ruleVersion = 3;
+  both.encounter.route = Route::Forest; CHECK(validate(both));
+  Save stage = both; stage.encounter.route = Route::Cave; CHECK(validate(stage));
+  rejectBytes(forged(both, stage, uint8_t(Route::Coast)));
+}
 int main() {
   // Minimal schema-1 save with a charged legacy encounter boundary.
   Save legacy1; legacy1.schema = 1; legacy1.bootGeneration = 1;
@@ -154,5 +178,6 @@ int main() {
   legacy1.encounter.ruleVersion = 1;
   for (auto& a : legacy1.encounter.attempts) a.ruleVersion = 1;
   modernEncounterBoundaries(legacy1);
+  routeMasks();
   std::printf("save codec modern: %u checks passed\n", checks);
 }

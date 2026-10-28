@@ -35,7 +35,7 @@ rtk proxy mise run icons-download
 | `test-motion` | 合成步态、日期和设备时钟适配 |
 | `test-rtc` | 真实 RX8130 驱动、初始化与校时故障 |
 | `test-storage` | 双槽、I/O、文件系统与分配失败；测试目录隔离、模式标记、重启恢复、清理失败、RAM-only 与存储故障开关 |
-| `check-adventure-catalog` | 251 目录、124 普通根与 122 进化边 |
+| `check-adventure-catalog` | 251 目录、属性推导路线掩码、124 普通根与 122 进化边 |
 | `test-pokedex` | 251 资料、Gen2 来源哈希与 Gen1 快照一致性 |
 | `test-sprites` | 251 个 GIF 哈希、完整帧和固件逐像素解码 |
 | `test-icons` | 251 个 PNG 哈希、透明规则与生成像素 |
@@ -96,7 +96,7 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 | 进化规则 | `rtk proxy mise exec -- python3 tools/build_evolution_rules.py` |
 | 遭遇目录 | `rtk proxy mise exec -- python3 tools/build_adventure_catalog.py` |
 
-遭遇目录入口为 [adventure-251.json](../assets/adventure-251.json)，`speciesFiles` 列出 [adventure-routes](../assets/adventure-routes) 内的手工配置。关都仍使用三份原路线文件，城都按第一条路线存放在 `*-gen2.json`。`ordinaryRoots` 显式声明普通资格，`reserved` 记录后续独立活动的保留物种；生成器合并后按编号排序，重复、缺失编号或未归属物种都会报错。旧的 `adventure-gen1.json` 与关都三份路线文件保留为冻结的关都快照，当前生成器只消费 `adventure-251.json`。
+遭遇目录入口为 [adventure-251.json](../assets/adventure-251.json)，`routeTypes` 声明属性到路线的归属，`speciesFiles` 列出 [adventure-routes](../assets/adventure-routes) 内的物种配置。物种文件只保留编号、名称、稀有度和权重，路线由生成器读取 `pokedex-gen1.json`／`pokedex-gen2.json` 的 `pokemon_type_name` 推导；双属性按位或，251 种都必须得到非空掩码。`ordinaryRoots` 显式声明普通资格，`reserved` 记录后续独立活动的保留物种；生成器合并后按编号排序，重复、缺失编号、手写 `routes`、未归属物种或路线映射缺口都会报错。生成器同时写出 schema1–4 的冻结旧掩码 `route_masks_v4_generated.hpp`；两份头文件都不得手改。旧的 `adventure-gen1.json` 与关都三份路线文件保留为冻结的关都快照，当前生成器只消费 `adventure-251.json`。
 
 动画缓存位于 `assets/sprites/black-white`，缩略图位于 `assets/sprites/icons`，均不纳入 Git。来源、版本和权利声明见[第三方声明](../THIRD_PARTY_NOTICES.md)。动画和缩略图清单按世代拆分为 Gen1／Gen2 两份，固定来源均为 PokeAPI sprites 提交 `97a7832d307311c0e1c6ea9035308bf80cc94f81`。指定子集必须使用独立输出路径，防止覆盖完整图鉴：
 

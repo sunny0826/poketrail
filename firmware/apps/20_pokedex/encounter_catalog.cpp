@@ -1,9 +1,14 @@
 #include "encounter_catalog.hpp"
 #include "adventure_catalog_generated.hpp"
 #include "progression_catalog_generated.hpp"
+#include "route_masks_v4_generated.hpp"
 namespace pokedex { namespace adventure {
 const CatalogEntry* catalogEntry(uint16_t species) {
   return species >= 1 && species <= kSpeciesCount ? &kCatalog[species - 1] : nullptr;
+}
+uint8_t savedRouteMask(uint16_t species, uint16_t schema) {
+  if (species < 1 || species > kSpeciesCount) return 0;
+  return schema >= 5 ? kCatalog[species - 1].routes : kRouteMaskV4[species - 1];
 }
 bool ordinaryEncounter(uint16_t species) {
   return species >= 1 && species <= kSpeciesCount && kOrdinaryEncounter[species - 1];

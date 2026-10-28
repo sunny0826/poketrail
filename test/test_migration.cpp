@@ -29,7 +29,7 @@ static void phases() {
     Slots slots;slots.files[0]=legacy(kind);const auto original=slots.files[0];auto old=decoded(original);
     CHECK(old->schema==1&&encoded(*old)==original&&original.size()==12139);
     FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied&&e.ready());const auto& s=e.view();
-    CHECK(s.schema==4&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
+    CHECK(s.schema==5&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
     CHECK(s.rewardBaseSteps==500&&availableBalls(s)==0&&s.captureCounts==old->captureCounts&&s.owned==old->owned);
     CHECK(s.explorationSpent==s.totalSteps-s.explorationCredit&&s.encounterTarget>=kEncounterMinSteps&&s.encounterTarget<=kEncounterMaxSteps);
     CHECK(s.progress[0].walked==0&&registered(s,1)&&s.rosterRevision==1);
@@ -62,7 +62,7 @@ static void failures() {
     Slots slots;slots.files[0]=legacy(6);slots.after=complete;slots.cut=complete?SIZE_MAX:100;
     {FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::StorageError);}
     slots.after=false;slots.cut=SIZE_MAX;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
-    CHECK(e.view().schema==4&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
+    CHECK(e.view().schema==5&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
     CHECK(e.view().sequence==(complete?12:11));
   }
 }
@@ -120,24 +120,24 @@ static void schema2Upgrade() {
   CHECK(old->schema==2&&old->progress[3].walked==1000);
   Slots slots;slots.files[0]=bytes;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   const auto& s=e.view();
-  CHECK(s.schema==4&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
+  CHECK(s.schema==5&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
   CHECK(s.partner==4&&s.progress[3].walked==1000&&s.totalSteps==1000&&s.explorationCredit==1000);
   CHECK(s.explorationSpent==0&&s.encounterTarget>=kEncounterMinSteps&&s.encounterTarget<=kEncounterMaxSteps);
   CHECK(s.rewardBaseSteps==0&&s.legacyChargedCount==0&&s.rosterRevision==1);
   for(uint16_t id=152;id<=251;++id)CHECK(!registered(s,id)&&!owns(s,id)&&!s.progress[id-1].walked&&!s.captureCounts[id-1]);
-  FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==4);
+  FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==5);
   CHECK(reboot.view().progress[3].walked==1000&&slots.writes==2);
   Save enc;CHECK(codec::decode(slots.files[0].data(),slots.files[0].size(),enc)==codec::DecodeStatus::Ok);
-  CHECK(enc.schema==4&&validate(enc));
+  CHECK(enc.schema==5&&validate(enc));
 }
 static void mixedSlots() {
   Slots slots;slots.files[0]=legacy(0);FileStore first(slots);Engine e(first);CHECK(e.begin()==CommandResult::Applied);
   const auto v2=slots.files[1];auto s=decoded(v2);s->sequence=10;slots.files[1]=encoded(*s);
   FileStore conflict(slots);std::unique_ptr<Save> out(new Save);CHECK(conflict.load(*out).status==LoadStatus::Corrupt);
-  slots.files[1]=v2;slots.files[1][4]=5;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
+  slots.files[1]=v2;slots.files[1][4]=6;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
   slots.files[1]=v2;slots.files[1].back()^=1;FileStore corrupt(slots);
   CHECK(corrupt.load(*out).status==LoadStatus::Loaded&&out->schema==1&&out->sequence==10);
-  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==4);
+  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==5);
 }
 static void activityTail() {
   // A real frame written by the unmerged activity-branch firmware: an ordinary
@@ -148,16 +148,70 @@ static void activityTail() {
   const std::vector<uint8_t> frame((std::istreambuf_iterator<char>(file)), {});
   CHECK(frame.size() == 21520);
   Save s; CHECK(codec::decode(frame.data(), frame.size(), s) == codec::DecodeStatus::Ok);
-  CHECK(s.schema == 4 && s.sequence == 8555 && s.totalSteps == 6293 && s.explorationCredit == 1293);
+  CHECK(s.schema == 5 && s.sequence == 8555 && s.totalSteps == 6293 && s.explorationCredit == 1293);
   CHECK(s.explorationSpent == 5000 && s.explorationSpent + s.explorationCredit == s.totalSteps);
   CHECK(s.phase == Phase::Walking && !s.encounter.id && s.result == Result::None);
   CHECK(s.partner == 1 && s.progress[0].walked == 6281 && s.encounterTarget >= kEncounterMinSteps);
   CHECK(s.nextEncounterId == 14 && s.ballsSpent == 6 && validate(s));
   MemoryStore store; store.disk = frame; Engine e(store);
   CHECK(e.begin() == CommandResult::Applied && e.ready());
-  CHECK(e.view().schema == 4 && e.view().totalSteps == 6293 && e.view().partner == 1);
+  CHECK(e.view().schema == 5 && e.view().totalSteps == 6293 && e.view().partner == 1);
   CHECK(e.view().phase == Phase::Walking && e.view().explorationCredit == 1293);
   // The zero-cost activity ids stay inside schema-4 bookkeeping bounds.
   CHECK(e.view().explorationSpent + e.view().explorationCredit == e.view().totalSteps);
 }
-int main(){phases();failures();oldThrowsAndBase();creditAndBoundary();schema2Upgrade();mixedSlots();activityTail();std::printf("migration: %u checks passed\n",checks);}
+static std::unique_ptr<Save> schema4Encounter(uint16_t species, Route route, Phase phase, Result result) {
+  std::unique_ptr<Save> s(new Save);
+  s->schema=4; s->sequence=3; s->bootGeneration=1; s->starter=s->partner=1;
+  s->rosterRevision=1; setRegistered(*s,1); setOwned(*s,1);
+  total(*s,1000); s->explorationSpent=500; s->explorationCredit=500; s->nextEncounterId=2;
+  s->encounterTarget=300; s->encounter.id=1; s->encounter.species=species; s->encounter.partner=1;
+  s->encounter.route=route; s->encounter.ruleVersion=3;
+  for(auto& a: s->encounter.attempts) a.ruleVersion=3;
+  s->phase=phase; s->result=result; s->route=Route::Forest;
+  return s;
+}
+static void routeUpgrade() {
+  // #4 小火龙 was a Forest encounter under the frozen masks; Fire is Cave-only
+  // once schema 5 derives routes from types. Finished results keep their value.
+  for(Phase phase:{Phase::EncounterReady,Phase::Resolved}){
+    auto s=schema4Encounter(4,Route::Forest,phase,phase==Phase::Resolved?Result::Lost:Result::None);
+    CHECK(validate(*s));
+    MemoryStore store;store.disk=encoded(*s);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
+    CHECK(e.view().schema==5&&e.view().encounter.species==4&&e.view().encounter.route==Route::Cave);
+    CHECK(e.view().phase==phase&&e.view().result==s->result&&e.view().encounter.id==1&&e.view().encounter.seed==0);
+  }
+  // A retired activity boundary is repaired the same way and keeps its result.
+  std::unique_ptr<Save> retired(new Save);
+  retired->schema=4; retired->sequence=3; retired->bootGeneration=1; retired->starter=retired->partner=1;
+  retired->rosterRevision=1; setRegistered(*retired,1); setOwned(*retired,1);
+  total(*retired,1000); retired->explorationSpent=0; retired->explorationCredit=1000;
+  retired->nextEncounterId=2; retired->voidedLegacyCount=1; retired->legacyChargedCount=0;
+  retired->encounterTarget=300; retired->encounter.id=1; retired->encounter.species=147;
+  retired->encounter.partner=1; retired->encounter.route=Route::Forest; retired->encounter.ruleVersion=1;
+  for(auto& a: retired->encounter.attempts) a.ruleVersion=1;
+  retired->phase=Phase::Resolved; retired->result=Result::MigrationRetired;
+  CHECK(validate(*retired));
+  MemoryStore retiredStore;retiredStore.disk=encoded(*retired);Engine retiredEngine(retiredStore);
+  CHECK(retiredEngine.begin()==CommandResult::Applied&&retiredEngine.view().schema==5);
+  CHECK(retiredEngine.view().result==Result::MigrationRetired&&retiredEngine.view().voidedLegacyCount==1);
+  CHECK(retiredEngine.view().encounter.route==Route::Cave);
+}
+static void captureRoutePreserved() {
+  // Historical capture and player-selected routes are history, not eligibility:
+  // schema 5 must leave them untouched even when the new masks disagree.
+  std::unique_ptr<Save> s(new Save);
+  s->schema=4; s->sequence=3; s->bootGeneration=1; s->starter=s->partner=1;
+  s->rosterRevision=1; setRegistered(*s,1); setOwned(*s,1); setRegistered(*s,4); setOwned(*s,4);
+  total(*s,1000); s->explorationSpent=500; s->explorationCredit=500; s->nextEncounterId=2;
+  s->encounterTarget=300; s->route=Route::Forest; s->captureCounts[3]=1;
+  Capture c; c.species=4; c.route=Route::Forest; c.at.bootGeneration=1; c.at.totalSteps=500;
+  s->firstCapture[3]=c; s->recent[0]=c; s->recentSize=1;
+  CHECK(validate(*s));
+  MemoryStore store;store.disk=encoded(*s);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
+  CHECK(e.view().schema==5&&e.view().route==Route::Forest);
+  CHECK(e.view().firstCapture[3].route==Route::Forest&&e.view().recent[0].route==Route::Forest);
+  CHECK(e.view().captureCounts[3]==1&&e.view().encounter.id==0);
+}
+int main(){phases();failures();oldThrowsAndBase();creditAndBoundary();schema2Upgrade();mixedSlots();activityTail();
+  routeUpgrade();captureRoutePreserved();std::printf("migration: %u checks passed\n",checks);}

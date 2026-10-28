@@ -3,280 +3,186 @@
     {
       "id": 169,
       "name": "叉字蝠",
-      "routes": [
-        "Cave",
-        "Coast"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 185,
       "name": "树才怪",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 197,
       "name": "月亮伊布",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 198,
       "name": "黑暗鸦",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 200,
       "name": "梦妖",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 201,
       "name": "未知图腾",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 202,
       "name": "果然翁",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 206,
       "name": "土龙弟弟",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 207,
       "name": "天蝎",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 208,
       "name": "大钢蛇",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 213,
       "name": "壶壶",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 215,
       "name": "狃拉",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 218,
       "name": "熔岩虫",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 219,
       "name": "熔岩蜗牛",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 220,
       "name": "小山猪",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 221,
       "name": "长毛猪",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 225,
       "name": "信使鸟",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 227,
       "name": "盔甲鸟",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 231,
       "name": "小小象",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 232,
       "name": "顿甲",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 233,
       "name": "多边兽２型",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 236,
       "name": "无畏小子",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 237,
       "name": "战舞郎",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 238,
       "name": "迷唇娃",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 239,
       "name": "电击怪",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 240,
       "name": "鸭嘴宝宝",
-      "routes": [
-        "Cave"
-      ],
       "rare": false,
       "weight": 10
     },
     {
       "id": 243,
       "name": "雷公",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 244,
       "name": "炎帝",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 246,
       "name": "幼基拉斯",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 247,
       "name": "沙基拉斯",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     },
     {
       "id": 248,
       "name": "班基拉斯",
-      "routes": [
-        "Cave"
-      ],
       "rare": true,
       "weight": 2
     }

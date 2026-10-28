@@ -26,7 +26,7 @@ bool migrateLegacy(Save& s) {
     }
     if (!validate(s)) return false;
   }
-  if (s.schema != 2 && s.schema != 3) return false;
+  if (s.schema != 2 && s.schema != 3 && s.schema != 4) return false;
   // Schema 3 widens the catalog. Existing fields and the current encounter stay
   // verbatim; species 152-251 start empty and unregistered.
   if (s.schema == 2) {
@@ -43,13 +43,30 @@ bool migrateLegacy(Save& s) {
   // spent + credit == totalSteps. Any non-legacy encounter still in play is
   // upgraded to the current rules; finished attempts keep their own version so
   // their stored probability and roll stay verifiable.
-  upgradeToSchema4(s);
+  if (s.schema == 3) upgradeToSchema4(s);
+  // Schema 5 re-derives route eligibility from species types. A schema-4 save was
+  // validated against the frozen masks, so an in-play encounter may sit on a
+  // route it no longer belongs to; only that route is repaired.
+  if (s.schema == 4) upgradeToSchema5(s);
   return validate(s);
 }
 void upgradeToSchema4(Save& s) {
   s.explorationSpent = s.totalSteps - s.explorationCredit;
   if (s.encounter.id && s.encounter.ruleVersion == 2) s.encounter.ruleVersion = 3;
   s.encounterTarget = nextEncounterTarget(mixRandom(uint32_t(s.bootGeneration) ^ uint32_t(s.totalSteps)));
-  s.schema = kSchemaVersion;
+  s.schema = 4;
+}
+void upgradeToSchema5(Save& s) {
+  const CatalogEntry* entry = catalogEntry(s.encounter.species);
+  if (s.phase != Phase::Walking && s.encounter.id && entry &&
+      !(entry->routes & (1u << uint8_t(s.encounter.route)))) {
+    for (uint8_t route = 0; route < 3; ++route) {
+      if (entry->routes & (1u << route)) {
+        s.encounter.route = Route(route);
+        break;
+      }
+    }
+  }
+  s.schema = 5;
 }
 } }

@@ -42,7 +42,7 @@ int main() {
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
   data.resize(codec::maxEncodedSize + 1);
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
-  data = original; data[4] = 5;
+  data = original; data[4] = 6;
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::UnsupportedVersion);
   data.resize(codec::maxEncodedSize + 100);
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::UnsupportedVersion);
