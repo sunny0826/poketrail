@@ -31,7 +31,9 @@ struct Sprite {
   uint32_t duration_ms;
   const char* height_text;
   const char* weight_text;
-  bool has_evolved;
+  // 优先 3 倍类别：中间／最终形态与目录内无进化链物种；
+  // 实际缩放仍受 336x270 画布与页面高度限制。
+  bool enlarged;
 };
 
 uint16_t displayScale(const Sprite& sprite);

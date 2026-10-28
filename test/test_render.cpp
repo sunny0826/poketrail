@@ -104,8 +104,8 @@ void checkFullSprites() {
     const int w = s.width * scale, h = s.height * scale;
     if (scale == 3) ++enlarged;
     check(w <= 336 && h <= 270 &&
-          scale == (s.has_evolved && s.id != 17 && s.id != 22 && s.height * 3 <= 220 ? 3 : 2),
-          "intermediate and final forms enlarge within the observation area");
+          scale == (s.enlarged && s.width * 3 <= 336 && s.height * 3 <= 220 ? 3 : 2),
+          "enlarged forms use three-times within the observation area");
     check(render(), "all species render");
     const int x0 = 233 - w/2, y0 = 215 - h/2 - g_state.jump;
     bool canvas_inside = y0 >= kFieldTop && 215 - h/2 + h <= kFieldBottom && x0 + w <= 403;
@@ -154,6 +154,22 @@ void checkFullSprites() {
     if (pokedex::displayScale(sprite) == 3 && sprite.height * 3 <= 220) ++expectedEnlarged;
   }
   check(enlarged == expectedEnlarged, "three-times sprites are limited only by the observation area");
+  const auto& farfetchd = pokedex::data::kSprites[82];
+  const auto& mewtwo = pokedex::data::kSprites[149];
+  const auto& moltres = pokedex::data::kSprites[145];
+  const auto& lugia = pokedex::data::kSprites[248];
+  check(pokedex::displayScale(farfetchd) == 3 && farfetchd.width * 3 == 135 &&
+        farfetchd.height * 3 == 147,
+        "standalone Farfetch'd grows to 135 by 147");
+  check(pokedex::displayScale(mewtwo) == 3 && mewtwo.width * 3 == 270 &&
+        mewtwo.height * 3 == 207,
+        "standalone Mewtwo grows to 270 by 207");
+  check(pokedex::displayScale(moltres) == 2 && moltres.width * 2 == 256 &&
+        moltres.height * 2 == 194,
+        "standalone Moltres falls back to 256 by 194");
+  check(pokedex::displayScale(lugia) == 2 && lugia.width * 2 == 306 &&
+        lugia.height * 2 == 188,
+        "standalone Lugia falls back to 306 by 188");
 }
 
 void checkLargeAnimation() {
@@ -341,6 +357,14 @@ void checkViewerReentry() {
 }
 
 void writeAnimationEvidence() {
+  for (const uint16_t id : {83, 150, 146, 249}) {
+    resetFrame();
+    g_state.sprite_index = id - 1;
+    check(render(), "standalone viewer evidence renders");
+    char filename[32];
+    std::snprintf(filename, sizeof(filename), "viewer-%03u.ppm", unsigned(id));
+    savePPM(verificationOutput(filename).c_str());
+  }
   resetFrame();
   g_state.sprite_index = 24;
   render();

@@ -7,7 +7,7 @@ namespace pokedex {
 uint16_t displayScale(const Sprite& sprite) {
   if (!sprite.width || !sprite.height ||
       std::max(sprite.width, sprite.height) > kMaxSourceSize) return 0;
-  if (sprite.has_evolved && sprite.width * 3 <= kMaxDisplayWidth &&
+  if (sprite.enlarged && sprite.width * 3 <= kMaxDisplayWidth &&
       sprite.height * 3 <= kMaxDisplayHeight) return 3;
   return 2;
 }
