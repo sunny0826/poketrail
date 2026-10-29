@@ -1,31 +1,69 @@
+<div align="center">
+
 # PokeTrail · 宝可旅途
 
-给 M5Stack StopWatch（C152）的离线步行游戏：带着伙伴走路，遇见宝可梦，通过节奏对战和投球完成捕捉。保留关都与城都 1～251 只自由图鉴与《黑／白》像素动画。
+带着伙伴走路，遇见宝可梦，用节奏对战和投球完成捕捉。<br>
+运行在 M5Stack StopWatch（C152）圆屏上的离线步行探险。
 
-- 每走 **200–500 步**（随机）产生一次遭遇，精灵球不限量，每场最多投两球。
-- 一次携带一只伙伴，走路积累培养步，达到条件后手动进化。
-- 捕获概率：普通宝可梦 85%／92%／98%（普通／漂亮／完美时机），稀有为 70%／80%／90%。
-- 每种宝可梦成功捕获后永久退出遭遇池；失败、撤退或放弃后仍可遇见。
-- 默认首页显示伙伴、路线场景和今日步数；30 秒无操作后熄屏，继续计步和保存。
-- LittleFS 双槽存档，保存失败可重试；保留旧版本存档迁移。
+<img src="docs/images/readme/home.png" width="360" alt="圆屏首页：妙蛙种子站在森林路线上，标注携带中，下方为今日 4 步。主机 Runtime/M5GFX 渲染，不是实机拍摄。">
 
-这是开发中的非官方爱好项目。历史固件版本曾在 C152 启动并重载存档；该观察不代表当前 schema5 的设备验收已完成。当前主机检查、设备观察及真实计步、实体交互、RTC 保持、断电恢复和功耗的待验项见[验证说明](docs/verification.md)。
+[开始使用](#开始使用) · [构建和烧录](#构建和烧录) · [开发指南](docs/development.md) · [验证说明](docs/verification.md)
+
+<sub>开发中的非官方爱好项目 · 画面为主机 Runtime/M5GFX 渲染，不是实机拍摄</sub>
+
+</div>
+
+## 玩法
+
+- **走路探险**：森林、海边、洞窟三条路线，遭遇池各不相同。每走 200–500 步（随机）产生一次遭遇。
+- **节奏对战与捕捉**：按节拍攻击或躲避，胜利后最多投两球；精灵球不限量。成功捕获后该种永久退出遭遇池。
+- **伙伴培养**：一次携带一只，只有携带者获得培养步，达到条件后手动进化。
+- **图鉴**：自由浏览关都与城都 1～251，动画为《黑／白》像素素材。
+
+<p align="center">
+  <a href="docs/images/readme/battle.png"><img src="docs/images/readme/battle.png" width="234" alt="圆屏对战：妙蛙种子对玛瑙水母，双方有生命格，提示右键攻击。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <a href="docs/images/readme/throw.png"><img src="docs/images/readme/throw.png" width="234" alt="圆屏投球：玛瑙水母在瞄准圈中，提示按住蓄力、松手投球。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <a href="docs/images/readme/viewer.png"><img src="docs/images/readme/viewer.png" width="234" alt="圆屏图鉴：编号 001／251 的妙蛙种子，属性为草、毒，显示当前拥有和预览进化。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <br>
+  <sub>节奏对战 · 蓄力投球 · 图鉴</sub>
+</p>
+
+<p align="center">
+  <a href="docs/images/readme/route-forest.png"><img src="docs/images/readme/route-forest.png" width="234" alt="圆屏首页的森林路线：林间小径与树木。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <a href="docs/images/readme/route-coast.png"><img src="docs/images/readme/route-coast.png" width="234" alt="圆屏首页的海边路线：海浪、沙滩与礁石。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <a href="docs/images/readme/route-cave.png"><img src="docs/images/readme/route-cave.png" width="234" alt="圆屏首页的洞窟路线：钟乳石与水晶。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <br>
+  <sub>森林 · 海边 · 洞窟</sub>
+</p>
+
+概率、进化费用、按键和存档规则见[使用指南](docs/usage.md)。账户与迁移见[玩法契约](docs/design/walking-progression.md)。
+
+<details>
+<summary>画面来源</summary>
+
+全部画面是 2026-10-29 在当前代码上用主机 Runtime/M5GFX 离屏渲染的截图，不是 C152 实机拍摄，也不能当作实机帧率、观感或验收结果。点图片打开 468×468 原文件。物理圆屏为 466×466，当前 M5GFX 驱动报告 468×468；PNG 只保留圆屏内像素，圆外透明。
+
+| 画面 | 渲染套件 | 截图 |
+| --- | --- | --- |
+| 首屏首页 | `test_home_render` | `home-today-complete-live`：今日 4 步来自测试中的模拟走路 |
+| 森林、海边、洞窟 | `test_home_render` | `home-scene-0`～`home-scene-2`：未校时，所以今日显示 -- |
+| 节奏对战、蓄力投球 | `test_adventure_render` | `battle`、`throw-active`：海边路线，对手为玛瑙水母 |
+| 图鉴 | `test_adventure_render` | `viewer-entry`：测试档中的初始伙伴 |
+
+电量处的 -- 是因为渲染时没有电池读数。重新生成：
+
+```bash
+rtk proxy mise exec -- python3 scripts/run_render_tests.py \
+  test_home_render test_adventure_render
+```
+
+</details>
 
 ## 开始使用
 
 使用项目烧录脚本后，设备会同步烧录电脑的当前时间。存储可用后选择妙蛙种子、小火龙或杰尼龟作为初始伙伴。也可以在设备上手动校时，或暂不校时：累计步数与探索照常增加，未知日期期间的步数不会补填到今日。
 
-首页点按任一侧键或轻触屏幕进入菜单。普通菜单中，左键上移、右键下移，松开后生效；两键按住有重叠时确认。菜单按钮在触摸松开后执行，支持横滑及底部按钮前后翻页；轻触顶部返回上一级。
-
-| 页面 | 操作 |
-| --- | --- |
-| 对战／捕获练习 | 左键躲避，右键攻击；左右半屏触摸等价 |
-| 暂停 | 触摸顶部，或双键按住 800 毫秒 |
-| 投球 | 准备后按住右键或触摸蓄力，松手投出 |
-| 图鉴 | 左右键或横滑切换；点伙伴互动；点“预览进化”播放；点顶部返回 |
-| 省电 | 任意键或触摸唤醒，全部松手后再操作 |
-
-完整操作、培养、日期和保存规则见[使用指南](docs/usage.md)。
+首页点按任一侧键或轻触屏幕进入菜单。30 秒无操作后熄屏，计步和保存继续；按键或触摸先点亮屏幕。页面操作见[使用指南](docs/usage.md)。
 
 ## 构建和烧录
 
@@ -65,6 +103,8 @@ rtk proxy mise exec -- pio device monitor -p /dev/cu.usbmodemXXXX --baud 115200
 - v1.0 批次背面 `BAT` 贴纸标错，实际为 5V IN，不能接电池；v1.0.1 已修正。
 
 ## 文档与许可
+
+历史固件版本曾在 C152 启动并重载存档；该观察不代表当前 schema5 的设备验收已完成。当前主机检查、设备观察，以及真实计步、实体交互、RTC 保持、断电恢复和功耗的待验项，见[验证说明](docs/verification.md)。
 
 - [使用指南](docs/usage.md)：操作、捕捉、培养、日期与存档。
 - [开发指南](docs/development.md)：环境、素材生成、测试与模块职责。
