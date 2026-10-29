@@ -2,7 +2,7 @@
 
 返回[验证说明](../verification.md)。
 
-三条路线的遭遇资格改由 [adventure-251.json](../../assets/adventure-251.json) 的 `routeTypes` 按官方属性推导，物种文件删去手写 `routes`；存档升到 schema5，schema 1–4 改用冻结的旧掩码校验，4→5 只修正当前遭遇的路线。分支 `feat/issue-9-route-types`，基于 `master` `8ea8653`。
+三条路线的遭遇资格改由 [adventure-251.json](../../assets/adventure-251.json) 的 `routeTypes` 按官方属性推导，物种文件删去手写 `routes`；存档升到 schema5，schema 1–4 改用冻结的旧掩码校验，4→5 只修正当前遭遇的路线。分支 `feat/issue-9-route-types`，基于 `main` `8ea8653`。
 
 | 命令 | 结果 |
 | --- | --- |

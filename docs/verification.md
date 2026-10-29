@@ -21,7 +21,7 @@
 
 ## schema4 文档复核与主机检查（2026-10-27）
 
-在 `master`、HEAD `e3d6397` 上运行 `rtk proxy mise run test-adventure` 和 `rtk proxy mise run test-storage`，两项退出状态均为 0。环境为 macOS arm64、mise Python 3.14.2、Apple Clang 21.0.0；主机套件默认启用 AddressSanitizer／UndefinedBehaviorSanitizer，启动栈检查单独运行。
+在 `main`、HEAD `e3d6397` 上运行 `rtk proxy mise run test-adventure` 和 `rtk proxy mise run test-storage`，两项退出状态均为 0。环境为 macOS arm64、mise Python 3.14.2、Apple Clang 21.0.0；主机套件默认启用 AddressSanitizer／UndefinedBehaviorSanitizer，启动栈检查单独运行。
 
 | 检查 | 本轮结果 |
 | --- | --- |
@@ -39,7 +39,7 @@
 
 电源键输入直接读取 M5PM1 的 `0x48` 按钮状态：bit0 为当前按下电平，bit7 为读后自清的按下标志。按下沿或仅保留标志的短按产生一次省电／唤醒事件，不执行页面动作；唤醒完成帧不会再次锁屏。
 
-验证对象为 `master`、HEAD `85d470c` 加上述 PM1 输入改动的工作树，主机检查结果如下：
+验证对象为 `main`、HEAD `85d470c` 加上述 PM1 输入改动的工作树，主机检查结果如下：
 
 | 命令 | 结果 |
 | --- | --- |
