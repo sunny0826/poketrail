@@ -1,3 +1,5 @@
+[中文](README.md) · **English** ([README.en.md](README.en.md))
+
 <div align="center">
 
 # PokeTrail · 宝可旅途
@@ -107,6 +109,7 @@ rtk proxy mise exec -- pio device monitor -p /dev/cu.usbmodemXXXX --baud 115200
 历史固件版本曾在 C152 启动并重载存档；该观察不代表当前 schema5 的设备验收已完成。当前主机检查、设备观察，以及真实计步、实体交互、RTC 保持、断电恢复和功耗的待验项，见[验证说明](docs/verification.md)。
 
 - [使用指南](docs/usage.md)：操作、捕捉、培养、日期与存档。
+- [Usage guide (English)](docs/usage.en.md)：English version of the usage guide.
 - [开发指南](docs/development.md)：环境、素材生成、测试与模块职责。
 - [玩法与迁移契约](docs/design/walking-progression.md)：账户不变量、进化、旧档兼容。
 - [验证说明](docs/verification.md)：自动检查范围、当前限制和设备待验项。
