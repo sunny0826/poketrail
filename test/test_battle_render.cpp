@@ -54,10 +54,23 @@ void actor(uint16_t id, uint32_t origin, int cx, int cy, unsigned scale, bool up
   check(ink > 20 && mismatch == 0, "visible actor preserves original frame duration, integer pixels and placement");
 }
 void hp(unsigned player, unsigned enemy) {
-  for (unsigned i = 0; i < 3; ++i) {
+  for (unsigned i = 0; i < kPlayerHp; ++i)
     check(M5.Display.readPixel(92 + i * 18, 110) == (i < player ? theme::kMint : theme::kDisabled), "player HP immediately matches battle result");
-    check(M5.Display.readPixel(283 + i * 18, 110) == (i < enemy ? theme::kGold : theme::kDisabled), "enemy HP immediately matches battle result");
+  for (unsigned i = 0; i < kEnemyHp; ++i)
+    check(M5.Display.readPixel(283 + i * 11, 110) == (i < enemy ? theme::kGold : theme::kDisabled), "enemy HP immediately matches battle result");
+}
+// Plays cues until the next one requires `want`, using perfect dodges and normal attacks.
+void until(Runtime& r, Action want) {
+  while (r.engine().battleView().expected != want) {
+    const auto b = r.engine().battleView();
+    action(r, b.expected, b.targetMs - (b.expected == Action::Attack ? 100 : 0));
+    at(r, host_time_ms + 450);
   }
+}
+bool ringPixel(uint16_t color) {
+  // At 400ms before the beat over half the arc remains: 3 and 6 o'clock are lit, 9 o'clock is not.
+  return M5.Display.readPixel(451, 233) == color && M5.Display.readPixel(233, 451) == color &&
+         M5.Display.readPixel(15, 233) != color;
 }
 void snapshot(const char* name) {
   const std::string path = verificationOutput((std::string(name) + ".ppm").c_str());
@@ -73,43 +86,79 @@ void snapshot(const char* name) {
 }
 void attackAndDodge() {
   MemoryStore store; fixture(store); HostPlatform platform; Runtime r(store, platform); start(r);
-  const uint32_t origin = enter(r), target = r.engine().battleView().targetMs;
-  at(r, target - 400); actor(4, origin, 155, 232, 2); actor(25, origin, 311, 226, 2);
-  snapshot("battle-idle");
-  action(r, Action::Attack, target - 100); const uint32_t settled = target - 100;
-  check(r.engine().battleView().consumed && r.engine().battleView().lastTiming == Timing::Normal &&
-        r.engine().battleView().enemyHp == 2, "normal input preserves one damage");
-  hp(3, 2);
-  at(r, settled + 100); actor(4, origin, 189, 232, 2); actor(25, origin, 311, 226, 2, true, theme::kText);
-  snapshot("battle-attack-impact");
-  at(r, settled + 300);
-  check(r.engine().battleView().cueIndex == 1 && !r.engine().battleView().consumed, "next cue advances on original deadline");
-  actor(4, origin, 166, 232, 2);
-  snapshot("battle-attack-recovery");
-  at(r, settled + 450); actor(4, origin, 155, 232, 2); actor(25, origin, 311, 226, 2); hp(3, 2);
+  const uint32_t origin = enter(r);
+  check(r.engine().battleView().expected == Action::Dodge, "seed 0 opens on a dodge cue");
+  at(r, r.engine().battleView().targetMs - 900);
+  check(M5.Display.readPixel(451, 233) != theme::kBlue && M5.Display.readPixel(451, 233) != theme::kRed, "ring stays hidden before the 700ms lead");
+  at(r, r.engine().battleView().targetMs - 400);
+  check(ringPixel(theme::kBlue), "blue ring announces a dodge"); hp(3, 5);
+  snapshot("battle-cue-dodge");
   action(r, Action::Dodge, r.engine().battleView().targetMs - 100); const uint32_t dodge = host_time_ms;
-  at(r, dodge + 120); hp(3, 2); actor(4, origin, 129, 232, 2);
+  at(r, dodge + 120); hp(3, 5); actor(4, origin, 129, 232, 2);
   snapshot("battle-dodge-trails");
   at(r, dodge + 450); actor(4, origin, 155, 232, 2); actor(25, origin, 311, 226, 2);
   snapshot("battle-dodge-recovered");
+  until(r, Action::Attack);
+  const uint32_t target = r.engine().battleView().targetMs;
+  at(r, target - 400); actor(4, origin, 155, 232, 2); actor(25, origin, 311, 226, 2);
+  check(ringPixel(theme::kRed), "red ring announces an attack");
+  snapshot("battle-idle");
+  action(r, Action::Attack, target - 100); const uint32_t settled = target - 100;
+  check(r.engine().battleView().consumed && r.engine().battleView().lastTiming == Timing::Normal &&
+        r.engine().battleView().enemyHp == 4, "normal input preserves one damage");
+  hp(3, 4);
+  at(r, settled + 100); actor(4, origin, 189, 232, 2); actor(25, origin, 311, 226, 2, true, theme::kText);
+  snapshot("battle-attack-impact");
+  at(r, settled + 300);
+  check(r.engine().battleView().consumed || r.engine().battleView().cueIndex > 0, "attack settled before the deadline");
+  actor(4, origin, 166, 232, 2);
+  snapshot("battle-attack-recovery");
 }
 void perfectAndFinal() {
   MemoryStore store; fixture(store, 4, 41, Route::Forest); HostPlatform platform; Runtime r(store, platform); start(r);
-  const uint32_t origin = enter(r), target = r.engine().battleView().targetMs;
-  action(r, Action::Attack, target); hp(3, 1);
-  at(r, target + 125); hp(3, 1); actor(4, origin, 188, 232, 2);
+  const uint32_t origin = enter(r);
+  // seed 0: D D A A D A* ... ; perfect dodges fill energy without hurting the enemy.
+  for (unsigned i = 0; i < 2; ++i) {
+    action(r, Action::Dodge, r.engine().battleView().targetMs); at(r, host_time_ms + 450);
+  }
+  check(r.engine().battleView().energy == 2, "perfect dodges build energy");
+  const uint32_t target = r.engine().battleView().targetMs;
+  action(r, Action::Attack, target); hp(3, 3);
+  check(r.engine().battleView().energy == kSpecialEnergy && r.engine().battleView().frenzy == false, "third perfect fills energy");
+  at(r, target + 125); hp(3, 3); actor(4, origin, 188, 232, 2);
+  for (unsigned i = 0; i < kSpecialEnergy; ++i) check(M5.Display.readPixel(209 + i * 24, 326) != theme::kDisabled, "full energy pips light up");
   snapshot("battle-perfect-impact");
   at(r, target + 450); actor(4, origin, 155, 232, 2); actor(41, origin, 311, 226, 2);
-  action(r, Action::Dodge, r.engine().battleView().targetMs); at(r, host_time_ms + 450);
+  check(!r.engine().battleView().frenzy, "3 of 5 HP is not yet below half");
+  // Next cue (attack): a normal hit leaves 2 HP and the enemy turns frenzied.
+  action(r, Action::Attack, r.engine().battleView().targetMs - 100); at(r, host_time_ms + 450);
+  hp(3, 2);
+  until(r, Action::Attack);
+  check(r.engine().battleView().frenzy && r.engine().battleView().energy == kSpecialEnergy, "enemy below half HP turns frenzied");
+  check(r.engine().battleView().feint, "seed 0 cue 5 is a feint");
+  // Frenzy blinks white on odd 90ms slots; pick the even (coloured) slot at or after t.
+  const auto blinkOff = [](uint32_t t) { return t + (t / 90) % 2 * (90 - t % 90); };
+  at(r, blinkOff(r.engine().battleView().targetMs - 400));
+  check(M5.Display.readPixel(451, 233) == theme::kBlue, "feint decoy shows a dodge ring early");
+  check(r.engine().battleView().expected == Action::Attack, "decoy never changes the judged action");
+  snapshot("battle-feint-decoy");
+  at(r, blinkOff(r.engine().battleView().targetMs - 300));
+  check(M5.Display.readPixel(451, 233) == theme::kRed, "feint flips to the real attack 350ms before the beat");
+  at(r, host_time_ms - host_time_ms % 90 + 90);
+  // 170ms before the beat only the arc near 12 o'clock remains; sample it at 1 o'clock.
+  check((host_time_ms / 90) % 2 && M5.Display.readPixel(342, 44) == theme::kText &&
+        M5.Display.readPixel(451, 233) != theme::kText, "frenzy ring blinks white while it closes");
+  snapshot("battle-frenzy-special-ready");
   const uint32_t final = r.engine().battleView().targetMs; const unsigned commits = store.commits;
-  buttons(false, true); at(r, final);
+  buttons(true, true); at(r, final);
+  check(r.engine().battleView().special && r.engine().battleView().enemyHp == 0, "real two-key chord lands the special");
   check(r.screen().page == Page::Battle && r.engine().view().phase == Phase::ThrowReady && store.commits == commits + 1,
         "final hit commits victory immediately while battle stays visible");
   Save saved; check(store.load(saved).status == LoadStatus::Loaded && saved.phase == Phase::ThrowReady, "victory already survives codec reload during final animation");
-  at(r, final + 125); hp(3, 0); snapshot("battle-final-hit");
+  at(r, final + 125); hp(3, 0); snapshot("battle-final-special");
   at(r, final + 449); check(r.screen().page == Page::Battle, "final action remains until 449ms");
   at(r, final + 450); check(r.screen().page == Page::Throw && !r.engine().throwView().active, "450ms enters throw without reusing winning key");
-  at(r, final + 600); check(!r.engine().throwView().active, "held winning key cannot start throw");
+  at(r, final + 600); check(!r.engine().throwView().active, "held winning keys cannot start throw");
   buttons(false, false); frame(r); edge(r, false, true);
   check(r.engine().throwView().active && !r.engine().view().encounter.usedBalls, "fresh key prepares first ball without spending it");
 }
@@ -117,22 +166,31 @@ void failureAndPractice() {
   for (unsigned practice = 0; practice < 2; ++practice) {
     MemoryStore store; fixture(store, 7, 54, Route::Coast); HostPlatform platform; Runtime r(store, platform); start(r);
     enter(r, practice); const unsigned commits = store.commits;
-    for (unsigned cue = 0; cue < 6; ++cue) {
+    unsigned missedDodges = 0;
+    for (unsigned cue = 0; cue < kMaxCues; ++cue) {
       const auto b = practice ? r.practiceView() : r.engine().battleView();
+      if (!b.active) break;
       at(r, b.targetMs + 181);
-      if (cue == 1) { at(r, host_time_ms + 120); hp(2, 3); snapshot(practice ? "practice-miss" : "battle-miss"); }
+      if (b.expected == Action::Dodge && ++missedDodges == 1) {
+        at(r, host_time_ms + 120); hp(2, 5); snapshot(practice ? "practice-miss" : "battle-miss");
+      }
     }
     const auto b = practice ? r.practiceView() : r.engine().battleView();
-    check(!b.active && b.result == Result::Lost && b.playerHp == 0, "three failed dodges still end battle");
+    check(!b.active && b.result == Result::Lost && b.playerHp == 0 && missedDodges == kPlayerHp, "three failed dodges still end battle");
     check(r.screen().page == (practice ? Page::Practice : Page::Battle), "loss has a final presentation window");
     at(r, b.settledMs + 449); check(r.screen().page == (practice ? Page::Practice : Page::Battle), "loss remains before 450ms");
     at(r, b.settledMs + 450); check(r.screen().page == (practice ? Page::PracticeResult : Page::Result), "loss routes at 450ms");
     if (practice) check(store.commits == commits && r.engine().view().phase == Phase::EncounterReady, "practice grants nothing and retains encounter");
   }
   MemoryStore store; fixture(store); HostPlatform platform; Runtime r(store, platform); start(r); enter(r);
-  action(r, Action::Attack, r.engine().battleView().targetMs); at(r, host_time_ms + 450);
-  action(r, Action::Dodge, r.engine().battleView().targetMs); at(r, host_time_ms + 450);
-  store.fail = true; action(r, Action::Attack, r.engine().battleView().targetMs);
+  for (;;) {
+    const auto b = r.engine().battleView();
+    const bool finalHit = b.expected == Action::Attack && b.enemyHp <= 2;
+    if (finalHit) store.fail = true;
+    action(r, b.expected, b.targetMs);
+    if (finalHit) break;
+    at(r, host_time_ms + 450);
+  }
   check(r.screen().page == Page::Error && r.engine().savePending() && r.engine().view().phase == Phase::Battle,
         "failed final commit takes priority over animation and never publishes victory");
   snapshot("battle-save-failure");
@@ -144,13 +202,13 @@ void timingAndPause() {
   check(!battleEffectActive(b.view(), UINT32_MAX - 1499), "begin never plays an old effect");
   check(b.press(Action::Attack, 0), "settlement at millis zero is accepted");
   check(battleEffectActive(b.view(), 0) && battleEffectActive(b.view(), 449), "zero settlement supports complete effect");
-  b.tick(181); check(battleEffectAction(b.view()) == Action::Attack && battleEffectActive(b.view(), 300), "effect preserves previous action across cue advance");
+  b.tick(181); check(battleEffectAction(b.view()) == Action::Dodge && b.view().expected == Action::Dodge && battleEffectActive(b.view(), 300), "effect keeps the settled cue, not the next cue or the key pressed");
   check(!battleEffectActive(b.view(), 450), "effect ends exactly at 450ms");
   b.requestPause(); b.tick(b.view().targetMs + 181); const uint32_t pause = b.view().settledMs;
   check(!battleEffectActive(b.view(), pause), "paused battle suppresses effects");
   b.resume(pause + 1); check(!battleEffectActive(b.view(), pause + 1), "resume does not replay prior cue");
   b.begin(UINT32_MAX - 1700); b.press(Action::Attack, UINT32_MAX - 200); b.tick(50);
-  check(battleEffectActive(b.view(), 100) && battleEffectAction(b.view()) == Action::Attack, "effect timing survives millis rollover");
+  check(battleEffectActive(b.view(), 100) && battleEffectAction(b.view()) == Action::Dodge, "effect timing survives millis rollover");
   MemoryStore store; fixture(store, 17, 25, Route::Coast); HostPlatform platform; Runtime r(store, platform); start(r);
   const uint32_t origin = enter(r); at(r, r.engine().battleView().targetMs - 400);
   actor(17, origin, 155, 232, 1); actor(25, origin, 311, 226, 2); snapshot("battle-tall-partner");

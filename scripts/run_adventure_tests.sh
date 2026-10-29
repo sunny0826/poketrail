@@ -14,7 +14,7 @@ sources=(firmware/apps/20_pokedex/adventure_progression.cpp
   firmware/apps/20_pokedex/save_codec.cpp firmware/apps/20_pokedex/file_store.cpp)
 flags=(-Ifirmware/apps/20_pokedex -std=c++11 -O1 -g -Wall -Wextra -Werror)
 if [[ "${SANITIZE:-1}" == 1 ]]; then flags+=(-fsanitize=address,undefined -fno-omit-frame-pointer); fi
-for suite in adventure save_codec save_codec_modern adventure_regressions progression migration unique_encounters; do
+for suite in battle adventure save_codec save_codec_modern adventure_regressions progression migration unique_encounters; do
   "${CXX:-clang++}" "${flags[@]}" -Ifirmware/apps/20_pokedex "test/test_${suite}.cpp" "${sources[@]}" -o "${build_dir}/test_${suite}"
   "${build_dir}/test_${suite}"
 done

@@ -18,7 +18,8 @@ void CapturePractice::begin(uint16_t species, uint32_t nowMs, uint32_t seed) {
   stage_ = PracticeStage::Battle;
   result_ = Result::None;
   usedBalls_ = 0;
-  battle_.begin(nowMs, seed);
+  const CatalogEntry* entry = catalogEntry(species);
+  battle_.begin(nowMs, seed, entry && entry->rare);
 }
 
 void CapturePractice::reset() {

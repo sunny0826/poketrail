@@ -128,7 +128,8 @@ CommandResult Engine::startBattle(uint32_t now) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
   if (state_.phase != Phase::EncounterReady || !owns(state_, state_.encounter.partner)) return CommandResult::InvalidPhase;
   state_.phase = Phase::Battle; dirty_ = true;
-  battle_.begin(now, state_.encounter.seed);
+  const CatalogEntry* entry = catalogEntry(state_.encounter.species);
+  battle_.begin(now, state_.encounter.seed, entry && entry->rare);
   return CommandResult::Applied;
 }
 CommandResult Engine::finishBattle() {

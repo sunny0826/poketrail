@@ -102,7 +102,8 @@ class Screens {
   void glyph(theme::Icon, int x, int y, uint16_t color);
   void alert(const char*, int y, uint16_t color);
   void progress(uint64_t value, uint32_t total, int y, uint16_t color);
-  void hp(const char*, uint8_t value, int x, uint16_t color);
+  void hp(const char*, uint8_t value, uint8_t total, int x, uint16_t color);
+  void cueRing(const adventure::BattleView&, uint32_t now);
   void actorShadow(int cx, int cy);
   void warning(int cx, int cy, uint16_t color);
   void stamp(const adventure::Stamp&, int top);
