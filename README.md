@@ -60,6 +60,7 @@ rtk proxy mise exec -- pio device monitor -p /dev/cu.usbmodemXXXX --baud 115200
 目标设备为 ESP32-S3R8、16 MB Flash、8 MB PSRAM 的 M5Stack StopWatch C152，使用 CO5300 AMOLED 和 CST820B 触摸。物理圆屏 466×466，当前 M5GFX 驱动报告 468×468，应用留有圆形边缘余量。
 
 - 面向屏幕时，左侧为 `BtnA`（GPIO2），右侧为 `BtnB`（GPIO1）。
+- 双击电源键关机由 M5PM1 硬件执行。固件每次开机设置其 LDO 3.3V 电源保持，RTC 在关机期间继续走时，开机不需要重新校时；关机静态功耗待测。
 - 手动进入下载模式：连接 USB，长按电源键约 2 秒，内部绿灯亮起后松开。
 - v1.0 批次背面 `BAT` 贴纸标错，实际为 5V IN，不能接电池；v1.0.1 已修正。
 

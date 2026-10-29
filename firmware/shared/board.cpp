@@ -12,6 +12,10 @@ uint32_t vibration_until_ms = 0;
 bool vibration_active = false;
 bool previous_touch_down = false;
 
+// L1 同时供电 RTC 与 IMU；hold 使双击关机后 RTC 继续走时。
+constexpr uint8_t kPm1HoldCfg = 0x07;
+constexpr uint8_t kPm1LdoHold = 0x20;
+
 }  // namespace
 
 namespace c152 {
@@ -39,6 +43,20 @@ void begin(const char* title) {
   Serial.printf("\nM5Stack StopWatch C152: %s\n", title);
   Serial.printf("display=%dx%d board=%d\n", M5.Display.width(),
                 M5.Display.height(), static_cast<int>(M5.getBoard()));
+
+  uint8_t hold = 0;
+  if (!M5.Power.M5pm1.readRegister(kPm1HoldCfg, &hold, 1)) {
+    Serial.printf("pm1 ldo hold failed: read\n");
+  } else if (!M5.Power.M5pm1.writeRegister8(kPm1HoldCfg,
+                                             hold | kPm1LdoHold)) {
+    Serial.printf("pm1 ldo hold failed: write\n");
+  } else if (!M5.Power.M5pm1.readRegister(kPm1HoldCfg, &hold, 1)) {
+    Serial.printf("pm1 ldo hold failed: verify\n");
+  } else if (!(hold & kPm1LdoHold)) {
+    Serial.printf("pm1 ldo hold failed: verify %02x\n", hold);
+  } else {
+    Serial.printf("pm1 ldo hold=%02x\n", hold);
+  }
 }
 
 void update() {

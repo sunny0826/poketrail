@@ -13,7 +13,7 @@ namespace {
 using pokedex::device_clock::Reading;
 using pokedex::device_clock::Clock;
 const int64_t target = 1792670400LL;
-struct Op { bool write; unsigned reg, len, value; };
+struct Op { bool write; unsigned addr, reg, len, value; };
 uint8_t bank[256];
 std::vector<Op> trace;
 std::vector<std::array<uint8_t,256>> snapshots;
@@ -46,8 +46,8 @@ void reset() {
   stickStop = corruptRead = changeAfterRead = false;
   advance = 0; advanceFromRead = 0; dateReads = dateWrites = 0;
 }
-bool operation(bool write, unsigned reg, unsigned len) {
-  trace.push_back({write,reg,len,0});
+bool operation(bool write, unsigned addr, unsigned reg, unsigned len) {
+  trace.push_back({write,addr,reg,len,0});
   if (trace.size() == injectAt) { bank[0x1d] |= injectBits; ++injectionHits; }
   return trace.size() != failAt && trace.size() != failAt2;
 }
@@ -75,9 +75,9 @@ void I2C_Class::setPort(int port, int sda, int scl) {
   _port_num=port; _pin_sda=sda; _pin_scl=scl;
 }
 bool I2C_Class::begin() { ++busBegins; return true; }
-bool I2C_Class::readRegister(uint8_t, uint8_t reg, uint8_t* out,
+bool I2C_Class::readRegister(uint8_t a, uint8_t reg, uint8_t* out,
                              size_t len, uint32_t) const {
-  if (!operation(false,reg,len)) { snapshot(); return false; }
+  if (!operation(false,a,reg,len)) { snapshot(); return false; }
   if (reg==0x10) {
     ++dateReads;
     expect(len==7,"date read is one complete burst");
@@ -91,9 +91,9 @@ bool I2C_Class::readRegister(uint8_t, uint8_t reg, uint8_t* out,
   snapshot();
   return true;
 }
-bool I2C_Class::writeRegister(uint8_t, uint8_t reg, const uint8_t* data,
+bool I2C_Class::writeRegister(uint8_t a, uint8_t reg, const uint8_t* data,
                               size_t len, uint32_t) const {
-  const bool ok=operation(true,reg,len);
+  const bool ok=operation(true,a,reg,len);
   trace.back().value=data[0];
   if (reg==0x10) ++dateWrites;
   if (!ok) {
