@@ -41,7 +41,19 @@ class M5Unified {
     void setTextColor(int,int) {} void drawString(const char*,int,int) {}
   } Display;
   struct SpeakerShell { void setVolume(int) {} void tone(int,int) {} } Speaker;
-  struct PowerShell { void setVibration(int) {} } Power;
+  struct Pm1Shell {
+    static constexpr uint8_t address = 0x6E;
+    bool readRegister(uint8_t reg, uint8_t* out, size_t length) {
+      return m5::In_I2C.readRegister(address, reg, out, length, 0);
+    }
+    bool writeRegister8(uint8_t reg, uint8_t value) {
+      return m5::In_I2C.writeRegister8(address, reg, value, 0);
+    }
+  };
+  struct PowerShell {
+    void setVibration(int) {}
+    Pm1Shell M5pm1;
+  } Power;
   struct Detail { int x=0,y=0; bool isPressed() const { return false; } };
   struct TouchShell { Detail getDetail() const { return {}; } } Touch;
   struct ImuShell {

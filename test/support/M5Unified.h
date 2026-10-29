@@ -29,10 +29,23 @@ struct HostM5 {
   } Speaker;
   struct Pm1Stub {
     uint8_t button = 0;
+    uint8_t hold_cfg = 0;
     bool readRegister(uint8_t reg, uint8_t* out, size_t length) {
-      if (reg != 0x48 || length != 1) return false;
-      *out = button;
-      button &= ~0x80;
+      if (length != 1) return false;
+      if (reg == 0x48) {
+        *out = button;
+        button &= ~0x80;
+        return true;
+      }
+      if (reg == 0x07) {
+        *out = hold_cfg;
+        return true;
+      }
+      return false;
+    }
+    bool writeRegister8(uint8_t reg, uint8_t value) {
+      if (reg != 0x07) return false;
+      hold_cfg = value;
       return true;
     }
   };
