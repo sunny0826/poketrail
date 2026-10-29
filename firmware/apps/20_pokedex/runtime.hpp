@@ -126,6 +126,8 @@ class Runtime {
   void tickEvolution(uint32_t now, bool inputHeld);
   static bool hasEvolutionPreview(uint16_t species, void* context);
   void openPartner(uint16_t species);
+  void openHomeEvolution();
+  void leaveEvolutionConfirm();
   void resumeSavedProgression();
   static const char* collectionLabel(uint16_t species, void* context);
   void goBack();
@@ -175,6 +177,7 @@ class Runtime {
   bool testHoldActive_ = false;
   enum class PendingRoster : uint8_t { None, Select, Evolve };
   PendingRoster pendingRoster_ = PendingRoster::None;
+  bool evolutionFromHome_ = false;
   bool hasSample_ = false, gapReported_ = false, wasVibrating_ = false;
   enum class DisplayState : uint8_t { Awake, Asleep, Waking };
   DisplayState display_ = DisplayState::Awake;

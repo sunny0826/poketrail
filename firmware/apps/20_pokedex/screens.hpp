@@ -49,6 +49,9 @@ const char* routeName(adventure::Route);
 const char* speciesName(uint16_t id);
 const char* progressionMessage(adventure::CommandResult);
 unsigned menuCount(const ScreenState&, const adventure::Engine&);
+// Home shows the evolve button only while the carried partner can evolve now.
+constexpr menu_layout::Rect kHomeEvolveButton = {173, 67, 120, 30};
+bool homeEvolutionReady(const adventure::Engine&);
 bool touchBackEnabled(Page);
 bool isTestPage(Page);
 void drawGraphicsError(const c152::BatteryStatus&);

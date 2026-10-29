@@ -56,7 +56,14 @@ bool Screens::exploration(const Engine& engine, uint32_t now) {
   }
   const bool rendered = save.partner && sprite(save.partner, now, homePlayback_, 248, 233, 0, maxScale);
   if (!rendered) line("伙伴画面不可用", 233, theme::kRed);
-  title(speciesName(save.partner), "携带中", theme::routeColor(save.route));
+  const bool evolvable = homeEvolutionReady(engine);
+  title(speciesName(save.partner), evolvable ? "" : "携带中", theme::routeColor(save.route));
+  if (evolvable) {
+    const auto& b = kHomeEvolveButton;
+    M5.Display.fillRoundRect(b.x, b.y, b.width, b.height, 12, theme::kPanelActive);
+    M5.Display.drawRoundRect(b.x, b.y, b.width, b.height, 12, theme::kGold);
+    smallLabel("进化", b.x + b.width / 2, b.y + b.height / 2, theme::kGold, middle_center);
+  }
   M5.Display.fillRoundRect(76, 68, 69, 26, 7, theme::kPanel);
   glyph(theme::Icon::Route, 91, 81, theme::routeColor(save.route));
   smallLabel(routeName(save.route), 107, 81, theme::routeColor(save.route), middle_left);

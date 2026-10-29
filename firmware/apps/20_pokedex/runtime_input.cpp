@@ -39,7 +39,7 @@ void Runtime::goBack() {
   else if (screen_.page == Page::Clock)
     navigate(engine_.view().starter ? Page::Resources : Page::DateWelcome);
   else if (screen_.page == Page::EvolutionPreviewTargets) navigate(Page::Viewer);
-  else if (screen_.page == Page::EvolutionConfirm) openPartner(screen_.species);
+  else if (screen_.page == Page::EvolutionConfirm) leaveEvolutionConfirm();
   else if (screen_.page == Page::ReleaseConfirm) navigate(Page::Throw);
   else if (screen_.page == Page::PartnerDetail) navigate(Page::Partners);
   else if (screen_.page == Page::Partners || screen_.page == Page::Routes) navigate(Page::Menu);
@@ -56,6 +56,9 @@ void Runtime::handle(const Input& raw) {
     return;
   }
   if (screen_.page == Page::Home) {
+    const bool onEvolve = homeEvolutionReady(engine_) && kHomeEvolveButton.contains(raw.x, raw.y);
+    if (onEvolve && raw.click) { openHomeEvolution(); return; }
+    if (onEvolve && raw.touch) return;
     if (raw.touch) { navigate(Page::Menu); return; }
     if (raw.back) { waitForRelease(); return; }
     if (raw.left || raw.right) navigate(Page::Menu);

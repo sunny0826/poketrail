@@ -4,7 +4,7 @@
 
 | Page | 设计帧与状态 |
 | --- | --- |
-| `Home` | [森林](ui-scene-redesign/frames/home-forest.png) · [海边](ui-scene-redesign/frames/home-coast.png) · [洞窟](ui-scene-redesign/frames/home-cave.png) · [遭遇](ui-scene-redesign/frames/home-encounter.png) · [待捕捉](ui-scene-redesign/frames/home-throw-ready.png) · [日期未知](ui-scene-redesign/frames/home-unknown-date.png) · [部分日](ui-scene-redesign/frames/home-partial-day.png) · [步数缺失](ui-scene-redesign/frames/home-step-warning.png) · [恢复警告](ui-scene-redesign/frames/home-recovery.png) |
+| `Home` | [森林](ui-scene-redesign/frames/home-forest.png) · [海边](ui-scene-redesign/frames/home-coast.png) · [洞窟](ui-scene-redesign/frames/home-cave.png) · [遭遇](ui-scene-redesign/frames/home-encounter.png) · [待捕捉](ui-scene-redesign/frames/home-throw-ready.png) · [日期未知](ui-scene-redesign/frames/home-unknown-date.png) · [部分日](ui-scene-redesign/frames/home-partial-day.png) · [步数缺失](ui-scene-redesign/frames/home-step-warning.png) · [恢复警告](ui-scene-redesign/frames/home-recovery.png) · 可进化按钮无设计帧，见[伙伴渲染测试](../../test/test_progression_render.cpp)的 `home-evolve-ready`、`home-evolve-branches` 截图 |
 | `Menu` | [第一页](ui-scene-redesign/frames/menu-main.png) · [第二页](ui-scene-redesign/frames/menu-second.png) · [末页](ui-scene-redesign/frames/menu-last.png) · [恢复警告](ui-scene-redesign/frames/menu-recovery.png) |
 | `Resources` | [资源与数据](ui-scene-redesign/frames/resources.png) |
 | `DateWelcome` | [首次日期确认](ui-scene-redesign/frames/date-welcome.png) · [未完成校时恢复](ui-scene-redesign/frames/date-pending.png) |
