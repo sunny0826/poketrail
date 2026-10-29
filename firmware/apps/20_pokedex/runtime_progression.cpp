@@ -13,6 +13,29 @@ void Runtime::openPartner(uint16_t species) {
   screen_.species = species; screen_.evolved = false;
   navigate(Page::PartnerDetail);
 }
+void Runtime::openHomeEvolution() {
+  const uint16_t partner = engine_.view().partner;
+  const EvolutionView view = engine_.evolutionView(partner);
+  unsigned ready = view.count;
+  for (unsigned i = 0; i < view.count; ++i)
+    if (view.options[i].status == CommandResult::Applied) { ready = i; break; }
+  if (ready == view.count) return;
+  if (view.count > 1) {
+    openPartner(partner);
+    screen_.selected = ready + 1;
+    return;
+  }
+  screen_.species = partner; screen_.evolved = false;
+  screen_.evolution.from = view.from;
+  screen_.evolution.to = view.options[ready].target;
+  screen_.evolution.rosterRevision = view.revision;
+  evolutionFromHome_ = true;
+  navigate(Page::EvolutionConfirm);
+}
+void Runtime::leaveEvolutionConfirm() {
+  if (evolutionFromHome_) navigate(Page::Home);
+  else openPartner(screen_.species);
+}
 void Runtime::startEvolution() {
   const auto& request = engine_.view().lastEvolution.request;
   screen_.evolutionAnim.from = request.from;
@@ -71,7 +94,7 @@ void Runtime::activateProgression(unsigned item, uint32_t at) {
     return;
   }
   if (screen_.page == Page::EvolutionConfirm) {
-    if (item == 1) { openPartner(screen_.species); return; }
+    if (item == 1) { leaveEvolutionConfirm(); return; }
     const CommandResult result = engine_.evolve(screen_.evolution, readingAt(at));
     if (result == CommandResult::Applied) {
       startEvolution();
@@ -99,6 +122,7 @@ void Runtime::activateProgression(unsigned item, uint32_t at) {
   screen_.evolution.from = view.from;
   screen_.evolution.to = option.target;
   screen_.evolution.rosterRevision = view.revision;
+  evolutionFromHome_ = false;
   navigate(Page::EvolutionConfirm);
 }
 void Runtime::tickCapture(uint32_t now) {

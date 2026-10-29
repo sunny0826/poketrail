@@ -66,6 +66,13 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     default: return 0;
   }
 }
+bool homeEvolutionReady(const Engine& e) {
+  if (!e.ready()) return false;
+  const EvolutionView view = e.evolutionView(e.view().partner);
+  for (unsigned i = 0; i < view.count; ++i)
+    if (view.options[i].status == CommandResult::Applied) return true;
+  return false;
+}
 bool touchBackEnabled(Page page) {
   switch (page) {
     case Page::Menu: case Page::Resources: case Page::Routes: case Page::Partners:

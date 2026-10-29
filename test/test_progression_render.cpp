@@ -127,6 +127,67 @@ void peakOwnership() {
   check(evolving.engine().view().partner == 2 && evolving.engine().view().progress[0].walked == 7502 &&
         evolving.engine().view().progress[1].walked == 1, "late source peaks cultivate historical source after evolution");
 }
+void starterWith(MemoryStore& store, unsigned steps) {
+  Engine engine(store); check(engine.begin() == CommandResult::Applied, "new engine boots");
+  engine.chooseStarter(1); step(engine, 1, steps); engine.checkpoint();
+}
+void back(Runtime& runtime) { tap(runtime, 233, 30); }
+void homeEvolveButton() {
+  const auto& b = kHomeEvolveButton;
+  const int bx = b.x + b.width / 2, by = b.y + b.height / 2;
+  HostPlatform platform;
+  MemoryStore early; starterWith(early, 7499);
+  Runtime waiting(early, platform); start(waiting);
+  check(!homeEvolutionReady(waiting.engine()) && glyph("携带中", 80, theme::kMint) && !glyph("进化", by, theme::kGold),
+        "one step short keeps the carried label and hides the evolve button");
+  tap(waiting, bx, by);
+  check(waiting.screen().page == Page::Menu, "button area still opens the menu while evolution is unavailable");
+
+  MemoryStore store; starterWith(store, 7500);
+  Runtime runtime(store, platform); start(runtime);
+  check(runtime.screen().page == Page::Home && glyph("进化", by, theme::kGold) && !glyph("携带中", 80, theme::kMint),
+        "reaching the cost shows the evolve button on home");
+  screenshot(runtime, "home-evolve-ready");
+  const unsigned commits = store.commits;
+  tap(runtime, bx, by);
+  check(runtime.screen().page == Page::EvolutionConfirm && runtime.screen().evolution.from == 1 &&
+        runtime.screen().evolution.to == 2 && store.commits == commits,
+        "home button opens the existing confirmation without saving");
+  select(runtime, 1);
+  check(runtime.screen().page == Page::Home && runtime.engine().view().progress[0].spent == 0,
+        "later from a home evolution returns home and keeps progress");
+  tap(runtime, bx, by); back(runtime);
+  check(runtime.screen().page == Page::Home, "top back from a home evolution returns home");
+  tap(runtime, b.x + 4, by); select(runtime, 0);
+  check(runtime.screen().page == Page::Evolution && runtime.screen().evolutionAnim.to == 2,
+        "confirming from home plays the saved evolution");
+  idle(runtime, kEvolutionTotalMs);
+  check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 2 &&
+        runtime.engine().view().partner == 2 && runtime.engine().view().progress[0].spent == 7500,
+        "home evolution finishes on target detail with the normal charge");
+  back(runtime); back(runtime); back(runtime);
+  check(runtime.screen().page == Page::Home && !homeEvolutionReady(runtime.engine()) &&
+        glyph("携带中", 80, theme::kMint), "new form without steps hides the button again");
+
+  MemoryStore owned; legacyOwned(owned, {1, 2});
+  { Engine e(owned); e.begin(); step(e, 1, 7500); e.checkpoint(); }
+  Runtime blocked(owned, platform); start(blocked);
+  check(!homeEvolutionReady(blocked.engine()) && !glyph("进化", by, theme::kGold),
+        "owned target hides the button");
+  MemoryStore finalForm; legacyOwned(finalForm, {1, 3}, 3);
+  { Engine e(finalForm); e.begin(); step(e, 3, 20000); e.checkpoint(); }
+  Runtime last(finalForm, platform); start(last);
+  check(!homeEvolutionReady(last.engine()) && !glyph("进化", by, theme::kGold), "final form hides the button");
+
+  MemoryStore eevee; legacyOwned(eevee, {1, 133, 134}, 133);
+  { Engine e(eevee); e.begin(); step(e, 133, 10000); e.checkpoint(); }
+  Runtime branches(eevee, platform); start(branches);
+  check(glyph("进化", by, theme::kGold), "Eevee with an open branch shows one button");
+  tap(branches, bx, by);
+  check(branches.screen().page == Page::PartnerDetail && branches.screen().species == 133 &&
+        branches.screen().selected == 2, "multiple targets open the branch list at the first open branch");
+  screenshot(branches, "home-evolve-branches");
+}
 void legacyVictory(MemoryStore& store) {
   Save save; save.schema = 1; save.bootGeneration = 1; save.starter = save.partner = 1;
   setOwned(save, 1); save.totalSteps = save.undatedSteps = 500; save.nextEncounterId = 2;
@@ -176,6 +237,6 @@ void noBallsWaitAndRelease() {
 }
 int main() {
   c152::begin("PROGRESSION TEST");
-  evolveAndRetry(); eeveeAndCollection(); peakOwnership(); noBallsWaitAndRelease();
+  evolveAndRetry(); eeveeAndCollection(); homeEvolveButton(); peakOwnership(); noBallsWaitAndRelease();
   std::printf("%u progression Runtime/Button_Class checks, 0 failures\n", checks);
 }
