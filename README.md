@@ -1,4 +1,4 @@
-[中文](README.md) · **English** ([README.en.md](README.en.md))
+[中文](README.md) · [**English**](README.en.md)
 
 <div align="center">
 
