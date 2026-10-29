@@ -43,6 +43,20 @@ void impact(int x, int y, uint32_t age, uint16_t color, bool strong) {
   }
 }
 }
+void Screens::cueRing(const BattleView& b, uint32_t now) {
+  if (!b.active || b.paused || b.consumed) return;
+  const int32_t remaining = int32_t(b.targetMs - now);
+  if (remaining > int32_t(kCueLeadMs) || remaining < -int32_t(kNormalWindowMs)) return;
+  const bool attack = shownAction(b, now) == Action::Attack;
+  const bool blink = b.frenzy && (now / 90) % 2;
+  const uint16_t color = blink ? theme::kText : attack ? theme::kRed : theme::kBlue;
+  // The arc shrinks clockwise toward 12 o'clock (under the battery bar) and vanishes on the judged beat.
+  // M5GFX wraps angles with fmod, so the sweep is split at 360 instead of passing 630.
+  const float sweep = remaining > 0 ? 360.0f * remaining / kCueLeadMs : 0.0f;
+  const float end = 270.0f + sweep;
+  if (sweep >= 1.0f) M5.Display.fillArc(233, 233, 214, 222, 270.0f, end < 360.0f ? end : 360.0f, color);
+  if (end > 360.0f) M5.Display.fillArc(233, 233, 214, 222, 0.0f, end - 360.0f, color);
+}
 void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& practice, uint32_t now) {
   const auto& v = e.view();
   if (s.page == Page::Throw) {
@@ -85,7 +99,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   const Action action = effect ? battleEffectAction(b) : b.expected;
   const bool attack = action == Action::Attack;
   const bool hit = b.lastTiming != Timing::Miss;
-  const bool perfect = effect && b.lastTiming == Timing::Perfect;
+  const bool perfect = effect && (b.lastTiming == Timing::Perfect || b.special);
   const int shake = perfect && attack && age >= 100 && age < 200 ? ((age / 25) % 2 ? 2 : -2) : 0;
   const int playerX = 155 + shake + (attack ? pulse(age, 0, 100, 400, 34) :
                                      hit ? -pulse(age, 30, 120, 370, 26) : 0);
@@ -94,8 +108,8 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   const Route route = s.page == Page::Practice ? v.route : v.encounter.route;
   scene(route, true, shake);
   title(s.page == Page::Practice ? "捕获练习" : "节奏对战", "轻触上方暂停", theme::kMint);
-  hp(speciesName(partner), b.playerHp, 91, theme::kMint);
-  hp(speciesName(enemy), b.enemyHp, 282, theme::kGold);
+  hp(speciesName(partner), b.playerHp, kPlayerHp, 91, theme::kMint);
+  hp(speciesName(enemy), b.enemyHp, kEnemyHp, 282, theme::kGold);
   const uint8_t playerScale = actorScale(partner), enemyScale = actorScale(enemy);
   if (!attack && hit && age >= 10 && age < 250) {
     sprite(partner, now, battlePlayback_, 232, 145 + shake, theme::kOutline, playerScale);
@@ -103,28 +117,44 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   }
   if (!attack && age < 100) M5.Display.fillRect(286 - int(age) * 65 / 100, 225, 9, 5, theme::kBlue);
   const int32_t delta = int32_t(now - b.targetMs);
-  const bool perfectWindow = delta >= -int32_t(kPerfectWindowMs) && delta <= int32_t(kPerfectWindowMs);
+  const int32_t perfectMs = b.frenzy ? kFrenzyPerfectWindowMs : kPerfectWindowMs;
+  const bool perfectWindow = delta >= -perfectMs && delta <= perfectMs;
   if (attack && age < 100) brackets(enemyX, 226, perfect || perfectWindow ? theme::kGold : theme::routeColor(route));
-  else if (!effect && b.expected == Action::Attack) brackets(enemyX, 226, perfectWindow ? theme::kGold : theme::routeColor(route));
+  else if (!effect && shownAction(b, now) == Action::Attack) brackets(enemyX, 226, perfectWindow ? theme::kGold : theme::routeColor(route));
   actorShadow(playerX, 232); actorShadow(enemyX, 226);
   const bool flash = effect && age >= 100 && age < 250 && (age / 50) % 2 == 0;
   sprite(partner, now, battlePlayback_, 232, playerX, flash && !attack && !hit ? theme::kText : 0, playerScale);
   sprite(enemy, now, enemyBattlePlayback_, 226, enemyX, flash && attack && hit ? theme::kText : 0, enemyScale);
   if (effect && attack && hit) impact(enemyX, 222, age, perfect ? theme::kGold : theme::kText, perfect);
   if (effect && !attack && !hit) impact(playerX, 228, age, theme::kRed, false);
+  const uint32_t beat = b.frenzy ? kFrenzyBeatIntervalMs : kBeatIntervalMs;
+  const int32_t normalMs = b.frenzy ? kFrenzyNormalWindowMs : kNormalWindowMs;
   M5.Display.fillRoundRect(99, 344, 268, 27, 8, theme::kBackground);
   M5.Display.drawFastHLine(103, 357, 260, theme::kTrack);
-  for (int boundary : {-180, -70, 70, 180}) {
-    const int x = 233 + boundary * 120 / int(kBeatIntervalMs);
-    M5.Display.drawFastVLine(x, 352, 11, std::abs(boundary) == 70 ? theme::kGold : theme::kMuted);
+  for (int boundary : {-normalMs, -perfectMs, perfectMs, normalMs}) {
+    const int x = 233 + boundary * 120 / int(beat);
+    M5.Display.drawFastVLine(x, 352, 11, std::abs(boundary) == perfectMs ? theme::kGold : theme::kMuted);
   }
   M5.Display.drawRoundRect(217, 346, 32, 22, 4, perfectWindow ? theme::kGold : theme::kMint);
-  const int x = 233 + std::max(-1625, std::min(1625, int(delta))) * 120 / int(kBeatIntervalMs);
+  const int x = 233 + std::max(-1625, std::min(1625, int(delta))) * 120 / int(beat);
   M5.Display.fillCircle(x, 357, 5, perfect || perfectWindow ? theme::kGold : theme::kMint);
+  for (unsigned i = 0; i < kSpecialEnergy; ++i) {
+    const bool full = b.energy >= kSpecialEnergy;
+    const uint16_t color = i < b.energy ? (full && (now / 200) % 2 ? theme::kText : theme::kGold) : theme::kDisabled;
+    M5.Display.fillCircle(209 + int(i) * 24, 326, 5, color);
+  }
+  cueRing(b, now);
   const char* result[] = {"未命中", "命中", "漂亮", "完美"};
-  line(b.pauseRequested ? "本拍结束后暂停" : effect || b.consumed ? result[uint8_t(b.lastTiming)] :
-       b.expected == Action::Attack ? "右键 · 攻击" : "左键 · 躲避", 401,
-       perfect ? theme::kGold : effect && !hit ? theme::kMuted : theme::kText, true);
-  line("每拍只接受第一次动作", 430, theme::kMuted);
+  const bool cueVisible = int32_t(b.targetMs - now) <= int32_t(kCueLeadMs);
+  const bool shownAttack = shownAction(b, now) == Action::Attack;
+  const char* prompt = !cueVisible ? (b.frenzy ? "狂暴" : "") : shownAttack ?
+    (b.energy >= kSpecialEnergy ? "右键攻击 · 双键必杀" : "右键 · 攻击") : "左键 · 躲避";
+  const uint16_t promptColor = !cueVisible ? theme::kRed : shownAttack ? theme::kRed : theme::kBlue;
+  if (b.pauseRequested) line("本拍结束后暂停", 401, theme::kText, true);
+  else if (effect || b.consumed)
+    line(b.special ? "必杀" : result[uint8_t(b.lastTiming)], 401,
+         b.special || perfect ? theme::kGold : effect && !hit ? theme::kMuted : theme::kText, true);
+  else if (*prompt) line(prompt, 401, promptColor, true);
+  line(b.frenzy ? "狂暴 · 节奏加快" : "看外圈颜色出招", 430, b.frenzy ? theme::kRed : theme::kMuted);
 }
 } }

@@ -134,13 +134,15 @@ void Screens::progress(uint64_t value, uint32_t total, int y, uint16_t color) {
     M5.Display.fillRect(x, y, 13, 5, index < filled ? color : theme::kDisabled);
   }
 }
-void Screens::hp(const char* name, uint8_t value, int x, uint16_t color) {
+void Screens::hp(const char* name, uint8_t value, uint8_t total, int x, uint16_t color) {
   M5.Display.setTextDatum(middle_left);
   M5.Display.setFont(&fonts::efontCN_16);
   M5.Display.setTextColor(theme::kText);
   M5.Display.drawString(name, x, 92);
-  for (unsigned index = 0; index < 3; ++index)
-    M5.Display.fillRect(x + index * 18, 108, 13, 7, index < value ? color : theme::kDisabled);
+  // Segments share a fixed 54px track so 3 and 5 HP bars stay inside the round screen.
+  const unsigned pitch = total > 3 ? 11 : 18, width = total > 3 ? 8 : 13;
+  for (unsigned index = 0; index < total; ++index)
+    M5.Display.fillRect(x + index * pitch, 108, width, 7, index < value ? color : theme::kDisabled);
 }
 void Screens::actorShadow(int cx, int cy) {
   M5.Display.fillEllipse(cx, cy + 67, 40, 6, theme::rgb(0x6C, 0x68, 0x48));
