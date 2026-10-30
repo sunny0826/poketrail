@@ -13,8 +13,10 @@ int main() {
     pokedex::viewer::State state;
     for (uint16_t f = 0; f < s.frame_count; ++f) {
       pokedex::viewer::update(state, s, time);
-      if (state.frame_index != f || !pokedex::decodeFrame(s,f,1,pixels.data(),pixels.size()))
+      if (state.frame_index != f || !pokedex::decodeFrame(s,f,1,pixels.data(),pixels.size())) {
+        std::fprintf(stderr, "decode failed id=%u frame=%u raw=%u\n", s.id, f, s.raw_size);
         return 1;
+      }
       const uint16_t scale = pokedex::displayScale(s);
       if (!pokedex::decodeFrame(s, f, scale, scaled.data(), scaled.size())) return 3;
       const size_t width = size_t(s.width) * scale;

@@ -260,7 +260,8 @@ void animationWraparound() {
 }
 void allPartners() {
   const std::vector<uint16_t> representatives = {1, 4, 7, 6, 42, 122, 139, 149,
-                                                 152, 157, 160, 181, 197, 208, 245, 249, 251};
+      152, 157, 160, 181, 197, 208, 245, 249, 251, 252, 386, 387, 493, 494,
+      597, 600, 604, 606, 615, 642, 644, 648, 649};
   for (uint16_t id = 1; id <= kSpeciesCount; ++id) {
     MemoryStore store; modernOwned(store, {id}, id); HostPlatform platform;
     Runtime runtime(store, platform); start(runtime); const uint32_t origin = host_time_ms;

@@ -26,11 +26,11 @@ bool migrateLegacy(Save& s) {
     }
     if (!validate(s)) return false;
   }
-  if (s.schema != 2 && s.schema != 3 && s.schema != 4) return false;
+  if (s.schema < 2 || s.schema > 5 || !validate(s)) return false;
   // Schema 3 widens the catalog. Existing fields and the current encounter stay
   // verbatim; species 152-251 start empty and unregistered.
   if (s.schema == 2) {
-    for (size_t i = 151; i < kSpeciesCount; ++i) {
+    for (size_t i = 151; i < speciesCapacity(3).count; ++i) {
       s.progress[i] = SpeciesProgress();
       s.captureCounts[i] = 0;
       s.firstCapture[i] = Capture();
@@ -48,6 +48,11 @@ bool migrateLegacy(Save& s) {
   // validated against the frozen masks, so an in-play encounter may sit on a
   // route it no longer belongs to; only that route is repaired.
   if (s.schema == 4) upgradeToSchema5(s);
+  if (s.schema == 5) {
+    if (!validate(s)) return false;
+    // The old schema's validated empty tail becomes the new permanent accounts.
+    s.schema = 6;
+  }
   return validate(s);
 }
 void upgradeToSchema4(Save& s) {

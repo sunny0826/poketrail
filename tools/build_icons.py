@@ -2,8 +2,8 @@
 """离线生成宝可梦与精灵球静态缩略图：固定来源 PNG 转 RGB565 常量数组。
 
 平时完全离线：从 assets/sprites/icons 缓存读取并按 assets/icons-gen1.json
-与 assets/icons-gen2.json 核对 SHA256，任一清单缺失或哈希不符立即失败。首次或补图时使用 --download 显式联网下载，
---write-manifests 根据缓存重建 Gen1/Gen2 清单。
+至 assets/icons-gen5.json 核对 SHA256，任一清单缺失或哈希不符立即失败。首次或补图时使用 --download 显式联网下载，
+--write-manifests 根据缓存重建五个世代清单。
 """
 
 from __future__ import annotations
@@ -21,10 +21,9 @@ from PIL import Image
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_HEADER = REPO_ROOT / "firmware/apps/20_pokedex/icons_generated.hpp"
 CACHE_DIR = REPO_ROOT / "assets/sprites/icons"
-MANIFESTS = {
-    1: REPO_ROOT / "assets/icons-gen1.json",
-    2: REPO_ROOT / "assets/icons-gen2.json",
-}
+MANIFESTS = {generation: REPO_ROOT / f"assets/icons-gen{generation}.json"
+             for generation in range(1, 6)}
+RANGES = {1: (1, 151), 2: (152, 251), 3: (252, 386), 4: (387, 493), 5: (494, 649)}
 SPRITE_REVISION = "97a7832d307311c0e1c6ea9035308bf80cc94f81"
 SOURCE_REPO = f"https://github.com/PokeAPI/sprites/tree/{SPRITE_REVISION}"
 ICON_URL = (
@@ -38,7 +37,7 @@ POKE_BALL_URL = (
 POKE_BALL_CACHE = "poke-ball.png"
 TRANSPARENT_KEY = 0xF81F  # 与 firmware/apps/20_pokedex/sprite.hpp kTransparentKey 一致
 GEN1_COUNT = 151
-POKEMON_COUNT = 251
+POKEMON_COUNT = 649
 
 
 def cache_path(name: str) -> Path:
@@ -99,7 +98,7 @@ def load_manifests() -> tuple[dict[int, dict], set[int]]:
         manifest = json.loads(path.read_text())
         if manifest["revision"] != SPRITE_REVISION:
             raise ValueError(f"generation {generation} icon manifest revision differs")
-        first, last = (1, GEN1_COUNT) if generation == 1 else (GEN1_COUNT + 1, POKEMON_COUNT)
+        first, last = RANGES[generation]
         ids = [entry["id"] for entry in manifest["icons"]]
         if sorted(ids) != list(range(first, last + 1)):
             raise ValueError(f"generation {generation}: incomplete icon manifest")
@@ -115,7 +114,7 @@ def load_manifests() -> tuple[dict[int, dict], set[int]]:
 def verify_hash(name: str, data: bytes, expected: str) -> None:
     actual = hashlib.sha256(data).hexdigest()
     if actual != expected:
-        raise ValueError(f"{name}: SHA256 differs from assets/icons-gen1.json")
+        raise ValueError(f"{name}: SHA256 differs from its icon manifest")
 
 
 def generation_of(number: int) -> int:
@@ -165,7 +164,7 @@ struct Icon {
   const uint16_t* pixels;
 };
 
-extern const Icon kPokemonIcons[251];
+extern const Icon kPokemonIcons[649];
 extern const Icon kPokeBallIcon;
 
 }  // namespace data
@@ -189,7 +188,7 @@ def generate_source(pokemon: list[dict], poke_ball: dict) -> str:
         emit_pixels(lines, f'kIcon{icon["id"]:04d}Pixels', icon["pixels"])
     lines.append(f'// poke-ball, {poke_ball["width"]}x{poke_ball["height"]}')
     emit_pixels(lines, 'kPokeBallPixels', poke_ball["pixels"])
-    lines.extend(['}  // namespace', '', 'const Icon kPokemonIcons[251] = {'])
+    lines.extend(['}  // namespace', '', f'const Icon kPokemonIcons[{len(pokemon)}] = {{'])
     for icon in pokemon:
         ident = f'kIcon{icon["id"]:04d}Pixels'
         lines.append(f'    {{{icon["width"]}, {icon["height"]}, {ident}}},')
@@ -223,7 +222,7 @@ def main() -> int:
                         help='允许联网下载缓存中缺失的 PNG')
     parser.add_argument('--write-manifests', '--write-manifest', dest='write_manifests',
                         action='store_true',
-                        help='根据缓存重建 Gen1/Gen2 图标清单（隐含 --download）')
+                        help='根据缓存重建五个世代的图标清单（隐含 --download）')
     parser.add_argument('--check', action='store_true',
                         help='只校验生成物与清单一致，不写任何文件')
     args = parser.parse_args()
@@ -245,7 +244,7 @@ def main() -> int:
         return 0
     if args.write_manifests:
         for generation, path in MANIFESTS.items():
-            first, last = (1, GEN1_COUNT) if generation == 1 else (GEN1_COUNT + 1, POKEMON_COUNT)
+            first, last = RANGES[generation]
             selected = [icon for icon in pokemon if first <= icon["id"] <= last]
             path.write_text(generate_manifest(selected, poke_ball if generation == 1 else None),
                             encoding='utf-8')

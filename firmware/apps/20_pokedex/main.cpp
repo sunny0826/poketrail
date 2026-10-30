@@ -14,6 +14,7 @@
 #include "device_clock_hw.hpp"
 #include "test_mode_platform.hpp"
 #include "test_console.hpp"
+#include "large_object.hpp"
 
 namespace {
 class DevicePlatform : public pokedex::ui::Platform {
@@ -78,7 +79,7 @@ class DevicePlatform : public pokedex::ui::Platform {
 pokedex::adventure::DeviceStore store;
 DevicePlatform platform;
 pokedex::ui::TestModePlatform testPlatform(platform, store);
-std::unique_ptr<pokedex::ui::Runtime> runtime;
+pokedex::LargeObject<pokedex::ui::Runtime> runtime;
 bool ready = false;
 
 bool rebuildRuntime(bool persistBoot = true) {
@@ -86,9 +87,10 @@ bool rebuildRuntime(bool persistBoot = true) {
   // Always pass the delegating platform. It reads the final store identity
   // after any mount/marker retry, so a late transition to test mode cannot
   // bind the test save to real IMU sampling or hardware RTC writes.
-  runtime.reset(new pokedex::ui::Runtime(
-    store, static_cast<pokedex::ui::Platform&>(testPlatform), &store));
-  ready = runtime->begin(persistBoot);
+  runtime = pokedex::makeLargeObject<pokedex::ui::Runtime>(
+    store, static_cast<pokedex::ui::Platform&>(testPlatform), &store);
+  ready = runtime && runtime->begin(persistBoot);
+  if (!runtime) pokedex::ui::drawGraphicsError(platform.readBattery());
   return ready;
 }
 
@@ -217,34 +219,34 @@ void handleTestRequest(pokedex::ui::Runtime::TestRequest request) {
     case Request::EnterBlank: {
       const bool entered = enterTestMode(request == Request::EnterSnapshot ?
         adventure::TestSeed::Snapshot : adventure::TestSeed::Blank);
-      runtime->openTestPage(entered ? pokedex::ui::Page::TestHub : pokedex::ui::Page::TestEntry, !entered);
+      if (runtime) runtime->openTestPage(entered ? pokedex::ui::Page::TestHub : pokedex::ui::Page::TestEntry, !entered);
       break;
     }
     case Request::ResetSnapshot:
     case Request::ResetBlank: {
       const bool reset = reseedTestMode(request == Request::ResetSnapshot ?
         adventure::TestSeed::Snapshot : adventure::TestSeed::Blank);
-      runtime->openTestPage(reset ? pokedex::ui::Page::TestHub : pokedex::ui::Page::TestEntry, !reset);
+      if (runtime) runtime->openTestPage(reset ? pokedex::ui::Page::TestHub : pokedex::ui::Page::TestEntry, !reset);
       break;
     }
     case Request::ScenarioAccount: {
       const bool seeded = seedTestScenario(adventure::TestScenario::AccountBalls);
-      runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
+      if (runtime) runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
       break;
     }
     case Request::ScenarioNearEncounter: {
       const bool seeded = seedTestScenario(adventure::TestScenario::NearEncounter);
-      runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
+      if (runtime) runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
       break;
     }
     case Request::ScenarioCurrentThrow: {
       const bool seeded = seedTestScenario(adventure::TestScenario::CurrentThrow);
-      runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
+      if (runtime) runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
       break;
     }
     case Request::ScenarioLegacy: {
       const bool seeded = seedTestScenario(adventure::TestScenario::LegacyEncounter);
-      runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
+      if (runtime) runtime->openTestPage(pokedex::ui::Page::TestHub, !seeded);
       break;
     }
     case Request::Exit: {
@@ -262,12 +264,13 @@ void setup() {
   platform.beginClock();
   store.begin();
   rebuildRuntime();
-  if (!ready) {
+  if (!ready && runtime) {
     pokedex::ui::drawGraphicsError(runtime->screen().battery);
   }
 }
 void loop() {
   pumpClockSerial();
+  if (!runtime) { pumpClockTransmit(); delay(20); return; }
   const auto beforePage = runtime->screen().page;
   const auto beforeSelected = runtime->screen().selected;
   runtime->loop();

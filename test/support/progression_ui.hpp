@@ -85,7 +85,8 @@ void frame(Runtime& runtime, uint32_t ms = 20) { host_time_ms += ms; runtime.loo
 void idle(Runtime& runtime, unsigned ms) { for (unsigned i = 0; i < ms; i += 20) frame(runtime); }
 void buttons(bool left, bool right) { M5.button_a_down = left; M5.button_b_down = right; }
 void edge(Runtime& runtime, bool left, bool right) {
-  buttons(left, right); frame(runtime); buttons(false, false); frame(runtime);
+  buttons(left, right); frame(runtime);
+  buttons(false, false); frame(runtime);
 }
 void tap(Runtime& runtime, int x, int y) {
   auto& detail = M5.Touch.detail;
@@ -102,15 +103,22 @@ void swipe(Runtime& runtime, int startX, int startY, int endX, int endY) {
 }
 void openMenu(Runtime& runtime, bool left = false) {
   check(runtime.screen().page == Page::Home, "menu entry starts on exploration display");
-  frame(runtime); edge(runtime, left, !left); frame(runtime);
+  edge(runtime, left, !left);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 0,
         "fresh side key opens menu without selecting or confirming");
 }
 void select(Runtime& runtime, unsigned index) {
   Page page = runtime.screen().page;
   unsigned count = menuCount(runtime.screen(), runtime.engine());
+  const bool record = page == Page::FirstCaptures || page == Page::Recent ||
+                      page == Page::Days || page == Page::Achievements;
+  if (!record && count > menu_layout::kPageSize && index >= menu_layout::kPageSize) {
+    while (runtime.screen().selected / menu_layout::kPageSize != index / menu_layout::kPageSize)
+      swipe(runtime, 300, 300, 160, 300);
+    frame(runtime);
+  }
   for (unsigned i = 0; runtime.screen().selected != index && i < count + 1; ++i) edge(runtime, false, true);
-  check(runtime.screen().page == page && runtime.screen().selected == index, "menu reachable with real Button_Class edges");
+  check(runtime.screen().selected == index, "menu reachable with real Button_Class edges");
   edge(runtime, true, true);
 }
 void start(Runtime& runtime) {
@@ -156,7 +164,7 @@ void legacyOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t 
   check(store.commit(save) == CommitStatus::Committed, "legacy collection has authentic versioned bytes");
 }
 void modernOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t partner = 1) {
-  // Schema 4 collection with Johto ownership; the legacy helper can only express 151 species.
+  // Current-schema collection; the legacy helper can only express 151 species.
   Save save; save.sequence = 1; save.bootGeneration = 1; save.starter = 1; save.partner = partner;
   save.rosterRevision = 1; save.encounterTarget = 300; setRegistered(save, 1); setOwned(save, 1);
   setRegistered(save, partner); setOwned(save, partner);

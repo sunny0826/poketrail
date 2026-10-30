@@ -29,7 +29,7 @@ static void phases() {
     Slots slots;slots.files[0]=legacy(kind);const auto original=slots.files[0];auto old=decoded(original);
     CHECK(old->schema==1&&encoded(*old)==original&&original.size()==12139);
     FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied&&e.ready());const auto& s=e.view();
-    CHECK(s.schema==5&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
+    CHECK(s.schema==6&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
     CHECK(s.rewardBaseSteps==500&&availableBalls(s)==0&&s.captureCounts==old->captureCounts&&s.owned==old->owned);
     CHECK(s.explorationSpent==s.totalSteps-s.explorationCredit&&s.encounterTarget>=kEncounterMinSteps&&s.encounterTarget<=kEncounterMaxSteps);
     CHECK(s.progress[0].walked==0&&registered(s,1)&&s.rosterRevision==1);
@@ -62,7 +62,7 @@ static void failures() {
     Slots slots;slots.files[0]=legacy(6);slots.after=complete;slots.cut=complete?SIZE_MAX:100;
     {FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::StorageError);}
     slots.after=false;slots.cut=SIZE_MAX;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
-    CHECK(e.view().schema==5&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
+    CHECK(e.view().schema==6&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
     CHECK(e.view().sequence==(complete?12:11));
   }
 }
@@ -120,24 +120,24 @@ static void schema2Upgrade() {
   CHECK(old->schema==2&&old->progress[3].walked==1000);
   Slots slots;slots.files[0]=bytes;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   const auto& s=e.view();
-  CHECK(s.schema==5&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
+  CHECK(s.schema==6&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
   CHECK(s.partner==4&&s.progress[3].walked==1000&&s.totalSteps==1000&&s.explorationCredit==1000);
   CHECK(s.explorationSpent==0&&s.encounterTarget>=kEncounterMinSteps&&s.encounterTarget<=kEncounterMaxSteps);
   CHECK(s.rewardBaseSteps==0&&s.legacyChargedCount==0&&s.rosterRevision==1);
   for(uint16_t id=152;id<=251;++id)CHECK(!registered(s,id)&&!owns(s,id)&&!s.progress[id-1].walked&&!s.captureCounts[id-1]);
-  FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==5);
+  FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==6);
   CHECK(reboot.view().progress[3].walked==1000&&slots.writes==2);
   Save enc;CHECK(codec::decode(slots.files[0].data(),slots.files[0].size(),enc)==codec::DecodeStatus::Ok);
-  CHECK(enc.schema==5&&validate(enc));
+  CHECK(enc.schema==6&&validate(enc));
 }
 static void mixedSlots() {
   Slots slots;slots.files[0]=legacy(0);FileStore first(slots);Engine e(first);CHECK(e.begin()==CommandResult::Applied);
   const auto v2=slots.files[1];auto s=decoded(v2);s->sequence=10;slots.files[1]=encoded(*s);
   FileStore conflict(slots);std::unique_ptr<Save> out(new Save);CHECK(conflict.load(*out).status==LoadStatus::Corrupt);
-  slots.files[1]=v2;slots.files[1][4]=6;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
+  slots.files[1]=v2;slots.files[1][4]=7;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
   slots.files[1]=v2;slots.files[1].back()^=1;FileStore corrupt(slots);
   CHECK(corrupt.load(*out).status==LoadStatus::Loaded&&out->schema==1&&out->sequence==10);
-  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==5);
+  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==6);
 }
 static void activityTail() {
   // A real frame written by the unmerged activity-branch firmware: an ordinary
@@ -155,7 +155,7 @@ static void activityTail() {
   CHECK(s.nextEncounterId == 14 && s.ballsSpent == 6 && validate(s));
   MemoryStore store; store.disk = frame; Engine e(store);
   CHECK(e.begin() == CommandResult::Applied && e.ready());
-  CHECK(e.view().schema == 5 && e.view().totalSteps == 6293 && e.view().partner == 1);
+  CHECK(e.view().schema == 6 && e.view().totalSteps == 6293 && e.view().partner == 1);
   CHECK(e.view().phase == Phase::Walking && e.view().explorationCredit == 1293);
   // The zero-cost activity ids stay inside schema-4 bookkeeping bounds.
   CHECK(e.view().explorationSpent + e.view().explorationCredit == e.view().totalSteps);
@@ -178,7 +178,7 @@ static void routeUpgrade() {
     auto s=schema4Encounter(4,Route::Forest,phase,phase==Phase::Resolved?Result::Lost:Result::None);
     CHECK(validate(*s));
     MemoryStore store;store.disk=encoded(*s);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
-    CHECK(e.view().schema==5&&e.view().encounter.species==4&&e.view().encounter.route==Route::Cave);
+    CHECK(e.view().schema==6&&e.view().encounter.species==4&&e.view().encounter.route==Route::Cave);
     CHECK(e.view().phase==phase&&e.view().result==s->result&&e.view().encounter.id==1&&e.view().encounter.seed==0);
   }
   // A retired activity boundary is repaired the same way and keeps its result.
@@ -193,7 +193,7 @@ static void routeUpgrade() {
   retired->phase=Phase::Resolved; retired->result=Result::MigrationRetired;
   CHECK(validate(*retired));
   MemoryStore retiredStore;retiredStore.disk=encoded(*retired);Engine retiredEngine(retiredStore);
-  CHECK(retiredEngine.begin()==CommandResult::Applied&&retiredEngine.view().schema==5);
+  CHECK(retiredEngine.begin()==CommandResult::Applied&&retiredEngine.view().schema==6);
   CHECK(retiredEngine.view().result==Result::MigrationRetired&&retiredEngine.view().voidedLegacyCount==1);
   CHECK(retiredEngine.view().encounter.route==Route::Cave);
 }
@@ -209,7 +209,7 @@ static void captureRoutePreserved() {
   s->firstCapture[3]=c; s->recent[0]=c; s->recentSize=1;
   CHECK(validate(*s));
   MemoryStore store;store.disk=encoded(*s);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
-  CHECK(e.view().schema==5&&e.view().route==Route::Forest);
+  CHECK(e.view().schema==6&&e.view().route==Route::Forest);
   CHECK(e.view().firstCapture[3].route==Route::Forest&&e.view().recent[0].route==Route::Forest);
   CHECK(e.view().captureCounts[3]==1&&e.view().encounter.id==0);
 }

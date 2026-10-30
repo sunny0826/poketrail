@@ -1,2 +1,18 @@
 # 归档的设备资源快照为单页静态文档，不按 5000 token 上限拆分
 docs/verification/stopwatch-c152-dev-resources.html token-limit-ignore
+
+# 图鉴、动画、图标、进化与遭遇清单由生成器写入并校验，不按手写文件拆分
+assets/adventure-649-species.json token-limit-ignore
+assets/adventure-649.json token-limit-ignore
+assets/animations-gen1.json token-limit-ignore
+assets/animations-gen2.json token-limit-ignore
+assets/animations-gen3.json token-limit-ignore
+assets/animations-gen4.json token-limit-ignore
+assets/animations-gen5.json token-limit-ignore
+assets/evolution-649.json token-limit-ignore
+assets/icons-gen3.json token-limit-ignore
+assets/icons-gen4.json token-limit-ignore
+assets/icons-gen5.json token-limit-ignore
+assets/pokedex-gen3.json token-limit-ignore
+assets/pokedex-gen4.json token-limit-ignore
+assets/pokedex-gen5.json token-limit-ignore

@@ -282,7 +282,7 @@ bool DeviceStore::enterTest(TestSeed seed) {
       // No filesystem identity can be persisted here: accept only a blank
       // single-save session that never touches LittleFS.
       if (seed != TestSeed::Blank) return false;
-      ramSave_.reset(new (std::nothrow) Save());
+      ramSave_ = makeLargeObject<Save>();
       if (!ramSave_) return false;
       ramHasSave_ = false;
       mode_ = TestMode();

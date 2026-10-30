@@ -114,7 +114,7 @@ static void modernEncounterBoundaries(const Save& legacy1) {
     // Its retired counterpart is legal, so painting only the result byte back to
     // Released must be rejected by decode's semantic check, not by the CRC.
     Save retiredBoundary = boundary;
-    retiredBoundary.encounter.species = 251; retiredBoundary.result = Result::MigrationRetired;
+    retiredBoundary.encounter.species = schema == 2 ? 151 : 251; retiredBoundary.result = Result::MigrationRetired;
     CHECK(validate(retiredBoundary));
     const std::vector<uint8_t> retiredBytes = encode(retiredBoundary);
     Save retiredBack;
@@ -137,7 +137,7 @@ static void modernEncounterBoundaries(const Save& legacy1) {
   // encounter with a non-ordinary species and a spent ball must still load.
   Save legacyThrow = legacy1;
   legacyThrow.encounter.id = legacyThrow.nextEncounterId - 1;
-  legacyThrow.encounter.species = 251; legacyThrow.encounter.partner = legacyThrow.partner;
+  legacyThrow.encounter.species = 151; legacyThrow.encounter.partner = legacyThrow.partner;
   legacyThrow.encounter.route = Route::Forest; legacyThrow.encounter.ruleVersion = 1;
   failedFirstThrow(legacyThrow); CHECK(legacyThrow.ballsSpent == 0);
   CHECK(legacyThrow.schema == 1 && validate(legacyThrow));

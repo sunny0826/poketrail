@@ -3,15 +3,21 @@
 #include "progression_catalog_generated.hpp"
 #include "route_masks_v4_generated.hpp"
 namespace pokedex { namespace adventure {
+static_assert(sizeof(kCatalog) / sizeof(kCatalog[0]) ==
+              sizeof(kOrdinaryEncounter) / sizeof(kOrdinaryEncounter[0]),
+              "catalog and ordinary pool must list the same species");
+constexpr uint16_t kListedSpecies = sizeof(kCatalog) / sizeof(kCatalog[0]);
+constexpr uint16_t kLegacyRouteEntries = sizeof(kRouteMaskV4) / sizeof(kRouteMaskV4[0]);
 const CatalogEntry* catalogEntry(uint16_t species) {
-  return species >= 1 && species <= kSpeciesCount ? &kCatalog[species - 1] : nullptr;
+  return species >= 1 && species <= kListedSpecies ? &kCatalog[species - 1] : nullptr;
 }
 uint8_t savedRouteMask(uint16_t species, uint16_t schema) {
-  if (species < 1 || species > kSpeciesCount) return 0;
-  return schema >= 5 ? kCatalog[species - 1].routes : kRouteMaskV4[species - 1];
+  if (species < 1 || species > speciesCapacity(schema).count) return 0;
+  if (schema >= 5) return species <= kListedSpecies ? kCatalog[species - 1].routes : 0;
+  return species <= kLegacyRouteEntries ? kRouteMaskV4[species - 1] : 0;
 }
 bool ordinaryEncounter(uint16_t species) {
-  return species >= 1 && species <= kSpeciesCount && kOrdinaryEncounter[species - 1];
+  return species >= 1 && species <= kListedSpecies && kOrdinaryEncounter[species - 1];
 }
 const EvolutionRule* evolutionRules(size_t& count) {
   count = sizeof(kEvolutionRules) / sizeof(kEvolutionRules[0]);

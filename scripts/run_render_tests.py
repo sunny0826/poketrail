@@ -93,6 +93,7 @@ def main():
             raise SystemExit(f"未知渲染套件: {', '.join(sorted(unknown))}")
         suites = [(name, sources) for name, sources in suites if name in selected]
     for name, extra_sources in suites:
+        print(f"SUITE {name}", flush=True)
         screenshots = output / "ui" / name
         screenshots.mkdir(parents=True, exist_ok=True)
         os.environ["MYM5_UI_OUTPUT_DIR"] = str(screenshots.resolve())
@@ -100,7 +101,7 @@ def main():
         run([os.environ.get("CXX", "c++"), *common, "-std=gnu++11",
              "-Wall", "-Wextra", "-Itest/support", "-Ifirmware/shared", "-I" + str(app), "-isystem", str(unified),
              f"test/{name}.cpp", *shared, *extra_sources, *objects,
-             *libs, *linker_flags, "-o", str(executable)])
+             *libs, "-lz", *linker_flags, "-o", str(executable)])
         run([str(executable)])
 
 

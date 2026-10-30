@@ -192,7 +192,7 @@ static void corruptOfficialStillEnters() {
 
   state = storage_test::State();
   officialDirectory();
-  std::vector<uint8_t> future(codec::kHeaderSize, 0);
+  std::vector<uint8_t> future(codec::kHeaderSize + 2, 0);
   future[0] = 'A'; future[1] = 'V'; future[2] = 'D'; future[3] = '1';
   future[4] = 99; future[5] = 0;
   putRaw("/adventure/save-a.bin", future);

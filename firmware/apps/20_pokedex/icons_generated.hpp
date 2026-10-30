@@ -13,7 +13,7 @@ struct Icon {
   const uint16_t* pixels;
 };
 
-extern const Icon kPokemonIcons[251];
+extern const Icon kPokemonIcons[649];
 extern const Icon kPokeBallIcon;
 
 }  // namespace data

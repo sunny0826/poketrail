@@ -6,14 +6,13 @@
 namespace pokedex {
 
 constexpr uint16_t kTransparentKey = 0xF81F;
-constexpr uint16_t kMaxSourceSize = 160;  // Gen2 Lugia is 153x94; still below display limits.
+constexpr uint16_t kMaxSourceSize = 160;  // Measured through #649: 153 wide, 117 tall.
 constexpr uint16_t kMaxDisplayWidth = 336;
 constexpr uint16_t kMaxDisplayHeight = 270;
 
-// 每个字节：高四位为连续像素数减一，低四位为调色板索引。
+// data 是该宝可梦全部去重帧的 zlib 数据。Frame::offset 指向解压后的调色板索引。
 struct Frame {
   uint32_t offset;
-  uint16_t size;
   uint16_t duration_ms;
 };
 
@@ -24,8 +23,10 @@ struct Sprite {
   uint16_t width;
   uint16_t height;
   const uint16_t* palette;
+  uint16_t palette_size;
   const uint8_t* data;
   uint32_t data_size;
+  uint32_t raw_size;
   const Frame* frames;
   uint16_t frame_count;
   uint32_t duration_ms;

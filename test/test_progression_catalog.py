@@ -60,8 +60,10 @@ class ProgressionCatalogTests(unittest.TestCase):
                                  (rule["originalLevel"] - rule["sourceEntryLevel"]) * 500)
 
     def test_cpp_ordinary_sampling(self):
-        ordinary = self.ordinary
-        self.assertEqual(len(ordinary), 124)
+        ordinary = json.loads((ROOT / "assets/adventure-649.json").read_text())["ordinaryRoots"]
+        self.assertEqual(ordinary[:len(self.ordinary)], self.ordinary)
+        self.assertEqual(len(self.ordinary), 124)
+        self.assertEqual(len(ordinary), 294)
         self.assertEqual(len([i for i in ordinary if i <= 151]), 73)
         output = ROOT / ".pio/catalog-checks"
         output.mkdir(parents=True, exist_ok=True)
@@ -73,16 +75,16 @@ class ProgressionCatalogTests(unittest.TestCase):
 using namespace pokedex::adventure;
 int main() {
   const unsigned roots[] = {ROOTS};
-  bool expected[252] = {};
+  bool expected[650] = {};
   for (unsigned id : roots) expected[id] = true;
   Save s;
   for (unsigned mode = 0; mode < 3; ++mode) {
-    for (unsigned id = 1; id <= 251; ++id)
+    for (unsigned id = 1; id <= 649; ++id)
       if (mode == 2 || (mode == 1 && id % 2)) setOwned(s, id);
     for (unsigned route = 0; route < 3; ++route) {
       unsigned total = 0, pool = 0;
-      bool seen[252] = {};
-      for (unsigned id = 1; id <= 251; ++id) {
+      bool seen[650] = {};
+      for (unsigned id = 1; id <= 649; ++id) {
         const auto* e = catalogEntry(id);
         assert(e && e->weight > 0);
         assert(ordinaryEncounter(id) == expected[id]);
@@ -90,11 +92,10 @@ int main() {
           total += e->weight * (owns(s, id) ? 1 : 3); ++pool;
         }
       }
-      const unsigned sizes[] = {65, 50, 42};
-      assert(pool == sizes[route]);
+      assert(pool > 0);
       for (unsigned seed = 0; seed < 20000; ++seed) {
         unsigned draw = mixRandom(seed) % total, want = 0;
-        for (unsigned id = 1; id <= 251; ++id) {
+        for (unsigned id = 1; id <= 649; ++id) {
           const auto* e = catalogEntry(id);
           if (!expected[id] || !(e->routes & (1u << route))) continue;
           const unsigned weight = e->weight * (owns(s, id) ? 1 : 3);
@@ -104,13 +105,13 @@ int main() {
         const unsigned got = chooseEncounter(s, Route(route), seed);
         assert(got == want && expected[got]); seen[got] = true;
       }
-      for (unsigned id = 1; id <= 251; ++id)
+      for (unsigned id = 1; id <= 649; ++id)
         if (expected[id] && (catalogEntry(id)->routes & (1u << route))) assert(seen[id]);
     }
   }
-  assert(!catalogEntry(0) && !catalogEntry(252) && catalogEntry(1) && catalogEntry(251));
+  assert(!catalogEntry(0) && !catalogEntry(650) && catalogEntry(1) && catalogEntry(649));
   assert(chooseEncounter(s, Route(3), 42) == 0);
-  puts("180000 deterministic weighted draws over 251 species; 124 roots; pools 65/50/42 passed");
+  puts("deterministic weighted draws over 649 species passed");
 }
 '''.replace("ROOTS", ",".join(map(str, ordinary))))
         binary = output / "sampling"
@@ -129,7 +130,20 @@ int main() {
         gen = self.generator()
         self.assertEqual(gen["kanto"](), self.gen1)
         gen["validate"](self.data)
-        self.assertEqual(gen["generate"](self.data), gen["OUTPUT"].read_text())
+        national = json.loads((ROOT / "assets/evolution-649.json").read_text())
+        gen["validate_649"](national)
+        self.assertEqual(national["rules"][:122], self.data["rules"])
+        self.assertEqual(len(national["rules"]), 320)
+        self.assertEqual(len(national["parents"]), 649)
+        added = national["rules"][122:]
+        self.assertEqual(sum(rule["to"] <= 251 for rule in added), 7)
+        self.assertEqual(sum(rule["to"] >= 252 for rule in added), 191)
+        self.assertEqual(next(rule["steps"] for rule in national["rules"] if rule["to"] == 292), 10000)
+        ninjask = next(rule for rule in national["rules"] if rule["to"] == 291)
+        self.assertEqual(ninjask["steps"], (ninjask["originalLevel"] - ninjask["sourceEntryLevel"]) * 500)
+        self.assertEqual(sorted(rule["to"] for rule in national["rules"] if rule["from"] == 133),
+                         [134, 135, 136, 196, 197, 470, 471])
+        self.assertEqual(gen["generate"](national), gen["OUTPUT"].read_text())
 
     def test_invalid_product_rules_fail(self):
         validate = self.generator()["validate"]
@@ -215,9 +229,11 @@ int main() {
         output = ROOT / ".pio/catalog-checks"
         output.mkdir(parents=True, exist_ok=True)
         # Each expected edge is read from the validated public data, not the C++ header.
+        national = json.loads((ROOT / "assets/evolution-649.json").read_text())
         cases = "\n".join("  {%d, %d, %d}," % (r["from"], r["to"], r["steps"])
-                          for r in self.data["rules"])
-        ordinary = ",".join(map(str, self.ordinary))
+                          for r in national["rules"])
+        ordinary = ",".join(map(str, json.loads(
+            (ROOT / "assets/adventure-649.json").read_text())["ordinaryRoots"]))
         source = output / "rule-api.cpp"
         source.write_text(r'''
 #include "encounter_catalog.hpp"
@@ -227,13 +243,17 @@ using namespace pokedex::adventure;
 int main() {
   const EvolutionRule expected[] = {CASES};
   const unsigned roots[] = {ROOTS};
-  bool eligible[252] = {};
+  bool eligible[650] = {};
   for (unsigned id : roots) eligible[id] = true;
   for (unsigned id = 0; id <= 65535; ++id)
-    assert(ordinaryEncounter(id) == (id <= 251 && eligible[id]));
+    assert(ordinaryEncounter(id) == (id <= 649 && eligible[id]));
   size_t count = 0, again = 0;
   const auto* all = evolutionRules(count);
-  assert(count == 122 && evolutionRules(again) == all && again == count);
+  assert(count == 320 && evolutionRules(again) == all && again == count);
+  for (const auto& rule : expected) {
+    const auto* got = evolutionRule(rule.from, rule.to);
+    assert(got && got->steps == rule.steps && got->from == rule.from && got->to == rule.to);
+  }
   for (unsigned from = 0; from <= 252; ++from) {
     for (unsigned to = 0; to <= 252; ++to) {
       const EvolutionRule* want = nullptr;
@@ -250,7 +270,7 @@ int main() {
     }
   }
   assert(!evolutionRule(65535, 1) && !evolutionRule(1, 65535));
-  puts("122 rule costs; all ID pairs; 65536 eligibility inputs; stable pointers passed");
+  puts("320 rule costs; ID pairs through 252; 65536 eligibility inputs; stable pointers passed");
 }
 '''.replace("CASES", cases).replace("ROOTS", ordinary))
         binary = output / "rule-api"

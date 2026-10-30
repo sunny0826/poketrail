@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the offline 1-251 gameplay catalog; no sprite/network dependency.
+"""Generate the offline 1-649 gameplay catalog; no sprite/network dependency.
 
 Route eligibility is derived from each species' official types through the
 `routeTypes` table in assets/adventure-251.json, so the hand-written species
@@ -8,17 +8,20 @@ here in source form and written to route_masks_v4_generated.hpp so old saves kee
 their original eligibility checks after revision 5 re-derives every route.
 """
 import argparse
+import csv
 import json
 import runpy
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/adventure-251.json"
+NATIONAL_SOURCE = ROOT / "assets/adventure-649.json"
 OUTPUT = ROOT / "firmware/apps/20_pokedex/adventure_catalog_generated.hpp"
 LEGACY_OUTPUT = ROOT / "firmware/apps/20_pokedex/route_masks_v4_generated.hpp"
-TYPES_SOURCE = (ROOT / "assets/pokedex-gen1.json", ROOT / "assets/pokedex-gen2.json")
+TYPES_SOURCE = tuple(ROOT / f"assets/pokedex-gen{generation}.json" for generation in range(1, 6))
 PROGRESSION = runpy.run_path(str(ROOT / "tools/build_evolution_rules.py"))
 LAST = 251
+NATIONAL = 649
 ROUTES = {"Forest": 1, "Coast": 2, "Cave": 4}
 RUINS = [144, 145, 146, 147, 148, 149, 150, 151, 243, 244, 245, 249, 250, 251]
 DRAGON_CAVE = [246]
@@ -54,7 +57,7 @@ def load_types():
             names = [name.strip() for name in pokemon["pokemon_type_name"].split(",")]
             require(names and all(names), f"missing types for {species}")
             types[species] = names
-    require(sorted(types) == list(range(1, LAST + 1)), "dex types must cover 1..251")
+    require(sorted(types) == list(range(1, NATIONAL + 1)), "dex types must cover 1..649")
     return types
 
 
@@ -108,7 +111,7 @@ def route_masks(data, types):
         unknown = sorted(set(table) - known)
         raise ValueError(f"routeTypes must cover every type; missing={missing} unknown={unknown}")
     masks = {}
-    for species in range(1, LAST + 1):
+    for species in range(1, NATIONAL + 1):
         mask = 0
         for name in types[species]:
             mask |= ROUTES[table[name]]
@@ -117,20 +120,20 @@ def route_masks(data, types):
         masks[species] = mask
     for route, bit in ROUTES.items():
         derived = {species for species in masks if masks[species] & bit}
-        expected = {species for species in range(1, LAST + 1)
+        expected = {species for species in range(1, NATIONAL + 1)
                     if any(table[name] == route for name in types[species])}
         if derived != expected:
             raise ValueError(f"derived {route} pool disagrees with routeTypes")
     return masks
 
 
-def ownership(data, progression):
+def ownership(data, progression, last=NATIONAL):
     entries = data["species"]
     if data.get("ruleVersion") != 3:
         raise ValueError("unsupported catalog rule version")
-    if (len(entries) != LAST or any(type(e["id"]) is not int for e in entries)
-            or [e["id"] for e in entries] != list(range(1, LAST + 1))):
-        raise ValueError("IDs must be contiguous 1..251")
+    if (len(entries) != last or any(type(e["id"]) is not int for e in entries)
+            or [e["id"] for e in entries] != list(range(1, last + 1))):
+        raise ValueError(f"IDs must be contiguous 1..{last}")
     types = load_types()
     masks = route_masks(data, types)
     for entry in entries:
@@ -142,18 +145,24 @@ def ownership(data, progression):
             raise ValueError("weight must be positive uint16")
     ordinary = data.get("ordinaryRoots")
     if (not isinstance(ordinary, list) or any(type(i) is not int for i in ordinary)
-            or ordinary != sorted(set(ordinary)) or not all(1 <= i <= LAST for i in ordinary)):
-        raise ValueError("ordinaryRoots must be sorted unique IDs in 1..251")
+            or ordinary != sorted(set(ordinary)) or not all(1 <= i <= last for i in ordinary)):
+        raise ValueError(f"ordinaryRoots must be sorted unique IDs in 1..{last}")
     reserved = data.get("reserved")
-    if not isinstance(reserved, dict) or set(reserved) != {"ruins", "dragonCave"}:
-        raise ValueError("reserved must declare ruins and dragonCave")
+    expected_reserved = {"ruins", "dragonCave", "legendary"} if last > LAST else {"ruins", "dragonCave"}
+    if not isinstance(reserved, dict) or set(reserved) != expected_reserved:
+        raise ValueError("reserved groups do not match the catalog span")
     if reserved["ruins"] != RUINS or reserved["dragonCave"] != DRAGON_CAVE:
         raise ValueError("reserved species must match the independent-activity plan")
-    held = set(reserved["ruins"]) | set(reserved["dragonCave"])
+    legendary = reserved.get("legendary", [])
+    if last == LAST and legendary:
+        raise ValueError("the 251 catalog cannot reserve later legendary species")
+    if any(type(species) is not int or not LAST < species <= NATIONAL for species in legendary):
+        raise ValueError("new legendary reservations must stay within 252..649")
+    held = set(reserved["ruins"]) | set(reserved["dragonCave"]) | set(legendary)
     if held & set(ordinary):
         raise ValueError("reserved species must stay out of the ordinary pool")
     targets = {rule["to"] for rule in progression["rules"]}
-    uncovered = [i for i in range(1, LAST + 1)
+    uncovered = [i for i in range(1, last + 1)
                  if i not in ordinary and i not in held and i not in targets]
     if uncovered:
         raise ValueError(f"species without acquisition owner: {uncovered}")
@@ -161,31 +170,36 @@ def ownership(data, progression):
     frozen = json.loads((ROOT / "assets/evolution-gen1.json").read_text())["ordinaryRoots"]
     if first != frozen:
         raise ValueError("Kanto ordinary roots must keep the frozen 73-species set")
-    if len([i for i in ordinary if i > 151]) != 51:
+    if len([i for i in ordinary if 151 < i <= LAST]) != 51:
         raise ValueError("expected 51 Johto ordinary roots")
     parents = progression["parents"]
-    if any(parents[str(i)] is not None for i in ordinary if i > 151):
-        raise ValueError("Johto ordinary roots must not have a catalog parent")
+    if any(parents.get(str(i)) is not None for i in ordinary if LAST < i <= NATIONAL):
+        raise ValueError("new ordinary roots must not have a catalog parent")
     if len(FROZEN_V4_ROUTES) != LAST or any(not 1 <= mask <= 7 for mask in FROZEN_V4_ROUTES):
         raise ValueError("frozen schema-4 masks must cover 251 species")
     return masks, set(ordinary)
 
 
-def generate(data, progression=None):
+def generate(data, progression=None, last=None):
     if progression is None:
-        progression = json.loads((ROOT / "assets/evolution-251.json").read_text())
-    PROGRESSION["validate"](progression)
-    masks, ordinary = ownership(data, progression)
+        progression = json.loads((ROOT / "assets/evolution-649.json").read_text())
+    if last is None:
+        last = max(entry["id"] for entry in data["species"])
+    if last == NATIONAL:
+        PROGRESSION["validate_649"](progression)
+    else:
+        PROGRESSION["validate"](progression)
+    masks, ordinary = ownership(data, progression, last)
     entries = data["species"]
-    lines = ["// Generated by tools/build_adventure_catalog.py; edit assets/adventure-251.json.",
+    lines = ["// Generated by tools/build_adventure_catalog.py; edit assets/adventure-649.json.",
              "#pragma once", "#include \"encounter_catalog.hpp\"",
              "namespace pokedex { namespace adventure {",
-             "static const CatalogEntry kCatalog[251] = {"]
+             f"static const CatalogEntry kCatalog[{last}] = {{"]
     for entry in entries:
         lines.append(f"  {{{masks[entry['id']]}, {str(entry['rare']).lower()}, {entry['weight']}}},"
                      f" // {entry['id']:03d}")
-    lines.extend(["};", "static const bool kOrdinaryEncounter[251] = {"])
-    for i in range(1, LAST + 1):
+    lines.extend(["};", f"static const bool kOrdinaryEncounter[{last}] = {{"])
+    for i in range(1, last + 1):
         lines.append(f"  {str(i in ordinary).lower()}, // {i:03d}")
     lines.extend(["};", "} }", ""])
     return "\n".join(lines)
@@ -204,12 +218,52 @@ def generate_legacy_masks():
     return "\n".join(lines)
 
 
+def national_catalog():
+    """Keep authored 1-251 entries and extend them with default forms through 649."""
+    old = load_catalog(SOURCE)
+    names = {}
+    for path in TYPES_SOURCE:
+        for pokemon in json.loads(path.read_text())["pokemons"]:
+            names[int(pokemon["zukan_id"])] = pokemon["pokemon_name"]
+    with (ROOT / "assets/evolution-source/pokemon_species.csv").open() as file:
+        species = list(csv.DictReader(file))
+    legendary = {int(row["id"]) for row in species
+                 if row["is_legendary"] == "1" or row["is_mythical"] == "1"}
+    parents = {int(row["id"]): int(row["evolves_from_species_id"] or 0) for row in species}
+    rules = json.loads((ROOT / "assets/evolution-649.json").read_text())["rules"]
+    evolves = {int(rule["from"]) for rule in rules}
+    entries = list(old["species"])
+    roots = list(old["ordinaryRoots"])
+    reserved = {"ruins": list(old["reserved"]["ruins"]),
+                "dragonCave": list(old["reserved"]["dragonCave"]), "legendary": []}
+    for species_id in range(LAST + 1, NATIONAL + 1):
+        rare = species_id in evolves or species_id in legendary
+        entries.append({"id": species_id, "name": names[species_id], "rare": rare,
+                        "weight": 2 if rare else 10})
+        if species_id in legendary:
+            reserved["legendary"].append(species_id)
+        elif parents[species_id] == 0:
+            roots.append(species_id)
+    require(len(entries) == NATIONAL and roots == sorted(set(roots)), "national catalog shape")
+    return {"ruleVersion": 3,
+            "note": "1-649 普通遭遇目录。1-251 的稀有度、权重、普通资格和活动保留原样；"
+                    "252-649 中会进化的形态及传说/幻兽为稀有权重 2，其余为 10。",
+            "routeTypes": old["routeTypes"], "species": entries,
+            "ordinaryRoots": roots, "reserved": reserved}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    catalogue = load_catalog()
-    progression = json.loads((ROOT / "assets/evolution-251.json").read_text())
+    catalogue = national_catalog()
+    NATIONAL_SOURCE.write_text(json.dumps(
+        {key: value for key, value in catalogue.items() if key != "species"} |
+        {"speciesFiles": ["adventure-649-species.json"]}, ensure_ascii=False, indent=2) + "\n")
+    (ROOT / "assets/adventure-649-species.json").write_text(json.dumps(
+        {"species": catalogue["species"]}, ensure_ascii=False, indent=2) + "\n")
+    catalogue = load_catalog(NATIONAL_SOURCE)
+    progression = json.loads((ROOT / "assets/evolution-649.json").read_text())
     text = generate(catalogue, progression)
     legacy_text = generate_legacy_masks()
     progression_text = PROGRESSION["generate"](progression)
@@ -220,8 +274,9 @@ def main():
             raise SystemExit("frozen schema-4 route masks stale; regenerate")
         if not PROGRESSION["OUTPUT"].exists() or PROGRESSION["OUTPUT"].read_text() != progression_text:
             raise SystemExit("progression catalog stale; regenerate tools/build_evolution_rules.py")
-        print("catalog check: 251 typed route masks, 124 ordinary roots "
-              "(73 Kanto + 51 Johto), reserved species excluded, both headers match")
+        roots = catalogue["ordinaryRoots"]
+        print(f"catalog check: 649 typed route masks, {len(roots)} ordinary roots "
+              "(73 Kanto + 51 Johto retained), reserved species excluded, both headers match")
     else:
         OUTPUT.write_text(text)
         LEGACY_OUTPUT.write_text(legacy_text)

@@ -197,6 +197,21 @@ void failureAndPractice() {
   store.fail = false; frame(r); select(r, 0);
   check(r.screen().page == Page::Throw && r.engine().view().phase == Phase::ThrowReady, "retry publishes the original victory once");
 }
+void newGenerationActors() {
+  const uint16_t partners[] = {252, 386, 470, 597, 600, 606, 615, 642, 644, 648, 649};
+  for (uint16_t partner : partners) {
+    MemoryStore store; fixture(store, partner, 597, Route::Cave);
+    HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+    const uint32_t origin = enter(runtime);
+    at(runtime, runtime.engine().battleView().targetMs - 400);
+    const auto& source = data::kSprites[partner - 1];
+    const auto& enemy = data::kSprites[596];
+    actor(partner, origin, 155, 232, source.width <= 68 && source.height <= 65 ? 2 : 1);
+    actor(597, origin, 311, 226, enemy.width <= 68 && enemy.height <= 65 ? 2 : 1);
+    char name[48]; std::snprintf(name, sizeof(name), "battle-gen5-partner-%u", partner);
+    snapshot(name);
+  }
+}
 void timingAndPause() {
   Battle b; b.begin(UINT32_MAX - 1499);
   check(!battleEffectActive(b.view(), UINT32_MAX - 1499), "begin never plays an old effect");
@@ -220,6 +235,6 @@ void timingAndPause() {
 }
 int main() {
   c152::begin("BATTLE TEST");
-  attackAndDodge(); perfectAndFinal(); failureAndPractice(); timingAndPause();
+  attackAndDodge(); perfectAndFinal(); failureAndPractice(); newGenerationActors(); timingAndPause();
   std::printf("%u battle Runtime/Button_Class/M5GFX checks, 0 failures\n", checks);
 }

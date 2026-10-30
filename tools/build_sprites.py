@@ -9,6 +9,7 @@ import io
 import json
 import sys
 import urllib.request
+import zlib
 from pathlib import Path
 
 from PIL import Image
@@ -16,15 +17,14 @@ from PIL import Image
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_HEADER = REPO_ROOT / "firmware/apps/20_pokedex/sprites_generated.hpp"
 CACHE_DIR = REPO_ROOT / "assets/sprites/black-white"
-METADATA_CACHE = (REPO_ROOT / "assets/pokedex-gen1.json",
-                  REPO_ROOT / "assets/pokedex-gen2.json")
+METADATA_CACHE = tuple(REPO_ROOT / f"assets/pokedex-gen{generation}.json"
+                      for generation in range(1, 6))
 SCALE_CACHE = REPO_ROOT / "assets/sprite-scales.json"
-MANIFESTS = {
-    1: REPO_ROOT / "assets/animations-gen1.json",
-    2: REPO_ROOT / "assets/animations-gen2.json",
-}
+MANIFESTS = {generation: REPO_ROOT / f"assets/animations-gen{generation}.json"
+             for generation in range(1, 6)}
+RANGES = {1: (1, 151), 2: (152, 251), 3: (252, 386), 4: (387, 493), 5: (494, 649)}
 GEN1_COUNT = 151
-POKEMON_COUNT = 251
+POKEMON_COUNT = 649
 SPRITE_REVISION = "97a7832d307311c0e1c6ea9035308bf80cc94f81"
 SPRITE_URL = (
     f"https://raw.githubusercontent.com/PokeAPI/sprites/{SPRITE_REVISION}/"
@@ -35,11 +35,14 @@ MAX_CANVAS = 160
 
 
 def generation_of(number: int) -> int:
-    return 1 if number <= GEN1_COUNT else 2
+    for generation, (first, last) in RANGES.items():
+        if first <= number <= last:
+            return generation
+    raise ValueError(f"#{number} is outside National Dex 1-649")
 
 
 def requires_separate_output(wanted: list[int], has_ids: bool) -> bool:
-    """非完整 1-251 输出（或显式 --ids）不得写入正式动画表。"""
+    """非完整 1-649 输出（或显式 --ids）不得写入正式动画表。"""
     return has_ids or sorted(wanted) != list(range(1, POKEMON_COUNT + 1))
 
 
@@ -76,21 +79,6 @@ def frame_colors(image: Image.Image) -> tuple[int, ...]:
     return tuple(result)
 
 
-def encode_runs(indices: bytes) -> bytes:
-    encoded = bytearray()
-    i = 0
-    while i < len(indices):
-        color = indices[i]
-        if color > 15:
-            raise ValueError("palette index exceeds four bits")
-        count = 1
-        while count < 16 and i + count < len(indices) and indices[i + count] == color:
-            count += 1
-        encoded.append(((count - 1) << 4) | color)
-        i += count
-    return bytes(encoded)
-
-
 def build_animation(data: bytes) -> dict:
     image = Image.open(io.BytesIO(data))
     width, height = image.size
@@ -109,21 +97,24 @@ def build_animation(data: bytes) -> dict:
         colors = frame_colors(image)
         for color in colors:
             if color not in lookup:
+                if len(palette) == 256:
+                    raise ValueError("animation needs more than 256 colors")
                 lookup[color] = len(palette)
                 palette.append(color)
-        if len(palette) > 16:
-            raise ValueError("animation needs more than 16 colors; no quantization allowed")
         indices = bytes(lookup[color] for color in colors)
         if indices not in unique:
-            runs = encode_runs(indices)
-            unique[indices] = (len(blob), len(runs))
-            blob.extend(runs)
-        offset, size = unique[indices]
-        frames.append((offset, size, duration))
+            unique[indices] = len(blob)
+            blob.extend(indices)
+        frames.append((unique[indices], duration))
     if len(unique) < 2:
         raise ValueError("animation must contain at least two distinct frames")
-    return dict(width=width, height=height, palette=palette, data=bytes(blob),
-                frames=frames, unique=len(unique), duration=sum(f[2] for f in frames),
+    raw = bytes(blob)
+    compressed = zlib.compress(raw, 9)
+    if zlib.decompress(compressed) != raw:
+        raise ValueError("animation compression did not round-trip")
+    return dict(width=width, height=height, palette=palette, data=compressed,
+                raw_size=len(raw), frames=frames, unique=len(unique),
+                duration=sum(frame[1] for frame in frames),
                 sha256=hashlib.sha256(data).hexdigest())
 
 
@@ -139,10 +130,10 @@ def _unique_ids(entry: dict, key: str, field: str, first: int, last: int) -> set
 def load_scales(path: Path = SCALE_CACHE) -> set[int]:
     """返回优先 3 倍的编号：中间／最终形态与无进化链物种。"""
     data = json.loads(path.read_text())["generations"]
-    if set(data) != {"1", "2"}:
-        raise ValueError("sprite scales must describe generations 1 and 2")
+    if set(data) != {str(generation) for generation in RANGES}:
+        raise ValueError("sprite scales must describe generations 1 through 5")
     enlarged = set()
-    for key, first, last in (("1", 1, GEN1_COUNT), ("2", GEN1_COUNT + 1, POKEMON_COUNT)):
+    for key, (first, last) in ((str(generation), bounds) for generation, bounds in RANGES.items()):
         entry = data[key]
         if (entry.get("first"), entry.get("last")) != (first, last):
             raise ValueError(f"generation {key}: unexpected ID range")
@@ -153,11 +144,11 @@ def load_scales(path: Path = SCALE_CACHE) -> set[int]:
         base = _unique_ids(entry, key, "base", first, last) if "base" in entry else None
         if base is not None and base & (evolved | standalone):
             raise ValueError(f"generation {key}: base must not overlap evolved or standalone")
-        if key == "2":
+        if key != "1":
             expected = set(range(first, last + 1)) - evolved - standalone
             if base != expected:
                 raise ValueError(
-                    "generation 2: base, evolved and standalone must partition 152-251")
+                    f"generation {key}: base, evolved and standalone must partition its IDs")
         enlarged |= evolved | standalone
     return enlarged
 
@@ -173,7 +164,7 @@ def load_metadata() -> dict[int, dict]:
                 raise ValueError(f"#{number}: duplicate metadata")
             by_id[number] = entry
     if set(by_id) != set(range(1, POKEMON_COUNT + 1)):
-        raise ValueError("metadata must contain exactly IDs 1-251")
+        raise ValueError("metadata must contain exactly IDs 1-649")
     return by_id
 
 
@@ -187,7 +178,7 @@ def load_manifests() -> tuple[dict[int, str], set[int]]:
         manifest = json.loads(path.read_text())
         if manifest["revision"] != SPRITE_REVISION:
             raise ValueError(f"generation {generation} animation manifest revision differs")
-        first, last = (1, GEN1_COUNT) if generation == 1 else (GEN1_COUNT + 1, POKEMON_COUNT)
+        first, last = RANGES[generation]
         ids = [entry["id"] for entry in manifest["sprites"]]
         if sorted(ids) != list(range(first, last + 1)):
             raise ValueError(f"generation {generation}: incomplete animation manifest")
@@ -238,26 +229,26 @@ def generate_source(sprites: list[dict]) -> str:
              'namespace pokedex {', 'namespace data {', 'namespace {']
     for s in sprites:
         ident = f'kSprite{s["id"]:04d}'
-        palette = s["palette"] + [TRANSPARENT_KEY] * (16 - len(s["palette"]))
         lines.append(f'// #{s["id"]} {s["name"]}, {s["width"]}x{s["height"]}, '
                      f'{len(s["frames"])} frames')
         lines.append(f'const uint16_t {ident}Palette[] = {{' +
-                     ', '.join(f'0x{v:04X}' for v in palette) + '};')
+                     ', '.join(f'0x{v:04X}' for v in s["palette"]) + '};')
         lines.append(f'const uint8_t {ident}Data[] = {{')
         for start in range(0, len(s["data"]), 24):
             lines.append('    ' + ', '.join(f'0x{v:02X}' for v in s["data"][start:start+24]) + ',')
         lines.append('};')
         lines.append(f'const Frame {ident}Frames[] = {{')
-        for offset, size, duration in s["frames"]:
-            lines.append(f'    {{{offset}, {size}, {duration}}},')
+        for offset, duration in s["frames"]:
+            lines.append(f'    {{{offset}, {duration}}},')
         lines.append('};')
     lines.extend(['}  // namespace', '', 'const Sprite kSprites[] = {'])
     for s in sprites:
         ident = f'kSprite{s["id"]:04d}'
         text = lambda key: json.dumps(s[key], ensure_ascii=False)
         lines.append(f'    {{{text("name")}, {text("types")}, {s["id"]}, '
-                     f'{s["width"]}, {s["height"]}, {ident}Palette, {ident}Data, '
-                     f'sizeof({ident}Data), {ident}Frames, {len(s["frames"])}, '
+                     f'{s["width"]}, {s["height"]}, {ident}Palette, '
+                     f'{len(s["palette"])}, {ident}Data, sizeof({ident}Data), '
+                     f'{s["raw_size"]}, {ident}Frames, {len(s["frames"])}, '
                      f'{s["duration"]}, {text("height_text")}, {text("weight_text")}, '
                      f'{text("enlarged")}}},')
     lines.extend(['};', f'const size_t kSpriteCount = {len(sprites)};',
@@ -275,7 +266,7 @@ def generate_manifest(sprites: list[dict]) -> str:
 
 def write_manifests(sprites: list[dict], generation: int) -> None:
     for key, path in MANIFESTS.items():
-        if key not in ({1} if generation == 1 else {1, 2}):
+        if key > generation:
             continue
         first, last = (1, GEN1_COUNT) if key == 1 else (GEN1_COUNT + 1, POKEMON_COUNT)
         selected = [s for s in sprites if first <= s["id"] <= last]
@@ -286,22 +277,22 @@ def write_manifests(sprites: list[dict], generation: int) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--generation', type=int, choices=[1, 2], default=2,
-                        help='1 生成 1-151；2 生成 1-251（默认）')
+    parser.add_argument('--generation', type=int, choices=list(RANGES), default=5,
+                        help='1 至 5 分别生成到该世代末尾；默认 5 生成 1-649')
     parser.add_argument('--ids', default='', help='指定编号，逗号分隔')
     parser.add_argument('--out', type=Path)
     args = parser.parse_args()
-    count = GEN1_COUNT if args.generation == 1 else POKEMON_COUNT
+    count = RANGES[args.generation][1]
     wanted = [int(n) for n in args.ids.split(',')] if args.ids else list(range(1, count + 1))
     if len(set(wanted)) != len(wanted) or any(n < 1 or n > POKEMON_COUNT for n in wanted):
-        parser.error('编号必须是1至251的不重复整数')
+        parser.error('编号必须是1至649的不重复整数')
     output = (args.out or OUT_HEADER).resolve()
     official = {OUT_HEADER.resolve(), OUT_HEADER.with_suffix('.cpp').resolve()}
     if requires_separate_output(wanted, bool(args.ids)):
         if args.out is None:
-            parser.error('非完整 1-251 输出必须通过 --out 指定独立路径')
+            parser.error('非完整 1-649 输出必须通过 --out 指定独立路径')
         if output in official or output.with_suffix('.cpp').resolve() in official:
-            parser.error('非完整 1-251 输出不得写入正式动画表，请指定独立的 --out 路径')
+            parser.error('非完整 1-649 输出不得写入正式动画表，请指定独立的 --out 路径')
     sprites = load_sprites(wanted)
     output.write_text(generate_header(sprites), encoding='utf-8')
     output.with_suffix('.cpp').write_text(generate_source(sprites), encoding='utf-8')

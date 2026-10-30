@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""用固定提交的本地 PokeAPI CSV 生成第二世代中文资料（完全离线）。"""
+"""用固定提交的本地 PokeAPI CSV 生成第二至第五世代中文资料（完全离线）。"""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/pokedex-source"
 DATA = ROOT / "assets/pokedex-gen2.json"
+RANGES = ((2, 152, 251), (3, 252, 386), (4, 387, 493), (5, 494, 649))
 REVISION = "f38eb24b70f8462976154f534e79bf2bdd7af847"
 LANGUAGE = 12
 FILES = ("pokemon.csv", "pokemon_species_names.csv", "pokemon_types.csv", "type_names.csv")
@@ -57,7 +58,7 @@ def chinese_names(rows: list[dict], key: str) -> dict[int, str]:
     return names
 
 
-def build_pokemons(tables: dict[str, list[dict]]) -> list[dict]:
+def build_pokemons(tables: dict[str, list[dict]], first: int = FIRST_ID, last: int = LAST_ID) -> list[dict]:
     names = chinese_names(tables["pokemon_species_names.csv"], "pokemon_species_id")
     type_names = chinese_names(tables["type_names.csv"], "type_id")
     defaults = {}
@@ -72,7 +73,7 @@ def build_pokemons(tables: dict[str, list[dict]]) -> list[dict]:
         types.setdefault(int(row["pokemon_id"]), []).append(
             (int(row["slot"]), int(row["type_id"])))
     pokemons = []
-    for number in range(FIRST_ID, LAST_ID + 1):
+    for number in range(first, last + 1):
         require(number in names, f"#{number}: missing zh-hans name")
         require(number in defaults, f"#{number}: missing default form")
         slots = sorted(types.get(number, []))
@@ -94,16 +95,20 @@ def build_pokemons(tables: dict[str, list[dict]]) -> list[dict]:
     return pokemons
 
 
-def build(source: Path = SOURCE) -> dict:
+def build_range(generation: int, first: int, last: int, source: Path = SOURCE) -> dict:
     _, tables = load_sources(source)
     return {
         "source": URL_BASE,
         "revision": REVISION,
         "language": "zh-hans",
-        "scope": "National Pokedex 152-251 default forms; Chinese names, types, "
+        "scope": f"National Pokedex {first}-{last} default forms; Chinese names, types, "
                  "height and weight only.",
-        "pokemons": build_pokemons(tables),
+        "pokemons": build_pokemons(tables, first, last),
     }
+
+
+def build(source: Path = SOURCE) -> dict:
+    return build_range(2, FIRST_ID, LAST_ID, source)
 
 
 def validate(data: dict, source: Path = SOURCE) -> dict:
@@ -118,13 +123,20 @@ def main() -> int:
     parser.add_argument("--check", action="store_true",
                         help="只校验 assets/pokedex-gen2.json 与固定来源一致")
     args = parser.parse_args()
-    if args.check:
-        data = validate(json.loads(DATA.read_text()))
-        print(f"pokedex check ok: {len(data['pokemons'])} species, revision {REVISION}")
-        return 0
-    data = build()
-    DATA.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"generated {DATA.relative_to(ROOT)}: {len(data['pokemons'])} species")
+    outputs = []
+    for generation, first, last in RANGES:
+        path = ROOT / f"assets/pokedex-gen{generation}.json"
+        expected = build_range(generation, first, last)
+        if args.check:
+            require(path.exists(), f"{path.name} missing; regenerate")
+            actual = json.loads(path.read_text())
+            require(json.dumps(actual, sort_keys=True) == json.dumps(expected, sort_keys=True),
+                    f"{path.name} stale or invalid; regenerate")
+        else:
+            path.write_text(json.dumps(expected, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        outputs.append((path.name, len(expected["pokemons"])))
+    action = "pokedex check ok" if args.check else "generated"
+    print(action + ": " + ", ".join(f"{name} {count}" for name, count in outputs))
     return 0
 
 

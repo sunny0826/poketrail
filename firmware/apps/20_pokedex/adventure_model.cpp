@@ -104,7 +104,7 @@ static bool cleanBitmap(const std::array<uint8_t, kSpeciesBytes>& bits, uint16_t
   return true;
 }
 static bool validCapture(const Capture& c, const Save& s) {
-  return c.species <= kSpeciesCount && uint8_t(c.route) <= 2 && c.achievementMask <= 63 &&
+  return c.species <= speciesCapacity(s.schema).count && uint8_t(c.route) <= 2 && c.achievementMask <= 63 &&
          validStamp(c.at, s) && (c.species ? c.at.bootGeneration != 0 && c.at.totalSteps >= kEncounterMinSteps :
          (emptyStamp(c.at) && c.route == Route::Forest && c.achievementMask == 0));
 }
@@ -122,9 +122,15 @@ static bool validDay(const DayBucket& d, const Save& s) {
   return true;
 }
 bool validate(const Save& s) {
+  const size_t capacity = speciesCapacity(s.schema).count;
+  if (s.partner > capacity || s.encounter.species > capacity || s.encounter.partner > capacity ||
+      s.lastEvolution.request.from > capacity || s.lastEvolution.request.to > capacity) return false;
+  for (size_t i = capacity; i < kSpeciesCount; ++i) {
+    if (s.captureCounts[i] || s.progress[i].walked || s.progress[i].spent) return false;
+  }
   if (s.schema < 1 || s.schema > kSchemaVersion || uint8_t(s.route) > 2 || uint8_t(s.phase) > 4 ||
       uint8_t(s.result) > (s.schema == 1 ? 5 : 7) ||
-      !cleanBitmap(s.owned, uint16_t(s.schema >= 3 ? kSpeciesCount : 151)) || s.historySize > 14 ||
+      !cleanBitmap(s.owned, uint16_t(capacity)) || !cleanBitmap(s.registered, uint16_t(capacity)) || s.historySize > 14 ||
       s.recentSize > 32 || !s.nextEncounterId || s.explorationCredit > s.totalSteps ||
       s.undatedSteps > s.totalSteps || s.bestDaySteps > s.totalSteps) return false;
   const uint64_t encounters = s.nextEncounterId - 1;
@@ -135,8 +141,7 @@ bool validate(const Save& s) {
     if (s.voidedLegacyCount > 1 || s.legacyChargedCount > encounters ||
         s.voidedLegacyCount > encounters - s.legacyChargedCount ||
         s.legacyChargedCount > s.totalSteps / 500 || s.rewardBaseSteps > s.totalSteps ||
-        s.ballsSpent > (s.totalSteps - s.rewardBaseSteps) / 1000 ||
-        !cleanBitmap(s.registered, uint16_t(s.schema >= 3 ? kSpeciesCount : 151))) return false;
+        s.ballsSpent > (s.totalSteps - s.rewardBaseSteps) / 1000) return false;
     const uint64_t remaining = s.totalSteps - s.legacyChargedCount * 500;
     const uint64_t modern = encounters - s.legacyChargedCount - s.voidedLegacyCount;
     if (s.schema >= 4) {

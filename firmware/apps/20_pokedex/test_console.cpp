@@ -1,7 +1,8 @@
 #include "test_console.hpp"
 #include "save_codec.hpp"
+#include "large_object.hpp"
+#include <array>
 #include <cstddef>
-#include <memory>
 #include <new>
 
 namespace pokedex { namespace adventure {
@@ -87,7 +88,7 @@ void buildScenario(Save& s, TestScenario scenario, uint64_t sequence) {
 bool TestConsole::seed(Store& store, TestModeHost& host, TestScenario scenario) {
   if (!host.testMode()) return false;
   host.setFault(TestFault::None);
-  std::unique_ptr<Save> candidate(new (std::nothrow) Save());
+  auto candidate = makeLargeObject<Save>();
   if (!candidate) return false;
   const LoadResult loaded = store.load(*candidate);
   uint64_t sequence = 0;
@@ -98,13 +99,11 @@ bool TestConsole::seed(Store& store, TestModeHost& host, TestScenario scenario) 
   if (sequence == UINT64_MAX) return false;
   buildScenario(*candidate, scenario, sequence + 1);
   if (!validate(*candidate)) return false;
-  // Seed buffers live on the heap so official mode pays no 24 KB static cost
-  // and the firmware task stack never holds an encoded save.
-  std::unique_ptr<uint8_t[]> bytes(new (std::nothrow) uint8_t[codec::maxEncodedSize]);
+  auto bytes = makeLargeObject<std::array<uint8_t, codec::maxEncodedSize>>();
   if (!bytes) return false;
   size_t length = 0;
-  if (!codec::encode(*candidate, bytes.get(), codec::maxEncodedSize, length)) return false;
-  if (codec::decode(bytes.get(), length, *candidate) != codec::DecodeStatus::Ok ||
+  if (!codec::encode(*candidate, bytes->data(), bytes->size(), length)) return false;
+  if (codec::decode(bytes->data(), length, *candidate) != codec::DecodeStatus::Ok ||
       !validate(*candidate)) return false;
   return store.commit(*candidate) == CommitStatus::Committed;
 }
