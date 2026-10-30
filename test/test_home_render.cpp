@@ -195,7 +195,9 @@ void sleepContinuity() {
   MemoryStore store; ready(store); ClockPlatform platform; platform.valid = false;
   Runtime runtime(store, platform); start(runtime); const uint32_t origin = host_time_ms;
   idle(runtime, 30020); check(runtime.dimmed(), "animation is not user activity and home sleeps after thirty seconds");
-  buttons(true, false); frame(runtime); buttons(true, true); frame(runtime); idle(runtime, 160);
+  buttons(true, false); frame(runtime); buttons(true, true); frame(runtime);
+  check(runtime.dimmed(), "held side keys cannot wake home");
+  M5.powerClick(); frame(runtime); idle(runtime, 160);
   home(runtime); check(!runtime.dimmed(), "wake settles without opening menu");
   buttons(false, true); frame(runtime); home(runtime); settle(runtime); spritePixels(1, origin, true);
   screenshot(runtime, "home-after-wake"); spritePixels(1, origin, true);

@@ -28,7 +28,7 @@ void bootAndCapture() {
   check(r.dimmed() && p.light == 0, "30-second inactivity dims but continues sampling");
   const auto total = r.engine().view().totalSteps;
   const auto beforePage = r.screen().page;
-  edge(r, p, false, true);
+  p.next.power = true; frame(r); frame(r);
   check(!r.dimmed() && r.screen().page == beforePage && r.screen().selected == 0, "wake press does not navigate");
   check(p.feedbacks == 1, "one vibration per saved encounter");
   openMenu(r, p); select(r, p, 1); select(r, p, 2);
@@ -44,7 +44,7 @@ void bootAndCapture() {
   tap(r, p, 233, 30); idle(r, 1800);
   check(r.screen().page == Page::Pause, "battle pauses after cue closes"); published(r, "pause");
   idle(r, 30020); check(r.dimmed(), "paused battle enters power saving without resuming");
-  edge(r, p, false, true);
+  p.next.power = true; frame(r); frame(r);
   check(!r.dimmed() && r.screen().page == Page::Pause, "wake preserves paused battle");
   select(r, p, 0); check(r.screen().page == Page::Battle, "pause resumes");
   win(r, p);
@@ -149,6 +149,8 @@ void viewerWakeAndPractice() {
   M5.Touch.detail.base_y = M5.Touch.detail.y = 233;
   M5.Touch.detail.pressed = true;
   p.next.touch = p.next.held = true; p.next.x = p.next.y = 233; frame(r);
+  check(r.dimmed(), "touch leaves the viewer locked");
+  p.next.power = p.next.held = true; frame(r);
   M5.Touch.detail.pressed = false; M5.Touch.detail.released = M5.Touch.detail.clicked = true; frame(r);
   M5.Touch.detail = HostTouchDetail();
   check(!r.dimmed() && p.feedbacks == 0, "wake click release cannot leak into viewer interaction");

@@ -211,7 +211,7 @@ void noBallsWaitAndRelease() {
   walk(runtime, platform, 1002);
   check(availableBalls(runtime.engine().view()) == 1 && runtime.engine().view().encounter.id == encounter,
         "actual samples earn one ball while preserving victory");
-  if (runtime.dimmed()) edge(runtime, false, true);
+  if (runtime.dimmed()) { M5.powerClick(); frame(runtime); idle(runtime, 160); frame(runtime); }
   openMenu(runtime); select(runtime, 0); check(runtime.screen().page == Page::Throw, "menu explicitly resumes same throw");
   edge(runtime, false, true);
   check(runtime.engine().throwView().active && availableBalls(runtime.engine().view()) == 1, "prepare does not charge inventory");

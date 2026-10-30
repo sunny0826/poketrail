@@ -6,6 +6,43 @@ void powerWake(Runtime& runtime) {
   frame(runtime); powerClick(runtime); idle(runtime, 160); frame(runtime);  // a frame without a press separates the presses
   check(!runtime.dimmed(), "power click wakes after settling and release");
 }
+void powerOnlyWake() {
+  for (unsigned entry = 0; entry < 3; ++entry) {
+    MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
+    openMenu(runtime);
+    if (entry == 0) idle(runtime, 30020);
+    else if (entry == 1) { powerClick(runtime); frame(runtime); }
+    else select(runtime, 6);
+    const auto before = runtime.screen();
+    check(runtime.dimmed(), "all sleep entries leave the screen dark");
+    M5.Display.beginObservation();
+    tap(runtime, 233, 233); idle(runtime, 200);
+    check(runtime.dimmed() && platform.wakes == 0, "touch cannot wake the locked screen");
+    edge(runtime, true, false); edge(runtime, false, true);
+    buttons(true, true); frame(runtime); idle(runtime, 400);
+    buttons(false, false); frame(runtime);
+    auto& touch = M5.Touch.detail;
+    touch.base_x = touch.x = 233; touch.base_y = touch.y = 233;
+    touch.pressed = true; frame(runtime); idle(runtime, 400);
+    touch.pressed = false; touch.released = true; touch.x = 100; frame(runtime);
+    touch = {}; frame(runtime); idle(runtime, 200);
+    check(runtime.dimmed() && platform.wakes == 0 && M5.Display.brightness == 0 &&
+          M5.Display.publishedFrames().empty(), "side keys, held touch and swipe never light or draw the locked screen");
+    M5.Display.endObservation();
+    check(runtime.screen().page == before.page && runtime.screen().selected == before.selected,
+          "ignored locked inputs leave the page and selection unchanged");
+    touch.base_x = touch.x = 233; touch.base_y = touch.y = 233;
+    touch.pressed = true; buttons(false, true); frame(runtime);
+    powerClick(runtime); idle(runtime, 160);
+    check(!runtime.dimmed() && platform.wakes == 1 && runtime.screen().page == before.page &&
+          runtime.screen().selected == before.selected, "power wakes with other inputs held without executing them");
+    touch.pressed = false; touch.released = touch.clicked = true; frame(runtime);
+    touch = {}; buttons(false, false); frame(runtime); frame(runtime);
+    check(runtime.screen().selected == before.selected, "release after power wake does not activate a menu item");
+    edge(runtime, before.selected != 0, before.selected == 0);
+    check(runtime.screen().selected != before.selected, "fresh side key works after power wake");
+  }
+}
 void powerButton() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
   check(runtime.screen().page == Page::Home && !runtime.dimmed(), "power button test starts on home");
@@ -34,7 +71,7 @@ void powerDuringWake() {
   idle(runtime, 30020);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 3 && runtime.dimmed() &&
         platform.sleeps == 1 && platform.wakes == 0, "wake regression sleeps on the selected menu item");
-  edge(runtime, false, true); idle(runtime, 120);
+  powerClick(runtime); idle(runtime, 140);
   check(runtime.dimmed() && platform.wakes == 1, "wake regression is still settling at 140ms");
   powerClick(runtime);
   check(!runtime.dimmed() && M5.Display.brightness == 96 && platform.sleeps == 1 && platform.wakes == 1 &&
@@ -196,7 +233,7 @@ void powerWraparound() {
 }
 int main() {
   c152::begin("POWER TEST");
-  powerButton(); powerDuringWake(); powerClickSequence(); powerMenu(); powerBlocked(); powerSafePages();
+  powerOnlyWake(); powerButton(); powerDuringWake(); powerClickSequence(); powerMenu(); powerBlocked(); powerSafePages();
   powerHold(); powerFailure(); powerWraparound();
   std::printf("%u power Runtime/Button_Class/pixel checks, 0 failures\n", checks);
 }

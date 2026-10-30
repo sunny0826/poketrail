@@ -97,7 +97,7 @@ void sceneDepthNavigationAndSleep() {
   idle(runtime, 30020); check(runtime.dimmed(), "depth scene enters power saving");
   const auto sleepingPixels = groundPixels();
   walk(runtime, platform, 3);
-  edge(runtime, false, true); home(runtime);
+  M5.powerClick(); frame(runtime); frame(runtime); home(runtime);
   check(groundPixels() == sleepingPixels, "sleep and wake resume the same default scene position");
   screenshot(runtime, "home-depth-after-wake");
   openMenu(runtime); select(runtime, 1); select(runtime, 2); home(runtime);

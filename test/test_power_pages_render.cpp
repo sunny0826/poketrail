@@ -1,7 +1,7 @@
 #include "support/power_fixture.hpp"
 
 namespace {
-void wake(Runtime& runtime) { edge(runtime, false, true); idle(runtime, 160); frame(runtime);
+void wake(Runtime& runtime) { M5.powerClick(); frame(runtime); idle(runtime, 160); frame(runtime);
   check(!runtime.dimmed(), "display wakes after settling and release"); }
 void observeWake(PowerPlatform& platform) { M5.Display.beginObservation(); platform.observeWake = true; }
 void endWake(PowerPlatform& platform) { M5.Display.endObservation(); platform.observeWake = false; }
@@ -45,7 +45,7 @@ void manualAndBoundary() {
   buttons(true, true); frame(runtime); idle(runtime, 400);
   check(runtime.dimmed() && platform.sleeps == 1 && platform.wakes == 0, "held manual confirmation cannot immediately wake itself");
   buttons(false, false); frame(runtime); frame(runtime);
-  buttons(false, true); frame(runtime); const uint32_t wakeAt = host_time_ms;
+  M5.powerClick(); frame(runtime); const uint32_t wakeAt = host_time_ms;
   observeWake(platform);
   buttons(false, false); frame(runtime);
   buttons(true, false); frame(runtime); idle(runtime, 100); frame(runtime, 9);
@@ -68,12 +68,14 @@ void clockDraft() {
   openMenu(runtime); select(runtime, 4); select(runtime, 1); select(runtime, 0); edge(runtime, false, true);
   const auto draft = runtime.screen(); const unsigned writes = platform.clockWrites;
   idle(runtime, 30020); check(runtime.dimmed() && draft.editing, "clock editor can sleep with an unsaved draft");
-  tap(runtime, 233, 390); idle(runtime, 160); frame(runtime);
+  tap(runtime, 233, 390); idle(runtime, 160);
+  check(runtime.dimmed(), "touch leaves the sleeping clock draft locked");
+  wake(runtime);
   const auto& after = runtime.screen();
   check(!runtime.dimmed() && after.page == Page::Clock && after.editing && after.selected == draft.selected &&
         after.civil.year == draft.civil.year && after.civil.month == draft.civil.month &&
         after.civil.day == draft.civil.day && after.offset == draft.offset && after.clockMode == draft.clockMode,
-        "wake touch preserves editor field and draft instead of confirming it");
+        "power wake preserves editor field and draft instead of confirming it");
   check(platform.clockWrites == writes && !runtime.engine().view().clock.pending.active,
         "sleep and wake never persist a clock draft");
   screenshot(runtime, "power-clock-draft");
@@ -133,7 +135,9 @@ void viewerWakeInputs() {
     const unsigned feedbacks = platform.feedbacks;
     auto& touch = M5.Touch.detail;
     touch.base_x = touch.x = 233; touch.base_y = touch.y = gesture == 0 ? 30 : 233;
-    touch.pressed = true; frame(runtime); observeWake(platform);
+    touch.pressed = true; frame(runtime);
+    check(runtime.dimmed(), "viewer touch stays locked until the power key");
+    M5.powerClick(); frame(runtime); observeWake(platform);
     if (gesture == 1) { touch.pressed = false; touch.released = touch.clicked = true; frame(runtime); touch = {}; }
     if (gesture == 2) { buttons(false, true); frame(runtime); buttons(true, true); frame(runtime); }
     idle(runtime, gesture == 2 ? 120 : gesture == 1 ? 140 : 160);
@@ -196,7 +200,7 @@ void failedCommandsAndSave() {
 
 void wakeFailureAndSaveRetry() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 6); platform.failWake = true; edge(runtime, false, true); idle(runtime, 180);
+  openMenu(runtime); select(runtime, 6); platform.failWake = true; M5.powerClick(); frame(runtime); idle(runtime, 180);
   check(runtime.dimmed() && platform.wakes == 1 && runtime.metrics().displayErrors == 1,
         "failed wake stays dark without busy retries");
   platform.failWake = false; wake(runtime); check(platform.wakes == 2, "fresh wake retries failed command");
@@ -253,7 +257,7 @@ void pocketRest() {
   store.fail = true; walk(runtime, platform, 4); idle(runtime, 30020);
   check(runtime.engine().savePending() && !runtime.pocketIdle(),
         "an unfinished save keeps the asleep loop awake for retry");
-  store.fail = false; edge(runtime, false, true); idle(runtime, 180);
+  store.fail = false; M5.powerClick(); frame(runtime); idle(runtime, 180);
   check(!runtime.dimmed() && !runtime.pocketIdle(), "waking and visible display never enter pocket rest");
 }
 
