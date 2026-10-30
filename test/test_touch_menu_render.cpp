@@ -112,8 +112,10 @@ void pagination() {
   check(runtime.dimmed() && runtime.screen().page == Page::Menu && runtime.screen().selected == 6,
         "menu sleep button acts once on release");
   tap(runtime, 233, 150);
+  check(runtime.dimmed(), "touch cannot wake the locked menu");
+  M5.powerClick(); frame(runtime); idle(runtime, 160); frame(runtime);
   check(!runtime.dimmed() && runtime.screen().page == Page::Menu && runtime.screen().selected == 6,
-        "wake touch cannot activate a menu row");
+        "power wake cannot activate a menu row");
   screenshot(runtime, "menu-last-page");
   tap(runtime, 298, 430);
   check(runtime.screen().selected == 0, "menu last page wraps without carrying row offset");

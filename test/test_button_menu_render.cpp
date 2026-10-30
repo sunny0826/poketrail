@@ -98,8 +98,10 @@ void wakeAndRecords() {
   MemoryStore store; HostPlatform platform; Runtime r(store, platform); start(r);
   edge(r, false, true); idle(r, 30100); check(r.dimmed(), "inactive menu sleeps");
   chord(r, true); idle(r, 1000);
+  check(r.dimmed(), "staggered chord cannot wake the locked screen");
+  M5.powerClick(); frame(r); idle(r, 160);
   check(!r.dimmed() && r.screen().page == Page::DateWelcome && r.screen().selected == 1,
-        "first staggered chord only wakes without moving or confirming");
+        "power wakes without executing the held staggered chord");
   release(r); chord(r, false); release(r); select(r, 0);
   openMenu(r); select(r, 4); select(r, 0); select(r, 1);
   check(r.screen().page == Page::Recent && menuCount(r.screen(), r.engine()) == 1,
