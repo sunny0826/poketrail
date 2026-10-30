@@ -1,0 +1,3898 @@
+{
+  "species": [
+    {
+      "id": 1,
+      "name": "妙蛙种子",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 2,
+      "name": "妙蛙草",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 3,
+      "name": "妙蛙花",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 4,
+      "name": "小火龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 5,
+      "name": "火恐龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 6,
+      "name": "喷火龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 7,
+      "name": "杰尼龟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 8,
+      "name": "卡咪龟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 9,
+      "name": "水箭龟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 10,
+      "name": "绿毛虫",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 11,
+      "name": "铁甲蛹",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 12,
+      "name": "巴大蝶",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 13,
+      "name": "独角虫",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 14,
+      "name": "铁壳蛹",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 15,
+      "name": "大针蜂",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 16,
+      "name": "波波",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 17,
+      "name": "比比鸟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 18,
+      "name": "大比鸟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 19,
+      "name": "小拉达",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 20,
+      "name": "拉达",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 21,
+      "name": "烈雀",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 22,
+      "name": "大嘴雀",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 23,
+      "name": "阿柏蛇",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 24,
+      "name": "阿柏怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 25,
+      "name": "皮卡丘",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 26,
+      "name": "雷丘",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 27,
+      "name": "穿山鼠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 28,
+      "name": "穿山王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 29,
+      "name": "尼多兰",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 30,
+      "name": "尼多娜",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 31,
+      "name": "尼多后",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 32,
+      "name": "尼多朗",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 33,
+      "name": "尼多力诺",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 34,
+      "name": "尼多王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 35,
+      "name": "皮皮",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 36,
+      "name": "皮可西",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 37,
+      "name": "六尾",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 38,
+      "name": "九尾",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 39,
+      "name": "胖丁",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 40,
+      "name": "胖可丁",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 41,
+      "name": "超音蝠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 42,
+      "name": "大嘴蝠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 43,
+      "name": "走路草",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 44,
+      "name": "臭臭花",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 45,
+      "name": "霸王花",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 46,
+      "name": "派拉斯",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 47,
+      "name": "派拉斯特",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 48,
+      "name": "毛球",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 49,
+      "name": "摩鲁蛾",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 50,
+      "name": "地鼠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 51,
+      "name": "三地鼠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 52,
+      "name": "喵喵",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 53,
+      "name": "猫老大",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 54,
+      "name": "可达鸭",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 55,
+      "name": "哥达鸭",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 56,
+      "name": "猴怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 57,
+      "name": "火暴猴",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 58,
+      "name": "卡蒂狗",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 59,
+      "name": "风速狗",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 60,
+      "name": "蚊香蝌蚪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 61,
+      "name": "蚊香君",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 62,
+      "name": "蚊香泳士",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 63,
+      "name": "凯西",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 64,
+      "name": "勇基拉",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 65,
+      "name": "胡地",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 66,
+      "name": "腕力",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 67,
+      "name": "豪力",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 68,
+      "name": "怪力",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 69,
+      "name": "喇叭芽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 70,
+      "name": "口呆花",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 71,
+      "name": "大食花",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 72,
+      "name": "玛瑙水母",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 73,
+      "name": "毒刺水母",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 74,
+      "name": "小拳石",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 75,
+      "name": "隆隆石",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 76,
+      "name": "隆隆岩",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 77,
+      "name": "小火马",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 78,
+      "name": "烈焰马",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 79,
+      "name": "呆呆兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 80,
+      "name": "呆壳兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 81,
+      "name": "小磁怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 82,
+      "name": "三合一磁怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 83,
+      "name": "大葱鸭",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 84,
+      "name": "嘟嘟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 85,
+      "name": "嘟嘟利",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 86,
+      "name": "小海狮",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 87,
+      "name": "白海狮",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 88,
+      "name": "臭泥",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 89,
+      "name": "臭臭泥",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 90,
+      "name": "大舌贝",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 91,
+      "name": "刺甲贝",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 92,
+      "name": "鬼斯",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 93,
+      "name": "鬼斯通",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 94,
+      "name": "耿鬼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 95,
+      "name": "大岩蛇",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 96,
+      "name": "催眠貘",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 97,
+      "name": "引梦貘人",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 98,
+      "name": "大钳蟹",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 99,
+      "name": "巨钳蟹",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 100,
+      "name": "霹雳电球",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 101,
+      "name": "顽皮雷弹",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 102,
+      "name": "蛋蛋",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 103,
+      "name": "椰蛋树",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 104,
+      "name": "卡拉卡拉",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 105,
+      "name": "嘎啦嘎啦",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 106,
+      "name": "飞腿郎",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 107,
+      "name": "快拳郎",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 108,
+      "name": "大舌头",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 109,
+      "name": "瓦斯弹",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 110,
+      "name": "双弹瓦斯",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 111,
+      "name": "独角犀牛",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 112,
+      "name": "钻角犀兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 113,
+      "name": "吉利蛋",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 114,
+      "name": "蔓藤怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 115,
+      "name": "袋兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 116,
+      "name": "墨海马",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 117,
+      "name": "海刺龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 118,
+      "name": "角金鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 119,
+      "name": "金鱼王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 120,
+      "name": "海星星",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 121,
+      "name": "宝石海星",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 122,
+      "name": "魔墙人偶",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 123,
+      "name": "飞天螳螂",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 124,
+      "name": "迷唇姐",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 125,
+      "name": "电击兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 126,
+      "name": "鸭嘴火兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 127,
+      "name": "凯罗斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 128,
+      "name": "肯泰罗",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 129,
+      "name": "鲤鱼王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 130,
+      "name": "暴鲤龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 131,
+      "name": "拉普拉斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 132,
+      "name": "百变怪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 133,
+      "name": "伊布",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 134,
+      "name": "水伊布",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 135,
+      "name": "雷伊布",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 136,
+      "name": "火伊布",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 137,
+      "name": "多边兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 138,
+      "name": "菊石兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 139,
+      "name": "多刺菊石兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 140,
+      "name": "化石盔",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 141,
+      "name": "镰刀盔",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 142,
+      "name": "化石翼龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 143,
+      "name": "卡比兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 144,
+      "name": "急冻鸟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 145,
+      "name": "闪电鸟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 146,
+      "name": "火焰鸟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 147,
+      "name": "迷你龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 148,
+      "name": "哈克龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 149,
+      "name": "快龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 150,
+      "name": "超梦",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 151,
+      "name": "梦幻",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 152,
+      "name": "菊草叶",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 153,
+      "name": "月桂叶",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 154,
+      "name": "大竺葵",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 155,
+      "name": "火球鼠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 156,
+      "name": "火岩鼠",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 157,
+      "name": "火暴兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 158,
+      "name": "小锯鳄",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 159,
+      "name": "蓝鳄",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 160,
+      "name": "大力鳄",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 161,
+      "name": "尾立",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 162,
+      "name": "大尾立",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 163,
+      "name": "咕咕",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 164,
+      "name": "猫头夜鹰",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 165,
+      "name": "芭瓢虫",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 166,
+      "name": "安瓢虫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 167,
+      "name": "圆丝蛛",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 168,
+      "name": "阿利多斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 169,
+      "name": "叉字蝠",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 170,
+      "name": "灯笼鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 171,
+      "name": "电灯怪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 172,
+      "name": "皮丘",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 173,
+      "name": "皮宝宝",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 174,
+      "name": "宝宝丁",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 175,
+      "name": "波克比",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 176,
+      "name": "波克基古",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 177,
+      "name": "天然雀",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 178,
+      "name": "天然鸟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 179,
+      "name": "咩利羊",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 180,
+      "name": "茸茸羊",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 181,
+      "name": "电龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 182,
+      "name": "美丽花",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 183,
+      "name": "玛力露",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 184,
+      "name": "玛力露丽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 185,
+      "name": "树才怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 186,
+      "name": "蚊香蛙皇",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 187,
+      "name": "毽子草",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 188,
+      "name": "毽子花",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 189,
+      "name": "毽子棉",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 190,
+      "name": "长尾怪手",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 191,
+      "name": "向日种子",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 192,
+      "name": "向日花怪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 193,
+      "name": "蜻蜻蜓",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 194,
+      "name": "乌波",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 195,
+      "name": "沼王",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 196,
+      "name": "太阳伊布",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 197,
+      "name": "月亮伊布",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 198,
+      "name": "黑暗鸦",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 199,
+      "name": "呆呆王",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 200,
+      "name": "梦妖",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 201,
+      "name": "未知图腾",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 202,
+      "name": "果然翁",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 203,
+      "name": "麒麟奇",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 204,
+      "name": "榛果球",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 205,
+      "name": "佛烈托斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 206,
+      "name": "土龙弟弟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 207,
+      "name": "天蝎",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 208,
+      "name": "大钢蛇",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 209,
+      "name": "布鲁",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 210,
+      "name": "布鲁皇",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 211,
+      "name": "千针鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 212,
+      "name": "巨钳螳螂",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 213,
+      "name": "壶壶",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 214,
+      "name": "赫拉克罗斯",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 215,
+      "name": "狃拉",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 216,
+      "name": "熊宝宝",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 217,
+      "name": "圈圈熊",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 218,
+      "name": "熔岩虫",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 219,
+      "name": "熔岩蜗牛",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 220,
+      "name": "小山猪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 221,
+      "name": "长毛猪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 222,
+      "name": "太阳珊瑚",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 223,
+      "name": "铁炮鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 224,
+      "name": "章鱼桶",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 225,
+      "name": "信使鸟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 226,
+      "name": "巨翅飞鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 227,
+      "name": "盔甲鸟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 228,
+      "name": "戴鲁比",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 229,
+      "name": "黑鲁加",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 230,
+      "name": "刺龙王",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 231,
+      "name": "小小象",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 232,
+      "name": "顿甲",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 233,
+      "name": "多边兽２型",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 234,
+      "name": "惊角鹿",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 235,
+      "name": "图图犬",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 236,
+      "name": "无畏小子",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 237,
+      "name": "战舞郎",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 238,
+      "name": "迷唇娃",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 239,
+      "name": "电击怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 240,
+      "name": "鸭嘴宝宝",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 241,
+      "name": "大奶罐",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 242,
+      "name": "幸福蛋",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 243,
+      "name": "雷公",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 244,
+      "name": "炎帝",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 245,
+      "name": "水君",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 246,
+      "name": "幼基拉斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 247,
+      "name": "沙基拉斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 248,
+      "name": "班基拉斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 249,
+      "name": "洛奇亚",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 250,
+      "name": "凤王",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 251,
+      "name": "时拉比",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 252,
+      "name": "木守宫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 253,
+      "name": "森林蜥蜴",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 254,
+      "name": "蜥蜴王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 255,
+      "name": "火稚鸡",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 256,
+      "name": "力壮鸡",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 257,
+      "name": "火焰鸡",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 258,
+      "name": "水跃鱼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 259,
+      "name": "沼跃鱼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 260,
+      "name": "巨沼怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 261,
+      "name": "土狼犬",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 262,
+      "name": "大狼犬",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 263,
+      "name": "蛇纹熊",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 264,
+      "name": "直冲熊",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 265,
+      "name": "刺尾虫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 266,
+      "name": "甲壳茧",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 267,
+      "name": "狩猎凤蝶",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 268,
+      "name": "盾甲茧",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 269,
+      "name": "毒粉蛾",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 270,
+      "name": "莲叶童子",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 271,
+      "name": "莲帽小童",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 272,
+      "name": "乐天河童",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 273,
+      "name": "橡实果",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 274,
+      "name": "长鼻叶",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 275,
+      "name": "狡猾天狗",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 276,
+      "name": "傲骨燕",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 277,
+      "name": "大王燕",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 278,
+      "name": "长翅鸥",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 279,
+      "name": "大嘴鸥",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 280,
+      "name": "拉鲁拉丝",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 281,
+      "name": "奇鲁莉安",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 282,
+      "name": "沙奈朵",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 283,
+      "name": "溜溜糖球",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 284,
+      "name": "雨翅蛾",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 285,
+      "name": "蘑蘑菇",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 286,
+      "name": "斗笠菇",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 287,
+      "name": "懒人獭",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 288,
+      "name": "过动猿",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 289,
+      "name": "请假王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 290,
+      "name": "土居忍士",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 291,
+      "name": "铁面忍者",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 292,
+      "name": "脱壳忍者",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 293,
+      "name": "咕妞妞",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 294,
+      "name": "吼爆弹",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 295,
+      "name": "爆音怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 296,
+      "name": "幕下力士",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 297,
+      "name": "铁掌力士",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 298,
+      "name": "露力丽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 299,
+      "name": "朝北鼻",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 300,
+      "name": "向尾喵",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 301,
+      "name": "优雅猫",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 302,
+      "name": "勾魂眼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 303,
+      "name": "大嘴娃",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 304,
+      "name": "可可多拉",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 305,
+      "name": "可多拉",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 306,
+      "name": "波士可多拉",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 307,
+      "name": "玛沙那",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 308,
+      "name": "恰雷姆",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 309,
+      "name": "落雷兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 310,
+      "name": "雷电兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 311,
+      "name": "正电拍拍",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 312,
+      "name": "負电拍拍",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 313,
+      "name": "电萤虫",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 314,
+      "name": "甜甜萤",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 315,
+      "name": "毒蔷薇",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 316,
+      "name": "溶食兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 317,
+      "name": "吞食兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 318,
+      "name": "利牙鱼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 319,
+      "name": "巨牙鲨",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 320,
+      "name": "吼吼鲸",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 321,
+      "name": "吼鲸王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 322,
+      "name": "呆火驼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 323,
+      "name": "喷火驼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 324,
+      "name": "煤炭龟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 325,
+      "name": "跳跳猪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 326,
+      "name": "噗噗猪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 327,
+      "name": "晃晃斑",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 328,
+      "name": "大颚蚁",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 329,
+      "name": "超音波幼虫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 330,
+      "name": "沙漠蜻蜓",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 331,
+      "name": "刺球仙人掌",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 332,
+      "name": "梦歌仙人掌",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 333,
+      "name": "青绵鸟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 334,
+      "name": "七夕青鸟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 335,
+      "name": "猫鼬斩",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 336,
+      "name": "饭匙蛇",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 337,
+      "name": "月石",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 338,
+      "name": "太阳岩",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 339,
+      "name": "泥泥鳅",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 340,
+      "name": "鲶鱼王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 341,
+      "name": "龙虾小兵",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 342,
+      "name": "铁螯龙虾",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 343,
+      "name": "天秤偶",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 344,
+      "name": "念力土偶",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 345,
+      "name": "触手百合",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 346,
+      "name": "摇篮百合",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 347,
+      "name": "太古羽虫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 348,
+      "name": "太古盔甲",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 349,
+      "name": "丑丑鱼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 350,
+      "name": "美纳斯",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 351,
+      "name": "飘浮泡泡",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 352,
+      "name": "变隐龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 353,
+      "name": "怨影娃娃",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 354,
+      "name": "诅咒娃娃",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 355,
+      "name": "夜巡灵",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 356,
+      "name": "彷徨夜灵",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 357,
+      "name": "热带龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 358,
+      "name": "风铃铃",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 359,
+      "name": "阿勃梭鲁",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 360,
+      "name": "小果然",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 361,
+      "name": "雪童子",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 362,
+      "name": "冰鬼护",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 363,
+      "name": "海豹球",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 364,
+      "name": "海魔狮",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 365,
+      "name": "帝牙海狮",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 366,
+      "name": "珍珠贝",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 367,
+      "name": "猎斑鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 368,
+      "name": "樱花鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 369,
+      "name": "古空棘鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 370,
+      "name": "爱心鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 371,
+      "name": "宝贝龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 372,
+      "name": "甲壳龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 373,
+      "name": "暴飞龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 374,
+      "name": "铁哑铃",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 375,
+      "name": "金属怪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 376,
+      "name": "巨金怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 377,
+      "name": "雷吉洛克",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 378,
+      "name": "雷吉艾斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 379,
+      "name": "雷吉斯奇鲁",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 380,
+      "name": "拉帝亚斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 381,
+      "name": "拉帝欧斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 382,
+      "name": "盖欧卡",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 383,
+      "name": "固拉多",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 384,
+      "name": "烈空坐",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 385,
+      "name": "基拉祈",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 386,
+      "name": "代欧奇希斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 387,
+      "name": "草苗龟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 388,
+      "name": "树林龟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 389,
+      "name": "土台龟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 390,
+      "name": "小火焰猴",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 391,
+      "name": "猛火猴",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 392,
+      "name": "烈焰猴",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 393,
+      "name": "波加曼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 394,
+      "name": "波皇子",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 395,
+      "name": "帝王拿波",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 396,
+      "name": "姆克儿",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 397,
+      "name": "姆克鸟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 398,
+      "name": "姆克鹰",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 399,
+      "name": "大牙狸",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 400,
+      "name": "大尾狸",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 401,
+      "name": "圆法师",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 402,
+      "name": "音箱蟀",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 403,
+      "name": "小猫怪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 404,
+      "name": "勒克猫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 405,
+      "name": "伦琴猫",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 406,
+      "name": "含羞苞",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 407,
+      "name": "罗丝雷朵",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 408,
+      "name": "头盖龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 409,
+      "name": "战槌龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 410,
+      "name": "盾甲龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 411,
+      "name": "护城龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 412,
+      "name": "结草儿",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 413,
+      "name": "结草贵妇",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 414,
+      "name": "绅士蛾",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 415,
+      "name": "三蜜蜂",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 416,
+      "name": "蜂女王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 417,
+      "name": "帕奇利兹",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 418,
+      "name": "泳圈鼬",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 419,
+      "name": "浮潜鼬",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 420,
+      "name": "樱花宝",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 421,
+      "name": "樱花儿",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 422,
+      "name": "无壳海兔",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 423,
+      "name": "海兔兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 424,
+      "name": "双尾怪手",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 425,
+      "name": "飘飘球",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 426,
+      "name": "随风球",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 427,
+      "name": "卷卷耳",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 428,
+      "name": "长耳兔",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 429,
+      "name": "梦妖魔",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 430,
+      "name": "乌鸦头头",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 431,
+      "name": "魅力喵",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 432,
+      "name": "东施喵",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 433,
+      "name": "铃铛响",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 434,
+      "name": "臭鼬噗",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 435,
+      "name": "坦克臭鼬",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 436,
+      "name": "铜镜怪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 437,
+      "name": "青铜钟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 438,
+      "name": "盆才怪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 439,
+      "name": "魔尼尼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 440,
+      "name": "小福蛋",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 441,
+      "name": "聒噪鸟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 442,
+      "name": "花岩怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 443,
+      "name": "圆陆鲨",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 444,
+      "name": "尖牙陆鲨",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 445,
+      "name": "烈咬陆鲨",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 446,
+      "name": "小卡比兽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 447,
+      "name": "利欧路",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 448,
+      "name": "路卡利欧",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 449,
+      "name": "沙河马",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 450,
+      "name": "河马兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 451,
+      "name": "钳尾蝎",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 452,
+      "name": "龙王蝎",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 453,
+      "name": "不良蛙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 454,
+      "name": "毒骷蛙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 455,
+      "name": "尖牙笼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 456,
+      "name": "荧光鱼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 457,
+      "name": "霓虹鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 458,
+      "name": "小球飞鱼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 459,
+      "name": "雪笠怪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 460,
+      "name": "暴雪王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 461,
+      "name": "玛狃拉",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 462,
+      "name": "自爆磁怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 463,
+      "name": "大舌舔",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 464,
+      "name": "超甲狂犀",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 465,
+      "name": "巨蔓藤",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 466,
+      "name": "电击魔兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 467,
+      "name": "鸭嘴炎兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 468,
+      "name": "波克基斯",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 469,
+      "name": "远古巨蜓",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 470,
+      "name": "叶伊布",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 471,
+      "name": "冰伊布",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 472,
+      "name": "天蝎王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 473,
+      "name": "象牙猪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 474,
+      "name": "多边兽乙型",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 475,
+      "name": "艾路雷朵",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 476,
+      "name": "大朝北鼻",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 477,
+      "name": "黑夜魔灵",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 478,
+      "name": "雪妖女",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 479,
+      "name": "洛托姆",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 480,
+      "name": "由克希",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 481,
+      "name": "艾姆利多",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 482,
+      "name": "亚克诺姆",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 483,
+      "name": "帝牙卢卡",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 484,
+      "name": "帕路奇亚",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 485,
+      "name": "席多蓝恩",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 486,
+      "name": "雷吉奇卡斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 487,
+      "name": "骑拉帝纳",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 488,
+      "name": "克雷色利亚",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 489,
+      "name": "霏欧纳",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 490,
+      "name": "玛纳霏",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 491,
+      "name": "达克莱伊",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 492,
+      "name": "谢米",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 493,
+      "name": "阿尔宙斯",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 494,
+      "name": "比克提尼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 495,
+      "name": "藤藤蛇",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 496,
+      "name": "青藤蛇",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 497,
+      "name": "君主蛇",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 498,
+      "name": "暖暖猪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 499,
+      "name": "炒炒猪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 500,
+      "name": "炎武王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 501,
+      "name": "水水獭",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 502,
+      "name": "双刃丸",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 503,
+      "name": "大剑鬼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 504,
+      "name": "探探鼠",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 505,
+      "name": "步哨鼠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 506,
+      "name": "小约克",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 507,
+      "name": "哈约克",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 508,
+      "name": "长毛狗",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 509,
+      "name": "扒手猫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 510,
+      "name": "酷豹",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 511,
+      "name": "花椰猴",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 512,
+      "name": "花椰猿",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 513,
+      "name": "爆香猴",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 514,
+      "name": "爆香猿",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 515,
+      "name": "冷水猴",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 516,
+      "name": "冷水猿",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 517,
+      "name": "食梦梦",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 518,
+      "name": "梦梦蚀",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 519,
+      "name": "豆豆鸽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 520,
+      "name": "咕咕鸽",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 521,
+      "name": "高傲雉鸡",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 522,
+      "name": "斑斑马",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 523,
+      "name": "雷电斑马",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 524,
+      "name": "石丸子",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 525,
+      "name": "地幔岩",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 526,
+      "name": "庞岩怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 527,
+      "name": "滚滚蝙蝠",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 528,
+      "name": "心蝙蝠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 529,
+      "name": "螺钉地鼠",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 530,
+      "name": "龙头地鼠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 531,
+      "name": "差不多娃娃",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 532,
+      "name": "搬运小匠",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 533,
+      "name": "铁骨土人",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 534,
+      "name": "修建老匠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 535,
+      "name": "圆蝌蚪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 536,
+      "name": "蓝蟾蜍",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 537,
+      "name": "蟾蜍王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 538,
+      "name": "投摔鬼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 539,
+      "name": "打击鬼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 540,
+      "name": "虫宝包",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 541,
+      "name": "宝包茧",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 542,
+      "name": "保姆虫",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 543,
+      "name": "百足蜈蚣",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 544,
+      "name": "车轮球",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 545,
+      "name": "蜈蚣王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 546,
+      "name": "木棉球",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 547,
+      "name": "风妖精",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 548,
+      "name": "百合根娃娃",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 549,
+      "name": "裙儿小姐",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 550,
+      "name": "野蛮鲈鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 551,
+      "name": "黑眼鳄",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 552,
+      "name": "混混鳄",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 553,
+      "name": "流氓鳄",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 554,
+      "name": "火红不倒翁",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 555,
+      "name": "达摩狒狒",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 556,
+      "name": "沙铃仙人掌",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 557,
+      "name": "石居蟹",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 558,
+      "name": "岩殿居蟹",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 559,
+      "name": "滑滑小子",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 560,
+      "name": "头巾混混",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 561,
+      "name": "象征鸟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 562,
+      "name": "哭哭面具",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 563,
+      "name": "迭失棺",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 564,
+      "name": "原盖海龟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 565,
+      "name": "肋骨海龟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 566,
+      "name": "始祖小鸟",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 567,
+      "name": "始祖大鸟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 568,
+      "name": "破破袋",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 569,
+      "name": "灰尘山",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 570,
+      "name": "索罗亚",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 571,
+      "name": "索罗亚克",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 572,
+      "name": "泡沫栗鼠",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 573,
+      "name": "奇诺栗鼠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 574,
+      "name": "哥德宝宝",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 575,
+      "name": "哥德小童",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 576,
+      "name": "哥德小姐",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 577,
+      "name": "单卵细胞球",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 578,
+      "name": "双卵细胞球",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 579,
+      "name": "人造细胞卵",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 580,
+      "name": "鸭宝宝",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 581,
+      "name": "舞天鹅",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 582,
+      "name": "迷你冰",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 583,
+      "name": "多多冰",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 584,
+      "name": "双倍多多冰",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 585,
+      "name": "四季鹿",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 586,
+      "name": "萌芽鹿",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 587,
+      "name": "电飞鼠",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 588,
+      "name": "盖盖虫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 589,
+      "name": "骑士蜗牛",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 590,
+      "name": "哎呀球菇",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 591,
+      "name": "败露球菇",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 592,
+      "name": "轻飘飘",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 593,
+      "name": "胖嘟嘟",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 594,
+      "name": "保姆曼波",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 595,
+      "name": "电电虫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 596,
+      "name": "电蜘蛛",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 597,
+      "name": "种子铁球",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 598,
+      "name": "坚果哑铃",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 599,
+      "name": "齿轮儿",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 600,
+      "name": "齿轮组",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 601,
+      "name": "齿轮怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 602,
+      "name": "麻麻小鱼",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 603,
+      "name": "麻麻鳗",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 604,
+      "name": "麻麻鳗鱼王",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 605,
+      "name": "小灰怪",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 606,
+      "name": "大宇怪",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 607,
+      "name": "烛光灵",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 608,
+      "name": "灯火幽灵",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 609,
+      "name": "水晶灯火灵",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 610,
+      "name": "牙牙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 611,
+      "name": "斧牙龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 612,
+      "name": "双斧战龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 613,
+      "name": "喷嚏熊",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 614,
+      "name": "冻原熊",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 615,
+      "name": "几何雪花",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 616,
+      "name": "小嘴蜗",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 617,
+      "name": "敏捷虫",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 618,
+      "name": "泥巴鱼",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 619,
+      "name": "功夫鼬",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 620,
+      "name": "师父鼬",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 621,
+      "name": "赤面龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 622,
+      "name": "泥偶小人",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 623,
+      "name": "泥偶巨人",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 624,
+      "name": "驹刀小兵",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 625,
+      "name": "劈斩司令",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 626,
+      "name": "爆炸头水牛",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 627,
+      "name": "毛头小鹰",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 628,
+      "name": "勇士雄鹰",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 629,
+      "name": "秃鹰丫头",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 630,
+      "name": "秃鹰娜",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 631,
+      "name": "熔蚁兽",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 632,
+      "name": "铁蚁",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 633,
+      "name": "单首龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 634,
+      "name": "双首暴龙",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 635,
+      "name": "三首恶龙",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 636,
+      "name": "燃烧虫",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 637,
+      "name": "火神蛾",
+      "rare": false,
+      "weight": 10
+    },
+    {
+      "id": 638,
+      "name": "勾帕路翁",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 639,
+      "name": "代拉基翁",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 640,
+      "name": "毕力吉翁",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 641,
+      "name": "龙卷云",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 642,
+      "name": "雷电云",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 643,
+      "name": "莱希拉姆",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 644,
+      "name": "捷克罗姆",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 645,
+      "name": "土地云",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 646,
+      "name": "酋雷姆",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 647,
+      "name": "凯路迪欧",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 648,
+      "name": "美洛耶塔",
+      "rare": true,
+      "weight": 2
+    },
+    {
+      "id": 649,
+      "name": "盖诺赛克特",
+      "rare": true,
+      "weight": 2
+    }
+  ]
+}

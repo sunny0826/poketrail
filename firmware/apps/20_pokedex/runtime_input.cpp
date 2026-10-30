@@ -61,7 +61,7 @@ void Runtime::handle(const Input& raw) {
     if (onEvolve && raw.touch) return;
     if (raw.touch) { navigate(Page::Menu); return; }
     if (raw.back) { waitForRelease(); return; }
-    if (raw.left || raw.right) navigate(Page::Menu);
+    if (raw.leftDown || raw.rightDown || raw.left || raw.right) navigate(Page::Menu);
     return;
   }
   Input input = raw;

@@ -1,9 +1,8 @@
 #include "save_codec.hpp"
 #include "adventure_migration.hpp"
 #include "encounter_catalog.hpp"
+#include "large_object.hpp"
 #include <cstdio>
-#include <memory>
-#include <new>
 #include <type_traits>
 namespace pokedex { namespace adventure { namespace codec {
 namespace {
@@ -52,9 +51,9 @@ template<class A, class T> void reading(A& a, T& s) {
   a.field(s.bootGeneration); a.field(s.monotonicMs); a.field(s.calibrationEpoch);
 }
 template<class A, class T> void payload(A& a, T& s) {
-  // Schema 1/2 keep their frozen 151-species, 19-byte layout. Schema 3 widens to 251/32.
-  const size_t bits = s.schema >= 3 ? kSpeciesBytes : 19;
-  const size_t count = s.schema >= 3 ? kSpeciesCount : 151;
+  const SpeciesCapacity capacity = speciesCapacity(s.schema);
+  const size_t bits = capacity.bytes;
+  const size_t count = capacity.count;
   a.field(s.starter); a.field(s.partner); a.field(s.route);
   for (size_t i = 0; i < bits; ++i) a.field(s.owned[i]);
   for (size_t i = 0; i < count; ++i) a.field(s.captureCounts[i]);
@@ -129,8 +128,8 @@ DecodeStatus decode(const uint8_t* bytes, size_t length, Save& out) {
   if (schema < 1 || schema > kSchemaVersion) return DecodeStatus::UnsupportedVersion;
   if (length > maxEncodedSize) return DecodeStatus::Corrupt;
   if (payloadLength != length - kHeaderSize || crc != frameCrc(bytes, length)) return DecodeStatus::Corrupt;
-  // A Save exceeds a typical embedded task stack. Decode transactionally on the heap.
-  std::unique_ptr<Save> parsed(new (std::nothrow) Save());
+  // A Save exceeds a typical embedded task stack. Decode transactionally in PSRAM.
+  LargeObject<Save> parsed = makeLargeObject<Save>();
   if (!parsed) return DecodeStatus::IoError;
   parsed->schema = schema; parsed->sequence = sequence;
   Reader data(bytes + kHeaderSize, payloadLength); payload(data, *parsed);

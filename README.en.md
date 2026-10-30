@@ -20,7 +20,7 @@ An offline walking adventure for the round screen of the M5Stack StopWatch (C152
 - **Walking adventures**: Explore forest, coast, and cave routes, each with its own encounter pool. An encounter occurs every 200–500 steps (random).
 - **Rhythm battles and catching**: Attack or dodge to the beat. After winning, throw up to two balls; Poké Balls are unlimited. Catching a species permanently removes it from the encounter pool.
 - **Partner training**: Carry one partner at a time. Only the carried partner earns training steps. Evolve it manually once it meets the requirements.
-- **Pokédex**: Freely browse Kanto and Johto entries 1–251, with animated pixel art from Pokémon Black and White.
+- **Pokédex**: Freely browse National Pokédex entries 1–649 across Kanto, Johto, Hoenn, Sinnoh, and Unova, with animated pixel art from Pokémon Black and White.
 
 <p align="center">
   <a href="docs/images/readme/battle.png"><img src="docs/images/readme/battle.png" width="234" alt="Round battle screen: Bulbasaur faces Tentacool, with health segments for both and a prompt to attack with the right button. Host Runtime/M5GFX render, not a device photo."></a>
@@ -43,7 +43,7 @@ See the [usage guide](docs/usage.en.md) for probabilities, evolution costs, cont
 <details>
 <summary>Image sources</summary>
 
-All images are screenshots rendered offscreen with the host Runtime/M5GFX using the current code on 2026-10-29. They are not C152 device photos and cannot establish on-device frame rate, visual quality, or acceptance results. Click an image to open the original 468×468 file. The physical round screen is 466×466; the current M5GFX driver reports 468×468. The PNGs retain only pixels inside the round screen, with transparency outside it.
+All images are screenshots rendered offscreen with the host Runtime/M5GFX from the 251-species version on 2026-10-29. They are not C152 device photos and cannot establish on-device frame rate, visual quality, or acceptance results. Click an image to open the original 468×468 file. The physical round screen is 466×466; the current M5GFX driver reports 468×468. The PNGs retain only pixels inside the round screen, with transparency outside it.
 
 | Screen | Render suite | Screenshot |
 | --- | --- | --- |
@@ -106,7 +106,7 @@ The target device is the M5Stack StopWatch C152 with an ESP32-S3R8, 16 MB Flash,
 
 ## Documentation and licensing
 
-An earlier firmware version booted on a C152 and reloaded a save. That observation does not mean device acceptance testing for the current schema5 is complete. See the [verification notes (Chinese only)](docs/verification.md) for current host checks, device observations, and pending checks for real step counting, physical interaction, RTC retention, power-loss recovery, and power consumption. Host tests cannot establish real step counting, on-device feel, latency, or power-loss recovery.
+An earlier firmware version booted on a C152 and reloaded a save. That observation does not mean device acceptance testing for the current schema6 is complete. See the [verification notes (Chinese only)](docs/verification.md) for current host checks, device observations, and pending checks for real step counting, physical interaction, RTC retention, power-loss recovery, and power consumption. Host tests cannot establish real step counting, on-device feel, latency, or power-loss recovery.
 
 - [Usage guide](docs/usage.en.md): controls, catching, training, dates, and saves.
 - [Development guide (Chinese only)](docs/development.md): environment, asset generation, tests, and module responsibilities.

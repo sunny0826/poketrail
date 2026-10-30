@@ -21,6 +21,7 @@ mkdir -p "${build_dir}"
   -o "${build_dir}/test_game" \
   "${repo_root}/test/test_game.cpp" \
   "${repo_root}/firmware/apps/20_pokedex/game.cpp" \
-  "${repo_root}/firmware/apps/20_pokedex/sprite.cpp"
+  "${repo_root}/firmware/apps/20_pokedex/sprite.cpp" \
+  -lz
 
 "${build_dir}/test_game"

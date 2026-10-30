@@ -1,7 +1,7 @@
 #include "support/progression/harness.hpp"
-static_assert(kSchemaVersion==5 && kRuleVersion==3 && kEncounterMinSteps==200 && kEncounterMaxSteps==500,"v5 save, v3 encounter rules, random cadence");
+static_assert(kSchemaVersion==6 && kRuleVersion==3 && kEncounterMinSteps==200 && kEncounterMaxSteps==500,"v6 save, v3 encounter rules, random cadence");
 static void allEdges() {
-  size_t count=0;const auto* rules=evolutionRules(count);CHECK(count==122);
+  size_t count=0;const auto* rules=evolutionRules(count);CHECK(count==320);
   for(size_t i=0;i<count;++i)for(int delta=-1;delta<=1;++delta){
     const auto& rule=rules[i];auto s=fixture(rule.from,rule.steps+delta);s->progress[rule.from-1].walked=rule.steps+delta;
     MemoryStore store;store.disk=encoded(*s);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
@@ -44,7 +44,7 @@ static void accountsAndFailure() {
   CHECK(c.evolve(request(c,1,2),clockFor(c))==CommandResult::InvalidInput);
   auto eevee=fixture(133,10000);eevee->progress[132].walked=10000;setOwned(*eevee,134);setRegistered(*eevee,134);
   MemoryStore es;es.disk=encoded(*eevee);Engine ev(es);CHECK(ev.begin()==CommandResult::Applied);
-  const auto view=ev.evolutionView(133);CHECK(view.count==5);
+  const auto view=ev.evolutionView(133);CHECK(view.count==7);
   for(const auto& option:view.options)CHECK(option.status==(option.target==134?CommandResult::TargetOwned:CommandResult::Applied));
   CHECK(ev.evolutionView(134).count==0);
 }
@@ -65,11 +65,11 @@ static void johtoRules() {
   for(unsigned i=0;i<3;++i){const auto& option=three.options[i];
     CHECK((option.target==106||option.target==107||option.target==237)&&option.cost==10000&&
           option.status==CommandResult::Applied);}
-  const uint16_t eeveeTargets[]={134,135,136,196,197};
+  const uint16_t eeveeTargets[]={134,135,136,196,197,470,471};
   auto eevee=fixture(133,10000);eevee->progress[132].walked=10000;
   MemoryStore es;es.disk=encoded(*eevee);Engine ev(es);CHECK(ev.begin()==CommandResult::Applied);
-  const auto five=ev.evolutionView(133);CHECK(five.count==5);
-  for(unsigned i=0;i<5;++i)CHECK(five.options[i].target==eeveeTargets[i]&&five.options[i].cost==10000);
+  const auto seven=ev.evolutionView(133);CHECK(seven.count==7);
+  for(unsigned i=0;i<7;++i)CHECK(seven.options[i].target==eeveeTargets[i]&&seven.options[i].cost==10000);
   CHECK(ev.evolve(request(ev,133,197),clockFor(ev))==CommandResult::Applied&&owns(ev.view(),197));
   CHECK(registered(ev.view(),133)&&!owns(ev.view(),133)&&ev.view().progress[132].spent==10000);
   CHECK(ev.evolutionView(196).count==0&&ev.evolutionView(197).count==0);

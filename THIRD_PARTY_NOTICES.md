@@ -4,10 +4,10 @@
 
 ## 宝可梦图像与名称
 
-动画、缩略图和精灵球图标来自 [PokeAPI/sprites](https://github.com/PokeAPI/sprites/tree/97a7832d307311c0e1c6ea9035308bf80cc94f81)，固定提交 `97a7832d307311c0e1c6ea9035308bf80cc94f81`。编号 1～251 的动画与缩略图分别记录在 Gen1／Gen2 清单中。
+动画、缩略图和精灵球图标来自 [PokeAPI/sprites](https://github.com/PokeAPI/sprites/tree/97a7832d307311c0e1c6ea9035308bf80cc94f81)，固定提交 `97a7832d307311c0e1c6ea9035308bf80cc94f81`。编号 1～649 的动画与缩略图分别记录在 Gen1–Gen5 清单中。
 
-- 动画：`sprites/pokemon/versions/generation-v/black-white/animated/{id}.gif`，Gen1 记录在 [animations-gen1.json](assets/animations-gen1.json)，Gen2 记录在 [animations-gen2.json](assets/animations-gen2.json)。
-- 缩略图：`sprites/pokemon/versions/generation-vii/icons/{id}.png`，Gen1 记录在 [icons-gen1.json](assets/icons-gen1.json)，Gen2 记录在 [icons-gen2.json](assets/icons-gen2.json)。
+- 动画：`sprites/pokemon/versions/generation-v/black-white/animated/{id}.gif`，清单为 [Gen1](assets/animations-gen1.json)、[Gen2](assets/animations-gen2.json)、[Gen3](assets/animations-gen3.json)、[Gen4](assets/animations-gen4.json)、[Gen5](assets/animations-gen5.json)。
+- 缩略图：`sprites/pokemon/versions/generation-vii/icons/{id}.png`，清单为 [Gen1](assets/icons-gen1.json)、[Gen2](assets/icons-gen2.json)、[Gen3](assets/icons-gen3.json)、[Gen4](assets/icons-gen4.json)、[Gen5](assets/icons-gen5.json)。
 - 精灵球：`sprites/items/poke-ball.png`，与 Gen1 缩略图一同记录在 [icons-gen1.json](assets/icons-gen1.json)。
 - 对应生成物：`firmware/apps/20_pokedex/sprites_generated.hpp/.cpp` 和 `icons_generated.hpp/.cpp`。
 
@@ -29,7 +29,7 @@
 
 [pokedex-gen1.json](assets/pokedex-gen1.json) 保存 151 种中文名称、属性、身高和体重，来源标注为 [dex.pokemon.cn 图鉴](https://dex.pokemon.cn/play/pokedex)，从早期生成数据保留。该快照没有随附明确的再分发许可证，本项目不对其主张 MIT 授权，也不声称已核实权利人授权。
 
-[pokedex-gen2.json](assets/pokedex-gen2.json) 保存第二世代 152～251 的中文名称、属性、身高和体重，由 [build_pokedex.py](tools/build_pokedex.py) 从 [pokedex-source](assets/pokedex-source) 内的四份 PokeAPI CSV 离线生成。CSV 固定提交 `f38eb24b70f8462976154f534e79bf2bdd7af847`，版本、URL、字节数和 SHA256 见同目录 `manifest.json`；上游许可与进化资料相同，见 [pokeapi-LICENSE.md](docs/licenses/pokeapi-LICENSE.md)。生成器同时核对 Gen1 快照与同一来源一致。纯主机测试验证资料与来源，不改变第一世代既有再分发说明。
+[Gen2](assets/pokedex-gen2.json)、[Gen3](assets/pokedex-gen3.json)、[Gen4](assets/pokedex-gen4.json)、[Gen5](assets/pokedex-gen5.json) 分别保存第二至第五世代（#152–649）的中文名称、属性、身高和体重，由 [build_pokedex.py](tools/build_pokedex.py) 从 [pokedex-source](assets/pokedex-source) 内的四份 PokeAPI CSV 离线生成。CSV 固定提交 `f38eb24b70f8462976154f534e79bf2bdd7af847`，版本、URL、字节数和 SHA256 见同目录 `manifest.json`；上游许可与进化资料相同，见 [pokeapi-LICENSE.md](docs/licenses/pokeapi-LICENSE.md)。生成器同时核对 Gen1 快照与同一来源一致。纯主机测试验证资料与来源，不改变第一世代既有再分发说明。
 
 [assets/sprite-scales.json](assets/sprite-scales.json) 是本项目手写的整数缩放类别表，不是上游素材。
 

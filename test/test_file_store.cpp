@@ -76,7 +76,7 @@ static void selection() {
   io.put(1, one);
   CHECK(store.load(out).status == LoadStatus::Corrupt);
   CHECK(store.commit(two) == CommitStatus::IoError);
-  io.put(1, two); io.files[1][4] = 6; checksum(io.files[1]);
+  io.put(1, two); io.files[1][4] = 99; checksum(io.files[1]);
   CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
   CHECK(store.commit(two) == CommitStatus::IoError);
   io.files[1].resize(codec::maxEncodedSize+1);
@@ -106,7 +106,7 @@ static void unsupportedVersions() {
   io.put(1, two); io.files[1].resize(codec::maxEncodedSize+1); io.files[1][4] = 0;
   CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
   CHECK(store.commit(two) == CommitStatus::IoError && io.writes == 0);
-  io.files[1][4] = 6;
+  io.files[1][4] = 99;
   CHECK(store.load(out).status == LoadStatus::UnsupportedVersion);
   CHECK(store.commit(two) == CommitStatus::IoError && io.writes == 0);
   io.files[1][4] = 1;

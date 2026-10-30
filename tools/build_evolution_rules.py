@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Rebuild the 1-251 progression rules from pinned, local PokeAPI CSVs (no network).
+"""Rebuild progression rules from pinned, local PokeAPI CSVs (no network).
 
 Kanto edges keep their frozen version-group-1 records, costs and order in
 assets/evolution-gen1.json; Johto edges are selected from the Gold/Silver
-(version_group_id=3) default records. All non-level adaptations cost 10000 steps.
+(version_group_id=3) default records. National edges beyond those 122 use the
+one current default row, whichever version group stores it. All non-level
+adaptations cost 10000 steps.
 """
 import argparse
 import csv
@@ -15,11 +17,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/evolution-source"
 DATA = ROOT / "assets/evolution-251.json"
+DATA_649 = ROOT / "assets/evolution-649.json"
 GEN1_DATA = ROOT / "assets/evolution-gen1.json"
 OUTPUT = ROOT / "firmware/apps/20_pokedex/progression_catalog_generated.hpp"
 REVISION = "f38eb24b70f8462976154f534e79bf2bdd7af847"
 FILES = ("pokemon_species.csv", "pokemon_evolution.csv", "evolution_triggers.csv")
 LAST = 251
+NATIONAL = 649
 SPECIAL_STEPS = 10000
 STEP_PER_LEVEL = 500
 # Any non-empty value changes the adaptation, including "0" relative stats.
@@ -189,6 +193,85 @@ def derive_251(tables):
     return rules, parents
 
 
+def default_edge(tables, parent, target):
+    matches = [r for r in tables["pokemon_evolution.csv"]
+               if r["evolved_species_id"] == str(target) and r["is_default"] == "1"
+               and not r["region_id"]
+               and r["required_pokemon_form_id"] in ("", str(parent))
+               and r["evolved_pokemon_form_id"] in ("", str(target))]
+    require(len(matches) == 1,
+            f"expected one current default edge {parent}->{target}, got {len(matches)}")
+    return matches[0]
+
+
+def national_cost(row, trigger, parent, target, known):
+    level = int(row["minimum_level"]) if row["minimum_level"] else None
+    source = known.get(parent)
+    if (parent, target) == (290, 292):
+        require(trigger == "shed" and level is None, "Shedinja must stay the empty shed branch")
+        return SPECIAL_STEPS, level, 1
+    require(trigger in ("level-up", "trade", "use-item"), f"unsupported trigger for {target}")
+    branched = bool(conditions(row) or row["gender_id"] or
+                    row["percentage_chance"] not in ("", "100"))
+    require(not (source and source["trigger"] != "level-up" and trigger == "level-up" and not branched),
+            f"explicit source entry level required for {parent}")
+    if source and source["trigger"] == "level-up" and type(source["originalLevel"]) is int:
+        entry = source["originalLevel"]
+    else:
+        require(not (source and source["trigger"] == "level-up" and trigger == "level-up" and not branched),
+                f"explicit source entry level required for {parent}")
+        entry = 1
+    if trigger == "level-up" and level is not None and not branched:
+        require(1 <= entry < level <= 100, f"invalid level difference for {target}")
+        return (level - entry) * STEP_PER_LEVEL, level, entry
+    require(branched or trigger != "level-up", f"unsupported adaptation for {target}")
+    return SPECIAL_STEPS, level, entry
+
+
+def derive_649(tables):
+    """Keep the frozen 122 edges, then add the 198 newer default edges in parent order."""
+    species, parents = source_parents(tables, NATIONAL)
+    triggers = {r["id"]: r["identifier"] for r in tables["evolution_triggers.csv"]}
+    previous, _ = derive_251(tables)
+    rules = [dict(rule) for rule in previous]
+    known = {rule["to"]: rule for rule in rules}
+    pending = [target for target in range(1, NATIONAL + 1)
+               if parents[str(target)] is not None and target not in known]
+    added = []
+    waiting = set(pending)
+    while waiting:
+        ready = [target for target in pending
+                 if target in waiting and parents[str(target)] not in waiting]
+        require(ready, "evolution parent dependency cannot be ordered")
+        for target in ready:
+            parent = parents[str(target)]
+            row = default_edge(tables, parent, target)
+            trigger = triggers.get(row["evolution_trigger_id"])
+            steps, level, entry = national_cost(row, trigger, parent, target, known)
+            rule = {"from": parent, "to": target, "steps": steps, "trigger": trigger,
+                    "originalLevel": level, "sourceEntryLevel": entry,
+                    "sourceRowId": int(row["id"]), "sourceLine": row["csv_line"],
+                    "speciesSourceLine": species[target]["csv_line"],
+                    "versionGroup": int(row["version_group_id"])}
+            known[target] = rule
+            added.append(rule)
+            waiting.remove(target)
+    require(len(added) == 198, "expected 198 edges beyond the frozen 122")
+    require(sum(rule["to"] <= LAST for rule in added) == 7, "expected 7 baby edges into old species")
+    require(sum(rule["to"] > LAST for rule in added) == 191, "expected 191 edges targeting 252-649")
+    require(known[292]["steps"] == SPECIAL_STEPS and known[292]["trigger"] == "shed",
+            "Shedinja must cost 10000 and grant no extra species")
+    require(known[291]["trigger"] == "level-up" and
+            known[291]["steps"] == (known[291]["originalLevel"] - known[291]["sourceEntryLevel"]) * STEP_PER_LEVEL,
+            "Ninjask must keep the level-difference cost")
+    require(sorted(rule["to"] for rule in rules + added if rule["from"] == 133) ==
+            [134, 135, 136, 196, 197, 470, 471], "Eevee must have seven branches")
+    rules.extend(added)
+    require(len(rules) == 320 and len({rule["to"] for rule in rules}) == 320,
+            "expected 320 unique evolution targets")
+    return rules, parents
+
+
 def build(source=SOURCE):
     manifest, tables = load_sources(source)
     rules, parents = derive_251(tables)
@@ -205,11 +288,38 @@ def build(source=SOURCE):
     }
 
 
+def build_649(source=SOURCE):
+    manifest, tables = load_sources(source)
+    rules, parents = derive_649(tables)
+    return {
+        "source": "https://raw.githubusercontent.com/PokeAPI/pokeapi/"
+                  f"{REVISION}/data/v2/csv/pokemon_species.csv",
+        "scope": "National Pokedex 1-649. The first 122 edges stay on the frozen Kanto and "
+                 "Johto records. Each newer edge uses the single current is_default row with "
+                 "no region and a form that is empty or equal to its parent or target; its "
+                 "versionGroup is that row's record, not a first-appearance claim. Gender "
+                 "and branching chances cost 10000, and Shedinja is a separate 10000-step branch.",
+        "parents": parents,
+        "ruleVersion": 2,
+        "provenance": manifest,
+        "rules": rules,
+    }
+
+
 def validate(data, source=SOURCE):
     expected = build(source)
     # JSON comparison rejects bool/float pretending to be an integer.
     require(json.dumps(data, sort_keys=True) == json.dumps(expected, sort_keys=True),
             "progression rules/provenance/parents stale or invalid; regenerate")
+    return data
+
+
+def validate_649(data, source=SOURCE):
+    expected = build_649(source)
+    require(json.dumps(data, sort_keys=True) == json.dumps(expected, sort_keys=True),
+            "national progression rules stale or invalid; regenerate")
+    frozen = [rule for rule in data["rules"][:122]]
+    require(frozen == build(source)["rules"], "frozen 122 evolution edges changed")
     return data
 
 
@@ -229,19 +339,22 @@ def main():
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     if args.check:
-        require(DATA.exists(), "assets/evolution-251.json missing; regenerate")
+        require(DATA.exists() and DATA_649.exists(), "evolution JSON missing; regenerate")
         validate(json.loads(DATA.read_text()))
         require(json.loads(GEN1_DATA.read_text()) == kanto(),
                 "assets/evolution-gen1.json frozen Kanto artifact drifted")
-        require(OUTPUT.exists() and OUTPUT.read_text() == generate(json.loads(DATA.read_text())),
+        require(OUTPUT.exists() and OUTPUT.read_text() == generate(json.loads(DATA_649.read_text())),
                 "progression header stale; regenerate")
-        print("progression check: 122 edges (72 Kanto + 50 Johto), 251 parents, "
+        validate_649(json.loads(DATA_649.read_text()))
+        print("progression check: 320 edges (122 frozen + 198 national), 649 parents, "
               "frozen Gen1 artifact and header match")
     else:
         data = build()
+        national = build_649()
         DATA.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        OUTPUT.write_text(generate(data))
-        print("generated assets/evolution-251.json and progression_catalog_generated.hpp")
+        DATA_649.write_text(json.dumps(national, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        OUTPUT.write_text(generate(national))
+        print("generated evolution-251.json, evolution-649.json and progression_catalog_generated.hpp")
 
 
 if __name__ == "__main__":

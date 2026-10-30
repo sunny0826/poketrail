@@ -129,8 +129,12 @@ void holdTop(Fixture& f, uint32_t duration) {
 
 void moveTo(Fixture& f, unsigned item) {
   const auto page = f.r().screen().page;
-  for (unsigned guard = 0; f.r().screen().selected != item && guard < 320; ++guard)
-    edge(f.r(), f.p(), false, true);
+  for (unsigned guard = 0; f.r().screen().selected != item && guard < 320; ++guard) {
+    if (f.r().screen().selected / menu_layout::kPageSize != item / menu_layout::kPageSize) {
+      f.p().next.swipe = 1;
+      frame(f.r());
+    } else edge(f.r(), f.p(), false, true);
+  }
   check(f.r().screen().page == page && f.r().screen().selected == item,
         "test-menu item reachable with physical keys");
 }

@@ -35,7 +35,8 @@ void evolveAndRetry() {
   check(save.progress[0].spent == 7500 && save.progress[1].walked == 0 && save.captureCounts[1] == 0,
         "evolution neither transfers steps nor fabricates captures");
   screenshot(runtime, "evolution-saved");
-  select(runtime, 2); select(runtime, 1); select(runtime, 3);
+  select(runtime, 1); select(runtime, 2); select(runtime, 1);
+  select(runtime, 3);
   check(runtime.screen().page == Page::Viewer, "history still browsable after replacing source");
   screenshot(runtime, "viewer-history");
   check(glyph("曾经获得", 390, theme::kMint), "source history label is rendered");
@@ -57,7 +58,7 @@ void eeveeAndCollection() {
   }
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   openMenu(runtime); select(runtime, 2); select(runtime, 1);
-  check(runtime.screen().species == 133 && menuCount(runtime.screen(), runtime.engine()) == 7, "five branches, carry and back are pageable");
+  check(runtime.screen().species == 133 && menuCount(runtime.screen(), runtime.engine()) == 9, "seven branches, carry and back are pageable");
   screenshot(runtime, "eevee-branches");
   select(runtime, 1);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().command == CommandResult::TargetOwned,
@@ -79,19 +80,49 @@ void eeveeAndCollection() {
         "legacy Dratini may be carried and cultivated");
   screenshot(runtime, "dratini-progress");
   MemoryStore full; std::vector<uint16_t> all;
-  for (unsigned id = 1; id <= 251; ++id) all.push_back(id);
+  for (unsigned id = 1; id <= kSpeciesCount; ++id) all.push_back(id);
   modernOwned(full, all);
   Runtime collection(full, platform); start(collection); openMenu(collection); select(collection, 2);
-  check(menuCount(collection.screen(), collection.engine()) == 252, "all 251 owned species plus back");
-  select(collection, 250); check(collection.screen().species == 251, "last Johto species is reachable using actual keys");
+  check(menuCount(collection.screen(), collection.engine()) == 650, "all 649 owned species plus back");
+  select(collection, 648); check(collection.screen().species == 649, "last Unova species is reachable using actual keys");
   screenshot(collection, "collection-last");
+  select(collection, 1);
+  check(collection.screen().page == Page::Partners, "last partner detail returns to the collection");
+  edge(collection, true, false); screenshot(collection, "collection-last-return");
+  select(collection, 649);
+  check(collection.screen().page == Page::Menu, "collection final page has a working return entry");
+}
+void seventhEeveeBranch() {
+  MemoryStore store; legacyOwned(store, {1, 133}, 133);
+  { Engine engine(store); engine.begin(); step(engine, 133, 10123); engine.checkpoint(); }
+  HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+  openMenu(runtime); select(runtime, 2); select(runtime, 1);
+  select(runtime, 7);
+  check(runtime.screen().page == Page::EvolutionConfirm && runtime.screen().evolution.to == 471, "two swipes and a key reach the seventh evolution branch");
+  screenshot(runtime, "eevee-seventh-branch");
+  check(runtime.screen().page == Page::EvolutionConfirm && runtime.screen().evolution.to == 471,
+        "seventh branch confirms Glaceon");
+  screenshot(runtime, "eevee-glaceon-confirm");
+  select(runtime, 1); select(runtime, 8);
+  check(runtime.screen().page == Page::Partners, "seven-branch detail final return reaches partner list");
+  select(runtime, 1); select(runtime, 7); select(runtime, 0); idle(runtime, kEvolutionTotalMs);
+  const auto& save = runtime.engine().view();
+  check(save.partner == 471 && owns(save, 471) && !owns(save, 133) && registered(save, 133) &&
+        save.progress[132].walked - save.progress[132].spent == 123 &&
+        save.progress[132].spent == 10000 && save.progress[470].walked == 0,
+        "seventh branch replaces source once and retains its remaining cultivation");
+  screenshot(runtime, "eevee-glaceon-saved");
+  Save reloaded;
+  check(store.load(reloaded).status == LoadStatus::Loaded && reloaded.partner == 471 &&
+        reloaded.progress[132].spent == 10000, "seventh branch persists through the real codec");
 }
 void peakOwnership() {
   MemoryStore store; legacyOwned(store, {1, 4, 7});
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   const uint64_t startSteps = runtime.engine().view().totalSteps;
-  openMenu(runtime); walk(runtime, platform, 2);
-  check(runtime.engine().view().totalSteps == startSteps, "two peaks wait for confirmation");
+  walk(runtime, platform, 2);
+  openMenu(runtime);
+  check(runtime.engine().view().totalSteps == startSteps + 2, "two peaks wait for confirmation");
   tap(runtime, 233, 286); tap(runtime, 233, 306); tap(runtime, 233, 238);
   check(runtime.engine().view().partner == 4, "switch through partner detail");
   walk(runtime, platform, 1);
@@ -237,6 +268,6 @@ void noBallsWaitAndRelease() {
 }
 int main() {
   c152::begin("PROGRESSION TEST");
-  evolveAndRetry(); eeveeAndCollection(); homeEvolveButton(); peakOwnership(); noBallsWaitAndRelease();
+  evolveAndRetry(); eeveeAndCollection(); seventhEeveeBranch(); homeEvolveButton(); peakOwnership(); noBallsWaitAndRelease();
   std::printf("%u progression Runtime/Button_Class checks, 0 failures\n", checks);
 }

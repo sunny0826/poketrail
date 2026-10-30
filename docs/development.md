@@ -36,12 +36,12 @@ rtk proxy mise run icons-download
 | `test-clock-sync` | USB 校时协议、主机重试、Runtime 校时事务与存档保护 |
 | `test-rtc` | 真实 RX8130 驱动、初始化与校时故障 |
 | `test-storage` | 双槽、I/O、文件系统与分配失败；测试目录隔离、模式标记、重启恢复、清理失败、RAM-only 与存储故障开关 |
-| `check-adventure-catalog` | 251 目录、属性推导路线掩码、124 普通根与 122 进化边 |
-| `test-pokedex` | 251 资料、Gen2 来源哈希与 Gen1 快照一致性 |
-| `test-sprites` | 251 个 GIF 哈希、完整帧和固件逐像素解码 |
-| `test-icons` | 251 个 PNG 哈希、透明规则与生成像素 |
+| `check-adventure-catalog` | 649 目录、属性路线掩码、普通资格与 320 条进化边；旧 124 种资格、122 条费用和历史路线不变 |
+| `test-pokedex` | 649 资料、Gen2–5 来源哈希与 Gen1／Gen2 快照一致性 |
+| `test-sprites` | 649 个 GIF 哈希、完整帧和固件逐像素解码 |
+| `test-icons` | 649 个 PNG 哈希、透明规则与生成像素 |
 | `test-scenes` | 三路线场景来源、RGB565 像素与生成物 |
-| `test-render` | 14 套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归；含测试模式入口、控制台、场景、标识与退出 |
+| `test-render` | 15 套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归；含测试模式入口、控制台、场景、标识与退出 |
 | `build` | ESP32-S3 固件 |
 | `check-startup-stack` | 构建后 Engine 启动局部栈帧 |
 
@@ -55,7 +55,7 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_previe
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 ```
 
-`test_battle_render` 通过真实按键、Runtime 和 M5GFX 核对双角色原帧时长、攻击与躲避位移、即时 HP、最终动作窗口、暂停恢复和保存失败。`test_evolution_render` 覆盖保存后播放、形态交替、跳过与释放门、重试与重启、播放中计步及圆屏边界。`test_evolution_preview_render` 遍历全部 122 条进化边，核对新档、坏档、未拥有和零培养步下的预览、伊布五分支与无畏小子三分支、连续刷新、原条目返回、账户不变及真实进化重试隔离。输出是主机截图，不表示设备已达到目标帧率。
+`test_battle_render` 通过真实按键、Runtime 和 M5GFX 核对双角色原帧时长、攻击与躲避位移、即时 HP、最终动作窗口、暂停恢复和保存失败。`test_evolution_render` 覆盖保存后播放、形态交替、跳过与释放门、重试与重启、播放中计步及圆屏边界。`test_evolution_preview_render` 遍历全部 320 条进化边，核对新档、坏档、未拥有和零培养步下的预览、伊布七分支与无畏小子三分支、连续刷新、原条目返回、账户不变及真实进化重试隔离。输出是主机截图，不表示设备已达到目标帧率。
 
 `test_test_mode_render` 覆盖资源页和错误页顶部长按、来源确认、控制台翻页与返回、四种固定场景、手动 +1 步触发遭遇、模拟校时、故障选择、重置和退出。测试使用主机输入与存储替身，不执行 `main.cpp` 的完整设备切换链。操作入口见[设备内测试模式](usage-test-mode.md)，已有日志和未覆盖边界见[Issue #7 验证记录](verification.md#issue-7-设备内测试模式2026-10-27)。
 
@@ -99,9 +99,9 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 | 进化规则 | `rtk proxy mise exec -- python3 tools/build_evolution_rules.py` |
 | 遭遇目录 | `rtk proxy mise exec -- python3 tools/build_adventure_catalog.py` |
 
-遭遇目录入口为 [adventure-251.json](../assets/adventure-251.json)，`routeTypes` 声明属性到路线的归属，`speciesFiles` 列出 [adventure-routes](../assets/adventure-routes) 内的物种配置。物种文件只保留编号、名称、稀有度和权重，路线由生成器读取 `pokedex-gen1.json`／`pokedex-gen2.json` 的 `pokemon_type_name` 推导；双属性按位或，251 种都必须得到非空掩码。`ordinaryRoots` 显式声明普通资格，`reserved` 记录后续独立活动的保留物种；生成器合并后按编号排序，重复、缺失编号、手写 `routes`、未归属物种或路线映射缺口都会报错。生成器同时写出 schema1–4 的冻结旧掩码 `route_masks_v4_generated.hpp`；两份头文件都不得手改。旧的 `adventure-gen1.json` 与关都三份路线文件保留为冻结的关都快照，当前生成器只消费 `adventure-251.json`。
+遭遇目录入口为 [adventure-649.json](../assets/adventure-649.json)，`routeTypes` 声明属性到路线的归属，`speciesFiles` 列出 [adventure-routes](../assets/adventure-routes) 内的物种配置。物种文件只保留编号、名称、稀有度和权重；生成器读取 Gen1–Gen5 图鉴的 `pokemon_type_name`，按位或双属性得到路线掩码，649 种都必须非空。`ordinaryRoots` 显式声明普通资格，`reserved` 记录活动保留物种；重复或缺失编号、手写 `routes`、未归属物种和映射缺口都会报错。原 [adventure-251.json](../assets/adventure-251.json)、旧物种配置与 schema1–4 的 `route_masks_v4_generated.hpp` 保持冻结；新增宝宝父关系不取消旧 124 种普通资格。生成头文件不得手改。
 
-动画缓存位于 `assets/sprites/black-white`，缩略图位于 `assets/sprites/icons`，均不纳入 Git。来源、版本和权利声明见[第三方声明](../THIRD_PARTY_NOTICES.md)。动画和缩略图清单按世代拆分为 Gen1／Gen2 两份，固定来源均为 PokeAPI sprites 提交 `97a7832d307311c0e1c6ea9035308bf80cc94f81`。指定子集必须使用独立输出路径，防止覆盖完整图鉴：
+动画缓存位于 `assets/sprites/black-white`，缩略图位于 `assets/sprites/icons`，均不纳入 Git。来源、版本和权利声明见[第三方声明](../THIRD_PARTY_NOTICES.md)。动画和缩略图清单按世代拆分为 Gen1–Gen5 五份，固定来源均为 PokeAPI sprites 提交 `97a7832d307311c0e1c6ea9035308bf80cc94f81`。指定子集必须使用独立输出路径，防止覆盖完整图鉴：
 
 ```bash
 rtk proxy mise exec -- python3 tools/build_sprites.py --ids 1,4,7 --out /tmp/sprites_generated.hpp
@@ -113,9 +113,9 @@ rtk proxy mise exec -- python3 tools/build_sprites.py --ids 1,4,7 --out /tmp/spr
 
 三路线场景通过 `tools/design_preview_scenes.py` 生成，清单位于 `assets/scene-backgrounds.json`。普通与暗色合成图，以及首页远景／中层／近层均为 228×135 RGB565，绘制时逐行放大 2 倍；场景数组存于 Flash，只需 456 像素的行缓冲。首页由 `Screens::advanceScene()` 持有视觉步数，屏幕唤醒且首页可见时每 100ms 默认推进一次，地面向下循环，路线切换归零；走路不加速，其他页面和熄屏期间暂停。该进度不进入 Engine 或存档。遭遇、战斗和投球使用已保存遭遇路线的静态暗色图，选择新路线不改变当前遭遇背景。
 
-第二世代中文名、属性、身高和体重来自 PokeAPI 提交 `f38eb24b70f8462976154f534e79bf2bdd7af847` 的四份 CSV，保存在 [pokedex-source](../assets/pokedex-source)，哈希和字节数见同目录 `manifest.json`；[build_pokedex.py](../tools/build_pokedex.py) 只读本地缓存生成 [pokedex-gen2.json](../assets/pokedex-gen2.json)，普通构建不访问网络。
+第二至第五世代中文名、属性、身高和体重来自 PokeAPI 提交 `f38eb24b70f8462976154f534e79bf2bdd7af847` 的四份 CSV，保存在 [pokedex-source](../assets/pokedex-source)，哈希和字节数见同目录 `manifest.json`；[build_pokedex.py](../tools/build_pokedex.py) 只读本地缓存生成各世代图鉴 JSON，保留既有 Gen1／Gen2 快照，普通构建不访问网络。
 
-动画按原始帧时长推进，点击和战斗动作不会重启动画。双角色各自持有播放位置，共用解码缓冲；白闪和残影只改变本帧颜色与位置。Engine 与 HP 在判定后立即更新，结束战斗时页面保留最多 450ms 动作窗口，失败保存立即转到错误页。判定窗口和下一拍时间不变。进化关系使用编号 1～251，缩放不代表实际身高比例。
+动画按原始帧时长推进，点击和战斗动作不会重启动画。双角色各自持有播放位置，共用解码缓冲；白闪和残影只改变本帧颜色与位置。Engine 与 HP 在判定后立即更新，结束战斗时页面保留最多 450ms 动作窗口，失败保存立即转到错误页。判定窗口和下一拍时间不变。进化关系使用编号 1～649，缩放不代表实际身高比例。
 
 串口每 10 秒输出采样、最大间隔、输入轮询、质量缺口、RTC 错误、绘制与保存耗时。`maxgap`、`input`、`render`、`commit` 的单位为毫秒。锁定 IMU 接口不能区分 I/O 失败和无新样本，显示 `imuio=not-exposed`；日志不代替真实计步和屏幕观察。
 

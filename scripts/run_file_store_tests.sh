@@ -6,6 +6,9 @@ mkdir -p "${build_dir}"
 cd "${repo_root}"
 flags=(-Ifirmware/apps/20_pokedex -std=c++11 -O1 -g -Wall -Wextra -Werror)
 if [[ "${SANITIZE:-1}" == 1 ]]; then flags+=(-fsanitize=address,undefined -fno-omit-frame-pointer); fi
+"${CXX:-clang++}" "${flags[@]}" -DARDUINO_ARCH_ESP32 -Itest/support/psram \
+  test/test_large_object.cpp -o "${build_dir}/test_large_object"
+"${build_dir}/test_large_object"
 sources=(firmware/apps/20_pokedex/file_store.cpp firmware/apps/20_pokedex/save_codec.cpp
   firmware/apps/20_pokedex/adventure_migration.cpp
   firmware/apps/20_pokedex/adventure_model.cpp firmware/apps/20_pokedex/calendar.cpp firmware/apps/20_pokedex/encounter_catalog.cpp)
@@ -19,3 +22,10 @@ sources=(firmware/apps/20_pokedex/file_store.cpp firmware/apps/20_pokedex/save_c
 "${build_dir}/test_mode_storage"
 "${CXX:-clang++}" "${flags[@]}" test/support/storage/allocation_tests.cpp "${sources[@]}" -o "${build_dir}/test_storage_allocation"
 "${build_dir}/test_storage_allocation"
+"${CXX:-clang++}" "${flags[@]}" -DARDUINO_ARCH_ESP32 -Itest/support/psram \
+  test/support/storage/allocation_tests.cpp "${sources[@]}" -o "${build_dir}/test_storage_psram"
+"${build_dir}/test_storage_psram"
+"${CXX:-clang++}" "${flags[@]}" -DARDUINO_ARCH_ESP32 -Itest/support/psram -Itest/support/storage \
+  test/support/storage/large_state_tests.cpp firmware/apps/20_pokedex/device_store.cpp \
+  firmware/apps/20_pokedex/test_console.cpp "${sources[@]}" -o "${build_dir}/test_large_state"
+"${build_dir}/test_large_state"

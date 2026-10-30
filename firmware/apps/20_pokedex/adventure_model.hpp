@@ -4,12 +4,18 @@
 #include <cstdint>
 
 namespace pokedex { namespace adventure {
-constexpr size_t kSpeciesCount = 251;
-constexpr size_t kSpeciesBytes = 32;
-constexpr size_t kEvolutionOptions = 5;
+constexpr size_t kSpeciesCount = 649;
+constexpr size_t kSpeciesBytes = (kSpeciesCount + 7) / 8;
+constexpr size_t kEvolutionOptions = 7;
+struct SpeciesCapacity { size_t count, bytes; };
+constexpr SpeciesCapacity speciesCapacity(uint16_t schema) {
+  return schema >= 1 && schema <= 2 ? SpeciesCapacity{151, 19} :
+         schema >= 3 && schema <= 5 ? SpeciesCapacity{251, 32} :
+         schema == 6 ? SpeciesCapacity{649, 82} : SpeciesCapacity{0, 0};
+}
 constexpr size_t kRecentCount = 32;
 constexpr size_t kHistoryCount = 14;
-constexpr uint16_t kSchemaVersion = 5;
+constexpr uint16_t kSchemaVersion = 6;
 constexpr uint16_t kRuleVersion = 3;
 constexpr uint16_t kEncounterMinSteps = 200;
 constexpr uint16_t kEncounterMaxSteps = 500;

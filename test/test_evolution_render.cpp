@@ -163,8 +163,9 @@ void stepSaveBoundaries() {
     { Engine engine(store); engine.begin(); step(engine, 1, 997); engine.checkpoint(); }
     HostPlatform platform; Runtime runtime(store, platform); start(runtime); confirmPage(runtime);
     if (duringAnimation) { confirm(runtime); release(runtime); }
+    const auto beforeWalk = runtime.engine().view().totalSteps;
     walk(runtime, platform, 2);
-    check(runtime.engine().view().totalSteps == 8997, "two step peaks remain pending before threshold");
+    check(runtime.engine().view().totalSteps == beforeWalk + 2, "two step peaks remain pending before threshold");
     store.fail = true;
     for (unsigned t = 0; t < 500; t += 20) {
       platform.z = 1 - 0.30f * std::cos(6.28318530718f * t / 500);

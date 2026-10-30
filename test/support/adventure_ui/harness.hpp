@@ -98,9 +98,33 @@ void openMenu(Runtime& r, TestPlatform& p) {
 }
 void select(Runtime& r, TestPlatform& p, unsigned item) {
   const auto page = r.screen().page;
-  for (unsigned guard = 0; r.screen().selected != item && guard < 320; ++guard) edge(r, p, false, true);
+  const bool paged = r.screen().page == Page::Menu || r.screen().page == Page::Clock ||
+                      r.screen().page == Page::PartnerDetail || r.screen().page == Page::TestHub;
+  const bool record = r.screen().page == Page::FirstCaptures || r.screen().page == Page::Recent ||
+                      r.screen().page == Page::Days || r.screen().page == Page::Achievements;
+  if (record) {
+    for (unsigned guard = 0; r.screen().selected != item && guard < 2200; ++guard) {
+      p.next.swipe = 1;
+      frame(r);
+    }
+  }
+  if (paged) {
+    for (unsigned guard = 0; r.screen().selected / menu_layout::kPageSize != item / menu_layout::kPageSize &&
+                             guard < 8; ++guard) {
+      p.next.swipe = 1;
+      frame(r);
+    }
+    frame(r);
+  }
+  if (!record && !(paged && r.screen().selected == item)) {
+    for (unsigned guard = 0; r.screen().selected != item && guard < menu_layout::kPageSize; ++guard)
+      edge(r, p, false, true);
+  }
   check(r.screen().page == page && r.screen().selected == item, "menu item reachable with physical keys");
-  edge(r, p, true, true);
+  p.next.left = p.next.right = p.next.held = true;
+  frame(r);
+  p.next = Input();
+  frame(r);
 }
 void screenshot(const char* name) {
   const std::string path = verificationOutput((std::string(name) + ".ppm").c_str());

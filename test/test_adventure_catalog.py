@@ -27,14 +27,16 @@ class AdventureCatalogTests(unittest.TestCase):
         }
 
     def test_deterministic_generated_header(self):
-        generated = GENERATE(self.data, PROGRESSION)
-        self.assertEqual(generated, GENERATE(copy.deepcopy(self.data), PROGRESSION))
-        self.assertEqual(generated,
+        generated = GENERATE(self.data, PROGRESSION, 251)
+        self.assertEqual(generated, GENERATE(copy.deepcopy(self.data), PROGRESSION, 251))
+        national = json.loads((ROOT / "assets/evolution-649.json").read_text())
+        current = GENERATE(LOAD(ROOT / "assets/adventure-649.json"), national, 649)
+        self.assertEqual(current,
                          (ROOT / "firmware/apps/20_pokedex/adventure_catalog_generated.hpp").read_text())
 
     def test_route_masks_derive_from_types(self):
         types = CATALOG["load_types"]()
-        masks, ordinary = CATALOG["ownership"](self.data, PROGRESSION)
+        masks, ordinary = CATALOG["ownership"](self.data, PROGRESSION, 251)
         table = self.data["routeTypes"]
         bits = {"Forest": 1, "Coast": 2, "Cave": 4}
         for species in range(1, 252):
@@ -105,7 +107,7 @@ class AdventureCatalogTests(unittest.TestCase):
                 damaged = copy.deepcopy(self.data)
                 mutate(damaged)
                 with self.assertRaises(ValueError):
-                    GENERATE(damaged, PROGRESSION)
+                    GENERATE(damaged, PROGRESSION, 251)
 
     def test_partition_order_does_not_change_generated_catalog(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -114,8 +116,8 @@ class AdventureCatalogTests(unittest.TestCase):
             for name, species in (("even.json", self.data["species"][1::2]),
                                   ("odd.json", self.data["species"][::2])):
                 (root / name).write_text(json.dumps({"species": list(reversed(species))}))
-            self.assertEqual(GENERATE(LOAD(root / "catalog.json"), PROGRESSION),
-                             GENERATE(self.data, PROGRESSION))
+            self.assertEqual(GENERATE(LOAD(root / "catalog.json"), PROGRESSION, 251),
+                             GENERATE(self.data, PROGRESSION, 251))
 
     def test_invalid_partition_inputs_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:

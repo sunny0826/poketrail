@@ -15,9 +15,10 @@ void check(bool condition, const char* message) {
 
 const uint16_t palette[] = {kTransparentKey, 0, 0xFFFF, 0xF800, 0x07E0, 0x001F,
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-const uint8_t data[] = {0x01, 0x02, 0x00, 0x03, 0x04, 0x05};
-const Frame frames[] = {{0, 6, 100}, {0, 6, 200}, {0, 6, 50}};
-const Sprite sample = {"test", "", 1, 3, 2, palette, data, sizeof(data), frames, 3, 350, "", "", false};
+const uint8_t pixels_raw[] = {1, 2, 0, 3, 4, 5};
+const uint8_t data[] = {120,156,99,100,98,96,102,97,5,0,0,44,0,16};
+const Frame frames[] = {{0, 100}, {0, 200}, {0, 50}};
+const Sprite sample = {"test", "", 1, 3, 2, palette, 6, data, sizeof(data), sizeof(pixels_raw), frames, 3, 350, "", "", false};
 
 void testInputs() {
   check(releaseInput(233,233,233,233,true) == Input::React, "central click reacts");
@@ -149,30 +150,21 @@ void testDecode() {
   bool correct = true;
   for (int y = 0; y < 4; ++y)
     for (int x = 0; x < 6; ++x)
-      if (pixels[y*6+x] != palette[data[(y/2)*3+x/2]]) correct = false;
+      if (pixels[y*6+x] != palette[pixels_raw[(y/2)*3+x/2]]) correct = false;
   check(correct, "nearest neighbor retains black white color and transparent cells");
   pixels.resize(54);
   check(decodeFrame(sample, 0, 3, pixels.data(), pixels.size()), "decode three-times blocks");
   correct = true;
   for (int y = 0; y < 6; ++y)
     for (int x = 0; x < 9; ++x)
-      if (pixels[y*9+x] != palette[data[(y/3)*3+x/3]]) correct = false;
+      if (pixels[y*9+x] != palette[pixels_raw[(y/3)*3+x/3]]) correct = false;
   check(correct, "three-times blocks preserve every source color and transparency");
   check(!decodeFrame(sample, 3, 2, pixels.data(), pixels.size()), "out of range frame fails");
   check(!decodeFrame(sample, 0, 0, pixels.data(), pixels.size()), "zero scale fails");
   check(!decodeFrame(sample, 0, 2, pixels.data(), 23), "short output fails");
   check(!decodeFrame(sample, 0, 2, nullptr, 24), "null output fails");
-  const Frame truncated[] = {{0, 2, 100}};
+  const Frame out_of_bounds[] = {{6, 100}};
   Sprite broken = sample;
-  broken.frames = truncated;
-  check(!decodeFrame(broken, 0, 1, pixels.data(), 24), "truncated frame fails");
-  const uint8_t overflow[] = {0xF1};
-  const Frame excessive[] = {{0, 1, 100}};
-  broken.data = overflow;
-  broken.data_size = 1;
-  broken.frames = excessive;
-  check(!decodeFrame(broken, 0, 1, pixels.data(), 24), "excessive run fails");
-  const Frame out_of_bounds[] = {{1, 1, 100}};
   broken.frames = out_of_bounds;
   check(!decodeFrame(broken, 0, 1, pixels.data(), 24), "out of blob frame fails");
 }

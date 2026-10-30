@@ -12,7 +12,7 @@ from pathlib import Path
 from PIL import Image
 from tools.build_sprites import (
     CACHE_DIR, GEN1_COUNT, MANIFESTS, OUT_HEADER, POKEMON_COUNT, SCALE_CACHE,
-    SPRITE_URL, TRANSPARENT_KEY, build_animation, encode_runs, frame_colors,
+    SPRITE_URL, TRANSPARENT_KEY, build_animation, frame_colors,
     generate_header, generate_source, generate_manifest, load_scales, load_sprites,
     requires_separate_output,
 )
@@ -20,11 +20,9 @@ from tools.build_sprites import (
 ROOT = Path(__file__).resolve().parent.parent
 SOURCES = (
     'tools/build_sprites.py',
-    'assets/pokedex-gen1.json',
-    'assets/pokedex-gen2.json',
+    *(f'assets/pokedex-gen{generation}.json' for generation in range(1, 6)),
     'assets/sprite-scales.json',
-    'assets/animations-gen1.json',
-    'assets/animations-gen2.json',
+    *(f'assets/animations-gen{generation}.json' for generation in range(1, 6)),
 )
 
 
@@ -119,34 +117,26 @@ class SpriteTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'transparent key'):
             frame_colors(image)
 
-    def test_runs_preserve_long_spans_and_reject_invalid_index(self):
-        original = bytes([0]*33 + [15]*17 + [1,2,3])
-        decoded = bytearray()
-        for run in encode_runs(original):
-            decoded.extend([run & 15] * ((run >> 4)+1))
-        self.assertEqual(decoded, original)
-        with self.assertRaises(ValueError):
-            encode_runs(bytes([16]))
-
     def test_static_asset_rejected(self):
         output = io.BytesIO()
         Image.new('RGBA', (10,10), (0,0,0,255)).save(output, format='GIF', duration=100)
         with self.assertRaisesRegex(ValueError, 'distinct frames'):
             build_animation(output.getvalue())
 
-    def test_all_251_complete_animated_sources(self):
+    def test_all_649_complete_animated_sources(self):
         self.assertIn('generation-v/black-white/animated/', SPRITE_URL)
         self.assertEqual([s['id'] for s in self.sprites], list(range(1, POKEMON_COUNT + 1)))
         for s in self.sprites:
             with self.subTest(id=s['id']):
                 self.assertGreater(s['unique'], 1)
                 self.assertGreaterEqual(len(s['frames']), s['unique'])
-                self.assertLessEqual(len(s['palette']),16)
+                self.assertLessEqual(len(s['palette']), 256)
                 self.assertGreater(s['duration'], 0)
 
     def test_metadata_names_cover_both_generations(self):
         self.assertEqual(self.sprites[151]['name'], '菊草叶')
         self.assertEqual(self.sprites[250]['name'], '时拉比')
+        self.assertEqual(self.sprites[648]['name'], '盖诺赛克特')
         self.assertEqual(self.sprites[200]['name'], '未知图腾')
         self.assertEqual([s['id'] for s in self.sprites].count(201), 1)
 
@@ -167,13 +157,16 @@ class SpriteTests(unittest.TestCase):
             225, 226, 227, 234, 235, 241, 243, 244, 245, 249, 250, 251})
         self.assertEqual(len(gen2['base']), 31)
         self.assertEqual(set(gen2['base']) | set(gen2['evolved']) | set(gen2['standalone']),
-                         set(range(GEN1_COUNT + 1, POKEMON_COUNT + 1)))
+                         set(range(GEN1_COUNT + 1, 252)))
         self.assertEqual(set(gen2['evolved']).isdisjoint(gen2['standalone']), True)
         self.assertTrue({153, 169, 176, 186, 196, 197, 199, 208, 212, 230, 233, 242,
                          247, 248} <= set(gen2['evolved']))
         self.assertTrue(set(gen2['base']).isdisjoint({185, 201, 202, 226, 249, 250, 251}))
-        self.assertEqual(enlarged, set(gen1['evolved']) | set(gen1['standalone']) |
-                         set(gen2['evolved']) | set(gen2['standalone']))
+        enlarged_expected = set()
+        for generation in scales.values():
+            enlarged_expected.update(generation['evolved'])
+            enlarged_expected.update(generation['standalone'])
+        self.assertEqual(enlarged, enlarged_expected)
         self.assertEqual(load_scales(), enlarged)
 
     def test_scale_metadata_rejects_invalid_partitions(self):
@@ -208,7 +201,8 @@ class SpriteTests(unittest.TestCase):
         self.assertEqual(OUT_HEADER.read_text(), generate_header(self.sprites))
         self.assertEqual(OUT_HEADER.with_suffix('.cpp').read_text(), generate_source(self.sprites))
         for generation, path in MANIFESTS.items():
-            first, last = (0, GEN1_COUNT) if generation == 1 else (GEN1_COUNT, POKEMON_COUNT)
+            ranges = {1: (0, 151), 2: (151, 251), 3: (251, 386), 4: (386, 493), 5: (493, 649)}
+            first, last = ranges[generation]
             self.assertEqual(path.read_text(), generate_manifest(self.sprites[first:last]))
             for r in json.loads(path.read_text())['sprites']:
                 actual = hashlib.sha256((CACHE_DIR / f'{r["id"]:04d}.gif').read_bytes()).hexdigest()
@@ -221,7 +215,7 @@ class SpriteTests(unittest.TestCase):
         subprocess.run([os.environ.get('CXX','c++'), '-std=c++11', '-O2',
                         'test/test_decode.cpp', 'firmware/apps/20_pokedex/sprite.cpp',
                         'firmware/apps/20_pokedex/game.cpp',
-                        'firmware/apps/20_pokedex/sprites_generated.cpp',
+                        'firmware/apps/20_pokedex/sprites_generated.cpp', '-lz',
                         '-o', str(executable)], cwd=ROOT, check=True)
         output = subprocess.check_output([str(executable)], text=True)
         records = iter(output.splitlines())

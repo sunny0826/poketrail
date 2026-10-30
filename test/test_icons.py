@@ -39,15 +39,15 @@ def parse_generated_arrays():
     for match in re.finditer(r'const uint16_t (\w+)\[\] = \{(.*?)\};', source, re.S):
         name, body = match.groups()
         arrays[name] = [int(token, 16) for token in re.findall(r'0x[0-9A-Fa-f]{4}', body)]
-    table = re.search(r'const Icon kPokemonIcons\[251\] = \{(.*?)\};', source, re.S)
+    table = re.search(r'const Icon kPokemonIcons\[649\] = \{(.*?)\};', source, re.S)
     entries = re.findall(r'\{(\d+), (\d+), (\w+)\}', table.group(1))
     ball = re.search(r'const Icon kPokeBallIcon = \{(\d+), (\d+), (\w+)\};', source)
     return arrays, entries, ball.groups()
 
 
 def copy_icons_fixture(root):
-    for relative in ('tools/build_icons.py', 'assets/icons-gen1.json',
-                     'assets/icons-gen2.json'):
+    for relative in ('tools/build_icons.py', *(f'assets/icons-gen{generation}.json'
+                                                 for generation in range(1, 6))):
         destination = root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / relative, destination)
@@ -68,7 +68,7 @@ class ManifestTests(unittest.TestCase):
                 self.assertIn('generation-vii/icons/', manifest['pokemon_path'])
         self.assertEqual(self.manifests[1]['poke_ball_path'], 'sprites/items/poke-ball.png')
 
-    def test_all_251_ids_complete_and_unique(self):
+    def test_all_649_ids_complete_and_unique(self):
         entries = [entry for manifest in self.manifests.values()
                    for entry in manifest['icons']]
         ids = [entry['id'] for entry in entries]
@@ -83,9 +83,11 @@ class ManifestTests(unittest.TestCase):
     def test_generation_ranges_are_split(self):
         self.assertEqual([e['id'] for e in self.manifests[1]['icons']],
                          list(range(1, GEN1_COUNT + 1)))
-        self.assertEqual([e['id'] for e in self.manifests[2]['icons']],
-                         list(range(GEN1_COUNT + 1, POKEMON_COUNT + 1)))
-        self.assertNotIn('poke_ball', self.manifests[2])
+        ranges = {2: (152, 251), 3: (252, 386), 4: (387, 493), 5: (494, 649)}
+        for generation, (first, last) in ranges.items():
+            self.assertEqual([e['id'] for e in self.manifests[generation]['icons']],
+                             list(range(first, last + 1)))
+            self.assertNotIn('poke_ball', self.manifests[generation])
 
     def test_poke_ball_entry_present(self):
         ball = self.manifests[1]['poke_ball']
@@ -145,7 +147,7 @@ class GeneratedCodeTests(unittest.TestCase):
         self.assertRegex(self.header,
                          r'struct Icon \{\s*uint16_t width;\s*uint16_t height;'
                          r'\s*const uint16_t\* pixels;\s*\};')
-        self.assertIn('extern const Icon kPokemonIcons[251];', self.header)
+        self.assertIn('extern const Icon kPokemonIcons[649];', self.header)
         self.assertIn('extern const Icon kPokeBallIcon;', self.header)
 
     def test_transparent_key_matches_sprite_hpp(self):
@@ -153,7 +155,7 @@ class GeneratedCodeTests(unittest.TestCase):
         self.assertRegex(sprite, r'kTransparentKey = 0xF81F')
         self.assertEqual(TRANSPARENT_KEY, 0xF81F)
 
-    def test_table_has_251_entries_in_id_order(self):
+    def test_table_has_649_entries_in_id_order(self):
         self.assertEqual(len(self.entries), POKEMON_COUNT)
         for index, (width, height, array) in enumerate(self.entries, start=1):
             with self.subTest(id=index):
@@ -286,8 +288,8 @@ class GeneratorBehaviorTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
-        for relative in ('tools/build_icons.py', 'assets/icons-gen1.json',
-                         'assets/icons-gen2.json'):
+        for relative in ('tools/build_icons.py', *(f'assets/icons-gen{generation}.json'
+                                                     for generation in range(1, 6))):
             destination = root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / relative, destination)

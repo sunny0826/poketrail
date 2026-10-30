@@ -9,7 +9,7 @@
       "frames": 36,
       "unique_frames": 19,
       "duration_ms": 3600,
-      "data_bytes": 8652
+      "data_bytes": 2700
     },
     {
       "id": 153,
@@ -19,7 +19,7 @@
       "frames": 61,
       "unique_frames": 40,
       "duration_ms": 6200,
-      "data_bytes": 35496
+      "data_bytes": 10778
     },
     {
       "id": 154,
@@ -29,7 +29,7 @@
       "frames": 64,
       "unique_frames": 20,
       "duration_ms": 6600,
-      "data_bytes": 23897
+      "data_bytes": 7339
     },
     {
       "id": 155,
@@ -39,7 +39,7 @@
       "frames": 84,
       "unique_frames": 29,
       "duration_ms": 5040,
-      "data_bytes": 12620
+      "data_bytes": 3640
     },
     {
       "id": 156,
@@ -49,7 +49,7 @@
       "frames": 61,
       "unique_frames": 35,
       "duration_ms": 3660,
-      "data_bytes": 28161
+      "data_bytes": 7856
     },
     {
       "id": 157,
@@ -59,7 +59,7 @@
       "frames": 85,
       "unique_frames": 33,
       "duration_ms": 5100,
-      "data_bytes": 31481
+      "data_bytes": 8568
     },
     {
       "id": 158,
@@ -69,7 +69,7 @@
       "frames": 54,
       "unique_frames": 23,
       "duration_ms": 5600,
-      "data_bytes": 12570
+      "data_bytes": 4289
     },
     {
       "id": 159,
@@ -79,7 +79,7 @@
       "frames": 90,
       "unique_frames": 30,
       "duration_ms": 9000,
-      "data_bytes": 20143
+      "data_bytes": 5666
     },
     {
       "id": 160,
@@ -89,7 +89,7 @@
       "frames": 71,
       "unique_frames": 20,
       "duration_ms": 7100,
-      "data_bytes": 27453
+      "data_bytes": 8621
     },
     {
       "id": 161,
@@ -99,7 +99,7 @@
       "frames": 37,
       "unique_frames": 34,
       "duration_ms": 3800,
-      "data_bytes": 23521
+      "data_bytes": 6945
     },
     {
       "id": 162,
@@ -109,7 +109,7 @@
       "frames": 56,
       "unique_frames": 26,
       "duration_ms": 5600,
-      "data_bytes": 18576
+      "data_bytes": 6362
     },
     {
       "id": 163,
@@ -119,7 +119,7 @@
       "frames": 66,
       "unique_frames": 39,
       "duration_ms": 7100,
-      "data_bytes": 22404
+      "data_bytes": 6670
     },
     {
       "id": 164,
@@ -129,7 +129,7 @@
       "frames": 45,
       "unique_frames": 20,
       "duration_ms": 8500,
-      "data_bytes": 17322
+      "data_bytes": 3794
     },
     {
       "id": 165,
@@ -139,7 +139,7 @@
       "frames": 51,
       "unique_frames": 29,
       "duration_ms": 5100,
-      "data_bytes": 19194
+      "data_bytes": 4715
     },
     {
       "id": 166,
@@ -149,7 +149,7 @@
       "frames": 30,
       "unique_frames": 19,
       "duration_ms": 3000,
-      "data_bytes": 16190
+      "data_bytes": 6770
     },
     {
       "id": 167,
@@ -159,7 +159,7 @@
       "frames": 36,
       "unique_frames": 12,
       "duration_ms": 3700,
-      "data_bytes": 4957
+      "data_bytes": 2208
     },
     {
       "id": 168,
@@ -169,7 +169,7 @@
       "frames": 51,
       "unique_frames": 14,
       "duration_ms": 5500,
-      "data_bytes": 12862
+      "data_bytes": 3628
     },
     {
       "id": 169,
@@ -179,7 +179,7 @@
       "frames": 17,
       "unique_frames": 15,
       "duration_ms": 1700,
-      "data_bytes": 16175
+      "data_bytes": 7624
     },
     {
       "id": 170,
@@ -189,7 +189,7 @@
       "frames": 45,
       "unique_frames": 31,
       "duration_ms": 4500,
-      "data_bytes": 22256
+      "data_bytes": 9553
     },
     {
       "id": 171,
@@ -199,7 +199,7 @@
       "frames": 76,
       "unique_frames": 62,
       "duration_ms": 7800,
-      "data_bytes": 50666
+      "data_bytes": 19173
     },
     {
       "id": 172,
@@ -209,7 +209,7 @@
       "frames": 59,
       "unique_frames": 30,
       "duration_ms": 6100,
-      "data_bytes": 12138
+      "data_bytes": 1865
     },
     {
       "id": 173,
@@ -219,7 +219,7 @@
       "frames": 35,
       "unique_frames": 25,
       "duration_ms": 3800,
-      "data_bytes": 7301
+      "data_bytes": 2443
     },
     {
       "id": 174,
@@ -229,7 +229,7 @@
       "frames": 82,
       "unique_frames": 50,
       "duration_ms": 8300,
-      "data_bytes": 20538
+      "data_bytes": 3042
     },
     {
       "id": 175,
@@ -239,7 +239,7 @@
       "frames": 54,
       "unique_frames": 42,
       "duration_ms": 5500,
-      "data_bytes": 14999
+      "data_bytes": 3327
     },
     {
       "id": 176,
@@ -249,7 +249,7 @@
       "frames": 55,
       "unique_frames": 29,
       "duration_ms": 5600,
-      "data_bytes": 14143
+      "data_bytes": 4769
     },
     {
       "id": 177,
@@ -259,7 +259,7 @@
       "frames": 69,
       "unique_frames": 28,
       "duration_ms": 7000,
-      "data_bytes": 9633
+      "data_bytes": 2922
     },
     {
       "id": 178,
@@ -269,7 +269,7 @@
       "frames": 57,
       "unique_frames": 19,
       "duration_ms": 5700,
-      "data_bytes": 13106
+      "data_bytes": 3984
     },
     {
       "id": 179,
@@ -279,7 +279,7 @@
       "frames": 68,
       "unique_frames": 28,
       "duration_ms": 7200,
-      "data_bytes": 15280
+      "data_bytes": 4760
     },
     {
       "id": 180,
@@ -289,7 +289,7 @@
       "frames": 48,
       "unique_frames": 11,
       "duration_ms": 5000,
-      "data_bytes": 6579
+      "data_bytes": 2404
     },
     {
       "id": 181,
@@ -299,7 +299,7 @@
       "frames": 39,
       "unique_frames": 14,
       "duration_ms": 4500,
-      "data_bytes": 10934
+      "data_bytes": 4150
     },
     {
       "id": 182,
@@ -309,7 +309,7 @@
       "frames": 72,
       "unique_frames": 28,
       "duration_ms": 7200,
-      "data_bytes": 15950
+      "data_bytes": 4382
     },
     {
       "id": 183,
@@ -319,7 +319,7 @@
       "frames": 70,
       "unique_frames": 29,
       "duration_ms": 7200,
-      "data_bytes": 13471
+      "data_bytes": 4990
     },
     {
       "id": 184,
@@ -329,7 +329,7 @@
       "frames": 74,
       "unique_frames": 24,
       "duration_ms": 7500,
-      "data_bytes": 19816
+      "data_bytes": 8491
     },
     {
       "id": 185,
@@ -339,7 +339,7 @@
       "frames": 39,
       "unique_frames": 13,
       "duration_ms": 4500,
-      "data_bytes": 10704
+      "data_bytes": 4755
     },
     {
       "id": 186,
@@ -349,7 +349,7 @@
       "frames": 49,
       "unique_frames": 24,
       "duration_ms": 4900,
-      "data_bytes": 18926
+      "data_bytes": 5257
     },
     {
       "id": 187,
@@ -359,7 +359,7 @@
       "frames": 41,
       "unique_frames": 40,
       "duration_ms": 4100,
-      "data_bytes": 25452
+      "data_bytes": 10133
     },
     {
       "id": 188,
@@ -369,7 +369,7 @@
       "frames": 49,
       "unique_frames": 23,
       "duration_ms": 5000,
-      "data_bytes": 9197
+      "data_bytes": 2777
     },
     {
       "id": 189,
@@ -379,7 +379,7 @@
       "frames": 48,
       "unique_frames": 23,
       "duration_ms": 4800,
-      "data_bytes": 18113
+      "data_bytes": 6067
     },
     {
       "id": 190,
@@ -389,7 +389,7 @@
       "frames": 26,
       "unique_frames": 13,
       "duration_ms": 2600,
-      "data_bytes": 8444
+      "data_bytes": 2358
     },
     {
       "id": 191,
@@ -399,7 +399,7 @@
       "frames": 37,
       "unique_frames": 13,
       "duration_ms": 3800,
-      "data_bytes": 4289
+      "data_bytes": 769
     },
     {
       "id": 192,
@@ -409,7 +409,7 @@
       "frames": 46,
       "unique_frames": 10,
       "duration_ms": 4600,
-      "data_bytes": 6092
+      "data_bytes": 1663
     },
     {
       "id": 193,
@@ -419,7 +419,7 @@
       "frames": 22,
       "unique_frames": 22,
       "duration_ms": 2200,
-      "data_bytes": 18153
+      "data_bytes": 6015
     },
     {
       "id": 194,
@@ -429,7 +429,7 @@
       "frames": 53,
       "unique_frames": 12,
       "duration_ms": 5300,
-      "data_bytes": 5116
+      "data_bytes": 1660
     },
     {
       "id": 195,
@@ -439,7 +439,7 @@
       "frames": 41,
       "unique_frames": 16,
       "duration_ms": 4300,
-      "data_bytes": 11119
+      "data_bytes": 5498
     },
     {
       "id": 196,
@@ -449,7 +449,7 @@
       "frames": 65,
       "unique_frames": 42,
       "duration_ms": 6500,
-      "data_bytes": 30256
+      "data_bytes": 9155
     },
     {
       "id": 197,
@@ -459,7 +459,7 @@
       "frames": 35,
       "unique_frames": 9,
       "duration_ms": 3500,
-      "data_bytes": 5180
+      "data_bytes": 1365
     },
     {
       "id": 198,
@@ -469,7 +469,7 @@
       "frames": 34,
       "unique_frames": 10,
       "duration_ms": 3400,
-      "data_bytes": 4939
+      "data_bytes": 2528
     },
     {
       "id": 199,
@@ -479,7 +479,7 @@
       "frames": 67,
       "unique_frames": 17,
       "duration_ms": 6800,
-      "data_bytes": 14911
+      "data_bytes": 4619
     },
     {
       "id": 200,
@@ -489,7 +489,7 @@
       "frames": 49,
       "unique_frames": 16,
       "duration_ms": 4900,
-      "data_bytes": 9957
+      "data_bytes": 3510
     },
     {
       "id": 201,
@@ -499,7 +499,7 @@
       "frames": 96,
       "unique_frames": 16,
       "duration_ms": 4800,
-      "data_bytes": 5174
+      "data_bytes": 1279
     },
     {
       "id": 202,
@@ -509,7 +509,7 @@
       "frames": 123,
       "unique_frames": 25,
       "duration_ms": 6500,
-      "data_bytes": 14277
+      "data_bytes": 4792
     },
     {
       "id": 203,
@@ -519,7 +519,7 @@
       "frames": 56,
       "unique_frames": 23,
       "duration_ms": 5600,
-      "data_bytes": 24211
+      "data_bytes": 7083
     },
     {
       "id": 204,
@@ -529,7 +529,7 @@
       "frames": 64,
       "unique_frames": 16,
       "duration_ms": 6500,
-      "data_bytes": 9108
+      "data_bytes": 1798
     },
     {
       "id": 205,
@@ -539,7 +539,7 @@
       "frames": 29,
       "unique_frames": 26,
       "duration_ms": 2900,
-      "data_bytes": 22012
+      "data_bytes": 6227
     },
     {
       "id": 206,
@@ -549,7 +549,7 @@
       "frames": 48,
       "unique_frames": 16,
       "duration_ms": 4800,
-      "data_bytes": 6882
+      "data_bytes": 2096
     },
     {
       "id": 207,
@@ -559,7 +559,7 @@
       "frames": 36,
       "unique_frames": 21,
       "duration_ms": 3600,
-      "data_bytes": 23144
+      "data_bytes": 9642
     },
     {
       "id": 208,
@@ -569,7 +569,7 @@
       "frames": 16,
       "unique_frames": 16,
       "duration_ms": 1600,
-      "data_bytes": 25722
+      "data_bytes": 13860
     },
     {
       "id": 209,
@@ -579,7 +579,7 @@
       "frames": 55,
       "unique_frames": 29,
       "duration_ms": 5500,
-      "data_bytes": 14667
+      "data_bytes": 4148
     },
     {
       "id": 210,
@@ -589,7 +589,7 @@
       "frames": 62,
       "unique_frames": 33,
       "duration_ms": 6200,
-      "data_bytes": 26882
+      "data_bytes": 6328
     },
     {
       "id": 211,
@@ -599,7 +599,7 @@
       "frames": 37,
       "unique_frames": 26,
       "duration_ms": 3800,
-      "data_bytes": 14221
+      "data_bytes": 3659
     },
     {
       "id": 212,
@@ -609,7 +609,7 @@
       "frames": 53,
       "unique_frames": 39,
       "duration_ms": 5300,
-      "data_bytes": 52378
+      "data_bytes": 15682
     },
     {
       "id": 213,
@@ -619,7 +619,7 @@
       "frames": 61,
       "unique_frames": 24,
       "duration_ms": 6100,
-      "data_bytes": 13619
+      "data_bytes": 2994
     },
     {
       "id": 214,
@@ -629,7 +629,7 @@
       "frames": 44,
       "unique_frames": 19,
       "duration_ms": 4600,
-      "data_bytes": 19535
+      "data_bytes": 6854
     },
     {
       "id": 215,
@@ -639,7 +639,7 @@
       "frames": 69,
       "unique_frames": 28,
       "duration_ms": 6900,
-      "data_bytes": 20677
+      "data_bytes": 6011
     },
     {
       "id": 216,
@@ -649,7 +649,7 @@
       "frames": 46,
       "unique_frames": 20,
       "duration_ms": 4700,
-      "data_bytes": 6526
+      "data_bytes": 1351
     },
     {
       "id": 217,
@@ -659,7 +659,7 @@
       "frames": 67,
       "unique_frames": 26,
       "duration_ms": 6700,
-      "data_bytes": 29116
+      "data_bytes": 10712
     },
     {
       "id": 218,
@@ -669,7 +669,7 @@
       "frames": 32,
       "unique_frames": 15,
       "duration_ms": 3200,
-      "data_bytes": 7307
+      "data_bytes": 1800
     },
     {
       "id": 219,
@@ -679,7 +679,7 @@
       "frames": 32,
       "unique_frames": 8,
       "duration_ms": 3200,
-      "data_bytes": 8154
+      "data_bytes": 2161
     },
     {
       "id": 220,
@@ -689,7 +689,7 @@
       "frames": 33,
       "unique_frames": 8,
       "duration_ms": 3300,
-      "data_bytes": 1699
+      "data_bytes": 571
     },
     {
       "id": 221,
@@ -699,7 +699,7 @@
       "frames": 39,
       "unique_frames": 30,
       "duration_ms": 3900,
-      "data_bytes": 21944
+      "data_bytes": 5089
     },
     {
       "id": 222,
@@ -709,7 +709,7 @@
       "frames": 59,
       "unique_frames": 24,
       "duration_ms": 5900,
-      "data_bytes": 12440
+      "data_bytes": 4580
     },
     {
       "id": 223,
@@ -719,7 +719,7 @@
       "frames": 46,
       "unique_frames": 34,
       "duration_ms": 4600,
-      "data_bytes": 15339
+      "data_bytes": 4666
     },
     {
       "id": 224,
@@ -729,7 +729,7 @@
       "frames": 17,
       "unique_frames": 17,
       "duration_ms": 1700,
-      "data_bytes": 11567
+      "data_bytes": 3838
     },
     {
       "id": 225,
@@ -739,7 +739,7 @@
       "frames": 54,
       "unique_frames": 24,
       "duration_ms": 5400,
-      "data_bytes": 16403
+      "data_bytes": 5530
     },
     {
       "id": 226,
@@ -749,7 +749,7 @@
       "frames": 85,
       "unique_frames": 18,
       "duration_ms": 8500,
-      "data_bytes": 14304
+      "data_bytes": 4625
     },
     {
       "id": 227,
@@ -759,7 +759,7 @@
       "frames": 57,
       "unique_frames": 31,
       "duration_ms": 5700,
-      "data_bytes": 36463
+      "data_bytes": 13209
     },
     {
       "id": 228,
@@ -769,7 +769,7 @@
       "frames": 67,
       "unique_frames": 30,
       "duration_ms": 6700,
-      "data_bytes": 16102
+      "data_bytes": 3650
     },
     {
       "id": 229,
@@ -779,7 +779,7 @@
       "frames": 57,
       "unique_frames": 21,
       "duration_ms": 5800,
-      "data_bytes": 24729
+      "data_bytes": 8876
     },
     {
       "id": 230,
@@ -789,7 +789,7 @@
       "frames": 27,
       "unique_frames": 27,
       "duration_ms": 2700,
-      "data_bytes": 25536
+      "data_bytes": 10088
     },
     {
       "id": 231,
@@ -799,7 +799,7 @@
       "frames": 76,
       "unique_frames": 25,
       "duration_ms": 7600,
-      "data_bytes": 9545
+      "data_bytes": 2999
     },
     {
       "id": 232,
@@ -809,7 +809,7 @@
       "frames": 65,
       "unique_frames": 18,
       "duration_ms": 6500,
-      "data_bytes": 19036
+      "data_bytes": 8292
     },
     {
       "id": 233,
@@ -819,7 +819,7 @@
       "frames": 96,
       "unique_frames": 24,
       "duration_ms": 5820,
-      "data_bytes": 9184
+      "data_bytes": 2411
     },
     {
       "id": 234,
@@ -829,7 +829,7 @@
       "frames": 47,
       "unique_frames": 22,
       "duration_ms": 5300,
-      "data_bytes": 22544
+      "data_bytes": 5715
     },
     {
       "id": 235,
@@ -839,7 +839,7 @@
       "frames": 63,
       "unique_frames": 18,
       "duration_ms": 6400,
-      "data_bytes": 12163
+      "data_bytes": 4126
     },
     {
       "id": 236,
@@ -849,7 +849,7 @@
       "frames": 41,
       "unique_frames": 14,
       "duration_ms": 4100,
-      "data_bytes": 6793
+      "data_bytes": 1416
     },
     {
       "id": 237,
@@ -859,7 +859,7 @@
       "frames": 65,
       "unique_frames": 18,
       "duration_ms": 6500,
-      "data_bytes": 17371
+      "data_bytes": 7396
     },
     {
       "id": 238,
@@ -869,7 +869,7 @@
       "frames": 50,
       "unique_frames": 21,
       "duration_ms": 5000,
-      "data_bytes": 8813
+      "data_bytes": 2219
     },
     {
       "id": 239,
@@ -879,7 +879,7 @@
       "frames": 42,
       "unique_frames": 19,
       "duration_ms": 4900,
-      "data_bytes": 12754
+      "data_bytes": 3870
     },
     {
       "id": 240,
@@ -889,7 +889,7 @@
       "frames": 46,
       "unique_frames": 21,
       "duration_ms": 4900,
-      "data_bytes": 9717
+      "data_bytes": 3082
     },
     {
       "id": 241,
@@ -899,7 +899,7 @@
       "frames": 48,
       "unique_frames": 14,
       "duration_ms": 4800,
-      "data_bytes": 10488
+      "data_bytes": 4977
     },
     {
       "id": 242,
@@ -909,7 +909,7 @@
       "frames": 47,
       "unique_frames": 15,
       "duration_ms": 4700,
-      "data_bytes": 12061
+      "data_bytes": 6131
     },
     {
       "id": 243,
@@ -919,7 +919,7 @@
       "frames": 72,
       "unique_frames": 21,
       "duration_ms": 7200,
-      "data_bytes": 31419
+      "data_bytes": 9782
     },
     {
       "id": 244,
@@ -929,7 +929,7 @@
       "frames": 76,
       "unique_frames": 21,
       "duration_ms": 7600,
-      "data_bytes": 32453
+      "data_bytes": 7792
     },
     {
       "id": 245,
@@ -939,7 +939,7 @@
       "frames": 48,
       "unique_frames": 31,
       "duration_ms": 4800,
-      "data_bytes": 46899
+      "data_bytes": 19488
     },
     {
       "id": 246,
@@ -949,7 +949,7 @@
       "frames": 57,
       "unique_frames": 19,
       "duration_ms": 7000,
-      "data_bytes": 8018
+      "data_bytes": 2238
     },
     {
       "id": 247,
@@ -959,7 +959,7 @@
       "frames": 35,
       "unique_frames": 21,
       "duration_ms": 3600,
-      "data_bytes": 12152
+      "data_bytes": 4787
     },
     {
       "id": 248,
@@ -969,7 +969,7 @@
       "frames": 56,
       "unique_frames": 28,
       "duration_ms": 5800,
-      "data_bytes": 37233
+      "data_bytes": 12159
     },
     {
       "id": 249,
@@ -979,7 +979,7 @@
       "frames": 60,
       "unique_frames": 30,
       "duration_ms": 6000,
-      "data_bytes": 61926
+      "data_bytes": 23619
     },
     {
       "id": 250,
@@ -989,7 +989,7 @@
       "frames": 42,
       "unique_frames": 17,
       "duration_ms": 4200,
-      "data_bytes": 38670
+      "data_bytes": 15174
     },
     {
       "id": 251,
@@ -999,7 +999,7 @@
       "frames": 33,
       "unique_frames": 25,
       "duration_ms": 3300,
-      "data_bytes": 12353
+      "data_bytes": 3504
     }
   ]
 }

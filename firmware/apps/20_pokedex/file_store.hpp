@@ -1,6 +1,6 @@
 #pragma once
 #include "adventure_store.hpp"
-#include <memory>
+#include "large_object.hpp"
 namespace pokedex { namespace adventure {
 enum class ReadStatus : uint8_t { Ok, Missing, TooLarge, IoError };
 class SlotIO {
@@ -28,7 +28,7 @@ class FileStore : public Store {
  private:
   struct Workspace;
   SlotIO& io_;
-  std::unique_ptr<Workspace> work_;
+  LargeObject<Workspace> work_;
   bool allocate();
   LoadResult scan(int& current);
 };

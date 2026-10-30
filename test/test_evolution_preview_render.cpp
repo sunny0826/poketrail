@@ -12,7 +12,7 @@ void viewer(Runtime& runtime, uint16_t species) {
   else if (runtime.screen().page == Page::DateWelcome) select(runtime, 2);
   frame(runtime);
   check(runtime.screen().page == Page::Viewer, "real menu input opens the free Pokedex");
-  for (unsigned i = 0; i < 251 && !glyph(speciesName(species), 72, theme::kText, 233, false, true); ++i)
+  for (unsigned i = 0; i < kSpeciesCount && !glyph(speciesName(species), 72, theme::kText, 233, false, true); ++i)
     edge(runtime, false, true);
   check(glyph(speciesName(species), 72, theme::kText, 233, false, true), "real navigation selects requested species");
 }
@@ -75,12 +75,13 @@ void branchesAndHeldSkip() {
   MemoryStore store; legacyOwned(store, {133, 134}, 1);
   HostPlatform platform; Runtime runtime(store, platform); start(runtime); viewer(runtime, 133);
   const auto state = encoded(runtime), bytes = store.bytes; const unsigned commits = store.commits;
-  const uint16_t branches[] = {134, 135, 136, 196, 197};
-  for (unsigned branch = 0; branch < 5; ++branch) {
+  const uint16_t branches[] = {134, 135, 136, 196, 197, 470, 471};
+  for (unsigned branch = 0; branch < 7; ++branch) {
     tap(runtime, 233, 423); frame(runtime);
-    check(menuCount(runtime.screen(), runtime.engine()) == 6, "Eevee offers five targets and return");
+    check(menuCount(runtime.screen(), runtime.engine()) == 8, "Eevee offers seven targets and return");
     if (!branch) screenshot(runtime, "preview-eevee-targets");
     for (unsigned i = 0; i < branch; ++i) edge(runtime, false, true);
+    if (branch == 6) screenshot(runtime, "preview-eevee-seventh-target");
     buttons(true, true); frame(runtime);
     check(runtime.screen().evolutionAnim.from == 133 && runtime.screen().evolutionAnim.to == branches[branch],
           "all branches preview regardless of ownership or cultivation");
@@ -93,6 +94,8 @@ void branchesAndHeldSkip() {
     if (branch == 2) screenshot(runtime, "preview-eevee-flareon", 40);
     if (branch == 3) screenshot(runtime, "preview-eevee-espeon", 40);
     if (branch == 4) screenshot(runtime, "preview-eevee-umbreon", 40);
+    if (branch == 5) screenshot(runtime, "preview-eevee-leafeon", 40);
+    if (branch == 6) screenshot(runtime, "preview-eevee-glaceon", 40);
     frame(runtime); buttons(false, true); frame(runtime);
     check(runtime.screen().page == Page::Viewer && glyph("伊布", 72, theme::kText, 233, false, true),
           "second skip returns to the source entry without switching species");
@@ -104,7 +107,10 @@ void branchesAndHeldSkip() {
         "all Eevee previews preserve roster, progress, capture history and save");
   tap(runtime, 233, 423); frame(runtime); swipe(runtime, 300, 300, 160, 300);
   check(runtime.screen().selected == 3, "branch menu second page starts on the fourth target");
-  screenshot(runtime, "preview-eevee-return"); select(runtime, 5); frame(runtime);
+  swipe(runtime, 300, 300, 160, 300);
+  check(runtime.screen().selected == 6, "branch menu third page contains the seventh target");
+  edge(runtime, false, true); screenshot(runtime, "preview-eevee-return");
+  select(runtime, 7); frame(runtime);
   check(runtime.screen().page == Page::Viewer, "branch menu return preserves free viewer");
   tap(runtime, 233, 423); frame(runtime); tap(runtime, 233, 52);
   check(runtime.screen().page == Page::Viewer, "branch menu top returns to viewer");
@@ -180,8 +186,23 @@ void everyEvolutionEdge() {
   Save expected;
   check(codec::decode(state.data(), state.size(), expected) == codec::DecodeStatus::Ok, "initial preview snapshot decodes");
   expected.sequence = runtime.engine().view().sequence;
-  check(count == 122 && encoded(runtime) == encoded(expected) && !runtime.metrics().displayErrors,
-        "all 122 previews change only the normal checkpoint sequence and decode successfully");
+  check(count == 320 && encoded(runtime) == encoded(expected) && !runtime.metrics().displayErrors,
+        "all 320 previews change only the normal checkpoint sequence and decode successfully");
+}
+void nationalViewer() {
+  MemoryStore store; fresh(store);
+  HostPlatform platform; Runtime runtime(store, platform); start(runtime); viewer(runtime, 1);
+  edge(runtime, true, false);
+  check(glyph("盖诺赛克特", 72, theme::kText, 233, false, true), "left from first entry wraps to number 649");
+  screenshot(runtime, "viewer-649");
+  edge(runtime, false, true);
+  check(glyph("妙蛙种子", 72, theme::kText, 233, false, true), "right from number 649 wraps to first entry");
+  const uint16_t boundaries[] = {252, 386, 387, 493, 494, 563, 604, 640, 648};
+  for (uint16_t species : boundaries) {
+    viewer(runtime, species);
+    char name[48]; std::snprintf(name, sizeof(name), "viewer-%u", species);
+    screenshot(runtime, name);
+  }
 }
 void pendingEvolutionSurvivesPreview() {
   MemoryStore store; fresh(store);
@@ -203,6 +224,6 @@ void pendingEvolutionSurvivesPreview() {
 int main() {
   c152::begin("EVOLUTION PREVIEW TEST");
   unownedAndReturn(); branchesAndHeldSkip(); unavailableStorageAndNewSave();
-  continuousPlaybackAndWalking(); everyEvolutionEdge(); pendingEvolutionSurvivesPreview();
+  continuousPlaybackAndWalking(); everyEvolutionEdge(); nationalViewer(); pendingEvolutionSurvivesPreview();
   std::printf("%u evolution preview Runtime/Button_Class/M5GFX checks, 0 failures\n", checks);
 }

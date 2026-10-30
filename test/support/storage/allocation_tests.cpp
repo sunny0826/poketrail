@@ -12,6 +12,13 @@ void* operator new(std::size_t n, const std::nothrow_t&) noexcept {
   try { return ::operator new(n); } catch (...) { return nullptr; }
 }
 void operator delete(void* p, const std::nothrow_t&) noexcept { ::operator delete(p); }
+#if defined(ARDUINO_ARCH_ESP32)
+void* heap_caps_malloc(size_t size, uint32_t capabilities) {
+  if (capabilities != (MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)) std::abort();
+  return ::operator new(size, std::nothrow);
+}
+void heap_caps_free(void* memory) { ::operator delete(memory); }
+#endif
 struct IO : SlotIO {
   uint8_t bytes[codec::maxEncodedSize]; size_t length = 0; int writes = 0;
   LoadStatus prepare() override { return LoadStatus::Loaded; }

@@ -39,7 +39,7 @@ class DeviceStore : private SlotIO, public Store, public TestModeHost {
   bool seedSnapshot();
   const char* root_ = "/adventure";
   TestMode mode_;
-  std::unique_ptr<Save> ramSave_;
+  LargeObject<Save> ramSave_;
   bool ramHasSave_ = false;
   bool mounted_ = false;
   bool initialized_ = false;

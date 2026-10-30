@@ -42,7 +42,7 @@ int main() {
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
   data.resize(codec::maxEncodedSize + 1);
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
-  data = original; data[4] = 6;
+  data = original; data[4] = uint8_t(kSchemaVersion + 1);
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::UnsupportedVersion);
   data.resize(codec::maxEncodedSize + 100);
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::UnsupportedVersion);
@@ -67,8 +67,8 @@ int main() {
   Save bad = s; bad.route = Route(3); reject(bad);
   bad = s; bad.starter = 2; reject(bad);
   bad = s; bad.partner = 151; reject(bad);
-  bad = s; bad.owned[31] = 0x08; reject(bad);
-  bad = s; bad.registered[31] = 0x08; reject(bad);
+  bad = s; bad.owned[kSpeciesBytes - 1] = 0x02; reject(bad);
+  bad = s; bad.registered[kSpeciesBytes - 1] = 0x02; reject(bad);
   // Owned, walked and captured species must be registered. Start from a baseline
   // where #200 is registered (bit 199 = byte 24, mask 0x80) and clear only that bit.
   Save gated; gated.sequence = 3; gated.bootGeneration = 1; gated.starter = gated.partner = 1;
@@ -148,9 +148,9 @@ int main() {
   Save wideBack; CHECK(codec::decode(wideBytes.data(), wideBytes.size(), wideBack) == codec::DecodeStatus::Ok);
   CHECK(encode(wideBack) == wideBytes && wideBack.captureCounts[250] == 1 && wideBack.registered[31] == 0x04);
   Save full; full.sequence = 1; full.bootGeneration = 1; full.starter = full.partner = 1;
-  full.rosterRevision = 1; full.totalSteps = full.undatedSteps = 251 * kLegacyEncounterSteps;
+  full.rosterRevision = 1; full.totalSteps = full.undatedSteps = kSpeciesCount * kLegacyEncounterSteps;
   full.explorationSpent = full.totalSteps; full.encounterTarget = 400;
-  full.nextEncounterId = 252; full.explorationCredit = 0;
+  full.nextEncounterId = kSpeciesCount + 1; full.explorationCredit = 0;
   for (uint16_t id = 1; id <= kSpeciesCount; ++id) {
     setRegistered(full, id); setOwned(full, id);
     full.captureCounts[id - 1] = 1;
@@ -158,7 +158,7 @@ int main() {
     c.at.bootGeneration = 1; c.at.totalSteps = uint64_t(id) * 500;
   }
   for (size_t i = 0; i < 3; ++i) {
-    full.lifetime[i].reached = true; full.lifetime[i].first.totalSteps = 251 * kLegacyEncounterSteps;
+    full.lifetime[i].reached = true; full.lifetime[i].first.totalSteps = kSpeciesCount * kLegacyEncounterSteps;
     full.lifetime[i].first.bootGeneration = 1;
   }
   full.recentSize = 32;
@@ -167,7 +167,7 @@ int main() {
   CHECK(fullBytes.size() == wideBytes.size() && fullBytes.size() <= codec::maxEncodedSize);
   CHECK(codec::decode(fullBytes.data(), fullBytes.size(), reloaded) == codec::DecodeStatus::Ok);
   CHECK(encode(reloaded) == fullBytes && reloaded.captureCounts[250] == 1 && reloaded.firstCapture[250].species == 251);
-  CHECK(!catalogEntry(0) && !catalogEntry(252) && catalogEntry(152) && catalogEntry(251));
+  CHECK(!catalogEntry(0) && !catalogEntry(kSpeciesCount + 1) && catalogEntry(152) && catalogEntry(251));
   unsigned routes[3] = {0,0,0};
   for (uint16_t id = 1; id <= kSpeciesCount; ++id) {
     const CatalogEntry* e = catalogEntry(id); CHECK(e && e->weight > 0 && e->routes > 0 && e->routes <= 7);
@@ -185,7 +185,7 @@ int main() {
   CHECK(captureProbability(2, true, Timing::Normal) == 30 && captureProbability(2, true, Timing::Nice) == 45 &&
         captureProbability(2, true, Timing::Perfect) == 60);
   CHECK(captureProbability(kRuleVersion, true, Timing::Miss) == 0);
-  std::printf("codec: %u checks passed; v1=%zu, v2=%zu, v3=%zu (max=%zu); pools=%u/%u/%u\n",
+  std::printf("codec: %u checks passed; v1=%zu, v2=%zu, v6=%zu (max=%zu); pools=%u/%u/%u\n",
               checks, data.size(), twoBytes.size(), fullBytes.size(), codec::maxEncodedSize,
               routes[0], routes[1], routes[2]);
 }
