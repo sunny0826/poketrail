@@ -68,7 +68,8 @@ pokedex::ui::Input Platform::pollInput() {
   input.back = input.click && detail.base_y < 80 && detail.y < 80;
   if (detail.wasReleased() && std::abs(dx) >= 45 && std::abs(dx) > std::abs(dy))
     input.swipe = dx < 0 ? 1 : -1;
-  input.held |= detail.isPressed();
+  input.touchDown = detail.isPressed();
+  input.held |= input.touchDown;
   return input;
 }
 pokedex::device_clock::Reading Platform::readClock() {

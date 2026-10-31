@@ -45,6 +45,8 @@ class CapturePractice {
   bool requestPause();
   bool resume(uint32_t nowMs);
   bool beginThrow(uint32_t nowMs);
+  // Abandons the throw window without spending a practice ball.
+  void cancelThrow();
   PracticeOutcome pressThrow(uint32_t nowMs);
 
  private:

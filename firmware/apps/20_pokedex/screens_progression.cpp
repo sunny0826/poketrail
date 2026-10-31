@@ -20,15 +20,6 @@ const char* progressionMessage(CommandResult result) {
 void Screens::progression(const ScreenState& s, const Engine& e) {
   char text[120];
   const Save& save = e.view();
-  if (s.page == Page::ReleaseConfirm) {
-    title("放弃这次捕捉？", speciesName(save.encounter.species), theme::kRed);
-    warning(233, 133, theme::kRed);
-    line("不退探索步数或已用精灵球", 179, theme::kText);
-    line("伙伴与已有收藏保留", 199, theme::kMuted);
-    item(s, 0, "确认放弃", menu_layout::kTop);
-    item(s, 1, "返回投球", menu_layout::kTop);
-    return;
-  }
   if (s.page == Page::EvolutionConfirm) {
     const EvolutionRule* rule = evolutionRule(s.evolution.from, s.evolution.to);
     title("确认进化", "", theme::kGold);

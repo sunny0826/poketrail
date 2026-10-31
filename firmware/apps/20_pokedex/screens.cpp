@@ -16,7 +16,7 @@ uint16_t accentFor(Page page) {
     case Page::Recent: case Page::Days: case Page::Achievements: case Page::EvolutionConfirm:
     case Page::EvolutionPreviewTargets:
       return theme::kGold;
-    case Page::Error: case Page::ReleaseConfirm: return theme::kRed;
+    case Page::Error: return theme::kRed;
     case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
     case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit: return theme::kPurple;
     case Page::Clock: return theme::kBlue;
@@ -43,11 +43,16 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     }
     case Page::Encounter: return 4;
     case Page::Pause: return 2;
-    case Page::Throw: return e.throwView().active ? 0 : 3;
-    case Page::PracticeThrow: return s.capture.active || s.practiceThrowing ? 0 : 3;
+    case Page::Throw: {
+      const auto& v = e.view();
+      // Only a legacy encounter whose ball stock is empty needs a way out:
+      // the engine refuses to open a window without balls.
+      return (v.encounter.ruleVersion < 3 && !availableBalls(v)) ? 1 : 0;
+    }
+    case Page::PracticeThrow: return 0;
     case Page::PracticeResult: return 2;
     case Page::PartnerDetail: return 2 + e.evolutionView(s.species).count;
-    case Page::EvolutionConfirm: case Page::ReleaseConfirm: return 2;
+    case Page::EvolutionConfirm: return 2;
     case Page::EvolutionPreviewTargets: return 1 + e.evolutionView(s.evolutionAnim.from).count;
     case Page::Result: return 1;
     case Page::Records: return 5;
@@ -76,7 +81,7 @@ bool homeEvolutionReady(const Engine& e) {
 bool touchBackEnabled(Page page) {
   switch (page) {
     case Page::Menu: case Page::Resources: case Page::Routes: case Page::Partners:
-    case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
+    case Page::PartnerDetail: case Page::EvolutionConfirm:
     case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
     case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets:
     case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
@@ -254,7 +259,7 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     case Page::TestFaults: testFaults(s); break;
     case Page::TestDiagnostics: testDiagnostics(s, e); break;
     case Page::TestExit: testExit(s); break;
-    case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
+    case Page::PartnerDetail: case Page::EvolutionConfirm:
       progression(s, e); break;
     default: home(s, e, now); break;
   }

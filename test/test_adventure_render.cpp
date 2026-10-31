@@ -50,15 +50,18 @@ void bootAndCapture() {
   win(r, p);
   check(r.screen().page == Page::Battle, "committed victory keeps the final action visible before the throw menu");
   published(r, "throw-ready-1"); frozenScene(Route::Coast); frame(r);
-  edge(r, p, false, true); check(r.engine().throwView().active && r.engine().view().encounter.usedBalls == 0, "prepare first ball consumes no ball");
+  check(r.engine().throwView().active == false && r.engine().view().encounter.usedBalls == 0,
+        "victory lands on the throw page with the window still closed");
+  p.next.right = p.next.held = true; frame(r);
+  check(r.engine().throwView().active && r.engine().view().encounter.usedBalls == 0, "prepare first ball consumes no ball");
   published(r, "throw-active");
-  idle(r, 1800);
+  holdThrow(r, p, 1800);
   check(r.engine().view().encounter.usedBalls == 1 && !r.engine().throwView().active, "first timeout uses keyed attempt and waits for explicit second prepare");
+  p.next.right = p.next.held = true; frame(r);
   published(r, "throw-ready-2");
-  edge(r, p, false, true);
   auto key = r.engine().throwView().key;
   store.fail = true; store.writeThenFail = true;
-  throwAt(r, p, r.engine().throwView().targetMs);
+  throwAt(r, p);
   check(r.engine().savePending() && r.screen().page == Page::Error, "uncertain throw commit shows error before rewards");
   check(r.engine().view().encounter.usedBalls == 1, "failed second save does not publish attempt");
   frame(r); published(r, "save-retry");

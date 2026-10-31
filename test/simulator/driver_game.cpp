@@ -39,14 +39,18 @@ void Driver::replayBattle() {
 void Driver::throwBall(bool perfect, bool practice) {
   check(screen().page == (practice ? Page::PracticeThrow : Page::Throw), "throw page visible");
   frames();
-  tap(233, 238);
   const auto active = [&] { return practice ? screen().practiceThrowing : runtime().engine().throwView().active; };
-  check(active(), "throw timeline started");
+  check(!active(), "the throw window is closed before the first hold");
+  // The window opens on the first hold, so a tap must not start it.
+  tap(233, 238);
+  check(!active(), "a tap before the hold does not open the throw window");
   key(SDL_SCANCODE_RIGHT, true);
+  check(active(), "holding right opens the throw window");
   check(screen().charging, "holding right charges ball");
   const auto target = practice ? screen().practiceTargetMs : runtime().engine().throwView().targetMs;
   if (perfect) until([&] { return int32_t(target - now()) <= 20; }, 3000, "charge reaches release target");
-  else advance(100);
+  // A miss still holds past the minimum hold, so it counts as one attempt.
+  else advance(400);
   key(SDL_SCANCODE_RIGHT, false, 1);
   check(!active(), "release settles throw");
   state("throw-settled");

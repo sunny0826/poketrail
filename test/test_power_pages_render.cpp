@@ -116,7 +116,7 @@ void throwWaiting() {
         availableBalls(runtime.engine().view()) == balls && runtime.engine().view().encounter.id == 1,
         "wake preserves victory without preparing or spending a ball");
   screenshot(runtime, "power-throw-waiting");
-  edge(runtime, false, true); check(runtime.engine().throwView().active, "fresh throw input still works");
+  buttons(false, true); frame(runtime); check(runtime.engine().throwView().active, "fresh throw input still works");
   const unsigned reads = platform.reads, sleeps = platform.sleeps;
   while (runtime.engine().throwView().active) { frame(runtime); check(!runtime.dimmed(), "active throw remains visible"); }
   check(platform.sleeps == sleeps && platform.reads == reads &&

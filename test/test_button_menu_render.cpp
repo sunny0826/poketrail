@@ -169,12 +169,18 @@ void throwTimingAndRelease() {
          captureProbability(save.encounter.ruleVersion, catalogEntry(1)->rare, Timing::Perfect)) ++save.encounter.seed;
   check(validate(save) && store.commit(save) == CommitStatus::Committed, "throw timing fixture validates and encodes");
   HostPlatform platform; Runtime r(store, platform); start(r);
-  edge(r, false, true);
+  check(r.screen().page == Page::Throw && !r.engine().throwView().active,
+        "victory lands directly on the throw page with no menu");
+  idle(r, 2000);
+  check(r.screen().page == Page::Throw && !r.engine().throwView().active &&
+        r.engine().view().encounter.usedBalls == 0,
+        "waiting on the throw page does not start the window or spend a ball");
+  buttons(false, true); frame(r);
   check(r.engine().throwView().active && r.engine().view().encounter.usedBalls == 0,
-        "throw menu prepares immediately on right press");
+        "the first hold opens the throw window without spending a ball");
   idle(r, 100); check(r.engine().view().encounter.usedBalls == 0, "held prepare does not throw");
   const auto target = r.engine().throwView().targetMs;
-  buttons(false, true); frame(r, target - 300 - host_time_ms);
+  frame(r, target - 300 - host_time_ms);
   check(r.screen().charging && r.engine().view().encounter.usedBalls == 0,
         "charging holds the ball without spending it");
   buttons(false, false); frame(r, 300);
@@ -185,10 +191,9 @@ void throwTimingAndRelease() {
         "committed throw plays the capture animation before leaving the page");
   edge(r, false, true); edge(r, false, true); frame(r);
   check(!r.screen().capture.active && r.screen().page == Page::Throw,
-        "skipped failed animation returns to the throw menu");
-  edge(r, false, true);
-  check(r.engine().throwView().active, "second attempt prepares after the failed first ball");
+        "skipped failed animation returns to the throw page");
   buttons(false, true); frame(r);
+  check(r.engine().throwView().active, "second attempt opens a fresh window after the failed first ball");
   idle(r, 2000);
   check(r.engine().view().encounter.usedBalls == 2 &&
         r.engine().view().encounter.attempts[1].timing == Timing::Miss && !r.screen().charging,

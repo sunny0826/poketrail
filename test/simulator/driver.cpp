@@ -71,8 +71,7 @@ void Driver::select(unsigned index) {
   frames();
   const unsigned count = menuCount(screen(), runtime().engine());
   check(index < count, "menu index in range");
-  const auto next = screen().page == Page::Throw || screen().page == Page::PracticeThrow ? SDL_SCANCODE_LEFT : SDL_SCANCODE_RIGHT;
-  for (unsigned i = 0; screen().selected != index && i < count; ++i) press(next);
+  for (unsigned i = 0; screen().selected != index && i < count; ++i) press(SDL_SCANCODE_RIGHT);
   check(screen().selected == index, "menu selected " + std::to_string(index)); press(SDL_SCANCODE_RETURN);
 }
 void Driver::back() { tap(233, 35); }

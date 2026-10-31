@@ -129,7 +129,7 @@ void powerBlocked() {
     save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1;
     check(validate(save) && store.commit(save) == CommitStatus::Committed, "throw fixture validates");
     PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-    edge(runtime, false, true);
+    buttons(false, true); frame(runtime);
     check(runtime.engine().throwView().active, "throw timing is active");
     powerClick(runtime);
     check(!runtime.dimmed() && platform.sleeps == 0, "power click cannot sleep an active throw");

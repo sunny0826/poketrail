@@ -39,6 +39,8 @@ class Engine {
   CommandResult resume(uint32_t nowMs);
   CommandResult retreat();
   CommandResult beginThrow(AttemptKey, uint32_t nowMs);
+  // Abandons an in-flight throw window without spending an attempt.
+  CommandResult cancelThrow(AttemptKey);
   CommandResult pressThrow(AttemptKey, uint32_t pressMs, const ClockReading&);
   CommandResult acknowledgeResult(uint64_t encounterId, uint32_t seedForNext);
   CommandResult beginClockChange(uint64_t transactionId, ClockChangeMode,

@@ -62,6 +62,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   if (s.page == Page::Throw) {
     char text[60];
     scene(v.encounter.route, true);
+    const bool legacyNoBalls = v.encounter.ruleVersion < 3 && !availableBalls(v);
     snprintf(text, sizeof(text), "本场剩余 %u 次", 2 - v.encounter.usedBalls);
     title(speciesName(v.encounter.species), s.capture.active ? "" : e.throwView().active ? "等待投球" :
           text, theme::kGold);
@@ -81,12 +82,21 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
       ballAt(233, kHandY);
       line("按住蓄力 · 松手投球", 399, theme::kMint);
       line("未投出也计一次投球", 426, theme::kMuted);
-    } else {
+    } else if (legacyNoBalls) {
+      // A legacy encounter with an empty ball stock cannot be thrown, and the
+      // menu is gone, so the page carries its own way out.
       actorShadow(233, 147);
       sprite(v.encounter.species, now, battlePlayback_, 147, 233, 0, 2, 110);
-      item(s, 0, "准备投球", menu_layout::kTop);
-      item(s, 1, "保留遭遇 · 继续走路", menu_layout::kTop);
-      item(s, 2, "放弃这次捕捉", menu_layout::kTop);
+      line("本场没有可用精灵球", 196, theme::kRed);
+      item(s, 0, "结束本场 · 返回探索", menu_layout::kTop);
+    } else {
+      // Aiming state: the ball waits in the hand, no window runs yet and no
+      // ring is drawn, so the ring only ever means "the clock is running".
+      actorShadow(233, 233);
+      sprite(v.encounter.species, now, battlePlayback_, 233, 233, 0, 2, 190);
+      ballAt(233, kHandY);
+      line("按住右键蓄力 · 松手投球", 399, theme::kMint);
+      line("开始蓄力才开始计时", 426, theme::kMuted);
     }
     return;
   }

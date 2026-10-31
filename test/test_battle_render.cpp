@@ -163,7 +163,8 @@ void perfectAndFinal() {
   at(r, final + 449); check(r.screen().page == Page::Battle, "final action remains until 449ms");
   at(r, final + 450); check(r.screen().page == Page::Throw && !r.engine().throwView().active, "450ms enters throw without reusing winning key");
   at(r, final + 600); check(!r.engine().throwView().active, "held winning keys cannot start throw");
-  buttons(false, false); frame(r); edge(r, false, true);
+  buttons(false, false); frame(r);
+  buttons(false, true); frame(r);
   check(r.engine().throwView().active && !r.engine().view().encounter.usedBalls, "fresh key prepares first ball without spending it");
 }
 void failureAndPractice() {

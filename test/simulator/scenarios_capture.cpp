@@ -70,14 +70,6 @@ void acknowledge(Driver& d) {
           "acknowledge closes old encounter; saved credit may start the next");
 }
 
-// 保留遭遇：Throw 页把选中项移到第二行后按确认键
-void keepEncounter(Driver& d) {
-  d.press(SDL_SCANCODE_LEFT);
-  d.press(SDL_SCANCODE_RIGHT);
-  d.until([&] { return d.screen().page == Page::Home; }, 4000, "kept encounter returns home");
-  d.check(d.save().phase == Phase::ThrowReady, "kept encounter stays throw ready");
-}
-
 // 捕获记录的数据级断言（供 run 与 reload 复用）
 void checkCaptureRecord(Driver& d, uint16_t species) {
   const Save& s = d.save();
@@ -207,8 +199,8 @@ void scenarioCapture(Driver& d, const std::string& phase) {
 }
 
 // P0-03：throw fixture（species 72、rule3）两投均 Miss 恰好 Escaped，
-// 库存不变，确认后走路开启新 ID；defer 变体保留后经菜单回投再保留，
-// defer-reload 断言 ThrowReady 与已消耗的一球恢复。
+// 库存不变，确认后走路开启新 ID；aim 变体证明空等与轻触都不消耗机会，
+// aim-reload 断言 ThrowReady 与已消耗的一球恢复且窗口不复活。
 void scenarioThrows(Driver& d, const std::string& phase) {
   if (phase == "run") {
     d.frames();
@@ -258,31 +250,21 @@ void scenarioThrows(Driver& d, const std::string& phase) {
     d.check(d.save().encounter.usedBalls == 0, "new encounter has no attempts");
     d.shot("throws-reload");
     d.close();
-  } else if (phase == "defer") {
-    d.frames();
-    d.check(d.screen().page == Page::Throw, "throw fixture opens throw page");
-    d.check(d.save().encounter.usedBalls == 0, "fixture has no attempts");
-    d.throwBall(false);
-    d.finishCapture();
-    waitSettled(d, "first throw settles");
-    d.check(d.screen().page == Page::Throw, "first miss returns to throw page");
-    d.check(d.save().encounter.usedBalls == 1, "first attempt recorded");
-    keepEncounter(d);
-    d.check(d.save().encounter.usedBalls == 1, "deferred encounter keeps its attempt");
-    d.homeMenu();
-    d.select(0);
-    d.until([&] { return d.screen().page == Page::Throw; }, 4000, "menu reopens deferred throw");
-    d.check(d.save().encounter.usedBalls == 1, "reopened encounter unchanged");
-    d.shot("defer-reopened");
-    keepEncounter(d);
-    d.event("throws-defer-done", "id=" + std::to_string(d.save().encounter.id));
+  } else if (phase == "aim") {
+    aimBeforeThrow(d);
+    d.event("throws-aim-done", "id=" + std::to_string(d.save().encounter.id));
     d.close();
-  } else if (phase == "defer-reload") {
+  } else if (phase == "aim-reload") {
     d.frames();
-    d.until([&] { return d.screen().page == Page::Throw; }, 4000, "deferred throw reopens");
-    d.check(d.save().phase == Phase::ThrowReady, "deferred throw survives restart");
-    d.check(d.save().encounter.usedBalls == 1, "one attempt still spent");
-    d.shot("defer-reload");
+    d.until([&] { return d.screen().page == Page::Throw; }, 4000, "the throw page reopens");
+    d.check(d.save().phase == Phase::ThrowReady, "the pending throw survives restart");
+    d.check(d.save().encounter.usedBalls == 1, "the spent attempt is still recorded");
+    d.check(!d.runtime().engine().throwView().active,
+            "restart restores the aiming state, not the RAM throw window");
+    d.advance(3000);
+    d.check(d.save().encounter.usedBalls == 1,
+            "waiting after restart spends no further attempt");
+    d.shot("aim-reload");
     d.close();
   }
 }

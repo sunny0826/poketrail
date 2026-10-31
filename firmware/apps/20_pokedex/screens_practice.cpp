@@ -28,11 +28,11 @@ void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
     line("成功不会收入图鉴", 426, theme::kMuted);
     return;
   }
-  actorShadow(233, 147);
-  sprite(s.practiceSpecies, now, battlePlayback_, 147, 233, 0, 2, 110);
-  item(s, 0, "准备投球", menu_layout::kTop);
-  item(s, 1, "换一只练习", menu_layout::kTop);
-  item(s, 2, "结束练习", menu_layout::kTop);
+  actorShadow(233, 233);
+  sprite(s.practiceSpecies, now, battlePlayback_, 233, 233, 0, 2, 190);
+  ballAt(233, kHandY);
+  line("按住右键蓄力 · 松手投球", 399, theme::kMint);
+  line("轻触顶部结束练习", 426, theme::kMuted);
 }
 void Screens::practiceResult(const ScreenState& s, uint32_t now) {
   title(s.practiceResult == Result::Captured ? "练习成功" :

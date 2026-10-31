@@ -176,7 +176,12 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
           line("升级已退回 500 探索步", 249, theme::kGold);
           line("精灵球不限量", 277, theme::kText);
         } else if (v.result == Result::Released && !v.captureCounts[v.encounter.species - 1]) {
-          line("不退探索步数或已用精灵球", 249, theme::kRed);
+          if (v.encounter.ruleVersion < 3 && !availableBalls(v)) {
+            line("本场没有可用精灵球", 249, theme::kRed);
+            line("已结束本场", 277, theme::kMuted);
+          } else {
+            line("不退探索步数或已用精灵球", 249, theme::kRed);
+          }
         } else line("伙伴仍在，继续步行探索", 249, theme::kMuted);
       }
       menu(s, e, v.result == Result::Captured ? 372 : 355); return;

@@ -16,7 +16,7 @@ Your partner has 3 health segments and the opponent has 5. 700 ms before each be
 
 After a victory, each encounter allows at most two Poké Balls, and a successful capture ends the encounter immediately. For common Pokémon, the normal / nice / perfect capture rates are 85% / 92% / 98%. For rare Pokémon, they are 70% / 80% / 90%. Missing the window gives a 0% chance. Even a perfect throw can fail.
 
-After a victory, you can keep the result and return to the home page to walk at any time. Later, return through the menu to continue capturing in the same encounter. You can also confirm that you want to abandon it.
+After a victory you go straight to the throwing page: hold the right button or touch and hold to charge, then release to throw. Waiting does not start the window and does not spend an attempt. The encounter must finish (a capture, or both balls used) before you can confirm the result and return home; there is no mid-encounter abandon or keep-walking option. If an old save has no usable Poké Balls, the throwing page shows "End this encounter · return to exploring" as its only exit.
 
 ## Partners and evolution
 
@@ -62,9 +62,8 @@ In ordinary menus, releasing the left button moves up, and releasing the right b
 | --- | --- |
 | Battle / capture practice | Left button to dodge, right button to attack; touching the left/right half of the screen does the same |
 | Pause | Tap the top or hold both buttons for 800 ms to pause after the current beat ends |
-| Throw menu | Left button to cycle through prepare / keep walking / abandon, right button to confirm; touch is also supported |
-| Throw timeline | After preparing, hold the right button or touch and hold for a charged throw; release to throw; a timeout also counts as one throw |
-| Practice throw | Same as the throw timeline; two throws per encounter, no Poké Balls consumed, and success does not add a Pokédex entry |
+| Throw page | Hold the right button or touch and hold to charge, release to throw; the top edge never starts a throw |
+| Practice throw | Same as the throw page; tap the top to end practice. Two throws per encounter, no Poké Balls consumed, and success does not add a Pokédex entry |
 | Partner details | Choose a carried partner or evolution target; evolution requires another confirmation |
 | Evolution animation | Press either side button or tap to skip to the new form; act again to open its details |
 | Records | Page left/right; tap the bottom to return, or select the return option and confirm |
