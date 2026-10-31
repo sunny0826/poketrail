@@ -20,23 +20,28 @@ void scenarioMigration(Driver& d,const std::string& phase) {
     d.state("rule2-upgraded"); d.shot("rule2-upgraded"); d.close(); return;
   }
   if(phase=="reload") {
-    d.check(d.save().encounter.ruleVersion==3,"new encounter uses current unlimited-ball rule");
-    d.check(d.save().ballsSpent==1,"legacy charge persisted exactly once");
+    d.check(d.save().encounter.ruleVersion==1,"the released legacy encounter keeps its old rule");
+    d.check(d.save().result==Result::Released && d.save().ballsSpent==0,
+            "the legacy release persists without spending a ball");
+    d.check(d.save().encounter.usedBalls==1,"the earlier legacy attempt survives the release");
     d.state("migration-reloaded"); d.close(); return;
   }
   d.check(d.save().encounter.ruleVersion==1 && d.save().encounter.usedBalls==1,"frozen v1 in-flight encounter retains old attempt");
   d.check(availableBalls(d.save())==0,"legacy inventory begins empty");
-  d.tap(233,238);
-  d.check(!d.runtime().engine().throwView().active && d.screen().command==CommandResult::NoBalls,"old encounter rejects throw without inventory");
-  d.tap(233,286);
-  d.check(d.screen().page==Page::Home,"old encounter can be deferred");
-  d.walk(1000);
-  d.check(availableBalls(d.save())==1,"walking replenishes legacy inventory");
-  d.homeMenu(); d.select(0); d.throwBall(false); d.finishCapture();
-  d.check(d.save().ballsSpent==1 && d.save().encounter.usedBalls==2 && d.save().result==Result::Escaped,"second legacy miss charges exactly one ball and escapes");
-  d.check(d.save().encounter.attempts[1].ruleVersion==1,"new legacy attempt retains rule1");
-  d.select(0); d.walk(600);
-  d.check(d.save().encounter.ruleVersion==3 && d.save().phase==Phase::EncounterReady,"next encounter starts with rule3");
+  // 旧规则零球：投球页没有菜单，但必须留一个明确出口，否则玩家卡死。
+  d.check(d.screen().page==Page::Throw,"legacy encounter reaches the throw page");
+  d.check(d.screen().command!=CommandResult::NoBalls,"the empty stock does not block the page itself");
+  d.advance(3000);
+  d.check(!d.runtime().engine().throwView().active && d.save().encounter.usedBalls==1,
+          "waiting on the legacy throw page starts no window and spends no attempt");
+  d.key(SDL_SCANCODE_LEFT,true);
+  d.key(SDL_SCANCODE_RIGHT,true);
+  d.key(SDL_SCANCODE_RIGHT,false);
+  d.key(SDL_SCANCODE_LEFT,false);
+  d.check(d.screen().page==Page::Result && d.save().result==Result::Released,
+          "the legacy exit button ends the encounter instead of trapping the player");
+  d.check(d.save().ballsSpent==0 && d.save().encounter.usedBalls==1,
+          "ending the legacy encounter spends no ball and keeps the earlier attempt");
   d.state("migration-final"); d.shot("migration-final"); d.close();
 }
 } }

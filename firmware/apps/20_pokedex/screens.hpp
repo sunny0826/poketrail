@@ -13,7 +13,7 @@ enum class Page : uint8_t {
   Home, Menu, Resources, DateWelcome, Starter, Routes, Partners, Encounter, Battle, Practice,
   PracticeThrow, PracticeResult,
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
-  Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, ReleaseConfirm, Evolution,
+  Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, Evolution,
   EvolutionPreviewTargets, EvolutionPreview,
   TestEntry, TestHub, TestSteps, TestScenarios, TestFaults, TestDiagnostics, TestExit
 };

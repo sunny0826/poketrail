@@ -232,42 +232,70 @@ void noBallsWaitAndRelease() {
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   check(runtime.screen().page == Page::Throw && availableBalls(runtime.engine().view()) == 0,
         "migration victory restarts without retroactive balls");
+  check(menuCount(runtime.screen(), runtime.engine()) == 1,
+        "a legacy encounter with no balls keeps one explicit way out");
   edge(runtime, false, true);
-  check(!runtime.engine().throwView().active && runtime.screen().command == CommandResult::NoBalls, "zero ball cannot prepare");
+  check(!runtime.engine().throwView().active && runtime.screen().command == CommandResult::NoBalls,
+        "zero ball cannot prepare");
   screenshot(runtime, "zero-balls");
-  tap(runtime, 233, 306); idle(runtime, 1200);
-  check(runtime.screen().page == Page::Home && runtime.engine().view().phase == Phase::ThrowReady,
-        "waiting remains on home across syncPage ticks");
   const uint64_t encounter = runtime.engine().view().encounter.id;
   walk(runtime, platform, 1002);
   check(availableBalls(runtime.engine().view()) == 1 && runtime.engine().view().encounter.id == encounter,
         "actual samples earn one ball while preserving victory");
+  check(runtime.screen().page == Page::Throw && menuCount(runtime.screen(), runtime.engine()) == 0,
+        "the earned ball removes the way-out button without leaving the throw page");
+  // The long walk puts the display to sleep, so the screen has to wake before
+  // the press edge can reach the runtime.
   if (runtime.dimmed()) { M5.powerClick(); frame(runtime); idle(runtime, 160); frame(runtime); }
-  openMenu(runtime); select(runtime, 0); check(runtime.screen().page == Page::Throw, "menu explicitly resumes same throw");
-  edge(runtime, false, true);
-  check(runtime.engine().throwView().active && availableBalls(runtime.engine().view()) == 1, "prepare does not charge inventory");
+  buttons(false, false); frame(runtime);
+  // The window opens on the first hold, so the key stays down from here.
+  buttons(false, true); frame(runtime);
+  check(runtime.engine().throwView().active && availableBalls(runtime.engine().view()) == 1,
+        "a fresh press opens the window without charging inventory");
   idle(runtime, 1800);
   check(availableBalls(runtime.engine().view()) == 0 && runtime.engine().view().encounter.usedBalls == 1,
         "timeout charges one ball exactly once");
-  tap(runtime, 233, 374);
-  check(runtime.screen().page == Page::ReleaseConfirm, "release requires separate confirmation");
-  screenshot(runtime, "release-confirm");
-  tap(runtime, 233, 306); check(runtime.screen().page == Page::Throw, "release cancel preserves encounter");
-  tap(runtime, 233, 374); tap(runtime, 233, 238);
-  check(runtime.engine().view().result == Result::Released && runtime.screen().page == Page::Result,
-        "release persists distinct resolved result");
-  check(runtime.engine().view().ballsSpent == 1 && runtime.engine().view().captureCounts[0] == 0,
-        "release neither refunds ball nor grants capture");
-  screenshot(runtime, "released");
+  screenshot(runtime, "legacy-throw-after-miss");
   MemoryStore restartStore; legacyVictory(restartStore);
-  Runtime waiting(restartStore, platform); start(waiting); tap(waiting, 233, 306);
   Runtime restart(restartStore, platform); start(restart);
   check(restart.screen().page == Page::Throw && !restart.engine().throwView().active,
-        "restart restores pending victory and explicit wait option, not RAM timeline");
+        "restart restores pending victory and the aiming state, not the RAM timeline");
+  check(glyph("本场没有可用精灵球", 196, theme::kRed),
+        "the empty-ball page explains why the ball cannot be thrown");
+  check(glyph("结束本场 · 返回探索", 238, theme::kGold, 233, false, true),
+        "the empty-ball page offers one explicit way out");
+  tap(restart, 233, 238);
+  check(restart.engine().view().result == Result::Released && restart.screen().page == Page::Result,
+        "the exit button ends the encounter and resolves it as released");
+  check(restart.engine().view().ballsSpent == 0 && restart.engine().view().captureCounts[0] == 0,
+        "ending an empty-ball encounter refunds nothing and grants no capture");
+  screenshot(restart, "legacy-released");
+}
+void aimStateLayout() {
+  MemoryStore store; Save save;
+  save.bootGeneration = 1; save.starter = save.partner = 1; setOwned(save, 1); setRegistered(save, 1);
+  save.rosterRevision = 1; save.encounterTarget = 300;
+  save.totalSteps = save.undatedSteps = 5000; save.explorationSpent = 5000; save.nextEncounterId = 2;
+  save.phase = Phase::ThrowReady; save.result = Result::Won;
+  save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1;
+  check(store.commit(save) == CommitStatus::Committed, "modern throw fixture validates");
+  HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+  check(runtime.screen().page == Page::Throw && !runtime.engine().throwView().active &&
+        menuCount(runtime.screen(), runtime.engine()) == 0,
+        "the throw page opens as an aiming state with no menu");
+  check(glyph("按住右键蓄力 · 松手投球", 399, theme::kMint),
+        "the aiming state shows how to throw");
+  check(glyph("开始蓄力才开始计时", 426, theme::kMuted),
+        "the aiming state explains that the clock waits for the hold");
+  check(!glyph("准备投球", 238, theme::kGold, 233, false, true) &&
+        !glyph("保留遭遇 · 继续走路", 238, theme::kGold, 233, false, true) &&
+        !glyph("放弃这次捕捉", 238, theme::kGold, 233, false, true),
+        "the throw page carries none of the three retired menu items");
+  screenshot(runtime, "throw-aiming");
 }
 }
 int main() {
   c152::begin("PROGRESSION TEST");
-  evolveAndRetry(); eeveeAndCollection(); seventhEeveeBranch(); homeEvolveButton(); peakOwnership(); noBallsWaitAndRelease();
+  evolveAndRetry(); eeveeAndCollection(); seventhEeveeBranch(); homeEvolveButton(); peakOwnership(); noBallsWaitAndRelease(); aimStateLayout();
   std::printf("%u progression Runtime/Button_Class checks, 0 failures\n", checks);
 }

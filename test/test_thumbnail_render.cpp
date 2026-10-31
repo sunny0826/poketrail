@@ -151,25 +151,24 @@ void throwEntry() {
   check(runtime.screen().page == Page::Throw, "saved victory opens throw entry");
   noThrowBadge();
   const auto& sprite = data::kSprites[runtime.engine().view().encounter.species - 1];
-  const unsigned scale = sprite.height * 2 > 110 ? 1 : 2;
+  unsigned scale = sprite.height * 2 > 190 ? 1 : 2;
+  while (scale > 1 && sprite.height * scale > 190) --scale;
   const unsigned width = sprite.width * scale, height = sprite.height * scale;
   std::vector<uint16_t> pixels(width * height);
   check(decodeFrame(sprite, 0, scale, pixels.data(), pixels.size()), "throw preview source decodes");
   for (unsigned y = 0; y < height; ++y) for (unsigned x = 0; x < width; ++x) {
     const auto pixel = pixels[y * width + x];
     if (pixel != kTransparentKey)
-      check(M5.Display.readPixel(233 - width / 2 + x, 147 - height / 2 + y) == pixel,
+      check(M5.Display.readPixel(233 - width / 2 + x, 233 - height / 2 + y) == pixel,
             "throw preview retains every original opaque species pixel");
   }
   screenshot(runtime, "throw-ready");
-  edge(runtime, true, false); edge(runtime, false, true);
-  check(runtime.screen().page == Page::Home, "left switches and right confirms keep-walking option");
-  screenshot(runtime, "home-saved-victory"); openMenu(runtime); select(runtime, 4);
-  ball(110); screenshot(runtime, "resources-saved-victory");
-  tap(runtime, 233, 52); select(runtime, 0); edge(runtime, false, true);
+  buttons(false, true); frame(runtime);
   check(runtime.engine().throwView().active,
-        "right confirms prepare without spending a ball");
+        "holding right opens the throw window without spending a ball");
   noThrowBadge(); screenshot(runtime, "throw-active");
+  buttons(false, false); frame(runtime);
+  check(runtime.screen().page == Page::Throw, "releasing a held throw stays on the throw page");
 }
 void exhaustedRoutes() {
   MemoryStore store; std::vector<uint16_t> captured;

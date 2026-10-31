@@ -165,6 +165,12 @@ bool practiceRound(Driver& d, const std::string& tag) {
   REQUIRE(d, page(d, Page::Practice, tag + " practice resumes"), tag + " practice resumes");
   d.winBattle(true);
   REQUIRE(d, page(d, Page::PracticeThrow, tag + " practice reaches throw page"), tag + " practice reaches throw page");
+  d.key(SDL_SCANCODE_LEFT, true);
+  d.key(SDL_SCANCODE_RIGHT, true);
+  d.key(SDL_SCANCODE_RIGHT, false);
+  d.check(!d.screen().practiceThrowing && d.screen().practiceUsedBalls == 0,
+          "practice short right press cancels while left remains held");
+  d.key(SDL_SCANCODE_LEFT, false);
   d.throwBall(true, true);
   d.finishCapture();
   REQUIRE(d, wait(d, [&] {
@@ -173,7 +179,9 @@ bool practiceRound(Driver& d, const std::string& tag) {
           }, 10000, tag + " practice returns from capture animation"),
           tag + " practice returns from capture animation");
   d.shot("isolation-practice");
-  if (d.screen().page == Page::PracticeResult) d.select(1); else d.select(2);
+  if (d.screen().page == Page::PracticeResult) d.select(1);
+  else d.tap(233, 35);
+  REQUIRE(d, page(d, Page::Home, tag + " leaves practice"), tag + " leaves practice");
   return page(d, Page::Home, tag + " leaves practice");
 }
 

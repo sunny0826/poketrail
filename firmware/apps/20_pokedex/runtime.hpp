@@ -10,7 +10,7 @@
 namespace pokedex { namespace ui {
 struct Input {
   bool left = false, right = false, touch = false, click = false, pause = false, back = false;
-  bool held = false, leftDown = false, rightDown = false;
+  bool held = false, leftDown = false, rightDown = false, touchDown = false;
   bool power = false;
   int x = 0, y = 0, swipe = 0;
   uint32_t at = 0;
@@ -169,7 +169,6 @@ class Runtime {
   int16_t hostClockOffset_ = 0;
   HostClockStage hostClockStage_ = HostClockStage::None;
   bool hostClockWriteAttempted_ = false;
-  uint64_t deferredThrow_ = 0;
   TestRequest testRequest_ = TestRequest::None;
   Page testEntryReturn_ = Page::Resources;
   uint32_t testHoldStarted_ = 0;

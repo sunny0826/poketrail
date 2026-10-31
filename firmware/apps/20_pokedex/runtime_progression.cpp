@@ -85,14 +85,6 @@ void Runtime::resumeSavedProgression() {
   else openPartner(screen_.species);
 }
 void Runtime::activateProgression(unsigned item, uint32_t at) {
-  if (screen_.page == Page::ReleaseConfirm) {
-    if (item == 1) navigate(Page::Throw);
-    else {
-      screen_.command = engine_.giveUpCapture(engine_.view().encounter.id);
-      waitForRelease();
-    }
-    return;
-  }
   if (screen_.page == Page::EvolutionConfirm) {
     if (item == 1) { leaveEvolutionConfirm(); return; }
     const CommandResult result = engine_.evolve(screen_.evolution, readingAt(at));
@@ -152,37 +144,47 @@ void Runtime::tickCapture(uint32_t now) {
       waitForRelease();
   }
 }
-void Runtime::handleThrow(const Input& input) {  if (screen_.capture.active) {
+void Runtime::handleThrow(const Input& input) {
+  if (screen_.capture.active) {
     if (input.any()) { captureSkip(screen_.capture, input.at); waitForRelease(); }
     return;
   }
+  const auto& encounter = engine_.view().encounter;
+  const bool legacyNoBalls = encounter.ruleVersion < 3 && !availableBalls(engine_.view());
+  if (legacyNoBalls) {
+    // A legacy encounter with an empty ball stock cannot be thrown and the
+    // menu is gone, so the page offers one explicit way out.
+    if (input.click && menu_layout::rowAt(input.x, input.y) == 0) {
+      screen_.command = engine_.giveUpCapture(encounter.id);
+      waitForRelease();
+      return;
+    }
+    // The side keys confirm the same single button.
+    if (input.leftDown && input.rightDown) {
+      screen_.command = engine_.giveUpCapture(encounter.id);
+      waitForRelease();
+      return;
+    }
+    if (input.click || input.swipe) return;
+  }
+  // Exclude the top touch region from starting a throw.
+  const bool throwTouch = input.touch && input.y >= 80;
   if (engine_.throwView().active) {
-    if ((input.right || input.touch) && !screen_.charging) {
+    if ((input.right || throwTouch) && !screen_.charging) {
       screen_.charging = true;
       screen_.chargeStartMs = input.at;
       feedback(20);
     }
     return;
   }
-  bool confirm = input.left && input.right;
-  if (input.click) {
-    const int row = menu_layout::rowAt(input.x, input.y);
-    if (row >= 0 && row < 3) {
-      screen_.selected = static_cast<unsigned>(row); confirm = true;
-    }
-  } else if (!confirm && input.left) {
-    screen_.selected = (screen_.selected + 1) % 3;
-    screen_.command = CommandResult::Applied;
-  } else if (input.right) confirm = true;
-  if (!confirm) return;
-  if (screen_.selected == 1) {
-    deferredThrow_ = engine_.view().encounter.id;
-    navigate(Page::Home);
-  } else if (screen_.selected == 2) navigate(Page::ReleaseConfirm);
-  else {
-    const auto& encounter = engine_.view().encounter;
+  // Starting charge opens the window without spending an attempt.
+  if ((input.right || throwTouch) && !screen_.charging) {
     screen_.command = engine_.beginThrow(AttemptKey(encounter.id, encounter.usedBalls + 1), input.at);
-    waitForRelease();
+    if (screen_.command == CommandResult::Applied) {
+      screen_.charging = true;
+      screen_.chargeStartMs = input.at;
+      feedback(20);
+    }
   }
 }
 void Runtime::beginPractice(uint32_t at) {
@@ -258,26 +260,24 @@ void Runtime::handlePracticeThrow(const Input& input) {
     if (input.any()) { captureSkip(screen_.capture, input.at); waitForRelease(); }
     return;
   }
+  // The top edge ends the practice session, so a throw never starts there.
+  const bool throwTouch = input.touch && input.y >= 80;
   if (practiceCapture_.throwView().active) {
-    if ((input.right || input.touch) && !screen_.charging) {
+    if ((input.right || throwTouch) && !screen_.charging) {
       screen_.charging = true;
       screen_.chargeStartMs = input.at;
       feedback(20);
     }
     return;
   }
-  bool confirm = input.left && input.right;
-  if (input.click) {
-    const int row = menu_layout::rowAt(input.x, input.y);
-    if (row >= 0 && row < 3) {
-      screen_.selected = static_cast<unsigned>(row); confirm = true;
+  // Aiming state: the first hold starts the practice throw window. The session
+  // still exits by touching the top edge, so practice never traps the player.
+  if ((input.right || throwTouch) && !screen_.charging) {
+    if (practiceCapture_.beginThrow(input.at)) {
+      screen_.charging = true;
+      screen_.chargeStartMs = input.at;
+      feedback(20);
     }
-  } else if (!confirm && input.left) {
-    screen_.selected = (screen_.selected + 1) % 3;
-  } else if (input.right) confirm = true;
-  if (!confirm) return;
-  if (screen_.selected == 1) beginPractice(input.at);
-  else if (screen_.selected == 2) endPractice();
-  else if (practiceCapture_.beginThrow(input.at)) waitForRelease();
+  }
 }
 } }

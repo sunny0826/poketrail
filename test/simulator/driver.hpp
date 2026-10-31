@@ -26,6 +26,7 @@ class Driver {
   void until(const std::function<bool()>&, uint32_t maxMs, const std::string&);
   void key(SDL_Scancode, bool down, unsigned ticks = 4);
   void press(SDL_Scancode);
+  void mouse(int x, int y, bool down);
   void tap(int x, int y);
   void swipe(int fromX, int toX, int y = 300);
   void select(unsigned index);
@@ -51,7 +52,6 @@ class Driver {
   void event(const std::string& kind, const std::string& detail);
  private:
   void push(SDL_Event&, unsigned ticks = 4);
-  void mouse(int x, int y, bool down);
   std::string output_;
   FILE* events_ = nullptr;
   unsigned closeErrors_ = 0;
@@ -60,6 +60,7 @@ class Driver {
 void scenarioJourney(Driver&, const std::string& phase);
 void scenarioCapture(Driver&, const std::string& phase);
 void scenarioThrows(Driver&, const std::string& phase);
+void aimBeforeThrow(Driver&);
 void scenarioRetry(Driver&, const std::string& phase);
 void scenarioProgression(Driver&, const std::string& phase);
 void scenarioConflict(Driver&, const std::string& phase);

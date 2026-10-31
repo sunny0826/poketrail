@@ -136,10 +136,8 @@ void Runtime::syncPage() {
       screen_.page == Page::PracticeResult || (screen_.page == Page::Pause && screen_.practice)) return;
   if (screen_.page == Page::Battle && !engine_.battleView().active &&
       battleEffectActive(engine_.battleView(), platform_.now())) return;
-  if (deferredThrow_ && (v.phase != Phase::ThrowReady || deferredThrow_ != v.encounter.id)) deferredThrow_ = 0;
   if (v.phase == Phase::ThrowReady) {
-    if (deferredThrow_ != v.encounter.id && screen_.page != Page::Throw && screen_.page != Page::ReleaseConfirm)
-      navigate(Page::Throw);
+    if (screen_.page != Page::Throw) navigate(Page::Throw);
   } else if (v.phase == Phase::Resolved) {
     if (screen_.page != Page::Result) navigate(Page::Result);
   }

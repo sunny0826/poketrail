@@ -20,8 +20,7 @@ void firstBallSuccess() {
   savedVictory(store, s, true);
   TestPlatform p; Runtime r(store, p); start(r);
   check(r.screen().page == Page::Throw && !r.engine().throwView().active, "saved victory restarts at explicit preparation");
-  edge(r, p, false, true);
-  throwAt(r, p, r.engine().throwView().targetMs);
+  throwAt(r, p);
   check(r.engine().view().result == Result::Captured && r.engine().view().encounter.usedBalls == 1 &&
         !r.engine().view().encounter.attempts[1].used, "first successful ball ends encounter with second unused");
   check(r.screen().page == Page::Throw && r.screen().capture.active,
@@ -54,11 +53,10 @@ void winPractice(Runtime& r, TestPlatform& p) {
   frame(r);
 }
 void practicePerfectRelease(Runtime& r, TestPlatform& p) {
-  edge(r, p, false, true);
-  check(r.screen().practiceThrowing, "practice prepares a throw without consuming a real ball");
-  const uint32_t target = r.screen().practiceTargetMs;
   p.next.right = p.next.held = true; frame(r);
-  check(r.screen().charging, "practice throwing charges while held");
+  check(r.screen().practiceThrowing && r.screen().charging,
+        "practice opens the throw window on the first hold without consuming a real ball");
+  const uint32_t target = r.screen().practiceTargetMs;
   while (int32_t(target - host_time_ms) > 20) { p.next.rightDown = p.next.held = true; frame(r); }
   p.next.rightDown = p.next.held = true; frame(r, target - host_time_ms);
   frame(r, 0);
@@ -107,14 +105,12 @@ void practiceCapture() {
   check(r.screen().page == Page::Practice && secondSpecies != firstSpecies,
         "practice again rolls a new species");
   winPractice(r, p);
-  edge(r, p, false, true);
-  idle(r, 1800);
+  holdThrow(r, p, 1800);
   check(r.screen().practiceUsedBalls == 1 && r.screen().page == Page::PracticeThrow,
         "practice timeout spends one practice ball");
   while (r.screen().capture.active) frame(r);
   frame(r);
-  edge(r, p, false, true);
-  idle(r, 1800);
+  holdThrow(r, p, 1800);
   while (r.screen().capture.active) frame(r);
   frame(r);
   check(r.screen().page == Page::PracticeResult && r.screen().practiceResult == Result::Escaped,

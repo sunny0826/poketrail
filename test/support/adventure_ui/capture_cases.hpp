@@ -19,8 +19,7 @@ void firstBallSuccess() {
   savedVictory(store, s, true);
   TestPlatform p; Runtime r(store, p); start(r);
   check(r.screen().page == Page::Throw && !r.engine().throwView().active, "saved victory restarts at explicit preparation");
-  edge(r, p, false, true);
-  throwAt(r, p, r.engine().throwView().targetMs);
+  throwAt(r, p);
   check(r.engine().view().result == Result::Captured && r.engine().view().encounter.usedBalls == 1 &&
         !r.engine().view().encounter.attempts[1].used, "first successful ball ends encounter with second unused");
   check(r.screen().page == Page::Throw && r.screen().capture.active,
@@ -62,10 +61,14 @@ void captureAnimation() {
   MemoryStore store; Save s;
   savedVictory(store, s, true);
   TestPlatform p; Runtime r(store, p); start(r);
-  edge(r, p, false, true);
-  const uint32_t target = r.engine().throwView().targetMs;
+  const uint32_t heldAt = host_time_ms;
   p.next.right = p.next.held = true; frame(r);
-  check(r.screen().charging, "holding the throw key charges the ball");
+  check(r.engine().throwView().active && r.screen().charging,
+        "the first hold opens the throw window and charges the ball");
+  const uint32_t target = r.engine().throwView().targetMs;
+  check(int32_t(target - (heldAt + kThrowChargeMs)) >= 0 &&
+        int32_t(target - (heldAt + kThrowChargeMs)) < 40,
+        "the window targets one charge span after the hold starts");
   for (unsigned held = 0; held < 920; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
   p.next.rightDown = p.next.held = true; frame(r);
   check(M5.Display.readPixel(267, 344) == theme::kGold || M5.Display.readPixel(263, 344) == theme::kGold,
@@ -119,7 +122,7 @@ void captureAnimation() {
 void captureEscape() {
   MemoryStore store; Save s; savedVictory(store, s, false);
   TestPlatform p; Runtime r(store, p); start(r);
-  edge(r, p, false, true); throwAt(r, p, r.engine().throwView().targetMs);
+  throwAt(r, p);
   check(r.screen().capture.active && !r.screen().capture.captured &&
         r.engine().view().encounter.usedBalls == 1 && !r.engine().view().recentSize,
         "failed throw commits one ball without awarding a capture before escape");
@@ -130,7 +133,7 @@ void captureEscape() {
   for (unsigned i = 0; i < 40 && r.screen().capture.active; ++i) frame(r);
   check(r.screen().page == Page::Throw && !r.screen().capture.active && !r.engine().throwView().active,
         "escape returns to explicit preparation for the second ball");
-  frame(r); edge(r, p, false, true);
+  frame(r); p.next.right = p.next.held = true; frame(r);
   check(r.engine().throwView().active && r.engine().view().encounter.usedBalls == 1 && !r.engine().view().recentSize,
         "fresh input prepares second ball without spending it or adding a capture");
 }

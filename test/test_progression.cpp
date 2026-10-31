@@ -104,6 +104,26 @@ static void stepThresholds() {
   const auto frozen=t.view().encounter;CHECK(t.evolve(request(t,1,2),clockFor(t))==CommandResult::Applied);
   CHECK(t.view().encounter.partner==2&&t.view().encounter.id==frozen.id&&t.view().encounter.seed==frozen.seed);
 }
+static void cancelSpendsNothing() {
+  MemoryStore store;Engine e(store);CHECK(e.begin()==CommandResult::Applied);
+  CHECK(steps(e,1000,0)==CommandResult::Applied);
+  CHECK(e.chooseStarter(1)==CommandResult::Applied&&e.view().phase==Phase::EncounterReady);
+  win(e);
+  const AttemptKey key(e.view().encounter.id,1);const auto old=store.disk;
+  CHECK(e.beginThrow(key,1000)==CommandResult::Applied);
+  CHECK(e.throwView().active&&e.throwView().targetMs==1000+kThrowChargeMs);
+  CHECK(e.cancelThrow(key)==CommandResult::Applied);
+  CHECK(!e.throwView().active&&e.view().encounter.usedBalls==0&&e.view().ballsSpent==0);
+  CHECK(store.disk==old);
+  CHECK(e.cancelThrow(key)==CommandResult::InvalidPhase);
+  // A cancelled window can be reopened and still scores normally.
+  CHECK(e.beginThrow(key,2000)==CommandResult::Applied);
+  CHECK(e.cancelThrow(AttemptKey(key.encounterId,2))==CommandResult::InvalidInput);
+  CHECK(e.cancelThrow(key)==CommandResult::Applied);
+  CHECK(e.beginThrow(key,3000)==CommandResult::Applied);
+  CHECK(e.pressThrow(key,e.throwView().targetMs,clockFor(e))==CommandResult::Applied);
+  CHECK(e.view().encounter.usedBalls==1);
+}
 static void ballsAndRelease() {
   MemoryStore store;Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   CHECK(steps(e,1000,0)==CommandResult::Applied);
@@ -177,4 +197,4 @@ static void limitsAndValidation() {
   bad->progress[0].spent=0;bad->ballsSpent=2;CHECK(!validate(*bad));bad->ballsSpent=0;bad->rewardBaseSteps=1001;CHECK(!validate(*bad));
   bad->rewardBaseSteps=0;bad->registered[0]=0;CHECK(!validate(*bad));
 }
-int main(){allEdges();johtoRules();accountsAndFailure();stepThresholds();ballsAndRelease();recaptureAndGuards();limitsAndValidation();std::printf("progression: %u checks passed\n",checks);}
+int main(){allEdges();johtoRules();accountsAndFailure();stepThresholds();cancelSpendsNothing();ballsAndRelease();recaptureAndGuards();limitsAndValidation();std::printf("progression: %u checks passed\n",checks);}

@@ -40,7 +40,6 @@ void Runtime::goBack() {
     navigate(engine_.view().starter ? Page::Resources : Page::DateWelcome);
   else if (screen_.page == Page::EvolutionPreviewTargets) navigate(Page::Viewer);
   else if (screen_.page == Page::EvolutionConfirm) leaveEvolutionConfirm();
-  else if (screen_.page == Page::ReleaseConfirm) navigate(Page::Throw);
   else if (screen_.page == Page::PartnerDetail) navigate(Page::Partners);
   else if (screen_.page == Page::Partners || screen_.page == Page::Routes) navigate(Page::Menu);
   else navigate(Page::Home);
@@ -78,16 +77,23 @@ void Runtime::handle(const Input& raw) {
       input.right = action == MenuAction::Next || action == MenuAction::Confirm;
     }
   }
-  const bool throwRelease = !input.held && !input.rightDown &&
+  const bool throwRelease = !input.touchDown && !input.rightDown &&
     ((screen_.page == Page::Throw && screen_.charging && engine_.throwView().active) ||
      (screen_.page == Page::PracticeThrow && screen_.charging && practiceCapture_.throwView().active));
   if (!input.any() || throwRelease) {
     if (screen_.page == Page::Throw && screen_.charging && engine_.throwView().active &&
-        !input.held && !input.rightDown) {
+        !input.touchDown && !input.rightDown) {
       screen_.charging = false;
-      const auto result = engine_.pressThrow(engine_.throwView().key, input.at, readingAt(input.at));
+      const auto key = engine_.throwView().key;
+      // A tap shorter than the minimum hold is a mis-press: the window closes
+      // and no attempt is spent, so the player can aim again.
+      if (input.at - screen_.chargeStartMs < kThrowMinHoldMs) {
+        engine_.cancelThrow(key);
+        dirty_ = true;
+        return;
+      }
+      const auto result = engine_.pressThrow(key, input.at, readingAt(input.at));
       if (result == CommandResult::Applied) {
-        const auto& key = engine_.throwView().key;
         const auto& a = engine_.view().encounter.attempts[key.attemptIndex - 1];
         CaptureAnim anim;
         anim.active = true;
@@ -103,8 +109,13 @@ void Runtime::handle(const Input& raw) {
       }
       dirty_ = true;
     } else if (screen_.page == Page::PracticeThrow && screen_.charging &&
-               practiceCapture_.throwView().active && !input.held && !input.rightDown) {
+               practiceCapture_.throwView().active && !input.touchDown && !input.rightDown) {
       screen_.charging = false;
+      if (input.at - screen_.chargeStartMs < kThrowMinHoldMs) {
+        practiceCapture_.cancelThrow();
+        dirty_ = true;
+        return;
+      }
       const auto outcome = practiceCapture_.pressThrow(input.at);
       if (outcome.valid) startPracticeCapture(outcome);
       dirty_ = true;
@@ -134,7 +145,12 @@ void Runtime::handle(const Input& raw) {
     return;
   }
   if (screen_.page == Page::Throw) { handleThrow(input); return; }
-  if (screen_.page == Page::PracticeThrow) { handlePracticeThrow(input); return; }
+  if (screen_.page == Page::PracticeThrow) {
+    // Practice has no menu any more, so the top edge ends the session.
+    if (input.back && !screen_.charging) { endPractice(); return; }
+    handlePracticeThrow(input);
+    return;
+  }
   if (input.back && touchBackEnabled(screen_.page)) { goBack(); return; }
   if (!input.left && !input.right && !input.click && !input.swipe) return;
   bool confirm = input.left && input.right;
@@ -261,7 +277,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
     case Page::Menu:
       if (item == 0) {
         if (v.phase == Phase::EncounterReady) navigate(Page::Encounter);
-        else if (v.phase == Phase::ThrowReady) { deferredThrow_ = 0; navigate(Page::Throw); }
+        else if (v.phase == Phase::ThrowReady) navigate(Page::Throw);
       }
       else if (item == 1) navigate(Page::Routes);
       else if (item == 2) navigate(Page::Partners);
@@ -287,7 +303,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       }
       goBack(); break;
     }
-    case Page::PartnerDetail: case Page::EvolutionConfirm: case Page::ReleaseConfirm:
+    case Page::PartnerDetail: case Page::EvolutionConfirm:
       activateProgression(item, at); break;
     case Page::EvolutionPreviewTargets: chooseEvolutionPreview(item); break;
     case Page::Encounter:

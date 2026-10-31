@@ -11,7 +11,17 @@ CommandResult Engine::beginThrow(AttemptKey key, uint32_t now) {
   if (key.attemptIndex != state_.encounter.usedBalls + 1) return CommandResult::InvalidInput;
   if (throw_.active) return CommandResult::Duplicate;
   if (state_.encounter.ruleVersion < 3 && !availableBalls(state_)) return CommandResult::NoBalls;
-  throw_.active = true; throw_.key = key; throw_.targetMs = now + 1500;
+  // The window starts when the player begins charging, so the countdown only
+  // runs while a ball is actually being aimed.
+  throw_.active = true; throw_.key = key; throw_.targetMs = now + kThrowChargeMs;
+  return CommandResult::Applied;
+}
+CommandResult Engine::cancelThrow(AttemptKey key) {
+  if (!throw_.active) return CommandResult::InvalidPhase;
+  if (key.encounterId != throw_.key.encounterId || key.attemptIndex != throw_.key.attemptIndex)
+    return CommandResult::InvalidInput;
+  // Releasing before the ball was aimed spends nothing: no attempt is written.
+  throw_.active = false;
   return CommandResult::Applied;
 }
 void Engine::awardCapture(Save& s, const ClockReading& r) {

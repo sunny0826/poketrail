@@ -23,7 +23,7 @@ CASES = {
     "battle-fixed": ("P0-02", "blank", [("capture", "fixed"), ("capture", "reload")]),
     "capture-clock": ("P1-10", "blank", [("capture", "run"), ("clock", "captured"), ("clock", "reload")]),
     "throws": ("P0-03", "throw", [("throws", "run"), ("throws", "reload")]),
-    "defer": ("P0-03", "throw", [("throws", "defer"), ("throws", "defer-reload")]),
+    "aim": ("P0-03", "throw", [("throws", "aim"), ("throws", "aim-reload")]),
     **{f"retry-{kind}": ("P0-04", "throw", [("retry", kind), ("retry", "reload")])
        for kind in ("before", "after", "readback")},
     "progression": ("P0-05", "evolution", [("progression", "run"), ("progression", "reload")]),

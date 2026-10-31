@@ -10,6 +10,11 @@ constexpr uint32_t kFrenzyPerfectWindowMs = 55;
 constexpr uint32_t kCueLeadMs = 700;
 constexpr uint32_t kFeintFlipMs = 350;
 constexpr uint32_t kChordGraceMs = 80;
+// 投球时间线：从玩家开始蓄力到理想松手时刻的时长。
+// 窗口只在玩家实际按住时起算，空等不会消耗投球机会。
+constexpr uint32_t kThrowChargeMs = 1500;
+// 短于该时长的按压视为误触：关闭投球窗口且不占用一次投球机会。
+constexpr uint32_t kThrowMinHoldMs = 250;
 constexpr uint8_t kPlayerHp = 3;
 constexpr uint8_t kEnemyHp = 5;
 constexpr uint8_t kMaxCues = 16;

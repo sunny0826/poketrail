@@ -77,7 +77,7 @@ FileStore 在 write 返回 false 后立即结束本次提交；下次重试扫�
 | --- | --- | --- |
 | P0-01／N | journey | 引导、伙伴、图鉴、W计步、遭遇、正常关闭和重载 |
 | P0-02／N | capture、battle-fixed | 真实胜利与捕获；#590图鉴、伙伴、首捕卡；两页捕获徽标从0到1及重载像素检查；投球页无静态球徽标 |
-| P0-03／F | throws、defer | 两次Miss逃脱、球不扣库；剩一次时保留并重载 |
+| P0-03／F | throws、aim | 两次Miss逃脱、球不扣库；瞄准态空等与轻触不消耗机会，左键按住时右键／触摸短按仍可取消，按住才起算窗口，重载回到瞄准态 |
 | P0-04／F | retry-before/after/readback | 提交前无奖励；重试同一attempt；按住重试不能连带确认结果 |
 | P0-05／F | progression | 只有携带者获步；来源扣7500，目标使用自己200历史步；重载不重扣；进化及重载后两页捕获种数仍为0 |
 | P0-06／F | target-owned、evolution-retry | 目标已有则整笔拒绝；保存失败不播进化，重试一次并持久化 |
@@ -86,7 +86,7 @@ FileStore 在 write 返回 false 后立即结束本次提交；下次重试扫�
 | P1-09／F | isolation | 预览、分支、练习不改真实账户；静止区间不写槽 |
 | P1-10／N | clock、capture-clock | 未知步数/捕获不回填；UI校时、新步可信、重载UTC与账户 |
 | P1-11／F | midnight | 自然跨日、回拨一天归档、epoch增加一次、离线1小时及重载 |
-| P1-12／旧F | migration、migration-activity、migration-rule2 | rule1扣库存、活动场退休、rule2升级rule3继续投球 |
+| P1-12／旧F | migration、migration-activity、migration-rule2 | rule1零球时可先后按住双键确认投球页出口、活动场退休、rule2升级rule3继续投球 |
 | P1-13／F | lifecycle-* | 触摸不唤醒、P唤醒、宿主焦点隔离与脚本失焦停步/释放、蓄力关闭、两类关闭失败保护 |
 | P1-14／F | edges | 长名、图鉴、伊布分支末页和返回；真实截图供视觉审阅 |
 | P1-15／N | 尚未接入默认 runner | 原生 OS 键鼠路径待验收；不计入上述 28 场 |

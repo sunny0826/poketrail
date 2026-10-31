@@ -61,7 +61,9 @@ class TestPlatform : public Platform {
   Input pollInput() override {
     c152::update();
     if (vibration && int32_t(now() - vibrationEnd) >= 0) vibration = false;
-    Input r = next; r.at = now(); r.leftDown = r.left; r.rightDown = r.right;
+    Input r = next; r.at = now();
+    r.leftDown = r.leftDown || r.left; r.rightDown = r.rightDown || r.right;
+    r.touchDown = r.touchDown || r.touch;
     next = Input(); return r;
   }
   device_clock::Reading readClock() override {
@@ -180,13 +182,26 @@ void win(Runtime& r, TestPlatform& p) {
   check(r.engine().view().phase == Phase::ThrowReady, "public rhythm inputs win and persist victory");
   check(!r.engine().throwView().active, "winning input does not start throw");
 }
-void throwAt(Runtime& r, TestPlatform& p, uint32_t at) {
-  while (int32_t(at - 120 - host_time_ms) > 20) frame(r);
-  p.next.right = p.next.held = true;
-  frame(r, at - 120 - host_time_ms);
-  while (int32_t(at - host_time_ms) > 20) { p.next.rightDown = p.next.held = true; frame(r); }
+// Keep the throw input held; the window may time out before release.
+void holdThrow(Runtime& r, TestPlatform& p, unsigned ms) {
+  p.next.right = p.next.held = true; frame(r);
+  for (unsigned t = 0; t < ms; t += 20) {
+    p.next.rightDown = p.next.held = true;
+    frame(r);
+  }
+}
+// Holds the throw key and releases it exactly on the ideal target, so the
+// throw scores Perfect. The window opens on the first hold, so an already
+// active window is reused instead of preparing a second ball.
+void throwAt(Runtime& r, TestPlatform& p) {
+  if (!r.engine().throwView().active) {
+    p.next.right = p.next.held = true;
+    frame(r);
+  }
+  const uint32_t target = r.engine().throwView().targetMs;
+  while (int32_t(target - host_time_ms) > 20) { p.next.rightDown = p.next.held = true; frame(r); }
   p.next.rightDown = p.next.held = true;
-  frame(r, at - host_time_ms);
+  frame(r, target - host_time_ms);
   frame(r, 0);
 }
 }

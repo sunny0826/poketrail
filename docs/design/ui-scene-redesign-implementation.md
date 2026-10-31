@@ -4,7 +4,7 @@
 
 ## 当前实现
 
-`screen_theme.hpp` 定义主题，`screens_components.cpp` 提供公共组件，`screens*.cpp` 和 `viewer_screen.cpp` 绘制页面。`Page` 包含 29 个玩法页面与 7 个测试模式页面，共 36 页。普通列表由 `menu_layout.hpp` 统一为每页 3 项，输入和选择由 Runtime 管理，绘制不修改 Engine 或存档。
+`screen_theme.hpp` 定义主题，`screens_components.cpp` 提供公共组件，`screens*.cpp` 和 `viewer_screen.cpp` 绘制页面。`Page` 包含 28 个玩法页面与 7 个测试模式页面，共 35 页。普通列表由 `menu_layout.hpp` 统一为每页 3 项，输入和选择由 Runtime 管理，绘制不修改 Engine 或存档。
 
 `tools/design_preview_scenes.py` 提供场景来源；`tools/build_scene_backgrounds.py` 生成普通、暗色与分层 RGB565 数据。`Screens::advanceScene()` 持有展示层进度：首页且屏幕唤醒时每 100ms 推进一次，走路不加速；路线切换归零，其他页面和熄屏期间暂停。绘制使用 456 像素行缓冲，远景和 UI 不动。遭遇、对战和投球使用已保存遭遇路线的静态暗色图。
 
@@ -21,7 +21,7 @@ rtk proxy mise exec -- python3 -m unittest test.test_ui_design_previews
 
 画廊仍是原 26 页、77 帧和 6 条动画的历史视觉参考。`tools/design_preview.py` 的 `GeneratedAssets` 仍按 1～251 和旧 Sprite／帧字段布局解析数据，无法读取当前 649 种的 zlib 格式。2026-10-31 执行两个设计文档检查时均在 `setUpClass` 报 `generated sprite table must contain IDs 1-251`，尚未执行测试断言。
 
-另一个静态可确认的缺口是页面覆盖：`test_every_firmware_page_is_covered` 比较全部 36 个 `Page`，但清单缺少三张进化／预览页和七张测试模式页，且测试还硬编码了 26 页。修复需要同步素材解析、生成器、页面清单和测试；只更新文档不能使该检查通过。
+另一个静态可确认的缺口是页面覆盖：`test_every_firmware_page_is_covered` 比较全部 35 个 `Page`，但清单缺少三张进化／预览页和七张测试模式页，还保留已删除的 `ReleaseConfirm`；测试仍硬编码了 26 页。修复需要同步素材解析、生成器、页面清单和测试；只更新文档不能使该检查通过。
 
 `test_design_document_links_and_frame_count` 直接读取 UI 主文档及 `pages`、`motion`、`implementation` 三个文件。这些入口与 HTML 画廊仍被维护流程使用。设计测试还检查路线、六个捕获关键帧、圆外像素、sprite 像素、联系表、50ms 战斗 GIF 和 100ms 步行动画时间槽；这些是设计产物检查，不能替代 Runtime 验收。
 

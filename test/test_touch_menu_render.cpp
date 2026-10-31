@@ -240,32 +240,18 @@ void throwBounds() {
   for (auto& attempt : save.encounter.attempts) attempt.ruleVersion = 1;
   check(store.commit(save) == CommitStatus::Committed, "zero-ball saved victory validates");
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-  const int outside[][2] = {{72,306}, {393,306}, {233,268}, {233,275}, {233,336},
-                           {233,343}, {233,404}, {233,430}};
-  const unsigned commits = store.commits;
-  for (const auto& point : outside) {
-    tap(runtime, point[0], point[1]);
-    check(runtime.screen().page == Page::Throw && runtime.screen().selected == 0 &&
-          runtime.screen().command == CommandResult::Applied, "throw-menu blank space does not act");
-  }
-  check(store.commits == commits, "blank throw touches cannot charge or write");
-  tap(runtime, 233, 208);
-  check(runtime.screen().command == CommandResult::NoBalls && !runtime.engine().throwView().active,
-        "top edge of first throw row invokes only prepare on release");
+  check(runtime.screen().page == Page::Throw && runtime.engine().view().encounter.ruleVersion == 1,
+        "a legacy encounter with no balls reaches the throw page");
+  check(menuCount(runtime.screen(), runtime.engine()) == 1,
+        "the empty-ball encounter keeps one explicit way out");
   screenshot(runtime, "throw-no-balls");
-  tap(runtime, 233, 276);
-  check(runtime.screen().page == Page::Home, "top edge of second throw row keeps encounter and walks");
-  openMenu(runtime); select(runtime, 0); tap(runtime, 233, 344);
-  check(runtime.screen().page == Page::ReleaseConfirm, "top edge of third throw row opens separate release confirmation");
-  tap(runtime, 233, 335);
-  check(runtime.screen().page == Page::Throw, "bottom edge of cancel returns to throw");
-  tap(runtime, 233, 374); tap(runtime, 233, 238);
-  check(runtime.screen().page == Page::Result, "confirmed release opens result");
+  tap(runtime, 233, 40);
+  check(runtime.screen().command == CommandResult::Applied && !runtime.engine().throwView().active,
+        "the top edge never starts a throw");
   tap(runtime, 233, 238);
-  check(runtime.screen().page == Page::Result, "result has no invisible button at normal menu origin");
-  screenshot(runtime, "release-result");
-  tap(runtime, 233, 355);
-  check(runtime.screen().page == Page::Home, "result button retains its distinct position");
+  check(runtime.engine().view().result == Result::Released && runtime.screen().page == Page::Result,
+        "the exit button ends the empty-ball encounter");
+  screenshot(runtime, "throw-no-balls-released");
 }
 }
 int main() {

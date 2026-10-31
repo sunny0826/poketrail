@@ -67,9 +67,15 @@ bool CapturePractice::beginThrow(uint32_t nowMs) {
   if (stage_ != PracticeStage::ThrowReady || usedBalls_ >= kPracticeBalls) return false;
   throw_.active = true;
   throw_.attemptIndex = uint8_t(usedBalls_ + 1);
-  throw_.targetMs = nowMs + 1500;
+  throw_.targetMs = nowMs + kThrowChargeMs;
   stage_ = PracticeStage::Throwing;
   return true;
+}
+
+void CapturePractice::cancelThrow() {
+  if (stage_ != PracticeStage::Throwing || !throw_.active) return;
+  throw_.active = false;
+  stage_ = PracticeStage::ThrowReady;
 }
 
 PracticeOutcome CapturePractice::pressThrow(uint32_t nowMs) {
