@@ -3,6 +3,7 @@
 // SDL input, the real Runtime/Engine and the real FileStore.
 #include "progression_support.hpp"
 #include "viewer_screen.hpp"
+#include "capture_badge_checks.hpp"
 
 namespace simulator {
 namespace e2e {
@@ -63,6 +64,7 @@ bool progressionRun(Driver& d) {
   REQUIRE(d, d.screen().species == 2 && d.screen().evolved, "evolution animation ends on the target detail");
   if (!toHome(d, "evolve 1 to 2")) return false;
 
+  checkCaptureBadge(d, 0, "evolution-no-capture");
   const Save afterEvolution = d.save();
   const uint64_t baseTotal2 = afterEvolution.totalSteps;
   d.walk(10);
@@ -96,6 +98,7 @@ bool progressionReload(Driver& d) {
   REQUIRE(d, s.progress[1].spent == 0 && s.progress[1].walked >= 210, "reload keeps the target's own progress and no target debit");
   REQUIRE(d, s.totalSteps >= 7830, "reload keeps all three ten-step walks");
   REQUIRE(d, s.totalSteps == s.explorationSpent + s.explorationCredit, "reload keeps the exploration ledger balanced");
+  checkCaptureBadge(d, 0, "evolution-reloaded-no-capture");
   d.state("progression-reload");
   d.shot("progression-reload");
   return true;

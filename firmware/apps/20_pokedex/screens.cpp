@@ -128,10 +128,16 @@ void Screens::thumbnail(uint16_t id, int x, int y, unsigned scale) {
         M5.Display.fillRect(left + col * scale, top + row * scale, scale, scale, color);
     }
 }
-void Screens::ballIcon(int y, int x) {
+void Screens::captureBadge(const Save& save, int x, int y) {
   const auto& icon = data::kPokeBallIcon;
   M5.Display.pushImage(x - icon.width / 2, y - icon.height / 2, icon.width, icon.height,
                        icon.pixels, kTransparentKey);
+  char text[8];
+  snprintf(text, sizeof(text), "%u", capturedSpeciesCount(save));
+  M5.Display.setTextDatum(middle_left);
+  M5.Display.setFont(&fonts::Font2);
+  M5.Display.setTextColor(theme::kText);
+  M5.Display.drawString(text, x + icon.width / 2 + 8, y);
 }
 void Screens::item(const ScreenState& s, unsigned index, const char* label, int top,
                    uint16_t species, bool carried, const char* note) {

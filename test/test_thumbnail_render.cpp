@@ -1,4 +1,5 @@
 #include "support/progression_ui.hpp"
+#include "support/capture_badge.hpp"
 #include "icons_generated.hpp"
 #include "sprite.hpp"
 #include "sprites_generated.hpp"
@@ -21,9 +22,41 @@ void pokemon(uint16_t id, int x, int y, unsigned scale = 1) {
   iconAt(data::kPokemonIcons[id - 1], x, y, scale);
 }
 void ball(int y) {
-  iconAt(data::kPokeBallIcon, 312, y, 1);
-  check(!glyph("0", y, theme::kText, 335, true) && !glyph("5", y, theme::kText, 335, true),
-        "unlimited balls show the icon without a count");
+  check(capture_badge_test::badge(0, 312, y), "gifted starter contributes zero captured species");
+}
+void noThrowBadge() {
+  check(!capture_badge_test::iconAt(312, 109), "throw page has no static ball badge");
+}
+void captureCounts() {
+  for (unsigned count : {1u, 12u, 649u}) {
+    MemoryStore store; std::vector<uint16_t> ids;
+    for (unsigned id = 1; id <= count; ++id) ids.push_back(id);
+    modernOwned(store, ids);
+    Save save; check(store.load(save).status == LoadStatus::Loaded, "load capture count fixture");
+    save.captureCounts[0] = 5;
+    if (count > 1) save.owned[(count - 1) / 8] &= uint8_t(~(1u << ((count - 1) % 8)));
+    save.firstCapture[0].species = 1;
+    save.firstCapture[0].at.bootGeneration = 1;
+    save.firstCapture[0].at.totalSteps = kLegacyEncounterSteps;
+    save.nextEncounterId += 5;
+    save.totalSteps += 5 * kLegacyEncounterSteps;
+    save.undatedSteps = save.totalSteps;
+    save.explorationSpent = save.totalSteps;
+    const uint64_t thresholds[] = {10000, 50000, 100000};
+    for (unsigned i = 0; i < 3; ++i) if (save.totalSteps >= thresholds[i]) {
+      save.lifetime[i].reached = true;
+      save.lifetime[i].first.bootGeneration = 1;
+      save.lifetime[i].first.totalSteps = thresholds[i];
+    }
+    check(validate(save), "historical repeat capture fixture validates");
+    check(store.commit(save) == CommitStatus::Committed, "capture count fixture commits");
+    HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+    check(capture_badge_test::badge(count, 318, 81), "home displays distinct captures, not total captures");
+    char name[48]; std::snprintf(name, sizeof(name), "home-captured-%u", count); screenshot(runtime, name);
+    openMenu(runtime); select(runtime, 4);
+    check(capture_badge_test::badge(count, 312, 110), "resources matches home captured species count");
+    std::snprintf(name, sizeof(name), "resources-captured-%u", count); screenshot(runtime, name);
+  }
 }
 void starters() {
   MemoryStore store; HostPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -116,7 +149,7 @@ void throwEntry() {
   }
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   check(runtime.screen().page == Page::Throw, "saved victory opens throw entry");
-  ball(109);
+  noThrowBadge();
   const auto& sprite = data::kSprites[runtime.engine().view().encounter.species - 1];
   const unsigned scale = sprite.height * 2 > 110 ? 1 : 2;
   const unsigned width = sprite.width * scale, height = sprite.height * scale;
@@ -136,7 +169,7 @@ void throwEntry() {
   tap(runtime, 233, 52); select(runtime, 0); edge(runtime, false, true);
   check(runtime.engine().throwView().active,
         "right confirms prepare without spending a ball");
-  ball(109); screenshot(runtime, "throw-active");
+  noThrowBadge(); screenshot(runtime, "throw-active");
 }
 void exhaustedRoutes() {
   MemoryStore store; std::vector<uint16_t> captured;
@@ -166,6 +199,6 @@ void exhaustedRoutes() {
 }
 int main() {
   c152::begin("THUMBNAIL TEST");
-  starters(); collection(); evolution(); throwEntry(); exhaustedRoutes();
+  starters(); captureCounts(); collection(); evolution(); throwEntry(); exhaustedRoutes();
   std::printf("%u thumbnail Runtime/Button_Class/pixel checks, 0 failures\n", checks);
 }

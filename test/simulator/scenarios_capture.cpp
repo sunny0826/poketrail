@@ -1,5 +1,6 @@
 #include "driver.hpp"
 #include "viewer_screen.hpp"
+#include "capture_badge_checks.hpp"
 
 namespace simulator {
 namespace e2e {
@@ -128,6 +129,7 @@ void scenarioJourney(Driver& d, const std::string& phase) {
 void scenarioCapture(Driver& d, const std::string& phase) {
   if (phase == "run" || phase == "fixed") {
     bootNewSave(d);
+    checkCaptureBadge(d, 0, "gifted-starter");
     d.walk(500);
     d.check(d.save().phase == Phase::EncounterReady, "encounter ready after walk");
     const uint16_t species = d.save().encounter.species;
@@ -135,6 +137,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.event("capture-encounter", "species=" + std::to_string(species) +
                                      " seed=" + std::to_string(d.save().encounter.seed));
     enterAndWinBattle(d, phase == "fixed");
+    d.check(!capture_badge_test::iconAt(312, 109), "throw page removes the static ball badge");
     d.throwBall(true);
     d.finishCapture();
     waitSettled(d, "commit settles after the throw");
@@ -145,6 +148,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     checkCaptureRecord(d, species);
     d.shot("result-captured");
     acknowledge(d);
+    checkCaptureBadge(d, 1, "first-capture");
     d.homeMenu();
     d.select(3);
     d.until([&] { return d.screen().page == Page::Viewer; }, 4000, "viewer opens after capture");
@@ -196,6 +200,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.check(captureSpeciesTotal(d.save()) == 1, "exactly one capture after restart");
     checkCaptureRecord(d, capturedSpecies(d.save()));
     d.check(d.save().phase == Phase::EncounterReady && d.save().encounter.id == 2, "credit-funded next encounter survives restart");
+    checkCaptureBadge(d, 1, "capture-reloaded");
     d.shot("capture-reload");
     d.close();
   }

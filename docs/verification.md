@@ -51,13 +51,12 @@ E2E 是每次任务的必跑项；[按改动范围选择的专项检查](develop
 
 ## 已知失败与限制
 
-2026-10-31 模拟器集成记录报告 15 套渲染中的 13 套通过，以下两项失败保留。该记录不能代替本轮运行，也不能因 E2E 通过而改写为全部渲染通过：
+2026-10-31 模拟器集成时记录的两项渲染失败已复现并修正测试，两套定向回归通过，未修改固件行为：
 
-| 检查 | 保留的问题 |
-| --- | --- |
-| `test_battle_render` | `frenzy ring blinks white while it closes` |
-| `test_test_mode_render` | `menu item reachable with physical keys` |
-| 历史设计稿检查 | 素材解析仍要求 1～251 与旧格式，实跑在 `setUpClass` 失败，尚未执行断言；另有画廊 26 页与固件 36 页的静态覆盖缺口，见[设计稿维护](design/ui-scene-redesign-implementation.md) |
+- `test_battle_render`：旧闪环断言在 Runtime 的 40ms 绘制间隔内读取上一帧，并假定采样时弧线已收缩到 3 点钟以内。现在按节拍选取剩余 80～170ms 的白色闪烁时段，确认允许新帧绘制后，仍核对 1 点钟为白色、3 点钟不为白色。
+- `test_test_mode_render`：菜单辅助函数最多发出三次侧键输入，无法在五项菜单从第 2 项绕回第 1 项。现在先检查目标有效，再以实际菜单项数限制移动次数；保留到达目标和确认后的行为断言。
+
+上述定向结果不能代替本轮全量渲染与 E2E。历史设计稿检查仍有问题：素材解析要求 1～251 与旧格式，实跑在 `setUpClass` 失败，尚未执行断言；另有画廊 26 页与固件 36 页的静态覆盖缺口，见[设计稿维护](design/ui-scene-redesign-implementation.md)。
 
 其他限制：
 
