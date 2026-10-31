@@ -1,5 +1,7 @@
 #include "driver.hpp"
 #include "battle_presentation.hpp"
+#include "../support/animation_feedback.hpp"
+#include "../support/capture_badge.hpp"
 
 namespace simulator { namespace e2e {
 void Driver::winBattle(bool practice) {
@@ -15,6 +17,12 @@ void Driver::winBattle(bool practice) {
       if (lastCue == 999) shot(practice ? "practice-cue" : "battle-cue");
       lastCue = v.cueIndex;
       press(action == Action::Attack ? SDL_SCANCODE_RIGHT : SDL_SCANCODE_LEFT);
+      const auto& settled = view();
+      const bool hit = settled.lastTiming != Timing::Miss;
+      const char* feedback = action == Action::Attack ? (hit ? "命中" : "未命中") : (hit ? "躲开了" : "受伤了");
+      const uint16_t color = settled.lastTiming == Timing::Perfect ? theme::kGold : hit ? theme::kText : theme::kMuted;
+      check(animation_feedback_test::label(feedback, color, 401), "battle pixels identify the settled action result");
+      if (v.cueIndex == 0) shot(practice ? "practice-action-feedback" : "battle-action-feedback");
     } else frames(1);
   }
   check(view().result == Result::Won, "visible cue inputs win battle");
@@ -56,6 +64,19 @@ void Driver::throwBall(bool perfect, bool practice) {
   state("throw-settled");
 }
 void Driver::finishCapture() {
+  if (screen().capture.active) {
+    const auto anim = screen().capture;
+    const auto sequence = save().sequence;
+    const auto holdAt = anim.startMs + captureTotalMs(anim) - (anim.captured ? 1000 : 400) + 100;
+    until([&] { return int32_t(now() - holdAt) >= 0; }, 10000, "capture reaches its result hold");
+    check(screen().capture.active && captureFrameAt(screen().capture, now()).stage == CaptureStage::Reveal,
+          "capture result remains on screen during its hold");
+    check(animation_feedback_test::label(anim.captured ? "捕获成功" : "挣脱了", anim.captured ? theme::kGold : theme::kText),
+          "capture outcome is legible in actual rendered pixels");
+    if (anim.captured) check(capture_badge_test::iconAt(kBallX, kGroundY), "successful ball remains visible through the hold");
+    check(save().sequence == sequence, "animation does not repeat the committed outcome");
+    shot(anim.captured ? "capture-success-hold" : "capture-breakout-hold");
+  }
   until([&] { return !screen().capture.active; }, 20000, "capture animation completes"); frames();
 }
 } }

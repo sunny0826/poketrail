@@ -153,7 +153,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     M5.Display.fillCircle(209 + int(i) * 24, 326, 5, color);
   }
   cueRing(b, now);
-  const char* result[] = {"未命中", "命中", "漂亮", "完美"};
+  const char* result = attack ? (hit ? "命中" : "未命中") : (hit ? "躲开了" : "受伤了");
   const bool cueVisible = int32_t(b.targetMs - now) <= int32_t(kCueLeadMs);
   const bool shownAttack = shownAction(b, now) == Action::Attack;
   const char* prompt = !cueVisible ? (b.frenzy ? "狂暴" : "") : shownAttack ?
@@ -161,7 +161,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   const uint16_t promptColor = !cueVisible ? theme::kRed : shownAttack ? theme::kRed : theme::kBlue;
   if (b.pauseRequested) line("本拍结束后暂停", 401, theme::kText, true);
   else if (effect || b.consumed)
-    line(b.special ? "必杀" : result[uint8_t(b.lastTiming)], 401,
+    line(b.special ? "必杀命中" : result, 401,
          b.special || perfect ? theme::kGold : effect && !hit ? theme::kMuted : theme::kText, true);
   else if (*prompt) line(prompt, 401, promptColor, true);
   line(b.frenzy ? "狂暴 · 节奏加快" : "看外圈颜色出招", 430, b.frenzy ? theme::kRed : theme::kMuted);

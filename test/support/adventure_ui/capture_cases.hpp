@@ -130,7 +130,11 @@ void captureEscape() {
   check(captureFrameAt(r.screen().capture, host_time_ms).stage == CaptureStage::Reveal,
         "failed throw reaches its saved roll's escape frame");
   frame(r, 120); snapCurrent(r, "capture-escape");
-  for (unsigned i = 0; i < 40 && r.screen().capture.active; ++i) frame(r);
+  const uint32_t end = r.screen().capture.startMs + captureTotalMs(r.screen().capture);
+  frame(r, end - 1 - host_time_ms);
+  check(r.screen().capture.active && captureFrameAt(r.screen().capture, host_time_ms).stage == CaptureStage::Reveal,
+        "escape remains visible until its result hold ends");
+  frame(r, 1);
   check(r.screen().page == Page::Throw && !r.screen().capture.active && !r.engine().throwView().active,
         "escape returns to explicit preparation for the second ball");
   frame(r); p.next.right = p.next.held = true; frame(r);

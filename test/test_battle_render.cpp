@@ -1,5 +1,6 @@
 #include "support/progression_ui.hpp"
 #include "battle_presentation.hpp"
+#include "support/animation_feedback.hpp"
 #include "sprite.hpp"
 #include "sprites_generated.hpp"
 #include <algorithm>
@@ -95,6 +96,7 @@ void attackAndDodge() {
   snapshot("battle-cue-dodge");
   action(r, Action::Dodge, r.engine().battleView().targetMs - 100); const uint32_t dodge = host_time_ms;
   at(r, dodge + 120); hp(3, 5); actor(4, origin, 129, 232, 2);
+  check(animation_feedback_test::label("躲开了", theme::kText, 401), "successful dodge is named as a dodge, not a hit");
   snapshot("battle-dodge-trails");
   at(r, dodge + 450); actor(4, origin, 155, 232, 2); actor(25, origin, 311, 226, 2);
   snapshot("battle-dodge-recovered");
@@ -159,7 +161,9 @@ void perfectAndFinal() {
   check(r.screen().page == Page::Battle && r.engine().view().phase == Phase::ThrowReady && store.commits == commits + 1,
         "final hit commits victory immediately while battle stays visible");
   Save saved; check(store.load(saved).status == LoadStatus::Loaded && saved.phase == Phase::ThrowReady, "victory already survives codec reload during final animation");
-  at(r, final + 125); hp(3, 0); snapshot("battle-final-special");
+  at(r, final + 125); hp(3, 0);
+  check(animation_feedback_test::label("必杀命中", theme::kGold, 401), "special hit has explicit feedback");
+  snapshot("battle-final-special");
   at(r, final + 449); check(r.screen().page == Page::Battle, "final action remains until 449ms");
   at(r, final + 450); check(r.screen().page == Page::Throw && !r.engine().throwView().active, "450ms enters throw without reusing winning key");
   at(r, final + 600); check(!r.engine().throwView().active, "held winning keys cannot start throw");
@@ -177,7 +181,9 @@ void failureAndPractice() {
       if (!b.active) break;
       at(r, b.targetMs + 181);
       if (b.expected == Action::Dodge && ++missedDodges == 1) {
-        at(r, host_time_ms + 120); hp(2, 5); snapshot(practice ? "practice-miss" : "battle-miss");
+        at(r, host_time_ms + 120); hp(2, 5);
+        check(animation_feedback_test::label("受伤了", theme::kMuted, 401), "failed dodge identifies the damage outcome");
+        snapshot(practice ? "practice-miss" : "battle-miss");
       }
     }
     const auto b = practice ? r.practiceView() : r.engine().battleView();
