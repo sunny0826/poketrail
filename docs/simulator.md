@@ -70,6 +70,6 @@ E2E 每个场景使用独立目录，每次 reload 都启动新进程；失败�
 
 SDL 队列输入不证明操作系统键鼠注入；原生输入和人工视觉验收须分别记录。固定截图比较只覆盖指定画面，不能代替对本轮 UI 改动的读图核对。存储故障接缝只由测试驱动使用；桌面正常运行仍显示原有错误提示并在关闭保存失败时保持窗口。
 
-当前验证平台为 macOS。Linux 需桌面会话和 SDL2，尚未实跑；存储适配使用 POSIX 文件锁，暂不支持原生 Windows。模拟器复用 [test/support](../test/support) 的主机 M5 接口；构建清单位于 [host_build.py](../scripts/host_build.py)，渲染测试和模拟器共用同一份固件源文件列表。
+本地主机验证使用 macOS；Ubuntu 24.04 的 X11/Xvfb 全量 E2E 由 [GitHub Actions](../.github/workflows/simulator-e2e.yml) 执行，通过状态以对应提交的 CI 结果为准。Linux 真实桌面人工操作尚未验收。存储适配使用 POSIX 文件锁，暂不支持原生 Windows。模拟器复用 [test/support](../test/support) 的主机 M5 接口；构建清单位于 [host_build.py](../scripts/host_build.py)，渲染测试和模拟器共用同一份固件源文件列表。
 
 这是应用层桌面模拟，不模拟 ESP32 指令、真实 IMU、硬件 RTC、LittleFS 挂载、电池、声音或震动。设备内隐藏测试控制台的存储切换也未接入桌面版；模拟走路使用 `W`，新档使用 `--save-dir`。主机截图与输入检查不能证明设备性能、真实计步或断电恢复。

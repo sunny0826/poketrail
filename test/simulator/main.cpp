@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <exception>
 #include <map>
+#include <stdexcept>
 
 int main(int argc,char** argv) {
   using namespace simulator::e2e;
