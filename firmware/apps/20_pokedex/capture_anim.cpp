@@ -38,6 +38,10 @@ CaptureFrame captureFrameAt(const CaptureAnim& anim, uint32_t now) {
     }
     base += segments[i];
   }
+  if (elapsed < captureTotalMs(anim)) {
+    f.stage = CaptureStage::Reveal;
+    f.t = 1.0f;
+  }
   return f;
 }
 

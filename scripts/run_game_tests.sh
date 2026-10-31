@@ -25,3 +25,12 @@ mkdir -p "${build_dir}"
   -lz
 
 "${build_dir}/test_game"
+
+"${CXX:-c++}" -std=c++17 -O1 -Wall -Wextra \
+  -Dinflate=poketrail_test_inflate -c \
+  "${repo_root}/firmware/apps/20_pokedex/sprite.cpp" \
+  -o "${build_dir}/sprite_cache.o"
+"${CXX:-c++}" -std=c++17 -O1 -Wall -Wextra \
+  "${repo_root}/test/test_sprite_cache.cpp" "${build_dir}/sprite_cache.o" \
+  -lz -o "${build_dir}/test_sprite_cache"
+"${build_dir}/test_sprite_cache"

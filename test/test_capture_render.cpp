@@ -1,5 +1,6 @@
 #include "support/adventure_ui/harness.hpp"
 #include "battle_presentation.hpp"
+#include "support/capture_badge.hpp"
 
 namespace {
 void savedVictory(MemoryStore& store, Save& s, bool captured) {
@@ -136,6 +137,12 @@ void captureAnimation() {
           captureFrameAt(probe, 1070 + 1500).stage == CaptureStage::Reveal &&
           captureFrameAt(probe, captureTotalMs(probe)).stage == CaptureStage::Done,
           "captured ball completes three wiggles before the celebration");
+    for (bool captured : {false, true}) {
+      probe.captured = captured;
+      const auto held = captureFrameAt(probe, captureTotalMs(probe) - 1);
+      check(held.stage == CaptureStage::Reveal && held.t == 1.0f,
+            "capture result stays visible throughout its hold, without a blank pause");
+    }
     int x, y;
     captureFlightPos(0, x, y); check(x == 233 && y == 344, "flight starts at the held ball");
     captureFlightPos(1, x, y); check(x == 233 && y == 233, "flight lands on the species sprite");
@@ -175,6 +182,14 @@ void captureAnimation() {
     check(drawn, "flying ball is drawn on its arc");
   }
   snapCurrent(r, "capture-flight");
+  const auto captureStart = r.screen().capture.startMs;
+  frame(r, captureStart + kFlightMs + 80 - host_time_ms);
+  check(capture_badge_test::iconAt(kBallX, 233), "impact flash retains the ball at the contact point");
+  snapCurrent(r, "capture-impact");
+  frame(r, captureStart + kFlightMs + kFlashMs + kDropMs / 2 - host_time_ms);
+  check(M5.Display.readPixel(kBallX + 45, kGroundY + 14) == theme::kGold,
+        "landing ring marks the first ground contact");
+  snapCurrent(r, "capture-landing");
   while (captureFrameAt(r.screen().capture, host_time_ms).stage != CaptureStage::Wiggle) frame(r);
   snapCurrent(r, "capture-wiggle");
   check(M5.Display.readPixel(233, 300) != TFT_BLACK, "caught ball wiggles on the ground");
