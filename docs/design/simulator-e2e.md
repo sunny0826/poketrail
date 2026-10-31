@@ -76,10 +76,10 @@ FileStore 在 write 返回 false 后立即结束本次提交；下次重试扫�
 | ID／起点 | 场景 | 核心断言 |
 | --- | --- | --- |
 | P0-01／N | journey | 引导、伙伴、图鉴、W计步、遭遇、正常关闭和重载 |
-| P0-02／N | capture、battle-fixed | 真实胜利与捕获；#590图鉴、伙伴、首捕卡；一次奖励及重载 |
+| P0-02／N | capture、battle-fixed | 真实胜利与捕获；#590图鉴、伙伴、首捕卡；两页捕获徽标从0到1及重载像素检查；投球页无静态球徽标 |
 | P0-03／F | throws、defer | 两次Miss逃脱、球不扣库；剩一次时保留并重载 |
 | P0-04／F | retry-before/after/readback | 提交前无奖励；重试同一attempt；按住重试不能连带确认结果 |
-| P0-05／F | progression | 只有携带者获步；来源扣7500，目标使用自己200历史步；重载不重扣 |
+| P0-05／F | progression | 只有携带者获步；来源扣7500，目标使用自己200历史步；重载不重扣；进化及重载后两页捕获种数仍为0 |
 | P0-06／F | target-owned、evolution-retry | 目标已有则整笔拒绝；保存失败不播进化，重试一次并持久化 |
 | P0-07／F、X | storage | 有效+截断恢复；双坏、未来版本、目录锁拒绝且文件不变 |
 | P0-08／F | crash-pause/write/partial | 暂停、写后报错、部分写后三种SIGKILL及新进程账户恢复 |

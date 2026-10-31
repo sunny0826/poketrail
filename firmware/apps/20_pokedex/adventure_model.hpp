@@ -160,6 +160,7 @@ struct StepEvent {
 bool registered(const Save&, uint16_t);
 void setRegistered(Save&, uint16_t);
 uint64_t availableBalls(const Save&);
+unsigned capturedSpeciesCount(const Save&);
 bool owns(const Save&, uint16_t species);
 void setOwned(Save&, uint16_t species);
 bool validDayKey(uint32_t);

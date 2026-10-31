@@ -98,6 +98,8 @@ void openMenu(Runtime& r, TestPlatform& p) {
 }
 void select(Runtime& r, TestPlatform& p, unsigned item) {
   const auto page = r.screen().page;
+  const unsigned count = menuCount(r.screen(), r.engine());
+  check(item < count, "requested menu item exists");
   const bool paged = r.screen().page == Page::Menu || r.screen().page == Page::Clock ||
                       r.screen().page == Page::PartnerDetail || r.screen().page == Page::TestHub;
   const bool record = r.screen().page == Page::FirstCaptures || r.screen().page == Page::Recent ||
@@ -117,9 +119,11 @@ void select(Runtime& r, TestPlatform& p, unsigned item) {
     frame(r);
   }
   if (!record && !(paged && r.screen().selected == item)) {
-    for (unsigned guard = 0; r.screen().selected != item && guard < menu_layout::kPageSize; ++guard)
+    for (unsigned guard = 0; r.screen().selected != item && guard < count; ++guard)
       edge(r, p, false, true);
   }
+  if (r.screen().page != page || r.screen().selected != item)
+    std::fprintf(stderr, "select page=%u actual=%u selected=%u wanted=%u count=%u\n", unsigned(page), unsigned(r.screen().page), r.screen().selected, item, menuCount(r.screen(), r.engine()));
   check(r.screen().page == page && r.screen().selected == item, "menu item reachable with physical keys");
   p.next.left = p.next.right = p.next.held = true;
   frame(r);

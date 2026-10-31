@@ -144,8 +144,12 @@ void perfectAndFinal() {
   snapshot("battle-feint-decoy");
   at(r, blinkOff(r.engine().battleView().targetMs - 300));
   check(M5.Display.readPixel(451, 233) == theme::kRed, "feint flips to the real attack 350ms before the beat");
-  at(r, host_time_ms - host_time_ms % 90 + 90);
-  // 170ms before the beat only the arc near 12 o'clock remains; sample it at 1 o'clock.
+  // Use a white slot 80–170ms before the beat, at least 40ms after the last render.
+  // This keeps 1 o'clock inside the closing arc and 3 o'clock outside it.
+  uint32_t blink = r.engine().battleView().targetMs - 170;
+  if (!(blink / 90 % 2)) blink += 90 - blink % 90;
+  check(blink - host_time_ms >= 40, "frenzy sample allows a fresh Runtime frame");
+  at(r, blink);
   check((host_time_ms / 90) % 2 && M5.Display.readPixel(342, 44) == theme::kText &&
         M5.Display.readPixel(451, 233) != theme::kText, "frenzy ring blinks white while it closes");
   snapshot("battle-frenzy-special-ready");

@@ -14,6 +14,11 @@ uint64_t availableBalls(const Save& s) {
   const uint64_t earned = (s.totalSteps - s.rewardBaseSteps) / 1000;
   return s.ballsSpent <= earned ? earned - s.ballsSpent : 0;
 }
+unsigned capturedSpeciesCount(const Save& s) {
+  unsigned count = 0;
+  for (const auto captures : s.captureCounts) if (captures) ++count;
+  return count;
+}
 bool owns(const Save& s, uint16_t id) {
   return id >= 1 && id <= kSpeciesCount && (s.owned[(id - 1) / 8] & (1u << ((id - 1) % 8)));
 }

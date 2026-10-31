@@ -72,7 +72,7 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
       snprintf(text, sizeof(text), "%s %llu 步 · %s", v.clock.trusted ? "今日" : "上次记录",
                static_cast<unsigned long long>(v.today.steps), routeName(v.route));
       line(text, 80, theme::kMint);
-      ballIcon(110, 312);
+      captureBadge(v, 312, 110);
       const EvolutionView progress = e.evolutionView(v.partner);
       snprintf(text, sizeof(text), "%s · %s", speciesName(v.partner), progress.count ? "培养" : "最终形态");
       line(text, 132, theme::kMuted);

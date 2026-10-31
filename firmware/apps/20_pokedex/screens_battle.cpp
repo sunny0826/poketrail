@@ -65,7 +65,6 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     snprintf(text, sizeof(text), "本场剩余 %u 次", 2 - v.encounter.usedBalls);
     title(speciesName(v.encounter.species), s.capture.active ? "" : e.throwView().active ? "等待投球" :
           text, theme::kGold);
-    ballIcon(109, 312);
     if (s.capture.active) {
       capture(s, v.encounter.species, now);
     } else if (e.throwView().active) {
