@@ -66,7 +66,7 @@ void Driver::throwBall(bool perfect, bool practice) {
 void Driver::finishCapture() {
   if (screen().capture.active) {
     const auto anim = screen().capture;
-    const auto sequence = save().sequence;
+    const auto committed = save();
     const auto holdAt = anim.startMs + captureTotalMs(anim) - (anim.captured ? 1000 : 400) + 100;
     until([&] { return int32_t(now() - holdAt) >= 0; }, 10000, "capture reaches its result hold");
     check(screen().capture.active && captureFrameAt(screen().capture, now()).stage == CaptureStage::Reveal,
@@ -74,7 +74,13 @@ void Driver::finishCapture() {
     check(animation_feedback_test::label(anim.captured ? "捕获成功" : "挣脱了", anim.captured ? theme::kGold : theme::kText),
           "capture outcome is legible in actual rendered pixels");
     if (anim.captured) check(capture_badge_test::iconAt(kBallX, kGroundY), "successful ball remains visible through the hold");
-    check(save().sequence == sequence, "animation does not repeat the committed outcome");
+    check(save().encounter.id == committed.encounter.id &&
+          save().encounter.usedBalls == committed.encounter.usedBalls &&
+          save().phase == committed.phase && save().result == committed.result &&
+          save().ballsSpent == committed.ballsSpent && save().rosterRevision == committed.rosterRevision &&
+          save().owned == committed.owned && save().registered == committed.registered &&
+          save().captureCounts == committed.captureCounts && save().recentSize == committed.recentSize,
+          "animation preserves attempts and rewards across background checkpoints");
     shot(anim.captured ? "capture-success-hold" : "capture-breakout-hold");
   }
   until([&] { return !screen().capture.active; }, 20000, "capture animation completes"); frames();
