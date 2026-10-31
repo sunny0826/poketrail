@@ -61,6 +61,15 @@ void scenarioLifecycle(Driver& d,const std::string& phase) {
     d.advance(31000); d.check(d.dimmed(),"idle display sleeps");
     d.tap(233,238); d.check(d.dimmed(),"touch cannot wake"); d.wake();
     d.check(!d.dimmed(),"power wakes");
+    const auto beforeWalk = d.save().totalSteps;
+    d.press(SDL_SCANCODE_W); d.press(SDL_SCANCODE_TAB);
+    d.focusLost(true);
+    d.advance(6000);
+    d.check(d.save().totalSteps >= beforeWalk + 8,"host focus changes do not interrupt scripted walking");
+    d.focusLost(); d.advance(2000);
+    const auto stopped = d.save().totalSteps;
+    d.advance(3000);
+    d.check(d.save().totalSteps == stopped,"scripted focus loss stops walking");
     d.key(SDL_SCANCODE_RIGHT,true); d.focusLost();
     d.homeMenu(); d.select(7); d.shot("awake-after-focus"); d.close();
   } else if(phase=="close-save" || phase=="close-clock") {

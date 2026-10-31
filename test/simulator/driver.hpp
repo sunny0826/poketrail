@@ -46,7 +46,7 @@ class Driver {
   unsigned faultHits() const;
   unsigned writes() const;
   unsigned closeErrors() const { return closeErrors_; }
-  void focusLost();
+  void focusLost(bool hostWindow = false);
   void freeze();
   void event(const std::string& kind, const std::string& detail);
  private:

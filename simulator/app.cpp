@@ -40,6 +40,9 @@ bool App::step() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     if (event.type == SDL_WINDOWEVENT && options_.windowEvent) options_.windowEvent(event.window.event);
+    // Scripted focus events use windowID 0; normal desktop mode handles all focus changes.
+    if (options_.isolateHostFocus && event.type == SDL_WINDOWEVENT && event.window.windowID != 0 &&
+        event.window.event == SDL_WINDOWEVENT_FOCUS_LOST) continue;
     if (event.type == SDL_QUIT || (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE) ||
         (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_Q &&
          (event.key.keysym.mod & KMOD_GUI))) {

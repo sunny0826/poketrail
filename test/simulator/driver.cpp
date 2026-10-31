@@ -15,7 +15,7 @@ Driver::Driver(const std::string& saveDir, const std::string& output, uint32_t s
     : output_(output) {
   events_ = std::fopen((output + "/events.jsonl").c_str(), "w");
   if (!events_) throw std::runtime_error("cannot create events");
-  Options options; options.seed = seed;
+  Options options; options.seed = seed; options.isolateHostFocus = true;
   options.wallClock = [utc] { return utc + host_time_ms / 1000; };
   options.error = [this](const std::string& message) { ++closeErrors_; event("close-error", message); };
   options.windowEvent = [this](unsigned value) { event("window-event", std::to_string(value)); };
@@ -89,10 +89,14 @@ void Driver::walk(unsigned steps) {
   until([&] { return save().totalSteps >= target; }, steps * 600 + 20000, "walking counted by detector");
   press(SDL_SCANCODE_W); press(SDL_SCANCODE_TAB); advance(200); wake();
 }
-void Driver::focusLost() {
-  event("focus-lost", "synthetic"); SDL_Event e = {}; e.type = SDL_WINDOWEVENT;
-  e.window.event = SDL_WINDOWEVENT_FOCUS_LOST; push(e);
-  check(!M5.button_a_down && !M5.button_b_down && !M5.Touch.detail.pressed, "focus releases controls");
+void Driver::focusLost(bool hostWindow) {
+  event("focus-lost", hostWindow ? "host-window" : "synthetic");
+  SDL_Event e = {}; e.type = SDL_WINDOWEVENT;
+  e.window.event = SDL_WINDOWEVENT_FOCUS_LOST;
+  e.window.windowID = hostWindow ? app_->windowId() : 0;
+  push(e);
+  if (!hostWindow)
+    check(!M5.button_a_down && !M5.button_b_down && !M5.Touch.detail.pressed, "focus releases controls");
 }
 int64_t Driver::rtcUtc() const { return app_->platform().readClock().utcSeconds; }
 void Driver::close(Close expected) {

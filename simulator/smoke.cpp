@@ -114,6 +114,7 @@ void smoke(App& app, bool reload) {
   check(app.runtime().screen().page == Page::Pause, "touch pauses battle");
   key(app, SDL_SCANCODE_RIGHT, true);
   SDL_Event focus = {}; focus.type = SDL_WINDOWEVENT; focus.window.event = SDL_WINDOWEVENT_FOCUS_LOST;
+  focus.window.windowID = app.windowId();
   event(app, focus);
   check(!M5.button_a_down && !M5.button_b_down && !M5.Touch.detail.pressed,
         "losing focus releases held controls");
