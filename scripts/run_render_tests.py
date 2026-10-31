@@ -4,105 +4,36 @@
 from pathlib import Path
 from datetime import datetime, timezone
 import os
-import shlex
-import shutil
 import subprocess
 import sys
 
-from host_dependencies import library_source
-
-ROOT = Path(__file__).resolve().parent.parent
-
-
-def run(args):
-    subprocess.run(args, cwd=ROOT, check=True)
+from host_build import HostBuild, ROOT, RUNTIME_SOURCES, run
 
 
 def main():
-    lib = library_source("M5GFX")
-    unified = library_source("M5Unified")
-    build = ROOT / ".pio/render-test" / lib.parent.name
-    print(f"Render tests: {lib}", flush=True)
-    if not shutil.which("sdl2-config"):
-        raise SystemExit("离屏测试需要 SDL2 原生库及 sdl2-config；固件构建不需要它")
-    build.mkdir(parents=True, exist_ok=True)
-    flags = shlex.split(subprocess.check_output(
-        ["sdl2-config", "--cflags"], text=True))
-    libs = shlex.split(subprocess.check_output(
-        ["sdl2-config", "--libs"], text=True))
-    common = ["-O1", "-DLGFX_SDL", "-isystem", str(lib), *flags]
-    linker_flags = ["-Wl,-dead_strip"] if sys.platform == "darwin" else ["-Wl,--gc-sections"]
-    sources = [
-        *sorted((lib / "lgfx/utility").glob("*.c")),
-        *sorted((lib / "lgfx/Fonts/efont").glob("*.c")),
-        lib / "lgfx/Fonts/IPA/lgfx_font_japan.c",
-        lib / "lgfx/v1/LGFXBase.cpp",
-        lib / "lgfx/v1/lgfx_fonts.cpp",
-        lib / "lgfx/v1/LGFX_Sprite.cpp",
-        *sorted((lib / "lgfx/v1/misc").glob("*.cpp")),
-        lib / "lgfx/v1/panel/Panel_Device.cpp",
-        lib / "lgfx/v1/platforms/sdl/common.cpp",
-    ]
-    header_mtime = max(path.stat().st_mtime for path in lib.rglob("*.hpp"))
-    objects = []
-    for source in sources:
-        obj = build / ("_".join(source.relative_to(lib).parts) + ".o")
-        objects.append(str(obj))
-        if obj.exists() and obj.stat().st_mtime >= max(
-                source.stat().st_mtime, header_mtime, Path(__file__).stat().st_mtime):
-            continue
-        is_c = source.suffix == ".c"
-        compiler = os.environ.get("CC" if is_c else "CXX", "cc" if is_c else "c++")
-        standard = [] if is_c else ["-std=gnu++11"]
-        run([compiler, *common, *standard, "-c", str(source), "-o", str(obj)])
-    app = ROOT / "firmware/apps/20_pokedex"
-    shared = ["firmware/shared/board.cpp", str(unified / "utility/Button_Class.cpp"),
-              str(app / "game.cpp"), str(app / "sprite.cpp"),
-              str(app / "sprites_generated.cpp"), str(app / "battery_screen.cpp")]
-    adventure_sources = [
-        "runtime.cpp", "runtime_clock.cpp", "runtime_input.cpp", "runtime_progression.cpp", "runtime_power.cpp",
-        "clock_sync.cpp", "screens.cpp",
-        "screens_home.cpp", "screens_exploration.cpp", "screens_battle.cpp", "screens_capture.cpp", "screens_practice.cpp", "screens_records.cpp", "screens_clock.cpp", "screens_progression.cpp", "screens_evolution.cpp", "screens_components.cpp", "screens_test.cpp", "scene_backgrounds_generated.cpp",
-        "test_mode.cpp", "test_mode_platform.cpp", "test_console.cpp",
-        "viewer_screen.cpp", "adventure.cpp", "adventure_steps.cpp", "adventure_clock.cpp",
-        "adventure_capture.cpp", "adventure_model.cpp", "adventure_progression.cpp", "adventure_migration.cpp",
-        "battle.cpp", "practice_capture.cpp", "capture_anim.cpp", "encounter_catalog.cpp", "icons_generated.cpp",
-        "save_codec.cpp", "motion.cpp", "calendar.cpp",
-    ]
+    build = HostBuild()
+    print(f"Render tests: {build.lib}", flush=True)
     output = Path(os.environ.get("MYM5_VERIFICATION_DIR", str(
         ROOT / ".pio/verification" / datetime.now(timezone.utc).strftime("render-%Y%m%dT%H%M%SZ"))))
-    suites = [("test_render", []),
-              ("test_button_menu_render", [str(app / name) for name in adventure_sources]),
-              ("test_touch_menu_render", [str(app / name) for name in adventure_sources]),
-              ("test_adventure_render", [str(app / name) for name in adventure_sources]),
-              ("test_capture_render", [str(app / name) for name in adventure_sources]),
-              ("test_battle_render", [str(app / name) for name in adventure_sources]),
-              ("test_progression_render", [str(app / name) for name in adventure_sources]),
-              ("test_evolution_render", [str(app / name) for name in adventure_sources]),
-              ("test_evolution_preview_render", [str(app / name) for name in adventure_sources]),
-              ("test_thumbnail_render", [str(app / name) for name in adventure_sources]),
-              ("test_power_render", [str(app / name) for name in adventure_sources]),
-              ("test_power_pages_render", [str(app / name) for name in adventure_sources]),
-              ("test_home_render", [str(app / name) for name in adventure_sources]),
-              ("test_test_mode_render", [str(app / name) for name in adventure_sources]),
-              ("test_clock_sync_render", [str(app / name) for name in adventure_sources])]
+    names = ["test_render", "test_button_menu_render", "test_touch_menu_render",
+             "test_adventure_render", "test_capture_render", "test_battle_render",
+             "test_progression_render", "test_evolution_render", "test_evolution_preview_render",
+             "test_thumbnail_render", "test_power_render", "test_power_pages_render",
+             "test_home_render", "test_test_mode_render", "test_clock_sync_render"]
     if len(sys.argv) > 1:
         selected = set(sys.argv[1:])
-        unknown = selected - {name for name, _ in suites}
+        unknown = selected - set(names)
         if unknown:
             raise SystemExit(f"未知渲染套件: {', '.join(sorted(unknown))}")
-        suites = [(name, sources) for name, sources in suites if name in selected]
-    for name, extra_sources in suites:
+        names = [name for name in names if name in selected]
+    for name in names:
         print(f"SUITE {name}", flush=True)
         screenshots = output / "ui" / name
         screenshots.mkdir(parents=True, exist_ok=True)
         os.environ["MYM5_UI_OUTPUT_DIR"] = str(screenshots.resolve())
-        executable = build / name
-        run([os.environ.get("CXX", "c++"), *common, "-std=gnu++11",
-             "-Wall", "-Wextra", "-Itest/support", "-Ifirmware/shared", "-I" + str(app), "-isystem", str(unified),
-             f"test/{name}.cpp", *shared, *extra_sources, *objects,
-             *libs, "-lz", *linker_flags, "-o", str(executable)])
-        run([str(executable)])
+        sources = [] if name == "test_render" else RUNTIME_SOURCES
+        executable = build.executable(name, [ROOT / "test" / f"{name}.cpp", *sources])
+        run([executable])
 
 
 if __name__ == "__main__":

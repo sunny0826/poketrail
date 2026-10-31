@@ -82,10 +82,10 @@ schema6 把目录扩到全国编号 #1–649：拥有／曾获得位图各 82 �
 
 完整校验 schema5 后，将版本改为 6。新增 #252–649 保持未拥有、未登记、零培养、零捕获和空首捕卡；既有账户、总步、探索账目、捕获历史、伙伴及在途遭遇保留，不补发历史培养或新物种。新宝宝父关系不取消旧 124 种普通资格。schema5→6 不改变当前场的物种、路线、seed、ID、投球次数或规则版本；启动恢复仍按既有规则将 Battle 恢复为 EncounterReady，关闭已捕获的重复在途场。
 
-schema1–5 的所有必要迁移和启动更新合并为一次非当前槽提交。写入失败沿用同一个候选、sequence 与结果重试，提交成功前不开放玩法。旧固件不能读取 schema6，不应降级后忽略新版槽继续游戏。schema6 的实际编码长度与内存占用见[验证说明](../verification.md)。
+schema1–5 的所有必要迁移和启动更新合并为一次非当前槽提交。写入失败沿用同一个候选、sequence 与结果重试，提交成功前不开放玩法。旧固件不能读取 schema6，不应降级后忽略新版槽继续游戏。schema6 的编码长度与内存占用须从本轮测试和目标构建输出确认，检查边界见[验证说明](../verification.md)。
 
 ## 活动分支固件存档的兼容读取
 
-未合并的活动分支固件（legendary-ruins、dragon-trial）在 schema3 payload 末尾追加了 22 字节活动块，并可能持有超出普通池的当前遭遇：这些活动遭遇消耗遭遇 ID 但不消耗探索步，schema3 的固定扣步账式对它们不成立。解码器识别「schema3 + 恰好 22 字节尾部」的帧时跳过活动块；若当前遭遇不在普通池，就清空该遭遇、回到 Walking 并清空结果，然后就地升级 schema4，再进入 schema5。总步、培养账户、捕获历史与伙伴保留，活动进度（遗迹线索、试炼阶段）随尾部块一起丢弃。
+未合并的活动分支固件（legendary-ruins、dragon-trial）在 schema3 payload 末尾追加了 22 字节活动块，并可能持有超出普通池的当前遭遇：这些活动遭遇消耗遭遇 ID 但不消耗探索步，schema3 的固定扣步账式对它们不成立。解码器识别「schema3 + 恰好 22 字节尾部」的帧时跳过活动块；若当前遭遇不在普通池，就清空该遭遇、回到 Walking 并清空结果，然后由解码器就地升级 schema4、schema5，启动时再由 Engine 升级到 schema6。总步、培养账户、捕获历史与伙伴保留，活动进度（遗迹线索、试炼阶段）随尾部块一起丢弃。
 
 升级到 schema4 后仍须通过 v4 语义校验，再按上文进入 4 到 5 并通过 v5 校验。令 `modern = nextEncounterId - 1 - legacyChargedCount - voidedLegacyCount`、`modernSpent = explorationSpent - 500 × legacyChargedCount`，当前校验要求 `200 × modern <= modernSpent <= 5000 × modern`；这是累计账目区间，并非允许每场零消耗。已纳入测试的[活动固件字节样本](../../test/fixtures/progression/schema3-activity.bin)满足该区间，[迁移测试](../../test/test_migration.cpp)验证其 6293 总步、1293 探索余额、培养与伙伴保留。不能据此承诺任意活动分支存档都能迁移；未来活动格式需另订迁移契约。

@@ -1,0 +1,64 @@
+name: Simulator E2E
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simulator-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulator-e2e:
+    name: Full E2E (Ubuntu)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CC: clang
+      CXX: clang++
+      SDL_VIDEODRIVER: x11
+      MYM5_VERIFICATION_DIR: .pio/verification/ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+
+      - name: Install native dependencies
+        run: |
+          rtk proxy sudo apt-get update
+          rtk proxy sudo apt-get install -y clang libsdl2-dev zlib1g-dev xvfb xauth
+
+      - name: Install project dependencies
+        run: |
+          rtk proxy mise exec -- python3 -m pip install -r requirements-dev.txt
+          rtk proxy mise exec -- pio pkg install -e 20_pokedex
+
+      - name: Check workflow and tool versions
+        run: |
+          rtk proxy mise run check-ci
+          rtk proxy mise exec -- python3 --version
+          rtk proxy mise exec -- pio --version
+          rtk proxy mise exec -- clang++ --version
+          rtk proxy mise exec -- sdl2-config --version
+
+      - name: Run full simulator E2E
+        run: rtk proxy xvfb-run -a -s '-screen 0 1280x1024x24' rtk proxy mise run test-simulator-e2e
+
+      - name: Upload E2E evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: simulator-e2e-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.MYM5_VERIFICATION_DIR }}/
+            !${{ env.MYM5_VERIFICATION_DIR }}/**/ready.fifo
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7

@@ -154,157 +154,40 @@
 </head>
 <body>
 <main>
-
 <header>
-  <p class="kicker">开发板研究 · 2026-10-21</p>
-  <h1>M5Stack StopWatch 二次开发资源汇总</h1>
-  <p class="meta">素材整理：快龙 · 引用编号见文末来源</p>
+  <p class="kicker">PokeTrail · 硬件参考</p>
+  <h1>M5Stack StopWatch 开发资源</h1>
+  <p class="meta">硬件、Arduino 与出厂仓库核对日期：2026-10-31</p>
 </header>
+<p>PokeTrail 使用 Arduino、M5Unified 和 M5GFX，由 PlatformIO 构建。安装、构建、备份与烧录请从 <a href="../../README.md">项目 README</a> 和 <a href="../development.md">开发指南</a> 开始；版本以 <a href="../../mise.toml">mise.toml</a>、<a href="../../platformio.ini">platformio.ini</a> 为准。</p>
 
-<p class="lead"><span class="label">一句话结论</span>想在 StopWatch 上加自己的功能，优先走出厂固件的 ESP-IDF 路线：在 <code>main/apps/</code> 里放一个独立 app，launcher、HAL 和出厂功能都能直接接着用。 <sup><a href="#s2">[2]</a><a href="#s8">[8]</a><a href="#s9">[9]</a></sup></p>
-
-<h2>硬件概况</h2>
-
-<p>主控是 ESP32-S3R8，16MB Flash、8MB PSRAM，带 2.4GHz Wi-Fi，SKU 为 C152。 <sup><a href="#s1">[1]</a><a href="#s8">[8]</a></sup></p>
-
-<p>屏幕是 1.75 英寸 466×466 圆形 AMOLED 触摸屏，显示驱动 CO5300，触摸芯片 CST820。表身另有可编程按键和振动马达。 <sup><a href="#s1">[1]</a></sup></p>
-
-<p>音频用 ES8311，配 IMU、RTC RX8130CE、M5PM1 电源管理加 M5IOE1 IO 扩展，电池 450mAh。 <sup><a href="#s1">[1]</a></sup></p>
-
-<p>官方文档页提供尺寸 PDF、结构文件和各芯片 datasheet。结构文件可用于外壳设计。 <sup><a href="#s1">[1]</a></sup></p>
-
+<h2>硬件与下载模式</h2>
+<p>目标板为 C152，主控 ESP32-S3R8，16 MB Flash、8 MB PSRAM，物理圆屏为 466×466。硬件规格、原理图与芯片资料见 <a href="https://docs.m5stack.com/en/core/StopWatch">M5Stack 硬件文档</a>。当前项目驱动报告 468×468，验收时仍需检查物理圆形边缘。</p>
 <div class="warn">
-  <p><strong>先确认硬件版本。</strong>v1.0 于 2026-05-22 发布，部分批次的贴纸把 5V IN 引脚误标成 BAT，这个脚严禁接电池。v1.0.1（2026-08-27）已把该脚改成真正的 BAT。 <sup><a href="#s1">[1]</a></sup></p>
+  <p>部分 v1.0 设备把 5V IN 误标为 BAT，不能接电池；v1.0.1 硬件已把该引脚改为真正的 BAT。接线前按 <a href="https://docs.m5stack.com/en/core/StopWatch">官方版本表</a> 核对，不能只看旧贴纸。</p>
 </div>
+<p>长按电源／复位键约 2 秒，内部绿灯亮起后松开，进入下载模式。操作图见 <a href="https://docs.m5stack.com/en/arduino/stopwatch/program">官方 Arduino 编程页</a>。烧录前备份目标设备的当前 Flash，并保留已有出厂备份；本项目没有首次 LittleFS 格式化入口。</p>
 
-<h2>四条开发路径对比</h2>
-
-<div class="table-wrap">
+<h2>官方入口</h2>
 <table>
-  <thead>
-    <tr>
-      <th>路径</th>
-      <th>入口与工具</th>
-      <th>构建 / 烧录</th>
-      <th>特点</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>ESP-IDF<br>出厂固件</td>
-      <td>M5StopWatch-UserDemo 仓库 <sup><a href="#s2">[2]</a></sup></td>
-      <td>ESP-IDF v5.5.4；<code>python3 ./fetch_repos.py</code> → <code>idf.py build</code> → <code>idf.py flash</code> <sup><a href="#s2">[2]</a></sup></td>
-      <td>MIT 许可。已合入 PlatformIO/PIOArduino 构建支持、FluidBox 流体演示、亮屏时关闭电源 LED（社区贡献者 Simon J. Stuart）。 <sup><a href="#s2">[2]</a></sup></td>
-    </tr>
-    <tr>
-      <td>Arduino /<br>PlatformIO</td>
-      <td>官方 Arduino 编程页 <sup><a href="#s3">[3]</a></sup></td>
-      <td>板卡选 M5StopWatch，装 M5Unified 与 M5GFX；长按复位约 2 秒进下载模式 <sup><a href="#s3">[3]</a></sup></td>
-      <td>另有 M5PM1、M5IOE1 库。PlatformIO 配置为 <code>platform = espressif32 @ 6.12.0</code>、<code>board = esp32s3box</code>、16MB 分区、<code>qio_opi</code> PSRAM。 <sup><a href="#s3">[3]</a></sup></td>
-    </tr>
-    <tr>
-      <td>UiFlow2<br>（MicroPython / Blockly）</td>
-      <td>UiFlow2 编程页、MicroPython 控制器文档 <sup><a href="#s4">[4]</a><a href="#s5">[5]</a></sup></td>
-      <td>用 M5Burner 烧固件 <sup><a href="#s4">[4]</a></sup></td>
-      <td>支持 m5ui（LVGL）、Unit、Chain，内置中日韩字体。官方给了 3 个示例：RTC 时钟、电源管理、录音回放。 <sup><a href="#s4">[4]</a><a href="#s5">[5]</a></sup></td>
-    </tr>
-    <tr>
-      <td>小智语音助手</td>
-      <td>官方指南、xiaozhi-esp32 上游提交 <sup><a href="#s6">[6]</a><a href="#s7">[7]</a></sup></td>
-      <td>用 M5Burner 直接烧 <sup><a href="#s6">[6]</a></sup></td>
-      <td>板级支持于 2026-06-18 07:38（UTC+8）合入 xiaozhi-esp32，代码在 <code>main/boards/m5stack-stopwatch/</code>，共同作者使用 m5stack.com 邮箱。 <sup><a href="#s6">[6]</a><a href="#s7">[7]</a></sup></td>
-    </tr>
-  </tbody>
+<thead><tr><th>资源</th><th>用途与范围</th></tr></thead>
+<tbody>
+<tr id="s1"><td><a href="https://docs.m5stack.com/en/core/StopWatch">StopWatch 硬件文档</a></td><td>规格、版本差异、原理图、结构与芯片资料。</td></tr>
+<tr id="s3"><td><a href="https://docs.m5stack.com/en/arduino/stopwatch/program">Arduino 编程指南</a></td><td>开发板选择、M5Unified 依赖与下载模式；PokeTrail 使用仓库锁定版本。</td></tr>
+<tr id="s2"><td><a href="https://github.com/m5stack/M5StopWatch-UserDemo">出厂示例固件</a></td><td>独立的硬件评估项目；上游 README 提供 ESP-IDF 构建步骤，不能把它的目录与命令直接用于 PokeTrail。</td></tr>
+<tr id="s4"><td><a href="https://docs.m5stack.com/en/uiflow2/stopwatch/program">UiFlow2 指南</a></td><td>另一条固件开发路径，不是本项目运行依赖。</td></tr>
+<tr id="s5"><td><a href="https://uiflow-micropython.readthedocs.io/en/develop/controllers/stopwatch.html">UiFlow MicroPython 控制器参考</a></td><td>UiFlow 的 API 入口，不是 PokeTrail 的 Arduino API。</td></tr>
+<tr id="s6"><td><a href="https://docs.m5stack.com/en/guide/stopwatch/xiaozhi_voice_assistant">小智语音助手指南</a></td><td>另一种固件用途；更换固件前仍需保留备份。</td></tr>
+</tbody>
 </table>
-</div>
-<p class="note">PlatformIO 的 env 配置也写在同一个 Arduino 文档页里，所以合成一行。 <sup><a href="#s3">[3]</a></sup></p>
 
-<h2>推荐路径与上手步骤</h2>
-
-<p>推荐出厂固件的 ESP-IDF 路线。固件栈是 ESP-IDF + LVGL + Mooncake（应用框架），新功能以独立 app 的形式放进 <code>main/apps/</code>，复用 launcher 与 HAL，原有功能不动。 <sup><a href="#s2">[2]</a><a href="#s8">[8]</a><a href="#s9">[9]</a></sup></p>
-
-<ol class="steps">
-  <li><strong>准备环境。</strong>装 ESP-IDF v5.5.4。 <sup><a href="#s2">[2]</a></sup></li>
-  <li><strong>拉取固件与依赖。</strong>克隆 <code>M5StopWatch-UserDemo</code>，执行 <code>python3 ./fetch_repos.py</code>。 <sup><a href="#s2">[2]</a></sup></li>
-  <li><strong>先编译原版。</strong><code>idf.py build</code>，通过之后再改代码。 <sup><a href="#s2">[2]</a></sup></li>
-  <li><strong>写自己的 app。</strong>在 <code>main/apps/</code> 下新建目录，照现有 app 的写法接 launcher 和 HAL；需要参考就翻出厂固件源码。 <sup><a href="#s2">[2]</a><a href="#s8">[8]</a><a href="#s9">[9]</a></sup></li>
-  <li><strong>烧录验证。</strong><code>idf.py flash</code>。 <sup><a href="#s2">[2]</a></sup></li>
-  <li><strong>按需求挑参考项目。</strong>要走 BLE 连电脑，看 cc-island 的 NimBLE Nordic UART 外设加 Mac 端 Python 桥接；要联网上报数据，看 MQTT-Counter 的 Wi-Fi 配网、MQTT 同步和 NVS 持久化。 <sup><a href="#s8">[8]</a><a href="#s9">[9]</a></sup></li>
-</ol>
-
-<p>不想碰 C 的话，UiFlow2 有 3 个官方示例：RTC 时钟、电源管理、录音回放。 <sup><a href="#s4">[4]</a><a href="#s5">[5]</a></sup></p>
-
-<h2>社区项目</h2>
-
-<div class="card">
-  <h3>cc-island</h3>
-  <p class="repo">github.com/xiaoyuanzi1230/cc-island <sup><a href="#s8">[8]</a></sup></p>
-  <p>把 Claude Code / Codex 的用量做成表盘。手表当 NimBLE Nordic UART 外设，Mac 端用 Python 桥接推 JSON 过来。 <sup><a href="#s8">[8]</a></sup></p>
-  <p>仓库里的 <code>install_firmware.sh</code> 会自动克隆出厂固件并集成 app，加 app 的流程可以照着它走。 <sup><a href="#s8">[8]</a></sup></p>
-  <p class="note">个人项目，0 星，仓库带 fork 标记。 <sup><a href="#s8">[8]</a></sup></p>
-</div>
-
-<div class="card">
-  <h3>M5StopWatch-MQTT-Counter</h3>
-  <p class="repo">github.com/slochewie/M5StopWatch-MQTT-Counter <sup><a href="#s9">[9]</a></sup></p>
-  <p>场馆人数计数器。带 Wi-Fi AP 配网、MQTT 同步、NVS 持久化，浅睡和深睡可配置。 <sup><a href="#s9">[9]</a></sup></p>
-  <p>仓库有 architecture、mqtt、power-management 等文档，想看联网和功耗怎么处理，从这里入手比较快。 <sup><a href="#s9">[9]</a></sup></p>
-  <p class="note">个人项目，MIT 许可。 <sup><a href="#s9">[9]</a></sup></p>
-</div>
-
-<h2>社区玩法（X 上）</h2>
-
-<p>下面几条来自 X 上近一周的公开帖。帖里的仓库地址多是短链，这里只给帖子链接。</p>
+<h2>社区参考</h2>
+<p>以下是原调研保留的源码线索，不属于 PokeTrail 依赖，也未在本项目中验证集成。接口和安装方法以各仓库当前说明为准。</p>
 <ul>
-  <li><strong>AI 助手头像应用。</strong>@karaage0703 开源了一个 StopWatch 上的 AI 助手头像应用，用手机热点连家里电脑上的 AI。 <sup><a href="#s10">[10]</a></sup></li>
-  <li><strong>Anan iPhone Use。</strong>一个 iPhone MCP Server：StopWatch 冒充 HID 键盘鼠标，经 USB-C 或蓝牙去操作 iPhone。 <sup><a href="#s11">[11]</a></sup></li>
-  <li><strong>Vibe Watch。</strong>@GOROman 做的，表上同时看 6 个 AI 编程 agent 的状态，用实体按键批准或拒绝，按键说话，有声音和震动反馈。拿了 M5Stack Innovation Contest 2026 最佳 AI 应用奖，M5Stack 官方转推过。 <sup><a href="#s12">[12]</a></sup></li>
-  <li><strong>全本地语音对话（未核实）。</strong>@yusuke_kizuna 说在 StopWatch 上纯本地跑通了 ASR、LLM 和 TTS，不连云。目前只有这一条帖子，没人复现过。 <sup><a href="#s13">[13]</a></sup></li>
+  <li id="s8"><a href="https://github.com/xiaoyuanzi1230/cc-island">cc-island</a>：查看 StopWatch 与桌面端桥接的实现。</li>
+  <li id="s9"><a href="https://github.com/slochewie/M5StopWatch-MQTT-Counter">M5StopWatch-MQTT-Counter</a>：查看联网计数器的实现。</li>
 </ul>
-
-<h2>坑与注意</h2>
-
-<ul>
-  <li><strong>别信 v1.0 的贴纸。</strong>5V IN 被标成 BAT，接上电池就出事；v1.0.1 才修好。 <sup><a href="#s1">[1]</a></sup></li>
-  <li><strong>下载模式要长按复位约 2 秒。</strong>烧不进去先检查这一步。 <sup><a href="#s3">[3]</a></sup></li>
-  <li><strong>PlatformIO 用 <code>board = esp32s3box</code>。</strong>官方配置里分区表按 16MB、PSRAM 按 <code>qio_opi</code> 设置，别漏。 <sup><a href="#s3">[3]</a></sup></li>
-  <li><strong>官方仓库体量很小。</strong>15 星、11 fork、1 个 open issue，公开资料不多。 <sup><a href="#s2">[2]</a></sup></li>
-  <li><strong>小智用 M5Burner 直接烧。</strong>它和出厂固件分属不同仓库。 <sup><a href="#s6">[6]</a><a href="#s7">[7]</a></sup></li>
-  <li><strong>续航和拆机。</strong>X 上有人问电池掉得快，也有人说外壳拆不开，两条都还没人回答。另外现在缺货，有渠道已下架。 <sup><a href="#s14">[14]</a><a href="#s15">[15]</a><a href="#s16">[16]</a></sup></li>
-  <li><strong>要摄像头得等底座。</strong>M5Stack 官方回复说，摄像头要等 StopWatch Base（底座），年底才出。 <sup><a href="#s17">[17]</a></sup></li>
-</ul>
-
-<h2>缺口</h2>
-
-<ul>
-  <li>官方文档和 GitHub 上没找到 ESPHome 或 Home Assistant 的专用支持。 <sup><a href="#s1">[1]</a><a href="#s2">[2]</a></sup></li>
-  <li>没有官方的 Mooncake app 开发文档。现在只能读出厂固件源码，加上 cc-island 和 MQTT-Counter 两个实例。 <sup><a href="#s2">[2]</a><a href="#s8">[8]</a><a href="#s9">[9]</a></sup></li>
-  <li>社区资料少，官方仓库 15 星、11 fork、1 个 open issue，可参考的第三方项目目前就上面两个。 <sup><a href="#s2">[2]</a></sup></li>
-</ul>
-
-<section class="src" id="sources">
-  <h2 style="margin-top:0">来源</h2>
-  <ol>
-    <li id="s1"><a href="https://docs.m5stack.com/en/core/StopWatch">M5Stack StopWatch 官方硬件文档</a> <span class="what">— 硬件规格、v1.0/v1.0.1 引脚差异、尺寸与结构文件</span></li>
-    <li id="s2"><a href="https://github.com/m5stack/M5StopWatch-UserDemo">m5stack/M5StopWatch-UserDemo</a> <span class="what">— 出厂固件、构建步骤、许可、仓库数据</span></li>
-    <li id="s3"><a href="https://docs.m5stack.com/en/arduino/stopwatch/program">StopWatch Arduino 编程文档</a> <span class="what">— 板卡选择、依赖库、下载模式、PlatformIO 配置</span></li>
-    <li id="s4"><a href="https://docs.m5stack.com/en/uiflow2/stopwatch/program">StopWatch UiFlow2 编程文档</a> <span class="what">— M5Burner 烧录、m5ui/Unit/Chain、官方示例</span></li>
-    <li id="s5"><a href="https://uiflow-micropython.readthedocs.io/en/develop/controllers/stopwatch.html">UiFlow MicroPython · StopWatch 控制器文档</a> <span class="what">— MicroPython 接口与字体支持</span></li>
-    <li id="s6"><a href="https://docs.m5stack.com/en/guide/stopwatch/xiaozhi_voice_assistant">StopWatch 小智语音助手指南</a> <span class="what">— M5Burner 烧录方式</span></li>
-    <li id="s7"><a href="https://github.com/78/xiaozhi-esp32/commit/0f2f30f2d2286ae2d9891f48a99d90bdb8544fe3">xiaozhi-esp32 板级支持提交</a> <span class="what">— 合入时间、目录位置、共同作者</span></li>
-    <li id="s8"><a href="https://github.com/xiaoyuanzi1230/cc-island">xiaoyuanzi1230/cc-island</a> <span class="what">— BLE 桥接方案、安装脚本、SKU 记录</span></li>
-    <li id="s9"><a href="https://github.com/slochewie/M5StopWatch-MQTT-Counter">slochewie/M5StopWatch-MQTT-Counter</a> <span class="what">— 配网、MQTT、NVS、休眠与项目文档</span></li>
-  <li id="s10"><a href="https://x.com/karaage0703/status/2112544380678701257">@karaage0703 的 X 帖</a> <span class="what">— AI 助手头像应用开源</span></li>
-    <li id="s11"><a href="https://x.com/jaywcjlove/status/2110647183233949980">@jaywcjlove 的 X 帖</a> <span class="what">— Anan iPhone Use MCP Server</span></li>
-    <li id="s12"><a href="https://x.com/M5Stack/status/2110567653576511933">@M5Stack 转推 Vibe Watch</a> <span class="what">— 6 个 agent 管理、比赛获奖</span></li>
-    <li id="s13"><a href="https://x.com/yusuke_kizuna/status/2112423227129757787">@yusuke_kizuna 的 X 帖</a> <span class="what">— 全本地 ASR+LLM+TTS，未核实</span></li>
-    <li id="s14"><a href="https://x.com/Yeq6X/status/2111903804056821933">@Yeq6X 的 X 帖</a> <span class="what">— 电池掉电快</span></li>
-    <li id="s15"><a href="https://x.com/DrNikotora/status/2111771434091733416">@DrNikotora 的 X 帖</a> <span class="what">— 外壳拆不开</span></li>
-    <li id="s16"><a href="https://x.com/0xNathanWalk/status/2111672247735980183">@0xNathanWalk 的 X 帖</a> <span class="what">— 断货下架</span></li>
-    <li id="s17"><a href="https://x.com/M5Stack/status/2111431798307828087">@M5Stack 官方回复</a> <span class="what">— 摄像头需等 StopWatch Base，年底</span></li>
-  </ol>
-</section>
-
+<p>本页不维护社区热度、库存、未来配件日期或社交平台功能宣称。PokeTrail 的实际能力以 <a href="../usage.md">使用指南</a> 为准，测试结果与设备边界见 <a href="../verification.md">验证说明</a>。</p>
 </main>
 </body>
 </html>

@@ -1,0 +1,20 @@
+{
+  "sourceCommit": "53ebf948c998af69b1da06f125c224ccb4f44ccc",
+  "sources": {
+    "adventure_model.hpp": "f24eb134dc0dfa4341334551a9f9c8da41de4f59f3327039f4e7848293402698",
+    "adventure_model.cpp": "bcf2d1bee8aaf3a79692a4749e3e626220fe9bb76cc5d2a22d21c461c6b08ae5",
+    "save_codec.hpp": "52718b04f3f27c7bd952a6b4b338a71a3bf45059aa384fbc7ffde14b2c64b2d7",
+    "save_codec.cpp": "a73c6c68e5a31735548985f8edda36da09d0dcb7f50c3faae193319f5b7c3478",
+    "calendar.hpp": "21a768acd9af252d40e4f637c4373768c1c5c594487bbf09a485c1c7f56b95dc",
+    "calendar.cpp": "0f24dbebddcf73918a2cfbdfeb62c29736825043e90259612d5b7f5dccf5d834",
+    "encounter_catalog.hpp": "85fd2e053120110cd008de43919079fd76e394f5bc1b72ca0ed987125cc42947",
+    "encounter_catalog.cpp": "56d5ccd9baccdabaa3532a1e78d21dd4b85ca3c0e6bdbc9dfe88c28da17769ce",
+    "adventure_catalog_generated.hpp": "3cd539fda213a9b51cf053a6c38700c9ccc5226523be1d171315a1d3130ee8c2",
+    "progression_catalog_generated.hpp": "cd817a59b0472403c38f48608230a3a561f3c69ae87fd7dc8cbd155da2c850d4"
+  },
+  "generator": "test/simulator/legacy_fixture.cpp.txt",
+  "generatorSha256": "495c53971581ba3127c21293233e8005a70a30b957d25f5d6deaca9749185d86",
+  "fixtures": {
+    "schema3-rule2.bin": "9a24d7a3efd5d0e9656a03e5169b38037c7a4fc9e7e9d569a7f5f45819e1101d"
+  }
+}

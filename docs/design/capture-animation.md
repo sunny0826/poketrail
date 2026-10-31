@@ -1,6 +1,6 @@
 # 捕获动画
 
-本文记录投球与捕获的表现层契约；玩法与账户规则见[步行培养与存档契约](walking-progression.md)，关键帧分镜见[样式分镜](capture-animation-style.html)。
+本文记录投球与捕获的表现层契约；玩法与账户规则见[步行培养与存档契约](walking-progression.md)，关键帧分镜见[捕获场景设计稿](ui-scene-redesign/capture.html)；该画廊是历史 Pillow 预览，不是 Runtime 截图。
 
 投球页确认“准备投球”后按住右键或触摸蓄力：球在画面下方 (233,344) 待命，蓄力环约 400ms 半充、800ms 充满并脉动；松手投出，判定取松手时刻。蓄力只改变拖尾表现，不影响概率。
 
