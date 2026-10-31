@@ -11,6 +11,8 @@ node = "24.22.1"
 python = "3.14.2"
 pipx = "1.18.4"
 "pipx:platformio" = "6.2.0"
+rtk = "1.1.0"
+actionlint = "1.7.12"
 
 [env]
 # PlatformIO 需要自己管理 ESP32 工具链，不让 mise 的 python 环境干扰
@@ -34,6 +36,22 @@ run = "./scripts/run_game_tests.sh"
 [tasks.test-render]
 description = "运行 M5GFX 离屏像素回归（需要 SDL2 原生库）"
 run = "python3 scripts/run_render_tests.py"
+
+[tasks.simulate]
+description = "启动 SDL 桌面模拟器（键盘、鼠标和独立存档）"
+run = "python3 scripts/run_simulator.py"
+
+[tasks.test-simulator]
+description = "验证桌面 SDL 输入、模拟走路、截图和存档重启"
+run = "python3 scripts/run_simulator.py --test"
+
+[tasks.test-simulator-e2e]
+description = "验证 SDL 用户旅程、真实存档重试与进程恢复"
+run = "python3 scripts/run_simulator_e2e.py"
+
+[tasks.check-ci]
+description = "检查 GitHub Actions 工作流语法与表达式"
+run = "actionlint"
 
 [tasks.test-adventure]
 description = "验证步数账户、对战投球、日期事务与存档编码"

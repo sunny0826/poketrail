@@ -1,6 +1,6 @@
 # 步行、战斗与捕获设计规格
 
-返回[视觉设计](ui-scene-redesign.md)和[29 个页面清单](ui-scene-redesign-pages.md)。
+返回[视觉设计](ui-scene-redesign.md)和[36 个页面清单](ui-scene-redesign-pages.md)。
 
 ## 步行纵深
 
@@ -8,7 +8,7 @@
 
 ![三路线停止、行走和循环接缝](ui-scene-redesign/contacts/walking-animation.png)
 
-这些 GIF 是 Pillow 主机设计预览，不是 Runtime/M5GFX 或实体设备录像，也不作为 C152 帧率证据。固件已实现同一纵深契约，真实渲染证据见[实现与验收](ui-scene-redesign-implementation.md)。
+这些 GIF 是 Pillow 主机设计预览，不是 Runtime/M5GFX 或实体设备录像，也不作为 C152 帧率证据。固件已实现同一纵深契约，真实渲染检查入口见[UI 实现与设计稿维护](ui-scene-redesign-implementation.md)。
 
 | 路线 | 固定远景 | 向屏幕下方靠近的地景 |
 | --- | --- | --- |
@@ -26,9 +26,11 @@
 - 路线切换显示该路线的静止首帧。菜单和熄屏期间暂停，返回首页和唤醒保留当前视觉位置，不重新开始伙伴原动画。
 - 展示层持有视觉进度，绘制函数只读。Engine、奖励、遭遇、培养和存档不保存这份进度。
 - 遭遇、对战和投球继续使用静态暗色场景。战斗只保留既有震动，不叠加步行位移。
-- 已通过默认时间轴、真实 IMU 输入和 Runtime/M5GFX 截图验收；实体 C152 另验圆屏观感与绘制耗时。
+- 主机回归使用合成 IMU 输入和真实 Runtime/M5GFX 绘制检查时间轴；实体 C152 的圆屏观感、真实计步和绘制耗时另行验收。
 
 ## 战斗动画
+
+下方 GIF 保留旧版 3 格敌方 HP 的示例；当前对手为 5 格，并加入读招、假动作、狂暴和必杀。实际规则见[使用指南](../usage.md)，固件 HP 在判定后立即更新，不等待 GIF 中的示例受击帧。
 
 播放设计稿：[普通攻击](ui-scene-redesign/animations/battle-attack.gif) · [闪避](ui-scene-redesign/animations/battle-dodge.gif) · [完美攻击](ui-scene-redesign/animations/battle-perfect.gif)
 
@@ -52,7 +54,7 @@
 | 750–1150ms | 前冲、侧移和残影；850ms 为受击帧，视觉 HP 同步切换 |
 | 1150–1500ms | 角色回到站位，动作进入下一拍；表现不延迟下一拍 |
 
-普通攻击伤害为 1，完美攻击伤害为 2；闪避成功不扣伙伴 HP，闪避 Miss 仍按现有规则扣 1。场景震动只移动地景和角色，不移动 HP、节拍轨道或文字。主机已验证原始帧与动作表现；双角色解码和绘制耗时仍需在 C152 测量，本 GIF 不作帧率证据。
+普通攻击伤害为 1，完美攻击伤害为 2；闪避成功不扣伙伴 HP，闪避 Miss 仍按现有规则扣 1。场景震动只移动地景和角色，不移动 HP、节拍轨道或文字。原始帧与动作表现由主机回归检查；双角色解码和绘制耗时仍需在 C152 测量，本 GIF 不作帧率证据。
 
 ## 捕获场景
 

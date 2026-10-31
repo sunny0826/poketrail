@@ -9,7 +9,7 @@ An offline walking adventure for the round screen of the M5Stack StopWatch (C152
 
 <img src="docs/images/readme/home.png" width="360" alt="Round home screen: Bulbasaur stands on the forest route, marked as the carried partner, with 4 steps today shown below. Host Runtime/M5GFX render, not a device photo.">
 
-[Getting started](#getting-started) · [Build and flash](#build-and-flash) · [Development guide (Chinese only)](docs/development.md) · [Verification notes (Chinese only)](docs/verification.md)
+[Getting started](#getting-started) · [Desktop simulation](#desktop-simulation) · [Build and flash](#build-and-flash) · [Development guide (Chinese only)](docs/development.md) · [Verification notes (Chinese only)](docs/verification.md)
 
 <sub><em>Unofficial fan project in development · Images are host Runtime/M5GFX renders, not device photos</em></sub>
 
@@ -52,7 +52,7 @@ All images are screenshots rendered offscreen with the host Runtime/M5GFX from t
 | Rhythm battle, charged throw | `test_adventure_render` | `battle`, `throw-active`: coast route, facing Tentacool |
 | Pokédex | `test_adventure_render` | `viewer-entry`: the starter partner in the test save |
 
-The battery display shows -- because no battery reading was available during rendering. To regenerate:
+The battery display shows -- because no battery reading was available during rendering. This command generates the corresponding test screenshots for the current version in a new verification directory. It does not replace the historical images on this page:
 
 ```bash
 rtk proxy mise exec -- python3 scripts/run_render_tests.py \
@@ -66,6 +66,16 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py \
 After flashing with the project's script, the device synchronizes its clock to the flashing computer's current time. Once storage is available, choose Bulbasaur, Charmander, or Squirtle as your starter partner. You can also set the clock manually on the device or leave it unset for now. Total steps and exploration continue to increase; steps recorded while the date is unknown are not added to today's count later.
 
 On the home screen, press either side button or tap the screen to open the menu. The screen turns off after 30 seconds of inactivity; step counting and saving continue. Only a short press of the power key wakes the screen; touch and side buttons do not. See the [usage guide](docs/usage.en.md) for page controls.
+
+## Desktop simulation
+
+After installing the development dependencies below and SDL2, open a desktop window without connecting a device:
+
+```bash
+rtk proxy mise run simulate
+```
+
+The left/right arrow keys act as the side buttons, `Enter` presses both for confirmation, and mouse clicks and drags simulate touch. `W` toggles walking, `Tab` switches to or from 16× time, and `P` wakes the display. Desktop saves are separate, in `.simulator/save/`. See the [simulator guide (Chinese only)](docs/simulator.md) for dependencies, controls, and limitations.
 
 ## Build and flash
 
@@ -102,13 +112,14 @@ The target device is the M5Stack StopWatch C152 with an ESP32-S3R8, 16 MB Flash,
 - Facing the screen, `BtnA` (GPIO2) is on the left and `BtnB` (GPIO1) is on the right.
 - The M5PM1 hardware powers the device off when you double-press the power button. On each boot, the firmware configures its LDO to maintain the 3.3V supply. The RTC keeps time while the device is off, so the clock need not be set again at startup. Standby power consumption while powered off has not been measured.
 - To enter download mode manually, connect USB, hold the power button for about 2 seconds, and release it when the internal green LED lights up.
-- The rear `BAT` sticker on the v1.0 batch is incorrect: the input is actually 5V IN and must not be connected to a battery. The label was corrected in v1.0.1.
+- Some v1.0 units have an incorrect `BAT` label: the pin is actually 5V IN and must not be connected to a battery. Hardware revision v1.0.1 changes the pin to an actual BAT connection. Check the [official hardware revision notes](https://docs.m5stack.com/en/core/StopWatch) before wiring.
 
 ## Documentation and licensing
 
-An earlier firmware version booted on a C152 and reloaded a save. That observation does not mean device acceptance testing for the current schema6 is complete. See the [verification notes (Chinese only)](docs/verification.md) for current host checks, device observations, and pending checks for real step counting, physical interaction, RTC retention, power-loss recovery, and power consumption. Host tests cannot establish real step counting, on-device feel, latency, or power-loss recovery.
+The 649-species firmware booted on a C152 and reloaded a save on 2026-10-30. That limited observation does not establish complete device acceptance for schema6. See the [verification notes (Chinese only)](docs/verification.md) for current host checks, device observations, and pending checks for real step counting, physical interaction, RTC retention, power-loss recovery, and power consumption. Host tests cannot establish real step counting, on-device feel, latency, or power-loss recovery.
 
 - [Usage guide](docs/usage.en.md): controls, catching, training, dates, and saves.
+- [Simulator guide (Chinese only)](docs/simulator.md): keyboard and mouse controls, separate saves, and simulation boundaries.
 - [Development guide (Chinese only)](docs/development.md): environment, asset generation, tests, and module responsibilities.
 - [Gameplay and migration contract (Chinese only)](docs/design/walking-progression.md): account invariants, evolution, and compatibility with older saves.
 - [Verification notes (Chinese only)](docs/verification.md): scope of automated checks, current limitations, and pending device checks.

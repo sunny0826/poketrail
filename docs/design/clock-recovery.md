@@ -13,7 +13,7 @@ RTC 的 VLF（振荡停止）表示日期数据不可信，必须重新校时。
 
 ## 关机时间保持
 
-双击电源键关机由 M5PM1 硬件执行，默认会切断给 RTC 与 IMU 供电的 L1，RTC 失电后按 VLF 规则要求重新校时。固件每次开机对 PM1 `HOLD_CFG(0x07)` 置 LDO 3.3V 电源保持位（读-改-写并回读），关机期间 L1 保持供电，RTC 继续走时，开机后时间连续。PM1 读、写或回读失败时打印一行诊断并按无保持的旧行为继续启动，不阻塞玩法；真实失时仍按上文规则处理。主机检查与设备关机验证见 [Issue #22 验证记录](../verification/issue-22-poweroff-clock.md)。
+双击电源键关机由 M5PM1 硬件执行，默认会切断给 RTC 与 IMU 供电的 L1，RTC 失电后按 VLF 规则要求重新校时。固件每次开机对 PM1 `HOLD_CFG(0x07)` 置 LDO 3.3V 电源保持位（读-改-写并回读），关机期间 L1 保持供电，RTC 继续走时，开机后时间连续。PM1 读、写或回读失败时打印一行诊断并按无保持的旧行为继续启动，不阻塞玩法；真实失时仍按上文规则处理。已有设备观察与未验证范围见[验证说明](../verification.md#设备观察与待验事项)。
 
 ## 烧录后校时
 
@@ -34,5 +34,5 @@ rtk proxy mise exec -- python3 scripts/sync_clock.py --port /dev/cu.usbmodem1101
 
 把示例端口换成目标设备的实际端口。`--query` 只读 RTC 和事务状态，并与主机当前 UTC 比较；超出 15 秒容差时非零退出。
 
-诊断时可用 `scripts/flash.sh --no-sync <port>` 跳过校时；这不会纠正设备日期。完整流程见 [Issue #19 验证记录](../verification/issue-19-clock-sync.md)。
+诊断时可用 `rtk proxy mise exec -- ./scripts/flash.sh --no-sync <port>` 跳过校时；这不会纠正设备日期。烧录入口见 [README](../../README.md#构建和烧录)，校时与存档的设备验证边界见[验证说明](../verification.md#设备观察与待验事项)。
 

@@ -9,7 +9,7 @@
 
 <img src="docs/images/readme/home.png" width="360" alt="圆屏首页：妙蛙种子站在森林路线上，标注携带中，下方为今日 4 步。主机 Runtime/M5GFX 渲染，不是实机拍摄。">
 
-[开始使用](#开始使用) · [构建和烧录](#构建和烧录) · [开发指南](docs/development.md) · [验证说明](docs/verification.md)
+[开始使用](#开始使用) · [桌面模拟](#桌面模拟) · [构建和烧录](#构建和烧录) · [开发指南](docs/development.md) · [验证说明](docs/verification.md)
 
 <sub>开发中的非官方爱好项目 · 画面为主机 Runtime/M5GFX 渲染，不是实机拍摄</sub>
 
@@ -52,7 +52,7 @@
 | 节奏对战、蓄力投球 | `test_adventure_render` | `battle`、`throw-active`：海边路线，对手为玛瑙水母 |
 | 图鉴 | `test_adventure_render` | `viewer-entry`：测试档中的初始伙伴 |
 
-电量处的 -- 是因为渲染时没有电池读数。重新生成：
+电量处的 -- 是因为渲染时没有电池读数。以下命令生成当前版本的对应测试截图，输出到新的验收目录；不会自动替换本页保留的历史图片：
 
 ```bash
 rtk proxy mise exec -- python3 scripts/run_render_tests.py \
@@ -66,6 +66,16 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py \
 使用项目烧录脚本后，设备会同步烧录电脑的当前时间。存储可用后选择妙蛙种子、小火龙或杰尼龟作为初始伙伴。也可以在设备上手动校时，或暂不校时：累计步数与探索照常增加，未知日期期间的步数不会补填到今日。
 
 首页点按任一侧键或轻触屏幕进入菜单。30 秒无操作后熄屏，计步和保存继续；熄屏后仅短按电源键可点亮屏幕，触摸和侧键不会唤醒。页面操作见[使用指南](docs/usage.md)。
+
+## 桌面模拟
+
+安装下方开发环境和 SDL2 后，无需连接设备即可打开桌面窗口：
+
+```bash
+rtk proxy mise run simulate
+```
+
+左右方向键对应两侧按键，`Enter` 双键确认，鼠标点按／拖动模拟触摸。`W` 开关走路，`Tab` 切换 16 倍时间，`P` 唤醒。存档独立保存在 `.simulator/save/`。完整操作、依赖和限制见[桌面模拟指南](docs/simulator.md)。
 
 ## 构建和烧录
 
@@ -102,14 +112,15 @@ rtk proxy mise exec -- pio device monitor -p /dev/cu.usbmodemXXXX --baud 115200
 - 面向屏幕时，左侧为 `BtnA`（GPIO2），右侧为 `BtnB`（GPIO1）。
 - 双击电源键关机由 M5PM1 硬件执行。固件每次开机设置其 LDO 3.3V 电源保持，RTC 在关机期间继续走时，开机不需要重新校时；关机静态功耗待测。
 - 手动进入下载模式：连接 USB，长按电源键约 2 秒，内部绿灯亮起后松开。
-- v1.0 批次背面 `BAT` 贴纸标错，实际为 5V IN，不能接电池；v1.0.1 已修正。
+- 部分 v1.0 批次背面误标 `BAT`，实际为 5V IN，不能接电池；v1.0.1 硬件已把该引脚改为真正的 BAT。接线前按[官方硬件版本说明](https://docs.m5stack.com/en/core/StopWatch)确认设备版本。
 
 ## 文档与许可
 
-历史固件版本曾在 C152 启动并重载存档；该观察不代表当前 schema6 的设备验收已完成。当前主机检查、设备观察，以及真实计步、实体交互、RTC 保持、断电恢复和功耗的待验项，见[验证说明](docs/verification.md)。
+2026-10-30 的 649 种固件曾在 C152 启动并重载存档；这次有限观察不代表 schema6 的完整设备验收已完成。当前主机检查、设备观察，以及真实计步、实体交互、RTC 保持、断电恢复和功耗的待验项，见[验证说明](docs/verification.md)。
 
 - [使用指南](docs/usage.md)：操作、捕捉、培养、日期与存档。
 - [Usage guide (English)](docs/usage.en.md)：English version of the usage guide.
+- [桌面模拟指南](docs/simulator.md)：键鼠操作、独立存档与模拟边界。
 - [开发指南](docs/development.md)：环境、素材生成、测试与模块职责。
 - [玩法与迁移契约](docs/design/walking-progression.md)：账户不变量、进化、旧档兼容。
 - [验证说明](docs/verification.md)：自动检查范围、当前限制和设备待验项。

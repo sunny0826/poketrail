@@ -1,6 +1,6 @@
 # 全场景页面覆盖
 
-返回[视觉设计](ui-scene-redesign.md)。下表按 [screens.hpp](../../firmware/apps/20_pokedex/screens.hpp) 的 `Page` 枚举列出当前 29 页。历史设计画廊只覆盖原 26 页，三张进化动画／预览页尚无设计帧，表中链接到对应行为契约与主机测试。联系表和设计帧保留旧规则示例，不表示当前 Runtime 的完整页面覆盖。
+返回[视觉设计](ui-scene-redesign.md)。下表按 [screens.hpp](../../firmware/apps/20_pokedex/screens.hpp) 的 `Page` 枚举列出当前 36 页。历史设计画廊只覆盖原 26 页，三张进化／预览页和七张测试模式页尚无设计帧，表中链接到对应行为契约与主机测试。联系表和设计帧保留旧规则示例，不表示当前 Runtime 的完整页面覆盖。
 
 | Page | 设计帧与状态 |
 | --- | --- |
@@ -31,7 +31,14 @@
 | `EvolutionConfirm` | [进化确认](ui-scene-redesign/frames/evolution-confirm.png) |
 | `ReleaseConfirm` | [放弃捕捉确认](ui-scene-redesign/frames/release-confirm.png) |
 | `Evolution` | 无独立设计帧；保存成功后的真实进化动画，见[动画契约](evolution-animation.md)与[渲染测试](../../test/test_evolution_render.cpp) |
-| `EvolutionPreviewTargets` | 无独立设计帧；伊布五分支、无畏小子三分支的预览选择，见[预览契约](evolution-animation.md)与[预览测试](../../test/test_evolution_preview_render.cpp) |
+| `EvolutionPreviewTargets` | 无独立设计帧；伊布七分支、无畏小子三分支的预览选择，见[预览契约](evolution-animation.md)与[预览测试](../../test/test_evolution_preview_render.cpp) |
 | `EvolutionPreview` | 无独立设计帧；不改变账户、结束返回原图鉴条目的预览动画，见[预览契约](evolution-animation.md)与[预览测试](../../test/test_evolution_preview_render.cpp) |
+| `TestEntry` | 无设计帧；进入、重置时选择正式快照或空档，见[测试模式指南](../usage-test-mode.md)与[测试模式渲染](../../test/test_test_mode_render.cpp) |
+| `TestHub` | 无设计帧；测试控制台，见[页面实现](../../firmware/apps/20_pokedex/screens_test.cpp) |
+| `TestSteps` | 无设计帧；手动步数注入，见[测试模式指南](../usage-test-mode.md) |
+| `TestScenarios` | 无设计帧；四种固定场景，见[场景构造](../../firmware/apps/20_pokedex/test_console.cpp) |
+| `TestFaults` | 无设计帧；存储故障选择，见[测试模式指南](../usage-test-mode.md) |
+| `TestDiagnostics` | 无设计帧；模式、容量、版本与故障诊断，见[页面实现](../../firmware/apps/20_pokedex/screens_test.cpp) |
+| `TestExit` | 无设计帧；退出确认，见[测试模式指南](../usage-test-mode.md) |
 
 分组联系表：[探索与菜单](ui-scene-redesign/contacts/exploration.png) · [遭遇与捕捉](ui-scene-redesign/contacts/capture.png) · [伙伴与图鉴](ui-scene-redesign/contacts/partners.png) · [步行记录](ui-scene-redesign/contacts/records.png) · [日期与异常](ui-scene-redesign/contacts/system.png) · [步行纵深关键帧](ui-scene-redesign/contacts/walking-animation.png) · [战斗动画分镜](ui-scene-redesign/contacts/battle-animation.png)

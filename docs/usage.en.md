@@ -6,7 +6,7 @@
 
 Once storage is available, set the date, time, and UTC offset, then choose Bulbasaur, Charmander, or Squirtle as your partner. You can postpone clock sync. Total steps and exploration continue, but steps and capture times recorded while the date is unknown are not filled in later. The starter gift and free browsing of the Pokédex do not create first capture cards.
 
-Forest, Coast, and Cave have different encounter pools. Forest covers Grass, Bug, Poison, Fairy, Normal, and Fighting; Coast covers Water, Ice, Flying, and Electric; Cave covers Fire, Rock, Ground, Steel, Dark, Ghost, Psychic, and Dragon. Pokémon with two types belong to the routes for both types. Every 200–500 steps, with a new random target for each encounter, the device saves an encounter and gives a short vibration. Ordinary exploration uses an explicit common pool. It preserves the 73 Kanto and 51 Johto species and adds ordinary base forms from Hoenn, Sinnoh, and Unova. Legendary Pokémon, Mythical Pokémon, the Dratini family, and Larvitar are reserved for future separate events. They currently have no acquisition entry point.
+Forest, Coast, and Cave have different encounter pools. Forest covers Grass, Bug, Poison, Fairy, Normal, and Fighting; Coast covers Water, Ice, Flying, and Electric; Cave covers Fire, Rock, Ground, Steel, Dark, Ghost, Psychic, and Dragon. For dual-type Pokémon, route eligibility is the union of both types; the two types may map to the same route. Every 200–500 steps, with a new random target for each encounter, the device saves an encounter and gives a short vibration. Ordinary exploration uses an explicit common pool. It preserves the 73 Kanto and 51 Johto species and adds ordinary base forms from Hoenn, Sinnoh, and Unova. Legendary Pokémon, Mythical Pokémon, the Dratini family, and Larvitar are reserved for future separate events. They currently have no acquisition entry point.
 
 After a successful capture, that species permanently leaves the encounter pools of all routes. Evolution and restarting do not restore its eligibility. You can encounter a species again after a defeat, retreat, failed capture, or abandonment. The starter gift does not count as a capture, so you can still capture that species once. When you have captured all species on a route, you can switch routes. Extra exploration steps are retained.
 
@@ -22,7 +22,9 @@ After a victory, you can keep the result and return to the home page to walk at 
 
 You can own at most one Pokémon of each species and carry one partner at a time. Only the carried partner earns training steps. "My partners" lists the Pokémon you currently own in Pokédex number order. You can change your carried partner and view training balances and evolution requirements.
 
-Level-based evolutions cost the original level difference × 500 steps, counting from level 1 for a base form. Friendship, day/night, held-item, trade, and branch evolutions all cost 10000 steps. Once the threshold is reached, you must confirm evolution manually.
+Pure level-based evolutions cost the catalog level difference × 500 steps, counting from level 1 for a base form. Special conditions such as friendship, day/night, items, and trades are adapted to a cost of 10000 steps. Each branch has its own cost, shown in partner details.
+
+When evolution becomes available, an "Evolve" button appears below the partner name on the home page. Tap it to confirm; for branching evolutions, choose a target in partner details first. You can also start from "My partners". Evolution always requires confirmation.
 
 | Evolution chain | Cost at each stage |
 | --- | --- |
@@ -76,7 +78,7 @@ The Pokédex wraps through entries 1–649. Holding a button does not advance re
 
 After 30 seconds of inactivity, the device automatically enters power saving. You can also briefly press the power key or select "Power saving now" on the third menu page. While the screen is off, the device continues counting steps, reading the clock, and saving. Encounters still trigger a vibration. When no vibration is active, saving is idle, and no USB host is connected, the main controller briefly enters light sleep until the next sample. A side button or touch wakes the controller early. With a USB host connected, the screen can still turn off, but the controller does not enter light sleep, to keep the serial connection active. Only a short press of the power key wakes the screen. Touches, swipes, and side buttons neither light the screen nor trigger page actions while it is off. The wake action only lights the screen; release all buttons and lift your finger before continuing. Steps are not counted while the device is fully shut down. Double-pressing the power key triggers hardware shutdown through the M5PM1; see the [hardware notes](../README.en.md#hardware).
 
-Active battles, practice, throw timelines, and evolution animations (including Pokédex previews) keep the screen on. A short press of the power key does not turn it off during these flows. The screen can turn off while paused, waiting to throw, or editing clock sync fields. The state and draft values are retained when you wake it.
+Active battles, practice, throw timelines, and evolution animations (including Pokédex previews) keep the screen on. A short press of the power key does not turn it off during these flows. The screen can turn off while paused, waiting to throw, or editing clock sync fields. The state and draft values are retained when you wake it. See [device observations and pending checks (Chinese only)](verification.md#设备观察与待验事项) for the verification scope.
 
 Holding the power key for about 2 seconds and releasing it after the internal green LED lights still enters hardware download mode. This is an inherent device behavior; see the [M5Stack download mode instructions](https://docs.m5stack.com/en/arduino/stopwatch/program).
 
@@ -93,6 +95,24 @@ The LittleFS dual-slot save normally saves ordinary step progress about every 30
 If mounting fails, the device shows "Storage not initialized". It does not automatically format storage or overwrite old saves, and you can still browse the Pokédex. Corrupt saves, newer versions, and I/O errors each have separate messages, and the files are preserved. If one save slot is corrupt, the other valid slot can be recovered.
 
 Upgrading from schema1 preserves partners, capture history, total steps, and the exploration balance. Training starts at 0. Unfinished encounters with evolved forms or event species are closed, refunding the 500 exploration steps charged under the old rules. Encounters with common base forms are retained. Unresolved common encounters with species already captured are closed without extra rewards or refunds. After upgrading to the current schema6, new encounters have unlimited Poké Balls. In-flight encounters that retain the old throwing rules continue checking and deducting historical inventory. They earn one ball for every 1000 total steps walked after the migration baseline. The catalog expansion from schema2 to schema3 preserves existing Kanto fields and initializes only #152–251 as not obtained, with 0 training steps. The subsequent upgrade to schema4 rebuilds the random encounter accounts, generates the first 200–500-step target, and upgrades the current encounter's ruleVersion from 2 to 3. Schema5 assigns routes by type. If an in-flight encounter's old route no longer belongs to that species, it changes to the first matching route. Existing capture records and the player's selected route stay unchanged. Schema6 preserves existing accounts and in-flight encounters and initializes #252–649 with empty accounts. It grants no historical training steps and does not reroll the current encounter. For details, see the [Save migration contract (Chinese only)](design/save-migration.md).
+
+## Desktop simulation and E2E verification
+
+After completing the [development setup (Chinese only)](development.md#环境与首次构建) and installing SDL2, start the desktop simulator:
+
+```bash
+rtk proxy mise run simulate
+```
+
+Use the arrow keys for the side buttons, Enter to confirm, and the mouse for touch and swipes. W toggles simulated walking; P turns the display off or wakes it. Closing the window saves to a separate desktop save directory. See the [simulator guide (Chinese only)](simulator.md) for all controls.
+
+Every new feature must add corresponding E2E coverage. After the final changes to every repository task, run the full E2E suite before reporting completion, including for documentation-only tasks:
+
+```bash
+rtk proxy mise run test-simulator-e2e
+```
+
+Tests use isolated save directories and write evidence to `.pio/verification/simulator-e2e-TIMESTAMP/`. A selected case does not replace the final full run. Report failures or blockers explicitly. See the [verification requirements (Chinese only)](verification.md#每次任务的-e2e-验收要求) for test and evidence requirements. Host tests do not replace verification of physical step counting, screen appearance, or recovery from device power loss.
 
 ## On-device test mode
 

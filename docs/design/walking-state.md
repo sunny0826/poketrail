@@ -30,7 +30,7 @@ uint64_t availableBalls(const Save&);
 
 Save v2 新增 151 个培养账户、19 字节曾获得位图、rewardBaseSteps、ballsSpent、legacyChargedCount、voidedLegacyCount、rosterRevision、lastEvolution；Encounter 新增 legacyFreeAttempts。Save v3 把物种数组扩到 251：32 字节拥有／曾获得位图、251 个培养账户与捕获次数、251 张首捕卡，新增的 100 项初始为空。Save v4 追加 `encounterTarget`（下一场 200–500 步目标）与 `explorationSpent`（累计已扣探索步），维持 `spent + credit == totalSteps` 账目；新遭遇规则版本为 3（普通 85/92/98、稀有 70/80/90，球不限量），规则版本与存档版本分开处理；schema1/2/3 的旧布局保持可读。Save v5 保留 v4 布局，按属性校验遭遇路线；Save v6 扩为 649 个账户、捕获次数与首捕卡，以及各 82 字节的拥有／曾获得位图。schema1–2 的 151 项和 schema3–5 的 251 项布局继续独立读写。
 
-实现入口：[Engine冻结提交与启动迁移](../../firmware/apps/20_pokedex/adventure.cpp)、[双版本语义校验](../../firmware/apps/20_pokedex/adventure_model.cpp)、[计步队列与安全刷步](../../firmware/apps/20_pokedex/adventure_steps.cpp)、[进化事务](../../firmware/apps/20_pokedex/adventure_progression.cpp)、[投球准备与结算](../../firmware/apps/20_pokedex/adventure_capture.cpp)、[捕获练习](../../firmware/apps/20_pokedex/practice_capture.cpp)。新增字段和状态由这些实际调用路径统一处理，页面读取已发布状态。
+实现入口：[Engine冻结提交与启动迁移](../../firmware/apps/20_pokedex/adventure.cpp)、[各版本语义校验](../../firmware/apps/20_pokedex/adventure_model.cpp)、[计步队列与安全刷步](../../firmware/apps/20_pokedex/adventure_steps.cpp)、[进化事务](../../firmware/apps/20_pokedex/adventure_progression.cpp)、[投球准备与结算](../../firmware/apps/20_pokedex/adventure_capture.cpp)、[捕获练习](../../firmware/apps/20_pokedex/practice_capture.cpp)。新增字段和状态由这些实际调用路径统一处理，页面读取已发布状态。
 
 ## 换伙伴前后的步数归属
 
@@ -42,7 +42,7 @@ Detector 在更新 `peakAt_` 时同时冻结本拍 `uint16_t` 不透明归属标
 
 ## 资源与验收
 
-各版本使用固定字段布局，历史编码宽度保持不变。schema6 将单槽缓冲上限增到 49,152 字节；`FileStore::Workspace` 包含两槽编码缓冲、同次提交的候选字节和解码状态。649 个永久账户也扩大了 Engine 的已发布与候选 Save。实际编码长度、结构大小和本轮构建结果见[验证说明](../verification.md)；旧版本测量保留在[2026-10-27 记录](../verification.md#schema4-文档复核与主机检查2026-10-27)。
+各版本使用固定字段布局，历史编码宽度保持不变。schema6 将单槽缓冲上限增到 49,152 字节；`FileStore::Workspace` 包含两槽编码缓冲、同次提交的候选字节和解码状态。649 个永久账户也扩大了 Engine 的已发布与候选 Save。实际编码长度与结构大小由 `test-adventure`、`test-storage` 的本轮输出确认；目标资源占用以本轮构建为准，证据边界见[验证说明](../verification.md)。
 
 C152 的 Runtime、存储工作区和测试模式大缓冲使用 PSRAM，分配失败返回错误，不回退挤占内部 RAM，也不通过格式化解决。Runtime 重建先释放旧实例，避免测试模式切换时同时持有两套画面和 Engine。主机使用普通堆，并通过 ESP32 分配接口替身检查能力位和失败后不写槽；这不证明设备的 PSRAM 峰值或完整任务栈水位。
 

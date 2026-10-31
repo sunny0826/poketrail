@@ -1,0 +1,23 @@
+#include "adventure_model.hpp"
+#include "save_codec.hpp"
+#include <cstdio>
+#include <vector>
+
+int main(int argc, char** argv) {
+  using namespace pokedex::adventure;
+  if (argc != 2) return 1;
+  Save s; s.sequence = 7; s.bootGeneration = 1;
+  s.starter = s.partner = 1; s.rosterRevision = 1;
+  setOwned(s, 1); setRegistered(s, 1);
+  s.totalSteps = s.undatedSteps = 5000; s.progress[0].walked = 5000;
+  s.nextEncounterId = 2; s.phase = Phase::ThrowReady; s.result = Result::Won;
+  s.encounter.id = 1; s.encounter.species = 72; s.encounter.partner = 1;
+  s.encounter.route = Route::Coast; s.encounter.seed = 0x2468ace0u;
+  if (!validate(s)) return 2;
+  std::vector<uint8_t> bytes(codec::maxEncodedSize); size_t length = 0;
+  if (!codec::encode(s, bytes.data(), bytes.size(), length)) return 3;
+  FILE* f = std::fopen(argv[1], "wb");
+  if (!f) return 4;
+  const bool ok = std::fwrite(bytes.data(), 1, length, f) == length;
+  return std::fclose(f) == 0 && ok ? 0 : 5;
+}

@@ -7,6 +7,9 @@
 build/
 compile_commands.json
 
+# 桌面模拟存档与截图
+.simulator/
+
 # 原始素材缓存（由 sprites / icons-download 任务获取）
 assets/sprites/
 
