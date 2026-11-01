@@ -119,7 +119,7 @@ void scenarioJourney(Driver& d, const std::string& phase) {
 // P0-02：新档走路遭遇 → 真实对战获胜 → 完美投球捕获 → 确认；
 // 检查图鉴/伙伴/记录入口与未知日期，reload 断言无重复奖励。
 void scenarioCapture(Driver& d, const std::string& phase) {
-  if (phase == "run" || phase == "fixed") {
+  if (phase == "run" || phase == "fixed" || phase == "slow") {
     bootNewSave(d);
     checkCaptureBadge(d, 0, "gifted-starter");
     d.walk(500);
@@ -130,7 +130,24 @@ void scenarioCapture(Driver& d, const std::string& phase) {
                                      " seed=" + std::to_string(d.save().encounter.seed));
     enterAndWinBattle(d, phase == "fixed");
     d.check(!capture_badge_test::iconAt(312, 109), "throw page removes the static ball badge");
+    const auto writes = d.writes();
+    if (phase == "slow") d.fault(Fault::SlowWrite);
     d.throwBall(true);
+    if (phase == "slow") {
+      d.fault(Fault::None);
+      d.check(d.faultHits() == 1 && d.writes() == writes + 1,
+              "capture writes one real save with a five-second simulated storage delay");
+    }
+    d.check(d.screen().capture.active && d.screen().page == Page::Throw,
+            "committed throw starts its animation before the result page");
+    d.check(captureFrameAt(d.screen().capture, d.now()).stage == CaptureStage::Flight &&
+            capture_badge_test::iconAt(kBallX, kHandY),
+            "first rendered frame after commit shows the ball at the start of flight");
+    d.shot("capture-flight-start");
+    d.advance(240);
+    d.check(captureFrameAt(d.screen().capture, d.now()).stage == CaptureStage::Flight,
+            "flight remains visible after commit regardless of save duration");
+    d.shot("capture-flight-middle");
     d.finishCapture();
     waitSettled(d, "commit settles after the throw");
     d.check(d.screen().page == Page::Result, "result page shown only after commit");

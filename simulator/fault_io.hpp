@@ -1,5 +1,6 @@
 #pragma once
 #include "storage.hpp"
+#include <Arduino.h>
 
 namespace simulator {
 class FaultIO : public pokedex::adventure::SlotIO {
@@ -22,6 +23,7 @@ class FaultIO : public pokedex::adventure::SlotIO {
       ++hits_; storage_.write(slot, bytes, length / 2); return false;
     }
     if (!storage_.write(slot, bytes, length)) return false;
+    if (fault_ == Fault::SlowWrite) { ++hits_; host_time_ms += 5000; }
     if (fault_ == Fault::AfterWrite) { ++hits_; return false; }
     if (fault_ == Fault::ReadBack) { writtenSlot_ = slot; readBack_ = true; }
     return true;

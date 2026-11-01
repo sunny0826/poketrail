@@ -97,7 +97,7 @@ void Runtime::handle(const Input& raw) {
         const auto& a = engine_.view().encounter.attempts[key.attemptIndex - 1];
         CaptureAnim anim;
         anim.active = true;
-        anim.startMs = input.at;
+        anim.startMs = platform_.now();
         anim.timing = a.timing;
         anim.captured = a.captured;
         anim.wiggleBreak = a.captured ? 0 : uint8_t(1 + a.roll % 3);

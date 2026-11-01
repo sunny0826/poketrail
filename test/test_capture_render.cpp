@@ -122,6 +122,47 @@ void practiceCapture() {
   check(r.screen().page == Page::Home && r.engine().view().phase == Phase::Walking,
         "practice exit keeps the real encounter untouched");
 }
+void slowSaveCapture() {
+  for (uint32_t delay : {650u, 5000u}) for (bool captured : {false, true}) for (bool touch : {false, true}) {
+    MemoryStore store; Save s;
+    savedVictory(store, s, captured);
+    TestPlatform p; Runtime r(store, p); start(r);
+    store.delayMs = delay;
+    const unsigned commits = store.commits;
+    p.next.held = true;
+    if (touch) { p.next.touch = true; p.next.x = 233; p.next.y = 344; }
+    else p.next.right = true;
+    frame(r);
+    const uint32_t target = r.engine().throwView().targetMs;
+    while (int32_t(target - host_time_ms) > 0) {
+      p.next.held = true;
+      if (touch) p.next.touchDown = true; else p.next.rightDown = true;
+      frame(r, std::min(20u, target - host_time_ms));
+    }
+    if (touch) { p.next.click = true; p.next.x = 233; p.next.y = 344; }
+    frame(r, 0);
+    check(host_time_ms == target + delay && store.commits == commits + 1,
+          "throw commits once with the injected storage delay");
+    const auto& attempt = r.engine().view().encounter.attempts[0];
+    check(attempt.used && attempt.timing == Timing::Perfect && attempt.captured == captured,
+          "slow save preserves release-time timing and the committed outcome");
+    check(r.screen().page == Page::Throw && r.screen().capture.active &&
+          captureFrameAt(r.screen().capture, host_time_ms).stage == CaptureStage::Flight,
+          "slow save cannot consume the flight before its first rendered frame");
+    check(capture_badge_test::iconAt(kBallX, kHandY),
+          "first frame after slow save draws the thrown ball at its starting position");
+    const uint32_t origin = host_time_ms;
+    frame(r, kFlightMs / 2);
+    int x, y; captureFlightPos(0.5f, x, y);
+    check(capture_badge_test::iconAt(x, y), "ball travels halfway along its arc after slow save");
+    if (delay == 5000 && !touch) snapCurrent(r, captured ? "slow-save-flight-success" : "slow-save-flight-escape");
+    frame(r, origin + kFlightMs + 40 - host_time_ms);
+    check(capture_badge_test::iconAt(kBallX, 233), "slow-save flight reaches the target before landing");
+    while (r.screen().capture.active) frame(r);
+    check(r.screen().page == (captured ? Page::Result : Page::Throw) && store.commits == commits + 1,
+          "slow-save animation finishes on the correct page without another commit");
+  }
+}
 void captureAnimation() {
   {
     CaptureAnim probe; probe.active = true; probe.captured = false; probe.wiggleBreak = 2;
@@ -217,6 +258,6 @@ void captureAnimation() {
 }
 int main() {
   c152::begin("CAPTURE TEST");
-  firstBallSuccess(); practiceCapture(); captureAnimation();
+  slowSaveCapture(); firstBallSuccess(); practiceCapture(); captureAnimation();
   std::printf("%u capture Runtime/Button_Class/M5GFX checks, 0 failures\n", checks);
 }

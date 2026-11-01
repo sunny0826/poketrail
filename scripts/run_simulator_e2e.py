@@ -20,6 +20,7 @@ UTC = 1793376000
 CASES = {
     "journey": ("P0-01", "blank", [("journey", "run"), ("journey", "reload")]),
     "capture": ("P0-02", "blank", [("capture", "run"), ("capture", "reload")]),
+    "capture-slow-save": ("P0-02", "blank", [("capture", "slow"), ("capture", "reload")]),
     "battle-fixed": ("P0-02", "blank", [("capture", "fixed"), ("capture", "reload")]),
     "capture-clock": ("P1-10", "blank", [("capture", "run"), ("clock", "captured"), ("clock", "reload")]),
     "throws": ("P0-03", "throw", [("throws", "run"), ("throws", "reload")]),
