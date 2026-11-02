@@ -8,6 +8,7 @@
 #include <cstdlib>
 namespace pokedex { namespace ui {
 using namespace adventure;
+using i18n::Text;
 namespace {
 uint16_t accentFor(Page page) {
   switch (page) {
@@ -24,18 +25,16 @@ uint16_t accentFor(Page page) {
   }
 }
 }
-const char* routeName(Route r) {
-  const char* names[] = {"森林", "海边", "洞窟", "关都", "城都", "丰缘", "神奥", "合众"};
-  return r <= Route::Unova ? names[uint8_t(r)] : "未知";
-}
-const char* speciesName(uint16_t id) {
-  return id && id <= data::kSpriteCount ? data::kSprites[id - 1].name : "未选择";
+const char* routeName(i18n::Language language, Route r) {
+  const Text names[] = {Text::RouteForest, Text::RouteSea, Text::RouteCave, Text::RouteKanto,
+                        Text::RouteJohto, Text::RouteHoenn, Text::RouteSinnoh, Text::RouteUnova};
+  return i18n::text(language, r <= Route::Unova ? names[uint8_t(r)] : Text::Unknown);
 }
 unsigned menuCount(const ScreenState& s, const Engine& e) {
   switch (s.page) {
-    case Page::Menu: return 8;
+    case Page::Menu: return 9;
     case Page::Resources: return 3;
-    case Page::DateWelcome: return 3;
+    case Page::DateWelcome: return 4;
     case Page::Starter: return 4;
     case Page::Routes: return kRegionCount + 1;
     case Page::Partners: {
@@ -61,7 +60,8 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::Days: return e.view().historySize + 2;
     case Page::Achievements: return 7;
     case Page::Clock: return 9;
-    case Page::Error: return 2;
+    case Page::Error: return 3;
+    case Page::Language: return 3;
     case Page::TestEntry: return 3;
     case Page::TestHub: return 8;
     case Page::TestSteps: return 6;
@@ -91,7 +91,8 @@ bool touchBackEnabled(Page page) {
     case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
     case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets:
     case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
-    case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit: return true;
+    case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit:
+    case Page::Language: return true;
     default: return false;
   }
 }
@@ -100,7 +101,7 @@ bool isTestPage(Page page) {
          page == Page::TestScenarios || page == Page::TestFaults ||
          page == Page::TestDiagnostics || page == Page::TestExit;
 }
-void drawGraphicsError(const c152::BatteryStatus& battery) {
+void drawGraphicsError(const c152::BatteryStatus& battery, i18n::Language language) {
   M5.Display.startWrite();
   M5.Display.fillScreen(TFT_BLACK);
   M5.Display.fillCircle(233, 233, 227, theme::kBackground);
@@ -110,7 +111,7 @@ void drawGraphicsError(const c152::BatteryStatus& battery) {
   M5.Display.setTextColor(theme::kRed);
   M5.Display.drawString("!", 233, 208);
   M5.Display.setFont(&fonts::efontCN_16);
-  M5.Display.drawString("画面不可用，请重启", 233, 290);
+  M5.Display.drawString(i18n::text(language, Text::GraphicsError), 233, 290);
   drawBattery(battery);
   M5.Display.endWrite();
 }
@@ -169,10 +170,11 @@ void Screens::item(const ScreenState& s, unsigned index, const char* label, int 
     M5.Display.fillRoundRect(bounds.x + 12, y - 10, 4, 20, 2, accent);
   }
   if (species) thumbnail(species, bounds.x + menu_layout::kIconInset, y);
-  const char* trailing = note ? note : carried ? "携带" : nullptr;
+  const char* trailing = note ? note : carried ? tr(Text::CarryNote) : nullptr;
   M5.Display.setFont(&fonts::efontCN_24);
   M5.Display.setTextColor(color);
   if (!species && !trailing) {
+    if (M5.Display.textWidth(label) > bounds.width - 48) M5.Display.setFont(&fonts::efontCN_16);
     M5.Display.setClipRect(bounds.x + 24, y - 24, bounds.width - 48, 48);
     M5.Display.setTextDatum(middle_center);
     M5.Display.drawString(label, 233, y);
@@ -190,6 +192,7 @@ void Screens::item(const ScreenState& s, unsigned index, const char* label, int 
     M5.Display.drawString(trailing, right, y);
     M5.Display.setFont(&fonts::efontCN_24);
   }
+  if (M5.Display.textWidth(label) > right - left - trailingWidth) M5.Display.setFont(&fonts::efontCN_16);
   M5.Display.setClipRect(left, y - 24, right - left - trailingWidth, 48);
   M5.Display.setTextDatum(middle_left);
   M5.Display.drawString(label, left, y);
@@ -266,6 +269,7 @@ bool Screens::sprite(uint16_t id, uint32_t now, Playback& playback, int cy, int 
   return true;
 }
 bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& practice, uint32_t now) {
+  language_ = s.language;
   M5.Display.startWrite();
   M5.Display.fillScreen(TFT_BLACK);
   M5.Display.fillCircle(233, 233, 227, theme::kBackground);
@@ -281,6 +285,7 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     case Page::FirstCaptures: case Page::Recent: case Page::Days: case Page::Achievements:
       records(s, e); break;
     case Page::Clock: clock(s); break;
+    case Page::Language: language(s, e); break;
     case Page::TestEntry: testEntry(s); break;
     case Page::TestHub: testHub(s, e); break;
     case Page::TestSteps: testSteps(s); break;
@@ -292,7 +297,7 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
       progression(s, e); break;
     default: home(s, e, now); break;
   }
-  const bool listPage = s.page == Page::Menu || s.page == Page::Resources || s.page == Page::Clock ||
+  const bool listPage = s.page == Page::DateWelcome || s.page == Page::Menu || s.page == Page::Resources || s.page == Page::Clock ||
                         s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::Records ||
                         s.page == Page::EvolutionPreviewTargets || s.page == Page::TestHub ||
                         s.page == Page::TestSteps || s.page == Page::TestScenarios ||
@@ -303,7 +308,7 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     if (s.page == Page::Menu) {
       M5.Display.setTextDatum(middle_left); M5.Display.setFont(&fonts::efontCN_16);
       M5.Display.setTextColor(theme::kMuted);
-      M5.Display.drawString("首页", 128, 52);
+      M5.Display.drawString(tr(Text::Home), 128, 52);
     }
   }
   drawBattery(s.battery);
@@ -311,7 +316,7 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     M5.Display.setTextDatum(middle_center);
     M5.Display.setFont(&fonts::efontCN_16);
     M5.Display.setTextColor(theme::kGold);
-    M5.Display.drawString("测试", 233, 452);
+    M5.Display.drawString(tr(Text::TestBadge), 233, 452);
   }
   M5.Display.endWrite();
   return rendered;

@@ -18,6 +18,14 @@ from host_build import APP, ROOT, HostBuild, RUNTIME_SOURCES
 SEED = 20261031
 UTC = 1793376000
 CASES = {
+    "language": ("P0-17", "blank", [("language", "new"), ("language", "english"), ("language", "chinese")]),
+    **{f"language-retry-{kind}": ("P0-17", "starter", [("language", kind), ("language", "retry-reload")])
+       for kind in ("before", "after", "readback")},
+    "language-schema7": ("P1-18", "schema7-progress.bin", [("language", "schema7"), ("language", "schema7-reload")]),
+    **{f"language-{kind}": ("P1-18", f"language-{kind}", [("language", "error"), ("language", "error-reload")])
+       for kind in ("corrupt", "future")},
+    "language-pages": ("P1-19", "english-edges", [("language-pages", "run"), ("language-pages", "reload")]),
+    "language-capture": ("P1-19", "blank", [("capture", "english"), ("capture", "english-reload")]),
     "journey": ("P0-01", "blank", [("journey", "run"), ("journey", "reload")]),
     "capture": ("P0-02", "blank", [("capture", "run"), ("capture", "reload")]),
     "capture-slow-save": ("P0-02", "blank", [("capture", "slow"), ("capture", "reload")]),
@@ -159,6 +167,26 @@ def check_clock_restart(before_path, after_path, offline_seconds):
         raise RuntimeError(f"clock restart mismatch: {evidence}")
 
 
+def verify_language_save(save, snapshot_path):
+    import struct
+    import zlib
+    snapshot = json.loads(snapshot_path.read_text())
+    valid = []
+    for path in save.glob("save-*.bin"):
+        data = path.read_bytes()
+        if len(data) < 23 or data[:4] != b"AVD1":
+            continue
+        schema, sequence, length, crc = struct.unpack_from("<HQII", data, 4)
+        if schema != 8 or length != len(data) - 22 or zlib.crc32(data[:18] + data[22:]) != crc:
+            continue
+        if data[-1] in (0, 1):
+            valid.append((sequence, data[-1]))
+    if not valid or max(valid)[1] != snapshot["savedLanguage"] or snapshot["language"] != snapshot["savedLanguage"]:
+        raise RuntimeError("language snapshot does not match CRC-valid schema8 disk slot")
+    write_json(snapshot_path.parent / "language-disk-check.json", {"validSlots": valid,
+               "displayedLanguage": snapshot["language"], "savedLanguage": snapshot["savedLanguage"]})
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--case", action="append", choices=CASES)
@@ -220,6 +248,7 @@ def main():
             write_json(output / "fixture.json", hashes(save))
             shutil.copytree(save, output / "before")
             utc = UTC if name != "midnight" else 1793375990
+            protected = hashes(save) if name in ("language-corrupt", "language-future") else None
             previous = None
             offline = 3600 if name == "midnight" else 5
             for index, (scenario, phase) in enumerate(stages):
@@ -239,6 +268,13 @@ def main():
                         raise RuntimeError("fixed battle cue pixels differ from reviewed trace")
                 if scenario == "clock" and phase == "reload":
                     check_clock_restart(previous / "closed.json", stage / "reloaded.json", offline)
+                if protected is not None:
+                    after = hashes(save)
+                    write_json(stage / "protected-files.json", {"before": protected, "after": after})
+                    if protected != after:
+                        raise RuntimeError("temporary language changed protected save files")
+                if name.startswith("language") and protected is None:
+                    verify_language_save(save, stage / "final.json")
                 previous = stage
                 utc += elapsed // 1000 + offline
             if name == "storage":

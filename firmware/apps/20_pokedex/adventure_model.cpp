@@ -1,4 +1,5 @@
 #include "adventure_model.hpp"
+#include "save_validation.hpp"
 #include "encounter_catalog.hpp"
 #include "calendar.hpp"
 #include <limits>
@@ -98,16 +99,6 @@ static bool emptyStamp(const Stamp& a) {
 static bool validAchievement(const Achievement& a, const Save& s) {
   return validStamp(a.first, s) && (a.reached ? a.first.bootGeneration != 0 : emptyStamp(a.first));
 }
-static bool cleanBitmap(const std::array<uint8_t, kSpeciesBytes>& bits, uint16_t count) {
-  for (size_t byte = 0; byte < kSpeciesBytes; ++byte) {
-    const uint16_t first = uint16_t(byte * 8 + 1);
-    if (first > count) { if (bits[byte]) return false; continue; }
-    const uint16_t used = uint16_t(count - first + 1);
-    const uint8_t mask = used >= 8 ? 0xFF : uint8_t((1u << used) - 1);
-    if (bits[byte] & uint8_t(~mask)) return false;
-  }
-  return true;
-}
 static bool validCapture(const Capture& c, const Save& s) {
   return c.species <= speciesCapacity(s.schema).count && c.route <= lastStoredRoute(s.schema) && c.achievementMask <= 63 &&
          validStamp(c.at, s) && (c.species ? c.at.bootGeneration != 0 && c.at.totalSteps >= kEncounterMinSteps :
@@ -127,6 +118,8 @@ static bool validDay(const DayBucket& d, const Save& s) {
   return true;
 }
 bool validate(const Save& s) {
+  if (!i18n::validLanguage(s.language) ||
+      (s.schema < 8 && s.language != i18n::Language::Chinese)) return false;
   const size_t capacity = speciesCapacity(s.schema).count;
   if (s.partner > capacity || s.encounter.species > capacity || s.encounter.partner > capacity ||
       s.lastEvolution.request.from > capacity || s.lastEvolution.request.to > capacity) return false;
@@ -136,7 +129,7 @@ bool validate(const Save& s) {
   if (s.schema < 1 || s.schema > kSchemaVersion || uint8_t(s.phase) > 4 ||
       (s.schema >= 7 ? !isRegion(s.route) : s.route > Route::Cave) ||
       uint8_t(s.result) > (s.schema == 1 ? 5 : 7) ||
-      !cleanBitmap(s.owned, uint16_t(capacity)) || !cleanBitmap(s.registered, uint16_t(capacity)) || s.historySize > 14 ||
+      !save_validation::cleanBitmap(s.owned, uint16_t(capacity)) || !save_validation::cleanBitmap(s.registered, uint16_t(capacity)) || s.historySize > 14 ||
       s.recentSize > 32 || !s.nextEncounterId || s.explorationCredit > s.totalSteps ||
       s.undatedSteps > s.totalSteps || s.bestDaySteps > s.totalSteps) return false;
   const uint64_t encounters = s.nextEncounterId - 1;

@@ -19,7 +19,7 @@ def main():
              "test_adventure_render", "test_capture_render", "test_battle_render",
              "test_progression_render", "test_evolution_render", "test_evolution_preview_render",
              "test_thumbnail_render", "test_power_render", "test_power_pages_render",
-             "test_home_render", "test_test_mode_render", "test_clock_sync_render"]
+             "test_home_render", "test_test_mode_render", "test_clock_sync_render", "test_language_render"]
     if len(sys.argv) > 1:
         selected = set(sys.argv[1:])
         unknown = selected - set(names)

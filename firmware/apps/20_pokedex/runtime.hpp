@@ -76,6 +76,7 @@ class Runtime {
   const adventure::Engine& engine() const { return engine_; }
   adventure::Engine& engine() { return engine_; }
   const ScreenState& screen() const { return screen_; }
+  i18n::Language language() const { return screen_.language; }
   const Metrics& metrics() const { return metrics_; }
   const adventure::BattleView& practiceView() const { return practiceCapture_.battleView(); }
   bool dimmed() const { return display_ != DisplayState::Awake; }
@@ -107,6 +108,10 @@ class Runtime {
   void syncTestMode();
   void waitForRelease();
   void syncPage();
+  void syncLanguage();
+  void openLanguage();
+  void activateLanguage(unsigned item);
+  void leaveLanguage();
   void handle(const Input&);
   bool handleTestHold(const Input&);
   void activate(unsigned item, uint32_t at);
@@ -172,6 +177,8 @@ class Runtime {
   bool hostClockWriteAttempted_ = false;
   TestRequest testRequest_ = TestRequest::None;
   Page testEntryReturn_ = Page::Resources;
+  Page languageReturn_ = Page::Menu;
+  uint16_t languageReturnSelection_ = 0;
   uint32_t testHoldStarted_ = 0;
   uint8_t lastCaptureCue_ = 0;
   uint8_t battleSettlements_ = 0;

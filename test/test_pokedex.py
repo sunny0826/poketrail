@@ -7,24 +7,25 @@ import unittest
 from pathlib import Path
 
 from tools.build_pokedex import (
-    DATA, FILES, LANGUAGE, REVISION, SOURCE, build, load_sources, validate,
+    DATA, ENGLISH, EN_SOURCE, FILES, LANGUAGE, LANGUAGES, REVISION, SOURCE,
+    build, english_outputs, load_sources, validate,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
 GEN1 = ROOT / 'assets/pokedex-gen1.json'
 
 
-def read_independent(source: Path) -> dict:
+def read_independent(source: Path, language: int = LANGUAGE, last: int = 251) -> dict:
     def rows(name):
         with (source / name).open(encoding='utf-8') as handle:
             return list(csv.DictReader(handle))
 
     names = {int(r['pokemon_species_id']): r['name']
              for r in rows('pokemon_species_names.csv')
-             if r['local_language_id'] == str(LANGUAGE)}
+             if r['local_language_id'] == str(language)}
     types = {int(r['type_id']): r['name']
              for r in rows('type_names.csv')
-             if r['local_language_id'] == str(LANGUAGE)}
+             if r['local_language_id'] == str(language)}
     defaults = {int(r['species_id']): r for r in rows('pokemon.csv')
                 if r['is_default'] == '1'}
     slots = {}
@@ -32,11 +33,11 @@ def read_independent(source: Path) -> dict:
         slots.setdefault(int(row['pokemon_id']), []).append(
             (int(row['slot']), int(row['type_id'])))
     result = {}
-    for number in range(1, 252):
+    for number in range(1, last + 1):
         base = defaults[number]
         result[number] = {
             'pokemon_name': names[number],
-            'pokemon_type_name': ','.join(types[t] for _, t in sorted(slots[number])),
+            'pokemon_type_name': ','.join(types[t] for _, t in sorted(slots[int(base['id'])])),
             'height': f"{int(base['height']) / 10:.1f} m",
             'weight': f"{int(base['weight']) / 10:.1f} kg",
         }
@@ -47,7 +48,7 @@ class SourceManifestTests(unittest.TestCase):
     def test_pinned_revision_hashes_and_urls(self):
         manifest, tables = load_sources()
         self.assertEqual(manifest['revision'], REVISION)
-        self.assertEqual(manifest['language'], {'id': LANGUAGE, 'identifier': 'zh-hans'})
+        self.assertEqual(manifest['languages'], LANGUAGES)
         self.assertEqual(set(manifest['sources']), set(FILES))
         for name in FILES:
             raw = (SOURCE / name).read_bytes()
@@ -66,6 +67,28 @@ class SourceManifestTests(unittest.TestCase):
             path.write_bytes(path.read_bytes() + b'\n')
             with self.assertRaisesRegex(ValueError, 'hash/size'):
                 build(source)
+
+
+class EnglishMetadataTests(unittest.TestCase):
+    def test_all_649_names_and_types_match_pinned_csv(self):
+        expected = read_independent(SOURCE, ENGLISH, 649)
+        lines = EN_SOURCE.read_text().splitlines()
+        entries = [json.loads('[' + line.strip()[1:-2] + ']')
+                   for line in lines if line.startswith('  {')]
+        self.assertEqual(len(entries), 649)
+        for number, (name, types) in enumerate(entries, 1):
+            with self.subTest(id=number):
+                self.assertEqual(name, expected[number]['pokemon_name'])
+                self.assertEqual(types, expected[number]['pokemon_type_name'].replace(',', ' / '))
+        self.assertEqual(entries[0], ['Bulbasaur', 'Grass / Poison'])
+        self.assertEqual(entries[28][0], 'Nidoran♀')
+        self.assertEqual(entries[31][0], 'Nidoran♂')
+        self.assertEqual(entries[82][0], 'Farfetch’d')
+        self.assertEqual(entries[648][0], 'Genesect')
+
+    def test_generated_tables_are_current(self):
+        for path, content in english_outputs().items():
+            self.assertEqual(path.read_text(), content)
 
 
 class Gen2MetadataTests(unittest.TestCase):

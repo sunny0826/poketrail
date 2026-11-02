@@ -24,7 +24,8 @@ bool Runtime::handleTestHold(const Input& input) {
   return false;
 }
 void Runtime::goBack() {
-  if (screen_.page == Page::TestEntry) navigate(testEntryReturn_);
+  if (screen_.page == Page::Language) leaveLanguage();
+  else if (screen_.page == Page::TestEntry) navigate(testEntryReturn_);
   else if (screen_.page == Page::TestHub) navigate(screen_.testMode ? Page::Home : Page::Resources);
   else if (screen_.page == Page::TestSteps || screen_.page == Page::TestScenarios ||
            screen_.page == Page::TestFaults || screen_.page == Page::TestDiagnostics ||
@@ -248,11 +249,13 @@ void Runtime::activateTest(unsigned item) {
 void Runtime::activate(unsigned item, uint32_t at) {
   const auto& v = engine_.view();
   switch (screen_.page) {
+    case Page::Language: activateLanguage(item); break;
     case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
     case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit:
       activateTest(item); break;
     case Page::Error:
       if (item == 1) navigate(Page::Viewer);
+      else if (item == 2) openLanguage();
       else {
         if (engine_.savePending()) engine_.retrySave(); else engine_.begin();
         syncTestMode();
@@ -267,6 +270,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
     case Page::DateWelcome:
       if (item == 0) openClock();
       else if (item == 1) { dateSkipped_ = true; navigate(v.starter ? Page::Home : Page::Starter); }
+      else if (item == 3) openLanguage();
       else navigate(Page::Viewer);
       break;
     case Page::Starter:
@@ -284,6 +288,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       else if (item == 4) navigate(Page::Resources);
       else if (item == 5) beginPractice(at);
       else if (item == 6) sleepDisplay();
+      else if (item == 7) openLanguage();
       else navigate(Page::Home);
       break;
     case Page::Resources:

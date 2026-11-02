@@ -14,6 +14,9 @@ class Engine {
   // Re-anchor the in-memory clock after a mode switch without writing the save.
   void adoptClock(const ClockReading&);
   const Save& view() const { return state_; }
+  // Boot retries retain the language of the validated loaded save. Other
+  // pending transactions never expose their candidate language to the UI.
+  i18n::Language language() const { return bootPending_ ? candidate_.language : state_.language; }
   const BattleView& battleView() const { return battle_.view(); }
   const ThrowView& throwView() const { return throw_; }
   LoadResult loadResult() const { return loadResult_; }
@@ -28,6 +31,7 @@ class Engine {
   CommandResult chooseStarter(uint16_t species);
   CommandResult selectPartner(uint16_t species);
   CommandResult selectRoute(Route);
+  CommandResult selectLanguage(i18n::Language);
   CommandResult observeSteps(const StepEvent*, size_t count, uint32_t seedForNext);
   CommandResult observeClock(const ClockReading&);
   CommandResult checkpoint();

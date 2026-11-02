@@ -1,13 +1,15 @@
 #include "runtime.hpp"
 #include "menu_layout.hpp"
 #include "battle_presentation.hpp"
+#include "i18n.hpp"
 namespace pokedex { namespace ui {
 using namespace adventure;
 const char* Runtime::collectionLabel(uint16_t species, void* context) {
   const Runtime& runtime = *static_cast<Runtime*>(context);
-  if (!runtime.engine_.ready()) return "收藏状态未知";
+  if (!runtime.engine_.ready()) return i18n::text(runtime.language(), i18n::Text::CollectionUnknown);
   const Save& save = runtime.engine_.view();
-  return owns(save, species) ? "当前拥有" : registered(save, species) ? "曾经获得" : "尚未获得";
+  return i18n::text(runtime.language(), owns(save, species) ? i18n::Text::Owned :
+                    registered(save, species) ? i18n::Text::Registered : i18n::Text::Unregistered);
 }
 void Runtime::openPartner(uint16_t species) {
   screen_.species = species; screen_.evolved = false;

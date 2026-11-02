@@ -14,7 +14,7 @@ int main(int argc,char** argv) {
       const std::string name=argv[3],phase=argv[4];
       using Scenario=void(*)(Driver&,const std::string&);
       const std::map<std::string,Scenario> scenarios={
-        {"journey",scenarioJourney},{"capture",scenarioCapture},{"throws",scenarioThrows},
+        {"language",scenarioLanguage},{"language-pages",scenarioLanguagePages},{"journey",scenarioJourney},{"capture",scenarioCapture},{"throws",scenarioThrows},
         {"retry",scenarioRetry},{"progression",scenarioProgression},{"conflict",scenarioConflict},
         {"isolation",scenarioIsolation},{"clock",scenarioClock},{"lifecycle",scenarioLifecycle},
         {"edges",scenarioEdges},{"crash",scenarioCrash},{"migration",scenarioMigration},

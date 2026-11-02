@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include "locale.hpp"
 
 namespace pokedex { namespace adventure {
 constexpr size_t kSpeciesCount = 649;
@@ -11,11 +12,11 @@ struct SpeciesCapacity { size_t count, bytes; };
 constexpr SpeciesCapacity speciesCapacity(uint16_t schema) {
   return schema >= 1 && schema <= 2 ? SpeciesCapacity{151, 19} :
          schema >= 3 && schema <= 5 ? SpeciesCapacity{251, 32} :
-         schema >= 6 && schema <= 7 ? SpeciesCapacity{649, 82} : SpeciesCapacity{0, 0};
+         schema >= 6 && schema <= 8 ? SpeciesCapacity{649, 82} : SpeciesCapacity{0, 0};
 }
 constexpr size_t kRecentCount = 32;
 constexpr size_t kHistoryCount = 14;
-constexpr uint16_t kSchemaVersion = 7;
+constexpr uint16_t kSchemaVersion = 8;
 constexpr uint16_t kRuleVersion = 3;
 constexpr uint16_t kEncounterMinSteps = 200;
 constexpr uint16_t kEncounterMaxSteps = 500;
@@ -130,6 +131,7 @@ struct Save {
   uint64_t rosterRevision = 0;
   EvolutionReceipt lastEvolution;
   uint16_t schema = kSchemaVersion;
+  i18n::Language language = i18n::Language::Chinese;
   uint64_t sequence = 0;
   uint16_t starter = 0;
   uint16_t partner = 0;

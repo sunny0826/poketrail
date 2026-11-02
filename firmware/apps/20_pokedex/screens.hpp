@@ -1,5 +1,7 @@
 #pragma once
 #include "adventure.hpp"
+#include "i18n.hpp"
+#include "pokedex_text.hpp"
 #include "calendar.hpp"
 #include "capture_anim.hpp"
 #include "evolution_anim.hpp"
@@ -16,9 +18,12 @@ enum class Page : uint8_t {
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
   Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, Evolution,
   EvolutionPreviewTargets, EvolutionPreview,
-  TestEntry, TestHub, TestSteps, TestScenarios, TestFaults, TestDiagnostics, TestExit
+  TestEntry, TestHub, TestSteps, TestScenarios, TestFaults, TestDiagnostics, TestExit, Language
 };
+enum class LanguagePersistence : uint8_t { Saved, SessionOnly };
 struct ScreenState {
+  i18n::Language language = i18n::Language::Chinese;
+  LanguagePersistence languagePersistence = LanguagePersistence::Saved;
   Page page = Page::Home;
   c152::BatteryStatus battery;
   uint16_t selected = 0;
@@ -46,9 +51,9 @@ struct ScreenState {
   bool practiceThrowing = false;
   adventure::Result practiceResult = adventure::Result::None;
 };
-const char* routeName(adventure::Route);
-const char* speciesName(uint16_t id);
-const char* progressionMessage(adventure::CommandResult);
+const char* routeName(i18n::Language, adventure::Route);
+using i18n::speciesName;
+const char* progressionMessage(i18n::Language, adventure::CommandResult);
 unsigned menuCount(const ScreenState&, const adventure::Engine&);
 int menuTop(const ScreenState&, const adventure::Engine&);
 // Home shows the evolve button only while the carried partner can evolve now.
@@ -69,7 +74,7 @@ inline bool sceneEdgeVisible(unsigned sourceX, unsigned sourceY) {
 }
 bool touchBackEnabled(Page);
 bool isTestPage(Page);
-void drawGraphicsError(const c152::BatteryStatus&);
+void drawGraphicsError(const c152::BatteryStatus&, i18n::Language);
 class Screens {
  public:
   ~Screens();
@@ -81,6 +86,11 @@ class Screens {
   bool draw(const ScreenState&, const adventure::Engine&,
             const adventure::BattleView& practice, uint32_t now);
  private:
+  const char* tr(i18n::Text id) const { return i18n::text(language_, id); }
+  const char* speciesName(uint16_t id) const { return i18n::speciesName(language_, id); }
+  const char* routeName(adventure::Route route) const { return ui::routeName(language_, route); }
+  const char* progressionMessage(adventure::CommandResult result) const { return ui::progressionMessage(language_, result); }
+  void language(const ScreenState&, const adventure::Engine&);
   struct Playback { viewer::State state; uint16_t species = 0; };
   bool exploration(const adventure::Engine&, uint32_t now);
   void home(const ScreenState&, const adventure::Engine&, uint32_t now);
@@ -130,6 +140,7 @@ class Screens {
   bool sprite(uint16_t id, uint32_t now, Playback&, int cy = 233, int cx = 233,
               uint16_t silhouette = 0, uint8_t maxScale = 3, uint16_t maxHeight = kMaxDisplayHeight);
   bool advance(Playback&, uint16_t id, uint32_t now);
+  i18n::Language language_ = i18n::Language::Chinese;
   uint16_t* pixels_ = nullptr;
   uint16_t sceneRow_[456];
   Playback homePlayback_, battlePlayback_, enemyBattlePlayback_, resultPlayback_;

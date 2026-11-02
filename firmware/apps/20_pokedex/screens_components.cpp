@@ -15,6 +15,11 @@ unsigned sceneIndex(Route route) { return isRegion(route) ? regionIndex(route) :
 void Screens::line(const char* text, int y, uint16_t color, bool large) {
   M5.Display.setTextDatum(middle_center);
   M5.Display.setFont(large ? &fonts::efontCN_24 : &fonts::efontCN_16);
+  if (large) {
+    const int dy = std::abs(y - 233) + 12;
+    const int width = dy < 220 ? int(2 * std::sqrt(float(220 * 220 - dy * dy))) : 0;
+    if (M5.Display.textWidth(text) > width) M5.Display.setFont(&fonts::efontCN_16);
+  }
   M5.Display.setTextColor(color);
   M5.Display.drawString(text, 233, y);
 }

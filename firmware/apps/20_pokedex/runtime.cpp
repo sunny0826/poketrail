@@ -110,6 +110,7 @@ bool Runtime::safe() const {
          !practiceBusy && screen_.page != Page::Evolution && screen_.page != Page::EvolutionPreview;
 }
 void Runtime::syncPage() {
+  syncLanguage();
   if (screen_.testMode && testHost_ &&
       (screen_.page == Page::TestHub || screen_.page == Page::TestFaults ||
        screen_.page == Page::TestDiagnostics)) {
@@ -121,6 +122,10 @@ void Runtime::syncPage() {
     notifiedEncounter_ = v.encounter.id; feedback(35);
   }
   if (isTestPage(screen_.page)) return;
+  if (screen_.page == Page::Language) {
+    if (engine_.savePending() && languageReturn_ != Page::Error) navigate(Page::Error);
+    return;
+  }
   if (screen_.page == Page::Viewer || screen_.page == Page::EvolutionPreviewTargets ||
       screen_.page == Page::EvolutionPreview) return;
   if (screen_.page == Page::Throw && screen_.capture.active) return;
@@ -243,7 +248,7 @@ void Runtime::loop() {
     if (screen_.page == Page::PracticeResult && practiceCapture_.result() == Result::Captured)
       dirty_ |= screens_.advanceResult(practiceCapture_.species(), now);
     if (screen_.page == Page::Viewer && waking) {
-      if (!viewer_screen::redraw(now)) { drawGraphicsError(screen_.battery); ++metrics_.displayErrors; }
+      if (!viewer_screen::redraw(now)) { drawGraphicsError(screen_.battery, language()); ++metrics_.displayErrors; }
       if (screen_.testMode) viewer_screen::paintTestBadge();
     } else if (screen_.page == Page::Viewer && viewerWasActive && !releaseGate_ && !blockedInput) {
       viewer_screen::update(now);
@@ -255,7 +260,7 @@ void Runtime::loop() {
     metrics_.maxRenderMs = std::max(metrics_.maxRenderMs, platform_.now() - now);
   }
   if (waking) {
-    if (!graphicsReady_) { drawGraphicsError(screen_.battery); ++metrics_.displayErrors; }
+    if (!graphicsReady_) { drawGraphicsError(screen_.battery, language()); ++metrics_.displayErrors; }
     platform_.brightness(96);
   }
   if (engine_.ready() && safe() && !engine_.savePending() && platform_.now() - lastCheckpoint_ >= 30000) {

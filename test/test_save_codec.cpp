@@ -191,7 +191,7 @@ int main() {
   CHECK(captureProbability(2, true, Timing::Normal) == 30 && captureProbability(2, true, Timing::Nice) == 45 &&
         captureProbability(2, true, Timing::Perfect) == 60);
   CHECK(captureProbability(kRuleVersion, true, Timing::Miss) == 0);
-  std::printf("codec: %u checks passed; v1=%zu, v2=%zu, v7=%zu (max=%zu); legacy type pools=%u/%u/%u\n",
+  std::printf("codec: %u checks passed; v1=%zu, v2=%zu, v8=%zu (max=%zu); legacy type pools=%u/%u/%u\n",
               checks, data.size(), twoBytes.size(), fullBytes.size(), codec::maxEncodedSize,
               routes[0], routes[1], routes[2]);
 }

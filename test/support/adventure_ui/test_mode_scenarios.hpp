@@ -11,6 +11,13 @@ void scenarioSeeds() {
   check(account.totalSteps == 2000 && account.ballsSpent == 1 &&
         pokedex::adventure::availableBalls(account) == 1,
         "account/ball scenario exposes one remaining ball");
+  check(account.language == pokedex::i18n::Language::Chinese, "blank test seed defaults Chinese");
+  {
+    pokedex::adventure::Engine engine(host.test);
+    check(engine.begin() == pokedex::adventure::CommandResult::Applied &&
+          engine.selectLanguage(pokedex::i18n::Language::English) == pokedex::adventure::CommandResult::Applied,
+          "test Engine selects English before replacing scenarios");
+  }
 
   check(TestConsole::seed(host.test, host, TestScenario::NearEncounter),
         "near-encounter scenario seeds the test store");
@@ -19,6 +26,7 @@ void scenarioSeeds() {
         "near-encounter scenario decodes as a valid save");
   check(near.totalSteps == 299 && near.encounterTarget == 300 && near.phase == pokedex::adventure::Phase::Walking,
         "near-encounter scenario sits one step below its target");
+  check(near.language == pokedex::i18n::Language::English, "near encounter keeps test language");
 
   pokedex::adventure::Save current;
   check(TestConsole::seed(host.test, host, TestScenario::CurrentThrow),
@@ -29,6 +37,7 @@ void scenarioSeeds() {
         current.encounter.usedBalls == 1 && current.encounter.attempts[0].used &&
         current.phase == pokedex::adventure::Phase::ThrowReady,
         "current-rule scenario waits for the second throw under rule 3");
+  check(current.language == pokedex::i18n::Language::English, "current throw keeps test language");
 
   check(TestConsole::seed(host.test, host, TestScenario::LegacyEncounter),
         "legacy scenario seeds the test store");
@@ -40,6 +49,10 @@ void scenarioSeeds() {
         legacy.ballsSpent == 1 && pokedex::adventure::availableBalls(legacy) == 1 &&
         legacy.phase == pokedex::adventure::Phase::ThrowReady,
         "legacy scenario keeps the old-rule in-flight encounter and ball account");
+  check(legacy.language == pokedex::i18n::Language::English, "legacy scenario keeps test language");
+  check(TestConsole::seed(host.test, host, TestScenario::AccountBalls), "replace account scenario after language selection");
+  check(host.test.load(account).status == pokedex::adventure::LoadStatus::Loaded &&
+        account.language == pokedex::i18n::Language::English, "account scenario keeps test language");
 
   host.setFault(TestFault::CommitBefore);
   pokedex::adventure::Save before;

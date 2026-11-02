@@ -55,11 +55,11 @@ rtk proxy mise run icons-download
 | `test-rtc` | 真实 RX8130 驱动、初始化与校时故障 |
 | `test-storage` | 双槽、I/O、文件系统与分配失败；测试目录隔离、模式标记、重启恢复、清理失败、RAM-only 与存储故障开关 |
 | `check-adventure-catalog` | 649 目录、五个地区编号范围与普通池、旧档属性路线掩码、普通资格与 320 条进化边；旧 124 种资格、122 条费用和历史路线不变 |
-| `test-pokedex` | 649 资料、Gen2–5 来源哈希与 Gen1／Gen2 快照一致性 |
+| `test-pokedex` | 649 资料、Gen2–5 中文来源哈希与 Gen1／Gen2 快照一致性、649 英文名称属性和生成表 |
 | `test-sprites` | 649 个 GIF 哈希、完整帧和固件逐像素解码 |
 | `test-icons` | 649 个 PNG 哈希、透明规则与生成像素 |
 | `test-scenes` | 五地区场景来源、图层透明规则、RGB565 像素、生成物与固件地区顺序 |
-| `test-render` | 15 套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归；含测试模式入口、控制台、场景、标识与退出 |
+| `test-render` | 16 套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归；含中英文设置、文字与图鉴、测试模式入口、控制台、场景、标识与退出 |
 | `test-simulator` | SDL 桌面输入、图鉴、走路遭遇、窗口退出、双槽存档重启与目录隔离 |
 | `test-simulator-e2e` | 捕获、培养进化、失败重试、强杀恢复、旧档迁移、地区切换与捕完、时钟和练习隔离；真实文件及新进程重载 |
 | `build` | ESP32-S3 固件 |
@@ -97,6 +97,7 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 | [test_console.hpp](../firmware/apps/20_pokedex/test_console.hpp)、[test_console.cpp](../firmware/apps/20_pokedex/test_console.cpp) | 构造四种固定测试场景，经 codec 往返与语义校验后提交测试档 |
 | [runtime_input.cpp](../firmware/apps/20_pokedex/runtime_input.cpp)、[screens_test.cpp](../firmware/apps/20_pokedex/screens_test.cpp) | 隐藏入口与测试控制请求、测试页面绘制；模式切换请求交给 `main.cpp`，页面不直接写档 |
 | [screens.cpp](../firmware/apps/20_pokedex/screens.cpp) 及同名前缀文件 | 从已发布状态绘制页面；公共组件位于 `screens_components.cpp` |
+| [locale.hpp](../firmware/apps/20_pokedex/locale.hpp)、[i18n.hpp](../firmware/apps/20_pokedex/i18n.hpp)、[pokedex_text.hpp](../firmware/apps/20_pokedex/pokedex_text.hpp) | 语言值、成对界面文案与物种名称／属性查询；语言状态和存档规则见[中英文界面](design/i18n.md) |
 | [screen_theme.hpp](../firmware/apps/20_pokedex/screen_theme.hpp) | 页面与 Viewer 的颜色和图标类型 |
 | [battle_presentation.hpp](../firmware/apps/20_pokedex/battle_presentation.hpp) | 从 `BattleView` 判定动作及 450ms 显示窗口，定义提示圈、音符轨道与倒计时的布局，不结算玩法 |
 | [game.cpp](../firmware/apps/20_pokedex/game.cpp)、[sprite.cpp](../firmware/apps/20_pokedex/sprite.cpp) | 不依赖 Arduino 的图鉴时序与解码 |

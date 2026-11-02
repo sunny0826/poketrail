@@ -3,6 +3,7 @@
 #include "encounter_catalog.hpp"
 namespace pokedex { namespace ui {
 using namespace adventure;
+using i18n::Text;
 void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
   scene(regionOf(s.practiceSpecies), true);
   title(speciesName(s.practiceSpecies), "", theme::kGold);
@@ -10,27 +11,27 @@ void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
   ballSlots(s.practiceUsedBalls);
   if (s.practiceThrowing) {
     aim(s.practiceSpecies, now, true, int32_t(s.practiceTargetMs - now), s.charging, now - s.chargeStartMs);
-    line("松手投球 · 未投出也计一次", 399, theme::kMint);
-    line("成功不会收入图鉴", 426, theme::kMuted);
+    line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
+    line(tr(Text::PracticeNoCollection), 426, theme::kMuted);
     return;
   }
   aim(s.practiceSpecies, now, false, 0, false, 0);
-  line("按住右键蓄力 · 松手投球", 399, theme::kMint);
-  line("轻触顶部结束练习", 426, theme::kMuted);
+  line(tr(Text::HoldThrow), 399, theme::kMint);
+  line(tr(Text::EndPracticeTop), 426, theme::kMuted);
 }
 void Screens::practiceResult(const ScreenState& s, uint32_t now) {
-  title(s.practiceResult == Result::Captured ? "练习成功" :
-        s.practiceResult == Result::Lost ? "对战失败" : "练习结束",
+  title(s.practiceResult == Result::Captured ? tr(Text::PracticeSuccess) :
+        s.practiceResult == Result::Lost ? tr(Text::BattleLost) : tr(Text::PracticeEnded),
         speciesName(s.practiceSpecies), theme::kGold);
   if (s.practiceResult == Result::Captured) {
     actorShadow(233, 168);
     sprite(s.practiceSpecies, now, resultPlayback_, 168, 233, 0, 2, 120);
-    line("未收入图鉴", 262, theme::kMuted);
+    line(tr(Text::NotCollected), 262, theme::kMuted);
   } else {
     thumbnail(s.practiceSpecies, 233, 160, 2);
-    line(s.practiceResult == Result::Lost ? "对战失败 · 下次再试" : "宝可梦逃走了", 240, theme::kMuted);
+    line(s.practiceResult == Result::Lost ? tr(Text::BattleTryAgain) : tr(Text::PokemonFled), 240, theme::kMuted);
   }
-  item(s, 0, "再练一只", menu_layout::kTop);
-  item(s, 1, "返回探索", menu_layout::kTop);
+  item(s, 0, tr(Text::PracticeAgain), menu_layout::kTop);
+  item(s, 1, tr(Text::ReturnExploration), menu_layout::kTop);
 }
 } }

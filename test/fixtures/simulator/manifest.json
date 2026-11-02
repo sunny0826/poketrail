@@ -37,10 +37,32 @@
       },
       "generator": "test/simulator/schema6_fixture.cpp.txt",
       "generatorSha256": "88647e5d17792c4e8201f200b389e07a711e53c90b79410f5b3431abc14ebd65"
+    },
+    "schema7-progress.bin": {
+      "sourceCommit": "95df92f1f89d9b087107ab5829db1721b3f6883f",
+      "sources": {
+        "adventure_model.hpp": "18a3b7a5a2f199d959d9f3509476edeeecbe7175014179ef74b6b3d7d7977f20",
+        "adventure_model.cpp": "c457e5957124eb5895cc11963b0953a8642db847a263f591dbb55cd90030cbf5",
+        "save_codec.hpp": "f6ae76c4746cdbb9594fff0face9447873e74730b16779167900a030d6356db5",
+        "save_codec.cpp": "c70ef157b98088c7d87d9847e5db4f9953e184a748a86d300c869547d1e42483",
+        "calendar.hpp": "21a768acd9af252d40e4f637c4373768c1c5c594487bbf09a485c1c7f56b95dc",
+        "calendar.cpp": "0f24dbebddcf73918a2cfbdfeb62c29736825043e90259612d5b7f5dccf5d834",
+        "encounter_catalog.hpp": "81603d757020a47c498cf6fa7e62fdcd548b6462f86a8ead0ea2267e8e8f330f",
+        "encounter_catalog.cpp": "0431f6d2255c35ef946a3885afe141d1709c09ce4719c67d4eb11230e1a5103a",
+        "adventure_catalog_generated.hpp": "4a58bcf050beaa72bfb94d46a5fd4ecbba33e4a77501601d34eb05d78bb2a601",
+        "progression_catalog_generated.hpp": "ce8531a82c2045e7dc69b93216f7f1ecb7785576bc006ae3a9cf5159694d41c8",
+        "adventure_migration.hpp": "13e9c0f63ff6c39bb26053753655ad9f1bd85607e1857e728efbf514fd8c6da9",
+        "adventure_migration.cpp": "4169e877db20e2010af6772bbde500f1ee6ead367f9250f06d13ff1eafd89569",
+        "large_object.hpp": "b6cc9291844fd190f1fa1468f7cbfa875557ec8f4c4a53613d68c9a5ebb3cfda",
+        "route_masks_v4_generated.hpp": "c478d6d4de4b6bf472185ee8f8a62cd54e2a6ade5a81854d6f1243a85c5fbcf0"
+      },
+      "generator": "scripts/fixtures/schema7_progress.cpp",
+      "generatorSha256": "0c127c8ae42dfb84dbebe20b9fae5510d61a97c34722c089645742f51b0c6583"
     }
   },
   "fixtures": {
     "schema3-rule2.bin": "9a24d7a3efd5d0e9656a03e5169b38037c7a4fc9e7e9d569a7f5f45819e1101d",
-    "schema6-coast.bin": "67857f668eb6bbcde88752f8e44a8cc0c3c33635de80eb0da6a2589a081d5033"
+    "schema6-coast.bin": "67857f668eb6bbcde88752f8e44a8cc0c3c33635de80eb0da6a2589a081d5033",
+    "schema7-progress.bin": "b6d0836e7eb1ac5a1d3637ce02899ae8c4b28cd7cd4a8d4f12a98a682d7d7e0f"
   }
 }

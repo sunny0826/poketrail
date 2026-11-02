@@ -91,7 +91,7 @@ bool rebuildRuntime(bool persistBoot = true) {
   runtime = pokedex::makeLargeObject<pokedex::ui::Runtime>(
     store, static_cast<pokedex::ui::Platform&>(testPlatform), &store);
   ready = runtime && runtime->begin(persistBoot);
-  if (!runtime) pokedex::ui::drawGraphicsError(platform.readBattery());
+  if (!runtime) pokedex::ui::drawGraphicsError(platform.readBattery(), pokedex::i18n::Language::Chinese);
   return ready;
 }
 
@@ -261,12 +261,12 @@ void handleTestRequest(pokedex::ui::Runtime::TestRequest request) {
 }
 }}
 void setup() {
-  c152::begin("ADVENTURE");
+  c152::begin("PokeTrail");
   platform.beginClock();
   store.begin();
   rebuildRuntime();
   if (!ready && runtime) {
-    pokedex::ui::drawGraphicsError(runtime->screen().battery);
+    pokedex::ui::drawGraphicsError(runtime->screen().battery, runtime->language());
   }
 }
 void loop() {

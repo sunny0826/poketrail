@@ -39,7 +39,7 @@ void bootAndCapture() {
   check(r.engine().view().route == Route::Johto, "region selection uses Engine command");
   openMenu(r, p); select(r, p, 2);
   check(menuCount(r.screen(), r.engine()) == 2, "partner menu only owns starter plus back");
-  select(r, p, 1); select(r, p, 7);
+  select(r, p, 1); select(r, p, 8);
   walk(r, p, 10008);
   check(r.engine().view().phase == Phase::EncounterReady && r.engine().view().totalSteps >= 10000, "continuous IMU steps create 5000-step encounter and bank next cycle");
   check(r.dimmed() && p.light == 0, "30-second inactivity dims but continues sampling");

@@ -135,7 +135,7 @@ void scenarioRegions(Driver& d, const std::string& phase) {
 // P1-12：HEAD 的 schema6 编码器写出的海边在途场与森林历史，升级为 schema7 关都后继续投球。
 void scenarioSchema6Upgrade(Driver& d, const std::string& phase) {
   d.frames();
-  d.check(d.save().schema == 7 && d.save().route == Route::Kanto, "schema6 bytes upgrade to Kanto schema7");
+  d.check(d.save().schema == 8 && d.save().route == Route::Kanto, "schema6 bytes upgrade to Kanto schema8");
   d.check(d.save().firstCapture[15].route == Route::Forest && d.save().recent[0].species == 16 &&
           d.save().recent[0].route == Route::Forest, "old Forest record stays as history");
   if (phase == "schema6") {

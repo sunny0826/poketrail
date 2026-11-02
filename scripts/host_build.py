@@ -13,7 +13,7 @@ from host_dependencies import ROOT, library_source
 
 APP = ROOT / "firmware/apps/20_pokedex"
 RUNTIME_SOURCES = [APP / name for name in (
-    "runtime.cpp runtime_clock.cpp runtime_input.cpp runtime_progression.cpp runtime_power.cpp "
+    "runtime.cpp runtime_clock.cpp runtime_input.cpp runtime_progression.cpp runtime_power.cpp runtime_language.cpp "
     "clock_sync.cpp screens.cpp screens_home.cpp screens_exploration.cpp screens_battle.cpp "
     "screens_capture.cpp screens_practice.cpp screens_records.cpp screens_clock.cpp "
     "screens_progression.cpp screens_evolution.cpp screens_components.cpp screens_test.cpp "
@@ -52,7 +52,8 @@ class HostBuild:
             self.lib / "lgfx/v1/panel/Panel_Device.cpp",
             self.lib / "lgfx/v1/platforms/sdl/common.cpp",
             ROOT / "firmware/shared/board.cpp", self.unified / "utility/Button_Class.cpp",
-            *[APP / name for name in ("game.cpp", "sprite.cpp", "sprites_generated.cpp", "battery_screen.cpp")],
+            *[APP / name for name in ("game.cpp", "sprite.cpp", "sprites_generated.cpp", "battery_screen.cpp",
+                                     "i18n.cpp", "pokedex_text.cpp", "pokedex_en_generated.cpp")],
         ]
 
     def object(self, source):

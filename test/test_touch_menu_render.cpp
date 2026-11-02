@@ -85,7 +85,7 @@ void welcomeBoundaries() {
   for (const auto& point : outside) {
     tap(runtime, point[0], point[1]);
     check(runtime.screen().page == Page::DateWelcome && runtime.screen().selected == 1,
-          "welcome gaps, outer edges and single-page footer are inert");
+          "welcome gaps, outer edges and footer center are inert");
   }
   check(store.commits == commits, "inert welcome touches never save");
   lgfx::LGFX_Sprite label;
@@ -160,7 +160,12 @@ void pagination() {
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 0,
         "right swipe returns without activating its start button");
   tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 218);
-  check(runtime.screen().page == Page::Home, "menu return restores exploration");
+  check(runtime.screen().page == Page::Language, "menu second row on the last page opens language");
+  tap(runtime, 233, 52);
+  check(runtime.screen().page == Page::Menu && runtime.screen().selected == 7,
+        "language top-back restores its menu row");
+  tap(runtime, 233, 286);
+  check(runtime.screen().page == Page::Home, "menu last-row return restores exploration");
   MemoryStore four; legacyOwned(four, {1,4,7,25});
   Runtime partners(four, platform); start(partners); openMenu(partners); select(partners, 2);
   tap(partners, 298, 430);

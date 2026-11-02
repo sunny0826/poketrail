@@ -7,6 +7,8 @@ void Driver::state(const std::string& name) {
   const auto& s = save();
   std::ofstream o(output_ + "/" + name + ".json");
   o << "{\"at\":" << now() << ",\"page\":" << int(screen().page)
+    << ",\"language\":" << int(runtime().language()) << ",\"savedLanguage\":" << int(s.language)
+    << ",\"schema\":" << s.schema << ",\"route\":" << int(s.route)
     << ",\"phase\":" << int(s.phase) << ",\"result\":" << int(s.result)
     << ",\"sequence\":" << s.sequence << ",\"bootGeneration\":" << s.bootGeneration
     << ",\"starter\":" << s.starter << ",\"partner\":" << s.partner

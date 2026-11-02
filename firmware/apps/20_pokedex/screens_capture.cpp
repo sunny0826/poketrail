@@ -4,6 +4,7 @@
 #include <algorithm>
 namespace pokedex { namespace ui {
 using namespace adventure;
+using i18n::Text;
 void Screens::ballAt(int x, int y, float angle) {
   const auto& icon = data::kPokeBallIcon;
   M5.Display.pushImageRotateZoom(float(x), float(y), icon.width / 2.0f, icon.height / 2.0f,
@@ -90,7 +91,7 @@ void Screens::capture(const ScreenState& s, uint16_t species, uint32_t now) {
         }
         M5.Display.drawCircle(233, kGroundY, 26, theme::kGold);
         ballAt(kBallX, kGroundY);
-        line("捕获成功", 399, theme::kGold, true);
+        line(tr(Text::CatchSuccess), 399, theme::kGold, true);
       } else {
         const int r = int(90.0f * f.t);
         if (r > 2 && f.t < 1.0f) {
@@ -100,7 +101,7 @@ void Screens::capture(const ScreenState& s, uint16_t species, uint32_t now) {
         }
         const int rise = f.t < 0.5f ? int(67 * (1.0f - 2 * f.t)) : 0;
         sprite(species, now, battlePlayback_, 233 + rise, 233, f.t < 0.2f ? TFT_WHITE : 0, 2, 190);
-        line("挣脱了", 399, theme::kText, true);
+        line(tr(Text::BrokeFree), 399, theme::kText, true);
       }
       break;
     case CaptureStage::Done: break;

@@ -26,7 +26,7 @@ bool migrateLegacy(Save& s) {
     }
     if (!validate(s)) return false;
   }
-  if (s.schema < 2 || s.schema > 6 || !validate(s)) return false;
+  if (s.schema < 2 || s.schema > 7 || !validate(s)) return false;
   // Schema 3 widens the catalog. Existing fields and the current encounter stay
   // verbatim; species 152-251 start empty and unregistered.
   if (s.schema == 2) {
@@ -62,6 +62,11 @@ bool migrateLegacy(Save& s) {
     s.route = Route::Kanto;
     if (s.phase != Phase::Walking && s.encounter.id) s.encounter.route = regionOf(s.encounter.species);
     s.schema = 7;
+  }
+  if (s.schema == 7) {
+    if (!validate(s)) return false;
+    s.language = i18n::Language::Chinese;
+    s.schema = 8;
   }
   return validate(s);
 }
