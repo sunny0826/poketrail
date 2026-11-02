@@ -225,8 +225,8 @@ def main():
                     from PIL import Image
                     with Image.open(stage / "fixed-cue-0.bmp") as image:
                         cue = hashlib.sha256(image.convert("RGB").crop((50, 24, 518, 492)).tobytes()).hexdigest()
-                    # Frozen from the independently reviewed 20261031T033539 capture trace.
-                    expected = "b93eac168aa8be654f57a67b57f8b5aeb94e904fbdf3e59fc1d2c7998abfdb61"
+                    # Frozen from the reviewed 20261102T024019 trace (HUD plates, edge dither); inputs unchanged.
+                    expected = "6bdb5d535c264f598db2b3562e2e28f2d0de76e6924ac151ea432138f552303a"
                     write_json(stage / "cue-check.json", {"expected": expected, "actual": cue})
                     if cue != expected:
                         raise RuntimeError("fixed battle cue pixels differ from reviewed trace")

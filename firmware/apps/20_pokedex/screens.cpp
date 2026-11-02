@@ -71,6 +71,12 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     default: return 0;
   }
 }
+int menuTop(const ScreenState& s, const Engine& e) {
+  if (s.page == Page::Menu) return menu_layout::kMainTop;
+  if (s.page == Page::Result)
+    return e.view().result == Result::Captured ? menu_layout::kCaptureResultTop : menu_layout::kResultTop;
+  return menu_layout::kTop;
+}
 bool homeEvolutionReady(const Engine& e) {
   if (!e.ready()) return false;
   const EvolutionView view = e.evolutionView(e.view().partner);
@@ -154,33 +160,55 @@ void Screens::item(const ScreenState& s, unsigned index, const char* label, int 
   const uint16_t accent = accentFor(s.page);
   const uint16_t background = active ? theme::kPanelActive : theme::kPanel;
   const uint16_t color = active ? accent : theme::kText;
-  M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 16, background);
+  const int radius = bounds.height / 2;
+  M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, radius, background);
   if (active) {
-    M5.Display.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 16, accent);
-    M5.Display.fillRect(bounds.x + 1, y - 12, 4, 24, accent);
+    M5.Display.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, radius, accent);
+    M5.Display.drawRoundRect(bounds.x + 1, bounds.y + 1, bounds.width - 2, bounds.height - 2, radius - 1, accent);
+    M5.Display.fillRoundRect(bounds.x + 12, y - 10, 4, 20, 2, accent);
   }
-  if (species) thumbnail(species, bounds.x + 34, y);
+  if (species) thumbnail(species, bounds.x + menu_layout::kIconInset, y);
   const char* trailing = note ? note : carried ? "携带" : nullptr;
   M5.Display.setFont(&fonts::efontCN_24);
   M5.Display.setTextColor(color);
   if (!species && !trailing) {
-    M5.Display.setClipRect(bounds.x + 12, y - 24, bounds.width - 24, 48);
+    M5.Display.setClipRect(bounds.x + 24, y - 24, bounds.width - 48, 48);
     M5.Display.setTextDatum(middle_center);
     M5.Display.drawString(label, 233, y);
     M5.Display.clearClipRect();
     return;
   }
-  const int left = species ? bounds.x + 64 : bounds.x + 16;
-  const int right = bounds.x + bounds.width - 16;
-  const int trailingWidth = trailing ? M5.Display.textWidth(trailing) + 12 : 0;
+  const int left = species ? bounds.x + 68 : bounds.x + 30;
+  const int right = bounds.x + bounds.width - 26;
+  int trailingWidth = 0;
+  if (trailing) {
+    if (M5.Display.textWidth(label) + M5.Display.textWidth(trailing) + 12 > right - left)
+      M5.Display.setFont(&fonts::efontCN_16);
+    trailingWidth = M5.Display.textWidth(trailing) + 12;
+    M5.Display.setTextDatum(middle_right);
+    M5.Display.drawString(trailing, right, y);
+    M5.Display.setFont(&fonts::efontCN_24);
+  }
   M5.Display.setClipRect(left, y - 24, right - left - trailingWidth, 48);
   M5.Display.setTextDatum(middle_left);
   M5.Display.drawString(label, left, y);
   M5.Display.clearClipRect();
-  if (trailing) {
-    M5.Display.setTextDatum(middle_right);
-    M5.Display.drawString(trailing, right, y);
+}
+void Screens::pager(const ScreenState& s, unsigned count) {
+  const int y = menu_layout::kPagerY;
+  const unsigned pages = menu_layout::pageCount(count), page = s.selected / menu_layout::kPageSize;
+  glyph(theme::Icon::Back, 168, y, theme::kMuted);
+  glyph(theme::Icon::Next, 298, y, theme::kMuted);
+  if (pages <= menu_layout::kPagerDots) {
+    const int first = 233 - int(pages - 1) * 7;
+    for (unsigned i = 0; i < pages; ++i)
+      M5.Display.fillCircle(first + int(i) * 14, y, i == page ? 4 : 2, i == page ? accentFor(s.page) : theme::kTrack);
+    return;
   }
+  char text[24]; snprintf(text, sizeof(text), "%u / %u", page + 1, pages);
+  M5.Display.setTextDatum(middle_center); M5.Display.setFont(&fonts::efontCN_16);
+  M5.Display.setTextColor(theme::kMuted);
+  M5.Display.drawString(text, 233, y);
 }
 bool Screens::advance(Playback& playback, uint16_t id, uint32_t now) {
   if (!id || id > data::kSpriteCount) return false;
@@ -268,17 +296,7 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
                         s.page == Page::EvolutionPreviewTargets || s.page == Page::TestHub ||
                         s.page == Page::TestSteps || s.page == Page::TestScenarios ||
                         s.page == Page::TestFaults;
-  if (listPage && menuCount(s, e) > menu_layout::kPageSize) {
-    M5.Display.fillCircle(168, 430, 20, theme::kPanel);
-    M5.Display.fillCircle(298, 430, 20, theme::kPanel);
-    glyph(theme::Icon::Back, 168, 430, theme::kText);
-    glyph(theme::Icon::Next, 298, 430, theme::kText);
-    char count[24]; snprintf(count, sizeof(count), "%u / %u", s.selected / menu_layout::kPageSize + 1,
-                            menu_layout::pageCount(menuCount(s, e)));
-    M5.Display.setTextDatum(middle_center); M5.Display.setFont(&fonts::efontCN_24);
-    M5.Display.setTextColor(theme::kText);
-    M5.Display.drawString(count, 233, 430);
-  }
+  if (listPage && menuCount(s, e) > menu_layout::kPageSize) pager(s, menuCount(s, e));
   if (touchBackEnabled(s.page)) {
     glyph(theme::Icon::Back, 112, 52, theme::kMuted);
     if (s.page == Page::Menu) {

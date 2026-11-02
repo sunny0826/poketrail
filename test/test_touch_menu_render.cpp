@@ -1,6 +1,19 @@
 #include "support/progression_ui.hpp"
+#include "support/round_layout_checks.hpp"
 using namespace progression_ui;
 namespace {
+void roundRows() {
+  const struct { int top; unsigned rows; } lists[] = {
+    {menu_layout::kTop, menu_layout::kPageSize}, {menu_layout::kMainTop, menu_layout::kPageSize},
+    {menu_layout::kResultTop, 1}, {menu_layout::kCaptureResultTop, 1}};
+  for (const auto& list : lists)
+    for (unsigned row = 0; row < list.rows; ++row)
+      check(round_layout_test::insideRowRadius(menu_layout::rowBounds(row, list.top)),
+            "every list row keeps its corners inside the round-screen row radius");
+  check(menu_layout::rowBounds(0).width == menu_layout::kWidth &&
+        menu_layout::rowBounds(2).width < menu_layout::kWidth,
+        "upper rows keep full width while the lowest row narrows with the circle");
+}
 int selectedTop() {
   for (int y = 210; y < 395; ++y)
     if (M5.Display.readPixel(200, y) == theme::kPanelActive) return y;
@@ -47,18 +60,27 @@ void blankTouch() {
 }
 void welcomeBoundaries() {
   const Page expected[] = {Page::Clock, Page::Starter, Page::Viewer};
-  const int points[][2] = {{233, 0}, {233, -30}, {233, 29}, {73, 0}, {392, 0},
-                          {88, -29}, {377, -29}, {88, 28}, {377, 28}};
-  for (unsigned row = 0; row < 3; ++row) for (const auto& point : points) {
-    MemoryStore store; HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-    tap(runtime, point[0], menu_layout::center(row) + point[1]);
-    check(runtime.screen().page == expected[row], "large welcome button interior and edges activate only its label");
-    check(!runtime.engine().view().starter, "welcome options never grant a partner");
+  for (unsigned row = 0; row < 3; ++row) {
+    const auto b = menu_layout::rowBounds(row);
+    const int left = b.x, right = b.x + b.width - 1;
+    const int points[][2] = {{233, 0}, {233, -30}, {233, 29}, {left, 0}, {right, 0},
+                            {left + 15, -29}, {right - 15, -29}, {left + 15, 28}, {right - 15, 28}};
+    for (const auto& point : points) {
+      MemoryStore store; HostPlatform platform; Runtime runtime(store, platform); start(runtime);
+      tap(runtime, point[0], menu_layout::center(row) + point[1]);
+      check(runtime.screen().page == expected[row], "large welcome button interior and edges activate only its label");
+      check(!runtime.engine().view().starter, "welcome options never grant a partner");
+    }
   }
   MemoryStore store; HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   edge(runtime, false, true);
+  for (unsigned row = 0; row < 3; ++row)
+    check(round_layout_test::rowEdges(menu_layout::rowBounds(row)),
+          "each welcome row paints exactly its touch bounds");
+  const auto low = menu_layout::rowBounds(2);
   const int outside[][2] = {{72,306}, {393,306}, {233,268}, {233,275}, {233,336},
-                           {233,343}, {233,404}, {233,430}, {233,207}};
+                           {233,343}, {233,404}, {233,430}, {233,207},
+                           {low.x - 1, 374}, {low.x + low.width, 374}};
   const unsigned commits = store.commits;
   for (const auto& point : outside) {
     tap(runtime, point[0], point[1]);
@@ -89,6 +111,7 @@ void pagination() {
   tap(runtime, 298, 430);
   check(runtime.screen().selected == 6, "clock nine-item menu reaches last page");
   screenshot(runtime, "clock-last-page");
+  check(round_layout_test::pagerDots(3, 2, theme::kBlue), "clock pager marks its last page in the clock accent");
   tap(runtime, 298, 430);
   check(runtime.screen().selected == 0, "clock next button wraps to first");
   tap(runtime, 168, 430);
@@ -106,6 +129,14 @@ void pagination() {
   openMenu(runtime); edge(runtime, false, true); tap(runtime, 298, 430);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 3, "menu flips to second page start");
   screenshot(runtime, "menu-second-page");
+  check(round_layout_test::pagerDots(3, 1, theme::kMint), "three-page menu shows a dot pager on page two");
+  for (unsigned row = 0; row < 3; ++row)
+    check(round_layout_test::pillRow(menu_layout::rowBounds(row, menu_layout::kMainTop)),
+          "menu rows are stadium shaped");
+  tap(runtime, 330, 425);
+  check(runtime.screen().selected == 6, "menu reaches third page from the enlarged next-page zone");
+  tap(runtime, 136, 425);
+  check(runtime.screen().selected == 3, "enlarged previous-page zone turns back one page");
   tap(runtime, 298, 430);
   check(runtime.screen().selected == 6, "menu reaches third page");
   tap(runtime, 233, 150);
@@ -256,7 +287,7 @@ void throwBounds() {
 }
 int main() {
   c152::begin("TOUCH MENU TEST");
-  welcomeTouch(); blankTouch(); welcomeBoundaries(); pagination(); resourcesAndHomeTouch();
+  roundRows(); welcomeTouch(); blankTouch(); welcomeBoundaries(); pagination(); resourcesAndHomeTouch();
   longLabelsAndWarnings(); throwBounds();
   std::printf("%u touch menu Runtime/Button_Class/pixel checks, 0 failures\n", checks);
 }

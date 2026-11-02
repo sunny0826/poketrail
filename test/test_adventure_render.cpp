@@ -4,6 +4,23 @@
 #include "scene_backgrounds_generated.hpp"
 
 namespace {
+void sceneEdges(Route route) {
+  unsigned dropped = 0, mismatched = 0;
+  for (int y : {92, 93, 94, 95, 96, 97, 356, 357, 358, 359, 360, 361})
+    for (int x = 60; x < 406; ++x) {
+      if (y > 300 && x > 200 && x < 266) continue;
+      const unsigned sx = (x - 5) / 2, sy = (y - 92) / 2;
+      const bool visible = sceneEdgeVisible(sx, sy);
+      const uint16_t expected = visible ? data::kRouteScenesDim[uint8_t(route)].pixels[sy * data::kSceneWidth + sx]
+                                        : theme::kBackground;
+      dropped += !visible;
+      mismatched += M5.Display.readPixel(x, y) != expected;
+    }
+  check(dropped > 1000 && mismatched == 0, "scene band dissolves into the page over its outer source rows");
+  unsigned kept[3] = {};
+  for (unsigned sy = 0; sy < 3; ++sy) for (unsigned sx = 0; sx < 8; ++sx) kept[sy] += sceneEdgeVisible(sx, sy);
+  check(kept[0] < kept[1] && kept[1] < kept[2] && sceneEdgeVisible(0, 3), "edge dither density rises 25/50/75/100%");
+}
 void frozenScene(Route route) {
   unsigned matched = 0;
   for (unsigned y = 180; y < 190; ++y) for (unsigned x = 70; x < 80; ++x) {
@@ -49,7 +66,7 @@ void bootAndCapture() {
   select(r, p, 0); check(r.screen().page == Page::Battle, "pause resumes");
   win(r, p);
   check(r.screen().page == Page::Battle, "committed victory keeps the final action visible before the throw menu");
-  published(r, "throw-ready-1"); frozenScene(Route::Coast); frame(r);
+  published(r, "throw-ready-1"); frozenScene(Route::Coast); sceneEdges(Route::Coast); frame(r);
   check(r.engine().throwView().active == false && r.engine().view().encounter.usedBalls == 0,
         "victory lands on the throw page with the window still closed");
   p.next.right = p.next.held = true; frame(r);
@@ -73,6 +90,8 @@ void bootAndCapture() {
   check(r.engine().view().encounter.usedBalls == 2 && r.screen().page == Page::Result, "retry publishes same saved second attempt");
   check(r.engine().view().encounter.id == key.encounterId, "retry preserves encounter identity");
   published(r, "result");
+  check(round_layout_test::clearAbove(menu_layout::rowBounds(0, menuTop(r.screen(), r.engine())), 8),
+        "capture result text keeps clear of its confirm button");
   if (r.engine().view().result == Result::Captured) {
     check(r.engine().view().recentSize == 1, "capture awards exactly one recent record");
     const auto& c = r.engine().view().recent[0];

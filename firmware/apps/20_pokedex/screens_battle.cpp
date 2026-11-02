@@ -69,17 +69,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     if (s.capture.active) {
       capture(s, v.encounter.species, now);
     } else if (e.throwView().active) {
-      actorShadow(233, 233);
-      sprite(v.encounter.species, now, battlePlayback_, 233, 233, 0, 2, 190);
-      const int32_t remaining = int32_t(e.throwView().targetMs - now);
-      const int radius = remaining > 1500 ? 130 : remaining > 0 ? 24 + remaining * 106 / 1500 : 24;
-      const bool perfect = remaining <= 70 && remaining >= -70;
-      M5.Display.drawCircle(233, 233, radius, remaining < 400 ? theme::kGold : theme::kMint);
-      M5.Display.drawCircle(233, 233, 24, perfect && (now / 100) % 2 ? theme::kText : theme::kGold);
-      const uint8_t charge = s.charging ? captureChargeLevel(now - s.chargeStartMs) : 0;
-      if (charge == 1) M5.Display.drawCircle(233, kHandY, 27, theme::kGold);
-      else if (charge == 2) M5.Display.drawCircle(233, kHandY, (now / 200) % 2 ? 34 : 30, theme::kGold);
-      ballAt(233, kHandY);
+      aim(v.encounter.species, now, true, int32_t(e.throwView().targetMs - now), s.charging, now - s.chargeStartMs);
       line("按住蓄力 · 松手投球", 399, theme::kMint);
       line("未投出也计一次投球", 426, theme::kMuted);
     } else if (legacyNoBalls) {
@@ -92,9 +82,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     } else {
       // Aiming state: the ball waits in the hand, no window runs yet and no
       // ring is drawn, so the ring only ever means "the clock is running".
-      actorShadow(233, 233);
-      sprite(v.encounter.species, now, battlePlayback_, 233, 233, 0, 2, 190);
-      ballAt(233, kHandY);
+      aim(v.encounter.species, now, false, 0, false, 0);
       line("按住右键蓄力 · 松手投球", 399, theme::kMint);
       line("开始蓄力才开始计时", 426, theme::kMuted);
     }
@@ -117,8 +105,8 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   const Route route = s.page == Page::Practice ? v.route : v.encounter.route;
   scene(route, true, shake);
   title(s.page == Page::Practice ? "捕获练习" : "节奏对战", "轻触上方暂停", theme::kMint);
-  hp(speciesName(partner), b.playerHp, kPlayerHp, 91, theme::kMint);
-  hp(speciesName(enemy), b.enemyHp, kEnemyHp, 282, theme::kGold);
+  hp(speciesName(partner), b.playerHp, kPlayerHp, false, theme::kMint);
+  hp(speciesName(enemy), b.enemyHp, kEnemyHp, true, theme::kGold);
   const uint8_t playerScale = actorScale(partner), enemyScale = actorScale(enemy);
   if (!attack && hit && age >= 10 && age < 250) {
     sprite(partner, now, battlePlayback_, 232, 145 + shake, theme::kOutline, playerScale);
@@ -138,7 +126,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   if (effect && !attack && !hit) impact(playerX, 228, age, theme::kRed, false);
   const uint32_t beat = b.frenzy ? kFrenzyBeatIntervalMs : kBeatIntervalMs;
   const int32_t normalMs = b.frenzy ? kFrenzyNormalWindowMs : kNormalWindowMs;
-  M5.Display.fillRoundRect(99, 344, 268, 27, 8, theme::kBackground);
+  M5.Display.fillRoundRect(99, 344, 268, 27, 13, theme::kBackground);
   M5.Display.drawFastHLine(103, 357, 260, theme::kTrack);
   for (int boundary : {-normalMs, -perfectMs, perfectMs, normalMs}) {
     const int x = 233 + boundary * 120 / int(beat);

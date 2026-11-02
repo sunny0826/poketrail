@@ -1,6 +1,7 @@
 #include "driver.hpp"
 #include "viewer_screen.hpp"
 #include "capture_badge_checks.hpp"
+#include "../support/round_layout_checks.hpp"
 
 namespace simulator {
 namespace e2e {
@@ -156,6 +157,8 @@ void scenarioCapture(Driver& d, const std::string& phase) {
             "frozen perfect capture roll and probability");
     checkCaptureRecord(d, species);
     d.shot("result-captured");
+    d.check(round_layout_test::clearAbove(menu_layout::rowBounds(0, menuTop(d.screen(), d.runtime().engine())), 8),
+            "captured result text keeps clear of its confirm button");
     acknowledge(d);
     checkCaptureBadge(d, 1, "first-capture");
     d.homeMenu();

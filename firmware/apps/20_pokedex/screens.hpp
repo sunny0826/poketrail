@@ -5,6 +5,7 @@
 #include "evolution_anim.hpp"
 #include "game.hpp"
 #include "menu_layout.hpp"
+#include "scene_backgrounds_generated.hpp"
 #include "board_power.hpp"
 #include "screen_theme.hpp"
 #include "test_mode.hpp"
@@ -49,9 +50,20 @@ const char* routeName(adventure::Route);
 const char* speciesName(uint16_t id);
 const char* progressionMessage(adventure::CommandResult);
 unsigned menuCount(const ScreenState&, const adventure::Engine&);
+int menuTop(const ScreenState&, const adventure::Engine&);
 // Home shows the evolve button only while the carried partner can evolve now.
 constexpr menu_layout::Rect kHomeEvolveButton = {173, 67, 120, 30};
 bool homeEvolutionReady(const adventure::Engine&);
+// Route scenes dissolve into the page over their outer three source rows (25/50/75% kept).
+inline bool sceneEdgeVisible(unsigned sourceX, unsigned sourceY) {
+  const unsigned last = data::kSceneHeight - 1;
+  const unsigned edge = sourceY < last - sourceY ? sourceY : last - sourceY;
+  const unsigned shifted = sourceX + 2 * (sourceY & 1);
+  if (edge == 0) return shifted % 4 == 0;
+  if (edge == 1) return (sourceX + sourceY) % 2 == 0;
+  if (edge == 2) return shifted % 4 != 1;
+  return true;
+}
 bool touchBackEnabled(Page);
 bool isTestPage(Page);
 void drawGraphicsError(const c152::BatteryStatus&);
@@ -89,9 +101,10 @@ class Screens {
   void testExit(const ScreenState&);
   void testMenu(const ScreenState&, const char* const* labels,
                 unsigned count, int top = menu_layout::kTop);
-  void menu(const ScreenState&, const adventure::Engine&, int top = menu_layout::kTop);
+  void menu(const ScreenState&, const adventure::Engine&);
   void item(const ScreenState&, unsigned index, const char*, int top = menu_layout::kTop,
             uint16_t species = 0, bool carried = false, const char* note = nullptr);
+  void pager(const ScreenState&, unsigned count);
   void thumbnail(uint16_t species, int x, int y, unsigned scale = 1);
   void captureBadge(const adventure::Save&, int x, int y);
   void line(const char*, int y, uint16_t color = theme::kText, bool large = false);
@@ -102,7 +115,8 @@ class Screens {
   void glyph(theme::Icon, int x, int y, uint16_t color);
   void alert(const char*, int y, uint16_t color);
   void progress(uint64_t value, uint32_t total, int y, uint16_t color);
-  void hp(const char*, uint8_t value, uint8_t total, int x, uint16_t color);
+  void hp(const char*, uint8_t value, uint8_t total, bool enemy, uint16_t color);
+  void aim(uint16_t species, uint32_t now, bool timing, int32_t remaining, bool charging, uint32_t heldMs);
   void cueRing(const adventure::BattleView&, uint32_t now);
   void actorShadow(int cx, int cy);
   void warning(int cx, int cy, uint16_t color);

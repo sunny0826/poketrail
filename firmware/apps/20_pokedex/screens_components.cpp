@@ -1,12 +1,12 @@
 #include "screens.hpp"
 #include "board.hpp"
 #include "scene_backgrounds_generated.hpp"
+#include "battle_presentation.hpp"
 #include <algorithm>
 #include <cmath>
 
 namespace pokedex { namespace ui {
 using namespace adventure;
-
 void Screens::line(const char* text, int y, uint16_t color, bool large) {
   M5.Display.setTextDatum(middle_center);
   M5.Display.setFont(large ? &fonts::efontCN_24 : &fonts::efontCN_16);
@@ -45,6 +45,7 @@ void Screens::scene(Route route, bool dim, int dx, uint64_t visualSteps) {
       uint16_t pixel = row[x];
       if (ground && middle[x] != data::kSceneTransparentKey) pixel = middle[x];
       if (ground && near[x] != data::kSceneTransparentKey) pixel = near[x];
+      if (!sceneEdgeVisible(x, y)) pixel = theme::kBackground;
       sceneRow_[x * 2] = sceneRow_[x * 2 + 1] = pixel;
     }
     for (unsigned dy = 0; dy < 2; ++dy) {
@@ -134,15 +135,20 @@ void Screens::progress(uint64_t value, uint32_t total, int y, uint16_t color) {
     M5.Display.fillRect(x, y, 13, 5, index < filled ? color : theme::kDisabled);
   }
 }
-void Screens::hp(const char* name, uint8_t value, uint8_t total, int x, uint16_t color) {
-  M5.Display.setTextDatum(middle_left);
+void Screens::hp(const char* name, uint8_t value, uint8_t total, bool enemy, uint16_t color) {
+  const auto& plate = enemy ? kEnemyPlate : kPlayerPlate;
+  M5.Display.fillRoundRect(plate.x, plate.y, plate.width, plate.height, plate.height / 2, theme::kBackground);
+  const int left = plate.x + kPlateInset, right = plate.x + plate.width - kPlateInset;
   M5.Display.setFont(&fonts::efontCN_16);
   M5.Display.setTextColor(theme::kText);
-  M5.Display.drawString(name, x, 92);
-  // Segments share a fixed 54px track so 3 and 5 HP bars stay inside the round screen.
-  const unsigned pitch = total > 3 ? 11 : 18, width = total > 3 ? 8 : 13;
+  M5.Display.setTextDatum(enemy ? middle_right : middle_left);
+  M5.Display.setClipRect(left, plate.y, right - left, plate.height);
+  M5.Display.drawString(name, enemy ? right : left, plate.y + 12);
+  M5.Display.clearClipRect();
+  const int start = enemy ? right - hpTrackWidth(total) : left;
   for (unsigned index = 0; index < total; ++index)
-    M5.Display.fillRect(x + index * pitch, 108, width, 7, index < value ? color : theme::kDisabled);
+    M5.Display.fillRoundRect(start + hpSegmentStart(index, total), kHpSegmentY, hpSegmentWidth(total), 6, 2,
+                             index < value ? color : theme::kDisabled);
 }
 void Screens::actorShadow(int cx, int cy) {
   M5.Display.fillEllipse(cx, cy + 67, 40, 6, theme::rgb(0x6C, 0x68, 0x48));
