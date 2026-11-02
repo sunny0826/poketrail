@@ -1,6 +1,7 @@
 #include "support/home_ui/pixel_checks.hpp"
 #include "support/home_ui/touch_cases.hpp"
 #include "support/home_ui/depth_cases.hpp"
+#include "support/home_ui/region_cases.hpp"
 #include <cstring>
 
 namespace {
@@ -40,19 +41,7 @@ void eighthItem() {
 }
 void routesAndPartner() {
   MemoryStore store; legacyOwned(store, {1, 4, 7}); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-  uint16_t colors[3] = {};
-  for (unsigned route = 0; route < 3; ++route) {
-    openMenu(runtime); select(runtime, 1);
-    if (route == 0) screenshot(runtime, "routes-menu");
-    select(runtime, route); settle(runtime); home(runtime);
-    check(runtime.engine().view().route == Route(route), "real route menu updates the displayed route");
-    check(glyph(routeName(Route(route)), 81, theme::routeColor(Route(route)), 107, true), "home labels the actual current scene");
-    colors[route] = M5.Display.readPixel(233, 110);
-    char name[40]; std::snprintf(name, sizeof(name), "home-scene-%u", route); screenshot(runtime, name);
-    Save loaded; check(store.load(loaded).status == LoadStatus::Loaded && loaded.route == Route(route),
-                       "route selection survives production codec reload");
-  }
-  check(colors[0] != colors[1] && colors[1] != colors[2] && colors[0] != colors[2], "three scenes have distinct visible backgrounds");
+  selectEveryRegion(store, runtime);
   openMenu(runtime); select(runtime, 2); select(runtime, 1);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 4, "partner list opens Charmander detail");
   select(runtime, 0); settle(runtime); check(runtime.engine().view().partner == 4, "carry action selects Charmander");
@@ -208,12 +197,12 @@ void saveFailure() {
   openMenu(runtime); select(runtime, 1); const auto bytes = store.bytes;
   store.fail = true; select(runtime, 1); frame(runtime);
   check(runtime.screen().page == Page::Error && runtime.engine().savePending() &&
-        runtime.engine().view().route == Route::Forest && store.bytes == bytes,
+        runtime.engine().view().route == Route::Kanto && store.bytes == bytes,
         "failed route save exposes error and does not publish the uncommitted scene");
   store.fail = false; const unsigned commits = store.commits; select(runtime, 0); frame(runtime); home(runtime);
-  check(runtime.engine().view().route == Route::Coast && store.commits == commits + 1,
+  check(runtime.engine().view().route == Route::Johto && store.commits == commits + 1,
         "explicit retry commits the original route change once");
-  Engine restarted(store); check(restarted.begin() == CommandResult::Applied && restarted.view().route == Route::Coast,
+  Engine restarted(store); check(restarted.begin() == CommandResult::Applied && restarted.view().route == Route::Johto,
                                 "route survives real Engine restart and codec reload");
 }
 void clockPendingRestart() {

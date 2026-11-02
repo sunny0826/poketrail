@@ -292,7 +292,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       else goBack();
       break;
     case Page::Routes:
-      if (item < 3) { engine_.selectRoute(Route(item)); navigate(Page::Home); }
+      if (item < kRegionCount) { engine_.selectRoute(regionAt(uint8_t(item))); navigate(Page::Home); }
       else goBack();
       break;
     case Page::Partners: {

@@ -11,16 +11,23 @@ struct SpeciesCapacity { size_t count, bytes; };
 constexpr SpeciesCapacity speciesCapacity(uint16_t schema) {
   return schema >= 1 && schema <= 2 ? SpeciesCapacity{151, 19} :
          schema >= 3 && schema <= 5 ? SpeciesCapacity{251, 32} :
-         schema == 6 ? SpeciesCapacity{649, 82} : SpeciesCapacity{0, 0};
+         schema >= 6 && schema <= 7 ? SpeciesCapacity{649, 82} : SpeciesCapacity{0, 0};
 }
 constexpr size_t kRecentCount = 32;
 constexpr size_t kHistoryCount = 14;
-constexpr uint16_t kSchemaVersion = 6;
+constexpr uint16_t kSchemaVersion = 7;
 constexpr uint16_t kRuleVersion = 3;
 constexpr uint16_t kEncounterMinSteps = 200;
 constexpr uint16_t kEncounterMaxSteps = 500;
 constexpr uint32_t kLegacyEncounterSteps = 5000;
-enum class Route : uint8_t { Forest, Coast, Cave };
+// Forest/Coast/Cave are the schema 1-6 type routes; schema 7 keeps them only in
+// capture history and selects and draws encounters by region.
+enum class Route : uint8_t { Forest, Coast, Cave, Kanto, Johto, Hoenn, Sinnoh, Unova };
+constexpr uint8_t kRegionCount = 5;
+constexpr bool isRegion(Route r) { return uint8_t(r) >= uint8_t(Route::Kanto) && uint8_t(r) <= uint8_t(Route::Unova); }
+constexpr uint8_t regionIndex(Route r) { return uint8_t(uint8_t(r) - uint8_t(Route::Kanto)); }
+constexpr Route regionAt(uint8_t index) { return Route(uint8_t(Route::Kanto) + index); }
+constexpr Route lastStoredRoute(uint16_t schema) { return schema >= 7 ? Route::Unova : Route::Cave; }
 enum class Phase : uint8_t { Walking, EncounterReady, Battle, ThrowReady, Resolved };
 enum class Timing : uint8_t { Miss, Normal, Nice, Perfect };
 enum class Action : uint8_t { Attack, Dodge, Both };
@@ -126,7 +133,7 @@ struct Save {
   uint64_t sequence = 0;
   uint16_t starter = 0;
   uint16_t partner = 0;
-  Route route = Route::Forest;
+  Route route = Route::Kanto;
   std::array<uint8_t, kSpeciesBytes> owned = {{0}};
   std::array<uint32_t, kSpeciesCount> captureCounts = {{0}};
   std::array<Capture, kSpeciesCount> firstCapture;

@@ -264,7 +264,7 @@ void longLabelsAndWarnings() {
 }
 void throwBounds() {
   MemoryStore store; Save save;
-  save.schema = 1; save.bootGeneration = 1; save.starter = save.partner = 1;
+  save.schema = 1; save.route = Route::Forest; save.bootGeneration = 1; save.starter = save.partner = 1;
   setOwned(save, 1); save.totalSteps = save.undatedSteps = 500; save.nextEncounterId = 2;
   save.phase = Phase::ThrowReady; save.result = Result::Won;
   save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1; save.encounter.ruleVersion = 1;

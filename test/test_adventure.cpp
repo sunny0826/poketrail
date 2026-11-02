@@ -18,7 +18,7 @@ static void basicSteps() {
   w.steps(11000); CHECK(w.e.view().totalSteps == unsigned(firstTarget) + 11000 && w.e.view().explorationCredit == 11000);
   CHECK(w.e.view().undatedSteps == unsigned(firstTarget) + 11000 && w.e.view().today.steps == 0);
   CHECK(w.e.view().encounterTarget == nextTarget);
-  CHECK(w.e.selectRoute(Route::Coast) == CommandResult::Applied);
+  CHECK(w.e.selectRoute(Route::Johto) == CommandResult::Applied);
   CHECK(w.e.view().encounter.species == target.species && w.e.view().encounter.route == target.route);
   StepEvent replay; replay.batchId = w.e.view().totalSteps; replay.clock = w.clock();
   CHECK(w.e.observeSteps(&replay, 1, 9) == CommandResult::Duplicate);
@@ -26,7 +26,7 @@ static void basicSteps() {
   const uint64_t spentBefore = w.e.view().explorationSpent;
   CHECK(w.e.acknowledgeResult(target.id, 123) == CommandResult::Applied);
   CHECK(w.e.view().explorationSpent == spentBefore + nextTarget);
-  CHECK(w.e.view().explorationCredit == 11000 - nextTarget && w.e.view().encounter.id == 2 && w.e.view().encounter.route == Route::Coast);
+  CHECK(w.e.view().explorationCredit == 11000 - nextTarget && w.e.view().encounter.id == 2 && w.e.view().encounter.route == Route::Johto);
   CHECK(w.e.pressThrow(AttemptKey(target.id, 1), 0, w.clock()) == CommandResult::InvalidInput);
   CHECK(w.e.checkpoint() == CommandResult::Duplicate);
   Engine reboot(w.store); CHECK(reboot.begin() == CommandResult::Applied);
@@ -100,7 +100,7 @@ static void failures() {
   CHECK(w.e.observeSteps(&event, 1, 12) == CommandResult::StorageError);
   const std::vector<uint8_t> frozen = w.store.lastAttempt;
   CHECK(w.e.view().totalSteps == target - 1 && w.e.view().phase == Phase::Walking);
-  CHECK(w.e.selectRoute(Route::Cave) == CommandResult::SavePending);
+  CHECK(w.e.selectRoute(Route::Hoenn) == CommandResult::SavePending);
   StepEvent next[3]; for (unsigned i = 0; i < 3; ++i) { next[i].batchId = target + 1 + i; next[i].clock = w.clock(); }
   CHECK(w.e.observeSteps(next, 3, 19) == CommandResult::SavePending);
   CHECK(w.e.observeSteps(next, 3, 19) == CommandResult::Duplicate);
@@ -140,7 +140,7 @@ static void probabilityBoundaries() {
       const uint8_t roll = uint8_t(probabilities[rare][timing] - 1 + side);
       uint32_t seed = 0;
       for (; seed < 1000000; ++seed) {
-        Encounter e; e.id = 1; e.seed = seed; e.species = chooseEncounter(w.e.view(), Route::Forest, seed);
+        Encounter e; e.id = 1; e.seed = seed; e.species = chooseEncounter(w.e.view(), Route::Kanto, seed);
         if (catalogEntry(e.species)->rare == bool(rare) && throwRoll(e, 1, kRuleVersion) == roll) break;
       }
       CHECK(seed < 1000000); w.walkToEncounter(seed); w.win();
@@ -219,8 +219,37 @@ static void battleCommitRecovery() {
   CHECK(reboot.view().recentSize == 1);
   std::puts("PASS victory and result acknowledgement crash points preserve encounter and credit");
 }
+static void regions() {
+  World w;
+  CHECK(w.e.view().route == Route::Kanto);
+  const unsigned pools[kRegionCount] = {73, 51, 63, 38, 69};
+  const uint16_t spans[kRegionCount][2] = {{1, 151}, {152, 251}, {252, 386}, {387, 493}, {494, 649}};
+  for (uint8_t i = 0; i < kRegionCount; ++i) {
+    const Route region = regionAt(i);
+    CHECK(remainingEncounters(w.e.view(), region) == pools[i]);
+    CHECK(regionOf(spans[i][0]) == region && regionOf(spans[i][1]) == region);
+    for (uint32_t seed = 0; seed < 400; ++seed) {
+      const uint16_t id = chooseEncounter(w.e.view(), region, seed);
+      CHECK(id >= spans[i][0] && id <= spans[i][1] && ordinaryEncounter(id));
+    }
+  }
+  CHECK(regionOf(0) == Route::Forest && regionOf(650) == Route::Forest);
+  const std::vector<uint8_t> before = w.store.disk;
+  for (Route legacy : {Route::Forest, Route::Coast, Route::Cave, Route(8)}) {
+    CHECK(w.e.selectRoute(legacy) == CommandResult::InvalidInput);
+    CHECK(chooseEncounter(w.e.view(), legacy, 1) == 0 && remainingEncounters(w.e.view(), legacy) == 0);
+  }
+  CHECK(w.store.disk == before && w.e.view().route == Route::Kanto);
+  CHECK(w.e.selectRoute(Route::Sinnoh) == CommandResult::Applied);
+  w.walkToEncounter();
+  CHECK(w.e.view().encounter.route == Route::Sinnoh);
+  CHECK(w.e.view().encounter.species >= 387 && w.e.view().encounter.species <= 493);
+  Engine reboot(w.store); CHECK(reboot.begin() == CommandResult::Applied);
+  CHECK(reboot.view().route == Route::Sinnoh && reboot.view().encounter.route == Route::Sinnoh);
+  std::puts("PASS five regions draw only their own generation, reject old routes and survive reboot");
+}
 int main() {
-  basicSteps(); battles(); throwsAndRecords(); failures(); dates(); clockTransactions();
+  regions(); basicSteps(); battles(); throwsAndRecords(); failures(); dates(); clockTransactions();
   probabilityBoundaries(); additionalRecovery(); battleCommitRecovery();
   std::printf("adventure: %u checks passed; sizeof(Save)=%zu sizeof(Engine)=%zu\n", checks, sizeof(Save), sizeof(Engine));
 }

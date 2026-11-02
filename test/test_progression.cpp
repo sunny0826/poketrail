@@ -1,5 +1,5 @@
 #include "support/progression/harness.hpp"
-static_assert(kSchemaVersion==6 && kRuleVersion==3 && kEncounterMinSteps==200 && kEncounterMaxSteps==500,"v6 save, v3 encounter rules, random cadence");
+static_assert(kSchemaVersion==7 && kRuleVersion==3 && kEncounterMinSteps==200 && kEncounterMaxSteps==500,"v7 save, v3 encounter rules, random cadence");
 static void allEdges() {
   size_t count=0;const auto* rules=evolutionRules(count);CHECK(count==320);
   for(size_t i=0;i<count;++i)for(int delta=-1;delta<=1;++delta){
@@ -152,7 +152,7 @@ static void recaptureAndGuards() {
   MemoryStore store;store.disk=encoded(*initial);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   const auto req=request(e,1,2);CHECK(e.evolve(req,clockFor(e))==CommandResult::Applied);
   uint32_t seed=0;for(;seed<1000000;++seed){Encounter encounter;encounter.id=1;encounter.seed=seed;
-    if(chooseEncounter(e.view(),Route::Forest,seed)==1&&throwRoll(encounter,1,3)<98)break;}
+    if(chooseEncounter(e.view(),Route::Kanto,seed)==1&&throwRoll(encounter,1,3)<98)break;}
   CHECK(seed<1000000);StepEvent event;event.batchId=1;event.clock=clockFor(e);event.partner=2;
   CHECK(e.observeSteps(&event,1,seed)==CommandResult::Applied);
   CHECK(e.view().encounter.species==1);
@@ -167,7 +167,7 @@ static void recaptureAndGuards() {
   CHECK(e.selectPartner(1)==CommandResult::Applied&&e.view().rosterRevision==4);
   CHECK(e.evolve(req,clockFor(e))==CommandResult::Duplicate);
   const uint64_t revision=e.view().rosterRevision;
-  for(seed=0;seed<10000;++seed) CHECK(chooseEncounter(e.view(),Route::Forest,seed)!=1);
+  for(seed=0;seed<10000;++seed) CHECK(chooseEncounter(e.view(),Route::Kanto,seed)!=1);
   for(unsigned i=0;i<1999;++i){event.batchId=e.view().lastStepBatch+1;event.clock=clockFor(e);event.partner=1;
     CHECK(e.observeSteps(&event,1,seed)==CommandResult::Applied);}
   CHECK(e.view().encounter.species!=1);

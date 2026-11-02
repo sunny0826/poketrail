@@ -1304,4 +1304,11 @@ static const bool kOrdinaryEncounter[649] = {
   false, // 648
   false, // 649
 };
+static const RegionRange kRegionRanges[5] = {
+  {1, 151}, // Kanto
+  {152, 251}, // Johto
+  {252, 386}, // Hoenn
+  {387, 493}, // Sinnoh
+  {494, 649}, // Unova
+};
 } }

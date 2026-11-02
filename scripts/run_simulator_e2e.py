@@ -41,9 +41,12 @@ CASES = {
     "migration": ("P1-12", "v1-3.bin", [("migration", "run"), ("migration", "reload")]),
     "migration-activity": ("P1-12", "schema3-activity.bin", [("migration", "activity")]),
     "migration-rule2": ("P1-12", "schema3-rule2.bin", [("migration", "rule2"), ("migration", "rule2-reload")]),
+    "migration-schema6": ("P1-12", "schema6-coast.bin", [("migration", "schema6"), ("migration", "schema6-reload")]),
     **{f"lifecycle-{kind}": ("P1-13", "throw" if kind.startswith("throw") else "starter", [("lifecycle", kind)])
        for kind in ("sleep", "close-save", "close-clock", "throw-focus", "throw-close")},
     "edges": ("P1-14", "edges", [("edges", "run")]),
+    "regions": ("P1-16", "blank", [("regions", "run"), ("regions", "reload")]),
+    "region-exhausted": ("P1-16", "sinnoh-done", [("regions", "exhausted"), ("regions", "exhausted-reload")]),
 }
 
 
@@ -199,11 +202,12 @@ def main():
         result = {"case": name, "id": identifier, "fixture": fixture, "status": "fail"}
         try:
             if fixture.endswith(".bin"):
-                source = ROOT / "test/fixtures" / ("simulator" if fixture == "schema3-rule2.bin" else "progression") / fixture
-                if fixture == "schema3-rule2.bin":
+                simulated = (ROOT / "test/fixtures/simulator" / fixture).exists()
+                source = ROOT / "test/fixtures" / ("simulator" if simulated else "progression") / fixture
+                if simulated:
                     frozen = json.loads((source.parent / "manifest.json").read_text())["fixtures"]
                     if digest(source) != frozen[fixture]:
-                        raise RuntimeError("schema3 historical fixture hash mismatch")
+                        raise RuntimeError(f"{fixture} historical fixture hash mismatch")
                 if fixture == "v1-3.bin":
                     frozen = json.loads((source.parent / "manifest.json").read_text())["fixtures"]
                     if digest(source) != frozen[str(source.relative_to(ROOT))]:
@@ -226,9 +230,10 @@ def main():
                     from PIL import Image
                     with Image.open(stage / "fixed-cue-0.bmp") as image:
                         cue = hashlib.sha256(image.convert("RGB").crop((50, 24, 518, 492)).tobytes()).hexdigest()
-                    # Frozen from the reviewed simulator-e2e-dev-20261102T114338 trace (actor-anchored cue,
-                    # note lane, 3-2-1 opening); inputs keep their timing relative to each beat.
-                    expected = "0d5a5dd99edf34a300cd44b230e54899aa7feaf32e959402e0d93db040b94c1f"
+                    # Frozen from the reviewed simulator-e2e-20261102T070951.426579Z trace (Kanto #108; versus
+                    # simulator-e2e-dev-20261102T114338 only the scene band and enemy changed); inputs keep their
+                    # timing relative to each beat.
+                    expected = "105f80735539a38ef56bd1d51033e5750a761a5f1bc689577edb3b3017184810"
                     write_json(stage / "cue-check.json", {"expected": expected, "actual": cue})
                     if cue != expected:
                         raise RuntimeError("fixed battle cue pixels differ from reviewed trace")

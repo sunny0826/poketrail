@@ -146,7 +146,7 @@ void step(Engine& engine, uint16_t partner, unsigned count) {
   }
 }
 void legacyOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t partner = 1) {
-  Save save; save.schema = 1; save.bootGeneration = 1; save.starter = 1; save.partner = partner;
+  Save save; save.schema = 1; save.route = Route::Forest; save.bootGeneration = 1; save.starter = 1; save.partner = partner;
   save.encounter.ruleVersion = 1;
   for (auto& attempt : save.encounter.attempts) attempt.ruleVersion = 1;
   setOwned(save, 1);

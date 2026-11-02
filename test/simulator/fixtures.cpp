@@ -1,5 +1,6 @@
 #include "driver.hpp"
 #include "../../simulator/storage.hpp"
+#include "encounter_catalog.hpp"
 #include "save_codec.hpp"
 #include <stdexcept>
 #include <vector>
@@ -13,13 +14,24 @@ void makeFixture(const std::string& name, const std::string& directory) {
     s.totalSteps=800; s.explorationSpent=300; s.explorationCredit=500; s.progress[0].walked=800;
     s.nextEncounterId=2; s.phase=name == "battle" ? Phase::EncounterReady : Phase::ThrowReady;
     s.result=name == "battle" ? Result::None : Result::Won;
-    auto& e=s.encounter; e.id=1; e.species=72; e.partner=1; e.route=Route::Coast; e.seed=0x2468ace0u;
+    auto& e=s.encounter; e.id=1; e.species=72; e.partner=1; e.route=Route::Kanto; e.seed=0x2468ace0u;
     if(name=="legacy") { e.ruleVersion=1; s.totalSteps=2000; s.explorationCredit=1700; s.progress[0].walked=2000; }
   } else if (name == "evolution" || name == "target-owned" || name == "edges") {
     s.totalSteps=7800; s.explorationCredit=7800; s.progress[0].walked=7600;
     setRegistered(s,2); s.progress[1].walked=200; setRegistered(s,4); setOwned(s,4);
     if(name=="target-owned") setOwned(s,2);
     if(name=="edges") for(unsigned id : {133u,439u,649u}) { setRegistered(s,id); setOwned(s,id); }
+  } else if (name == "sinnoh-done") {
+    unsigned captures=0;
+    for(uint16_t id=387; id<=493; ++id) {
+      if(!ordinaryEncounter(id)) continue;
+      setRegistered(s,id); setOwned(s,id); s.captureCounts[id-1]=1;
+      Capture& c=s.firstCapture[id-1]; c.species=id; c.route=Route::Sinnoh;
+      c.at.bootGeneration=1; c.at.totalSteps=++captures*250;
+    }
+    s.explorationCredit=400; s.explorationSpent=captures*250;
+    s.totalSteps=s.undatedSteps=s.explorationSpent+s.explorationCredit; s.progress[0].walked=s.totalSteps;
+    s.nextEncounterId=captures+1; s.route=Route::Sinnoh;
   } else if (name != "starter" && name != "clock") throw std::runtime_error("unknown fixture: " + name);
   if (!validate(s)) throw std::runtime_error("fixture semantic validation failed: " + name);
   std::vector<uint8_t> bytes(codec::maxEncodedSize); size_t length=0; Save decoded;

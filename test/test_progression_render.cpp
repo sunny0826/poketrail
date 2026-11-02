@@ -170,14 +170,14 @@ void homeEvolveButton() {
   HostPlatform platform;
   MemoryStore early; starterWith(early, 7499);
   Runtime waiting(early, platform); start(waiting);
-  check(!homeEvolutionReady(waiting.engine()) && glyph("携带中", 80, theme::kMint) && !glyph("进化", by, theme::kGold),
+  check(!homeEvolutionReady(waiting.engine()) && glyph("携带中", 80, theme::routeColor(Route::Kanto)) && !glyph("进化", by, theme::kGold),
         "one step short keeps the carried label and hides the evolve button");
   tap(waiting, bx, by);
   check(waiting.screen().page == Page::Menu, "button area still opens the menu while evolution is unavailable");
 
   MemoryStore store; starterWith(store, 7500);
   Runtime runtime(store, platform); start(runtime);
-  check(runtime.screen().page == Page::Home && glyph("进化", by, theme::kGold) && !glyph("携带中", 80, theme::kMint),
+  check(runtime.screen().page == Page::Home && glyph("进化", by, theme::kGold) && !glyph("携带中", 80, theme::routeColor(Route::Kanto)),
         "reaching the cost shows the evolve button on home");
   screenshot(runtime, "home-evolve-ready");
   const unsigned commits = store.commits;
@@ -199,7 +199,7 @@ void homeEvolveButton() {
         "home evolution finishes on target detail with the normal charge");
   back(runtime); back(runtime); back(runtime);
   check(runtime.screen().page == Page::Home && !homeEvolutionReady(runtime.engine()) &&
-        glyph("携带中", 80, theme::kMint), "new form without steps hides the button again");
+        glyph("携带中", 80, theme::routeColor(Route::Kanto)), "new form without steps hides the button again");
 
   MemoryStore owned; legacyOwned(owned, {1, 2});
   { Engine e(owned); e.begin(); step(e, 1, 7500); e.checkpoint(); }
@@ -221,7 +221,7 @@ void homeEvolveButton() {
   screenshot(branches, "home-evolve-branches");
 }
 void legacyVictory(MemoryStore& store) {
-  Save save; save.schema = 1; save.bootGeneration = 1; save.starter = save.partner = 1;
+  Save save; save.schema = 1; save.route = Route::Forest; save.bootGeneration = 1; save.starter = save.partner = 1;
   setOwned(save, 1); save.totalSteps = save.undatedSteps = 500; save.nextEncounterId = 2;
   save.phase = Phase::ThrowReady; save.result = Result::Won;
   save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1; save.encounter.ruleVersion = 1;
@@ -278,7 +278,7 @@ void aimStateLayout() {
   save.rosterRevision = 1; save.encounterTarget = 300;
   save.totalSteps = save.undatedSteps = 5000; save.explorationSpent = 5000; save.nextEncounterId = 2;
   save.phase = Phase::ThrowReady; save.result = Result::Won;
-  save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1;
+  save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1; save.encounter.route = Route::Kanto;
   check(store.commit(save) == CommitStatus::Committed, "modern throw fixture validates");
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   check(runtime.screen().page == Page::Throw && !runtime.engine().throwView().active &&

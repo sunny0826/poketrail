@@ -30,16 +30,17 @@ static void historicalBytes() {
     CHECK(codec::decode(b.data(),b.size(),s)==codec::DecodeStatus::Ok);
     CHECK(s.schema==schema&&encoded(s)==b);
     CHECK(s.partner==(schema>=3?251:1));
-    CHECK(migrateLegacy(s)&&s.schema==6&&s.sequence==19);
+    CHECK(s.route==Route::Forest);
+    CHECK(migrateLegacy(s)&&s.schema==7&&s.sequence==19&&s.route==Route::Kanto);
     for(uint16_t id=252;id<=649;++id)CHECK(!owns(s,id)&&!registered(s,id)&&!s.captureCounts[id-1]&&!s.progress[id-1].walked);
     const auto migrated=encoded(s);CHECK(migrated.size()==48672);
   }
 }
 static void capacityBoundaries() {
-  for(uint16_t schema=1;schema<=6;++schema){
-    Save good;const auto bytes=baseline(schema==6?5:schema);
+  for(uint16_t schema=1;schema<=7;++schema){
+    Save good;const auto bytes=baseline(schema>=6?5:schema);
     CHECK(codec::decode(bytes.data(),bytes.size(),good)==codec::DecodeStatus::Ok);
-    good.schema=schema;CHECK(validate(good));
+    good.schema=schema;if(schema==7)good.route=Route::Kanto;CHECK(validate(good));
     const auto cap=speciesCapacity(schema);CHECK(cap.bytes==(cap.count+7)/8);
     Save bad=good;bad.partner=uint16_t(cap.count+1);CHECK(!validate(bad));
     bad=good;bad.encounter.species=uint16_t(cap.count+1);CHECK(!validate(bad));
@@ -54,7 +55,7 @@ static void capacityBoundaries() {
     }
     CHECK(savedRouteMask(uint16_t(cap.count+1),schema)==0);
   }
-  CHECK(speciesCapacity(0).count==0&&speciesCapacity(7).count==0);
+  CHECK(speciesCapacity(0).count==0&&speciesCapacity(8).count==0);
   auto s=fixture(649,1000);s->progress[648].walked=1000;s->progress[648].spent=600;
   const auto b=encoded(*s);Save back;CHECK(codec::decode(b.data(),b.size(),back)==codec::DecodeStatus::Ok);
   CHECK(back.partner==649&&owns(back,649)&&registered(back,649)&&back.progress[648].walked==1000&&back.progress[648].spent==600);
@@ -78,7 +79,7 @@ static void highEvolution() {
 }
 static void upgradePhases() {
   for(Phase phase:{Phase::EncounterReady,Phase::Battle,Phase::ThrowReady})for(unsigned mode=0;mode<3;++mode){
-    auto old=fixture(1,1000);old->schema=5;old->progress[0].walked=1000;
+    auto old=fixture(1,1000);old->schema=5;old->route=Route::Coast;old->progress[0].walked=1000;
     old->phase=phase;old->result=phase==Phase::ThrowReady?Result::Won:Result::None;
     old->nextEncounterId=2;old->explorationSpent=300;old->explorationCredit=700;
     old->encounter.id=1;old->encounter.species=1;old->encounter.partner=1;old->encounter.seed=12345;
@@ -89,12 +90,12 @@ static void upgradePhases() {
     MemoryStore store;store.disk=encoded(*old);const auto original=store.disk;
     store.before=mode==1;store.after=mode==2;Engine e(store);
     CHECK(e.begin()==(mode?CommandResult::StorageError:CommandResult::Applied));
-    if(mode){CHECK(!e.ready()&&e.view().schema==6);const auto frozen=store.attempt;
+    if(mode){CHECK(!e.ready()&&e.view().schema==7);const auto frozen=store.attempt;
       store.before=store.after=false;CHECK(e.retrySave()==CommandResult::Applied&&store.disk==frozen);}
-    CHECK(e.ready()&&e.view().schema==6&&e.view().sequence==old->sequence+1);
+    CHECK(e.ready()&&e.view().schema==7&&e.view().sequence==old->sequence+1&&e.view().route==Route::Kanto);
     CHECK(e.view().phase==(phase==Phase::Battle?Phase::EncounterReady:phase));
     CHECK(e.view().encounter.species==1&&e.view().encounter.partner==1&&e.view().encounter.id==1&&e.view().encounter.seed==12345);
-    CHECK(e.view().encounter.route==old->encounter.route&&e.view().encounter.usedBalls==old->encounter.usedBalls&&e.view().encounter.ruleVersion==3);
+    CHECK(old->encounter.route==Route::Forest&&e.view().encounter.route==Route::Kanto&&e.view().encounter.usedBalls==old->encounter.usedBalls&&e.view().encounter.ruleVersion==3);
     CHECK(e.view().progress[0].walked==1000&&e.view().progress[251].walked==0&&store.disk!=original);
   }
 }

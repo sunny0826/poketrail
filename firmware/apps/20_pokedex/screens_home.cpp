@@ -24,11 +24,11 @@ void Screens::menu(const ScreenState& s, const Engine& e) {
   char dexLabel[32], captureLabel[48];
   snprintf(dexLabel, sizeof(dexLabel), "%u 图鉴", unsigned(kSpeciesCount));
   snprintf(captureLabel, sizeof(captureLabel), "永久首捕 · %u种", unsigned(kSpeciesCount));
-  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择路线", "我的伙伴", dexLabel, "资源与数据", "捕获练习", "立即省电", "返回探索"};
+  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择地区", "我的伙伴", dexLabel, "资源与数据", "捕获练习", "立即省电", "返回探索"};
   const char* const resources[] = {"捕捉与步行记录", "日期与时间", "返回"};
   const char* const date[] = {"设置日期时间", "暂不设置", "浏览图鉴"};
   const char* const starters[] = {"妙蛙种子", "小火龙", "杰尼龟", "返回"};
-  const char* const routes[] = {"森林", "海边", "洞窟", "返回"};
+  const char* const routes[] = {"关都", "城都", "丰缘", "神奥", "合众", "返回"};
   const char* const encounter[] = {"开始对战", "捕获练习", "选择伙伴", "稍后再战"};
   const char* const pause[] = {"继续", "确认撤退"};
   const char* const records[] = {captureLabel, "最近32次捕捉", "今日与14日日汇总", "每日与长期里程碑", "返回"};
@@ -84,9 +84,9 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
       else if (e.loadResult().degraded) alert("已从备用存档恢复", 183, theme::kGold);
       else if (v.phase == Phase::Walking) {
         if (!remainingEncounters(v, v.route)) {
-          const bool all = !remainingEncounters(v, Route::Forest) && !remainingEncounters(v, Route::Coast) &&
-                           !remainingEncounters(v, Route::Cave);
-          alert(all ? "普通宝可梦已全部捕获" : "本路线已捕获完 · 可换路线", 183, theme::kGold);
+          bool all = true;
+          for (uint8_t i = 0; i < kRegionCount; ++i) all = all && !remainingEncounters(v, regionAt(i));
+          alert(all ? "普通宝可梦已全部捕获" : "本地区已捕获完 · 可换地区", 183, theme::kGold);
         } else {
           snprintf(text, sizeof(text), "下次遭遇还差 %llu 步", static_cast<unsigned long long>(
             v.explorationCredit < v.encounterTarget ? v.encounterTarget - v.explorationCredit : 0));
@@ -111,10 +111,12 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
         sprite(ids[s.selected], now, resultPlayback_, 151, 233, 0, 2);
       }
       break;
-    case Page::Routes:
-      title("选择路线", "只影响下一场遭遇", theme::kMint);
-      sceneThumbnail(s.selected < 3 ? Route(s.selected) : Route::Forest, 233, 151);
+    case Page::Routes: {
+      const Route region = s.selected < kRegionCount ? regionAt(uint8_t(s.selected)) : v.route;
+      title("选择地区", "只影响下一场遭遇", theme::routeColor(region));
+      sceneThumbnail(region, 233, 151);
       break;
+    }
     case Page::Partners: {
       title("我的伙伴", "", theme::kMint);
       unsigned owned = 0, row = 0;

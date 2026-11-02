@@ -109,7 +109,7 @@ static bool cleanBitmap(const std::array<uint8_t, kSpeciesBytes>& bits, uint16_t
   return true;
 }
 static bool validCapture(const Capture& c, const Save& s) {
-  return c.species <= speciesCapacity(s.schema).count && uint8_t(c.route) <= 2 && c.achievementMask <= 63 &&
+  return c.species <= speciesCapacity(s.schema).count && c.route <= lastStoredRoute(s.schema) && c.achievementMask <= 63 &&
          validStamp(c.at, s) && (c.species ? c.at.bootGeneration != 0 && c.at.totalSteps >= kEncounterMinSteps :
          (emptyStamp(c.at) && c.route == Route::Forest && c.achievementMask == 0));
 }
@@ -133,7 +133,8 @@ bool validate(const Save& s) {
   for (size_t i = capacity; i < kSpeciesCount; ++i) {
     if (s.captureCounts[i] || s.progress[i].walked || s.progress[i].spent) return false;
   }
-  if (s.schema < 1 || s.schema > kSchemaVersion || uint8_t(s.route) > 2 || uint8_t(s.phase) > 4 ||
+  if (s.schema < 1 || s.schema > kSchemaVersion || uint8_t(s.phase) > 4 ||
+      (s.schema >= 7 ? !isRegion(s.route) : s.route > Route::Cave) ||
       uint8_t(s.result) > (s.schema == 1 ? 5 : 7) ||
       !cleanBitmap(s.owned, uint16_t(capacity)) || !cleanBitmap(s.registered, uint16_t(capacity)) || s.historySize > 14 ||
       s.recentSize > 32 || !s.nextEncounterId || s.explorationCredit > s.totalSteps ||
@@ -232,7 +233,7 @@ bool validate(const Save& s) {
   // Schema 1/2/3 keep their frozen rule versions; schema 4 upgrades every
   // non-legacy encounter to the current rules, while finished attempts stay
   // verifiable under the table they were thrown with.
-  if (uint8_t(e.route) > 2 || e.usedBalls > 2 || !e.ruleVersion || e.ruleVersion > kRuleVersion ||
+  if (e.route > lastStoredRoute(s.schema) || e.usedBalls > 2 || !e.ruleVersion || e.ruleVersion > kRuleVersion ||
       (legacyEncounter && e.ruleVersion != 1) ||
       (s.schema >= 4 && e.id && !legacyEncounter && e.ruleVersion != kRuleVersion) ||
       e.legacyFreeAttempts > e.usedBalls || (!legacyEncounter && e.legacyFreeAttempts) ||

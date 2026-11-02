@@ -56,6 +56,32 @@ class AdventureCatalogTests(unittest.TestCase):
         self.assertEqual(frozen[3], 1)  # 小火龙 sat in Forest before schema 5.
         self.assertEqual(masks[4], 4)   # Fire now belongs to Cave only.
 
+    def test_regions_follow_pokedex_generations(self):
+        national = LOAD(ROOT / "assets/adventure-649.json")
+        spans = [(r["key"], r["first"], r["last"]) for r in national["regions"]]
+        self.assertEqual(spans, [("Kanto", 1, 151), ("Johto", 152, 251), ("Hoenn", 252, 386),
+                                 ("Sinnoh", 387, 493), ("Unova", 494, 649)])
+        pools = CATALOG["region_pools"](national, national["ordinaryRoots"])
+        self.assertEqual({key: len(pool) for key, pool in pools.items()},
+                         {"Kanto": 73, "Johto": 51, "Hoenn": 63, "Sinnoh": 38, "Unova": 69})
+        self.assertIn(25, pools["Kanto"])
+        self.assertIn(172, pools["Johto"])  # 皮丘 stays Johto though it evolves into a Kanto form.
+        progression = json.loads((ROOT / "assets/evolution-649.json").read_text())
+        mutations = [
+            ("missing regions", lambda d: d.pop("regions")),
+            ("shifted span", lambda d: d["regions"][0].update(last=152)),
+            ("renamed region", lambda d: d["regions"][4].update(key="Kalos")),
+            ("dropped region", lambda d: d["regions"].pop()),
+        ]
+        for label, mutate in mutations:
+            with self.subTest(label=label):
+                damaged = copy.deepcopy(national)
+                mutate(damaged)
+                with self.assertRaises(ValueError):
+                    GENERATE(damaged, progression, 649)
+        with self.assertRaises(ValueError):
+            GENERATE(dict(self.data, regions=national["regions"]), PROGRESSION, 251)
+
     def test_ordinary_and_reserved_accounting(self):
         ordinary = self.data["ordinaryRoots"]
         self.assertEqual(len(ordinary), 124)

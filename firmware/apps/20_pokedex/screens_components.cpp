@@ -7,6 +7,11 @@
 
 namespace pokedex { namespace ui {
 using namespace adventure;
+static_assert(data::kSceneCount == kRegionCount, "one scene per region");
+namespace {
+// Legacy type routes survive only in capture history and never select a scene.
+unsigned sceneIndex(Route route) { return isRegion(route) ? regionIndex(route) : 0; }
+}
 void Screens::line(const char* text, int y, uint16_t color, bool large) {
   M5.Display.setTextDatum(middle_center);
   M5.Display.setFont(large ? &fonts::efontCN_24 : &fonts::efontCN_16);
@@ -25,9 +30,9 @@ void Screens::title(const char* heading, const char* subtitle, uint16_t accent) 
   if (subtitle && *subtitle) fitLine(subtitle, 80, 300, accent, false);
 }
 void Screens::scene(Route route, bool dim, int dx, uint64_t visualSteps) {
-  const unsigned index = uint8_t(route) < 3 ? uint8_t(route) : 0;
-  const auto& source = dim ? data::kRouteScenesDim[index] : data::kRouteScenes[index];
-  const auto& layers = data::kRouteSceneLayers[index];
+  const unsigned index = sceneIndex(route);
+  const auto& source = dim ? data::kRegionScenesDim[index] : data::kRegionScenes[index];
+  const auto& layers = data::kRegionSceneLayers[index];
   const unsigned groundTop = layers.groundTop;
   const unsigned groundHeight = data::kSceneHeight - groundTop;
   const bool depth = !dim && visualSteps;
@@ -60,9 +65,8 @@ void Screens::scene(Route route, bool dim, int dx, uint64_t visualSteps) {
   M5.Display.clearClipRect();
 }
 void Screens::sceneThumbnail(Route route, int cx, int cy) {
-  const unsigned index = uint8_t(route) < 3 ? uint8_t(route) : 0;
   M5.Display.pushImage(cx - 114, cy - 45, data::kSceneWidth, data::kSceneThumbHeight,
-                       data::kRouteScenes[index].pixels + data::kSceneThumbTop * data::kSceneWidth);
+                       data::kRegionScenes[sceneIndex(route)].pixels + data::kSceneThumbTop * data::kSceneWidth);
 }
 void Screens::glyph(theme::Icon icon, int x, int y, uint16_t color) {
   switch (icon) {

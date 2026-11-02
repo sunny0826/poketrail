@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Generate the offline 1-649 gameplay catalog; no sprite/network dependency.
 
-Route eligibility is derived from each species' official types through the
-`routeTypes` table in assets/adventure-251.json, so the hand-written species
-files only carry identity, rarity and weight. The schema-1..4 masks are frozen
-here in source form and written to route_masks_v4_generated.hpp so old saves keep
-their original eligibility checks after revision 5 re-derives every route.
+Schema 7 encounters are drawn by region: each region is the national-dex span
+of one pinned Gen1-Gen5 pokedex file. The type-derived `routeTypes` masks only
+validate schema-5/6 saves, and the schema-1..4 masks are frozen here in source
+form and written to route_masks_v4_generated.hpp, so old saves keep the
+eligibility checks they were written under.
 """
 import argparse
 import csv
@@ -23,6 +23,7 @@ PROGRESSION = runpy.run_path(str(ROOT / "tools/build_evolution_rules.py"))
 LAST = 251
 NATIONAL = 649
 ROUTES = {"Forest": 1, "Coast": 2, "Cave": 4}
+REGIONS = (("Kanto", "关都"), ("Johto", "城都"), ("Hoenn", "丰缘"), ("Sinnoh", "神奥"), ("Unova", "合众"))
 RUINS = [144, 145, 146, 147, 148, 149, 150, 151, 243, 244, 245, 249, 250, 251]
 DRAGON_CAVE = [246]
 # Frozen from baseline 8ea8653 (adventure_catalog_generated.hpp). Schema 1-4
@@ -59,6 +60,31 @@ def load_types():
             types[species] = names
     require(sorted(types) == list(range(1, NATIONAL + 1)), "dex types must cover 1..649")
     return types
+
+
+def derived_regions():
+    regions, expected = [], 1
+    for (key, name), path in zip(REGIONS, TYPES_SOURCE, strict=True):
+        ids = sorted(int(pokemon["zukan_id"]) for pokemon in json.loads(path.read_text())["pokemons"])
+        require(ids and ids == list(range(expected, ids[-1] + 1)),
+                f"{path.name} must continue the national dex at {expected}")
+        regions.append({"key": key, "name": name, "first": ids[0], "last": ids[-1]})
+        expected = ids[-1] + 1
+    require(expected == NATIONAL + 1, "regions must cover 1..649")
+    return regions
+
+
+def region_pools(data, ordinary):
+    regions = data.get("regions")
+    if regions != derived_regions():
+        raise ValueError("regions must match the pinned Gen1-Gen5 pokedex spans")
+    pools = {}
+    for region in regions:
+        pool = [i for i in ordinary if region["first"] <= i <= region["last"]]
+        if not pool:
+            raise ValueError(f"region {region['key']} has no ordinary encounter")
+        pools[region["key"]] = pool
+    return pools
 
 
 def load_catalog(path=SOURCE):
@@ -177,6 +203,10 @@ def ownership(data, progression, last=NATIONAL):
         raise ValueError("new ordinary roots must not have a catalog parent")
     if len(FROZEN_V4_ROUTES) != LAST or any(not 1 <= mask <= 7 for mask in FROZEN_V4_ROUTES):
         raise ValueError("frozen schema-4 masks must cover 251 species")
+    if last == NATIONAL:
+        region_pools(data, ordinary)
+    elif "regions" in data:
+        raise ValueError("only the 649 catalog defines regions")
     return masks, set(ordinary)
 
 
@@ -201,7 +231,13 @@ def generate(data, progression=None, last=None):
     lines.extend(["};", f"static const bool kOrdinaryEncounter[{last}] = {{"])
     for i in range(1, last + 1):
         lines.append(f"  {str(i in ordinary).lower()}, // {i:03d}")
-    lines.extend(["};", "} }", ""])
+    lines.append("};")
+    if last == NATIONAL:
+        lines.append(f"static const RegionRange kRegionRanges[{len(REGIONS)}] = {{")
+        for region in data["regions"]:
+            lines.append(f"  {{{region['first']}, {region['last']}}}, // {region['key']}")
+        lines.append("};")
+    lines.extend(["} }", ""])
     return "\n".join(lines)
 
 
@@ -247,7 +283,9 @@ def national_catalog():
     require(len(entries) == NATIONAL and roots == sorted(set(roots)), "national catalog shape")
     return {"ruleVersion": 3,
             "note": "1-649 普通遭遇目录。1-251 的稀有度、权重、普通资格和活动保留原样；"
-                    "252-649 中会进化的形态及传说/幻兽为稀有权重 2，其余为 10。",
+                    "252-649 中会进化的形态及传说/幻兽为稀有权重 2，其余为 10。"
+                    "schema7 按 regions 的全国编号范围抽取遭遇；routeTypes 只校验 schema5-6 旧档。",
+            "regions": derived_regions(),
             "routeTypes": old["routeTypes"], "species": entries,
             "ordinaryRoots": roots, "reserved": reserved}
 
@@ -274,9 +312,10 @@ def main():
             raise SystemExit("frozen schema-4 route masks stale; regenerate")
         if not PROGRESSION["OUTPUT"].exists() or PROGRESSION["OUTPUT"].read_text() != progression_text:
             raise SystemExit("progression catalog stale; regenerate tools/build_evolution_rules.py")
-        roots = catalogue["ordinaryRoots"]
-        print(f"catalog check: 649 typed route masks, {len(roots)} ordinary roots "
-              "(73 Kanto + 51 Johto retained), reserved species excluded, both headers match")
+        pools = region_pools(catalogue, catalogue["ordinaryRoots"])
+        counts = " / ".join(f"{key} {len(pool)}" for key, pool in pools.items())
+        print(f"catalog check: {sum(map(len, pools.values()))} ordinary roots by region ({counts}), "
+              "legacy type masks kept for schema 5-6, reserved species excluded, both headers match")
     else:
         OUTPUT.write_text(text)
         LEGACY_OUTPUT.write_text(legacy_text)

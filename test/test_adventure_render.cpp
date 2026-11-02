@@ -11,7 +11,7 @@ void sceneEdges(Route route) {
       if (y > 300 && x > 200 && x < 266) continue;
       const unsigned sx = (x - 5) / 2, sy = (y - 92) / 2;
       const bool visible = sceneEdgeVisible(sx, sy);
-      const uint16_t expected = visible ? data::kRouteScenesDim[uint8_t(route)].pixels[sy * data::kSceneWidth + sx]
+      const uint16_t expected = visible ? data::kRegionScenesDim[regionIndex(route)].pixels[sy * data::kSceneWidth + sx]
                                         : theme::kBackground;
       dropped += !visible;
       mismatched += M5.Display.readPixel(x, y) != expected;
@@ -25,9 +25,9 @@ void frozenScene(Route route) {
   unsigned matched = 0;
   for (unsigned y = 180; y < 190; ++y) for (unsigned x = 70; x < 80; ++x) {
     const unsigned index = ((y - 92) / 2) * data::kSceneWidth + (x - 5) / 2;
-    matched += M5.Display.readPixel(x, y) == data::kRouteScenesDim[uint8_t(route)].pixels[index];
+    matched += M5.Display.readPixel(x, y) == data::kRegionScenesDim[regionIndex(route)].pixels[index];
   }
-  check(matched == 100, "encounter background retains its saved route after selecting another route");
+  check(matched == 100, "encounter background retains its saved region after selecting another region");
 }
 void bootAndCapture() {
   MemoryStore store; TestPlatform p; Runtime r(store, p); start(r);
@@ -36,7 +36,7 @@ void bootAndCapture() {
   check(owns(r.engine().view(), 1) && r.engine().view().captureCounts[0] == 0, "starter owned without fake capture card");
   published(r, "home");
   openMenu(r, p); select(r, p, 1); select(r, p, 1);
-  check(r.engine().view().route == Route::Coast, "route selection uses Engine command");
+  check(r.engine().view().route == Route::Johto, "region selection uses Engine command");
   openMenu(r, p); select(r, p, 2);
   check(menuCount(r.screen(), r.engine()) == 2, "partner menu only owns starter plus back");
   select(r, p, 1); select(r, p, 7);
@@ -49,9 +49,10 @@ void bootAndCapture() {
   check(!r.dimmed() && r.screen().page == beforePage && r.screen().selected == 0, "wake press does not navigate");
   check(p.feedbacks == 1, "one vibration per saved encounter");
   openMenu(r, p); select(r, p, 1); select(r, p, 2);
-  check(r.engine().view().route == Route::Cave && r.engine().view().encounter.route == Route::Coast,
-        "route selection preserves the existing encounter");
-  openMenu(r, p); select(r, p, 0); published(r, "encounter"); frozenScene(Route::Coast);
+  check(r.engine().view().route == Route::Hoenn && r.engine().view().encounter.route == Route::Johto &&
+        regionOf(r.engine().view().encounter.species) == Route::Johto,
+        "region selection preserves the existing Johto encounter");
+  openMenu(r, p); select(r, p, 0); published(r, "encounter"); frozenScene(Route::Johto);
   select(r, p, 1); check(r.screen().page == Page::Practice, "encounter offers free practice");
   tap(r, p, 233, 30); idle(r, kOpeningMs + 300);
   check(r.screen().page == Page::Pause, "practice pauses after current cue");
@@ -66,7 +67,7 @@ void bootAndCapture() {
   select(r, p, 0); check(r.screen().page == Page::Battle, "pause resumes");
   win(r, p);
   check(r.screen().page == Page::Battle, "committed victory keeps the final action visible before the throw menu");
-  published(r, "throw-ready-1"); frozenScene(Route::Coast); sceneEdges(Route::Coast); frame(r);
+  published(r, "throw-ready-1"); frozenScene(Route::Johto); sceneEdges(Route::Johto); frame(r);
   check(r.engine().throwView().active == false && r.engine().view().encounter.usedBalls == 0,
         "victory lands on the throw page with the window still closed");
   p.next.right = p.next.held = true; frame(r);
@@ -128,7 +129,7 @@ void bootAndCapture() {
 }
 void fullRecordRestart() {
   MemoryStore store; Save save;
-  save.schema = 1; save.bootGeneration = 1; save.starter = save.partner = 1;
+  save.schema = 1; save.route = Route::Forest; save.bootGeneration = 1; save.starter = save.partner = 1;
   save.encounter.ruleVersion = 1;
   for (auto& attempt : save.encounter.attempts) attempt.ruleVersion = 1;
   setOwned(save, 1); setOwned(save, 25); setOwned(save, 151);

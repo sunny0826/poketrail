@@ -1,35 +1,10 @@
-#include "support/progression/harness.hpp"
-#include "file_store.hpp"
-#include <algorithm>
-#include <fstream>
-#include <iterator>
-struct Slots : SlotIO {
-  std::vector<uint8_t> files[2], attempt;bool before=false,after=false,readback=false;size_t cut=SIZE_MAX;unsigned writes=0;
-  LoadStatus prepare() override{return LoadStatus::Loaded;}
-  ReadStatus read(unsigned slot,uint8_t* out,size_t cap,size_t& n) override {
-    if(readback && writes){readback=false;return ReadStatus::IoError;}
-    n=files[slot].size();if(!n)return ReadStatus::Missing;
-    std::copy(files[slot].begin(),files[slot].begin()+std::min(cap,n),out);
-    return n>cap?ReadStatus::TooLarge:ReadStatus::Ok;
-  }
-  bool write(unsigned slot,const uint8_t* b,size_t n) override {
-    ++writes;attempt.assign(b,b+n);if(before)return false;files[slot].assign(b,b+std::min(cut,n));return !after&&cut>=n;
-  }
-};
-static std::vector<uint8_t> legacy(unsigned kind) {
-  char path[128];std::snprintf(path,sizeof(path),"test/fixtures/progression/v1-%u.bin",kind);
-  std::ifstream file(path,std::ios::binary);CHECK(bool(file));
-  return std::vector<uint8_t>(std::istreambuf_iterator<char>(file),{});
-}
-static std::unique_ptr<Save> decoded(const std::vector<uint8_t>& bytes) {
-  std::unique_ptr<Save> s(new Save);CHECK(codec::decode(bytes.data(),bytes.size(),*s)==codec::DecodeStatus::Ok);return s;
-}
+#include "support/progression/migration_slots.hpp"
 static void phases() {
   for(unsigned kind=0;kind<9;++kind){
     Slots slots;slots.files[0]=legacy(kind);const auto original=slots.files[0];auto old=decoded(original);
     CHECK(old->schema==1&&encoded(*old)==original&&original.size()==12139);
     FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied&&e.ready());const auto& s=e.view();
-    CHECK(s.schema==6&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
+    CHECK(s.schema==7&&s.sequence==11&&s.bootGeneration==2&&slots.files[0]==original&&slots.writes==1);
     CHECK(s.rewardBaseSteps==500&&availableBalls(s)==0&&s.captureCounts==old->captureCounts&&s.owned==old->owned);
     CHECK(s.explorationSpent==s.totalSteps-s.explorationCredit&&s.encounterTarget>=kEncounterMinSteps&&s.encounterTarget<=kEncounterMaxSteps);
     CHECK(s.progress[0].walked==0&&registered(s,1)&&s.rosterRevision==1);
@@ -62,7 +37,7 @@ static void failures() {
     Slots slots;slots.files[0]=legacy(6);slots.after=complete;slots.cut=complete?SIZE_MAX:100;
     {FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::StorageError);}
     slots.after=false;slots.cut=SIZE_MAX;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
-    CHECK(e.view().schema==6&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
+    CHECK(e.view().schema==7&&e.view().explorationCredit==500&&e.view().voidedLegacyCount==1);
     CHECK(e.view().sequence==(complete?12:11));
   }
 }
@@ -109,7 +84,7 @@ static void creditAndBoundary() {
   CHECK(e.view().result==Result::Captured&&owns(e.view(),2)&&registered(e.view(),2)&&e.view().voidedLegacyCount==0);
 }
 static std::vector<uint8_t> version2(uint16_t partner, uint64_t steps) {
-  Save s; s.schema=2; s.sequence=5; s.bootGeneration=1; s.starter=1; s.partner=partner;
+  Save s; s.schema=2; s.route=Route::Forest; s.sequence=5; s.bootGeneration=1; s.starter=1; s.partner=partner;
   s.rosterRevision=1; setRegistered(s,1); setRegistered(s,partner); setOwned(s,partner);
   total(s,steps); s.rewardBaseSteps=0; s.ballsSpent=0; s.legacyChargedCount=0; s.voidedLegacyCount=0;
   s.explorationCredit=steps; s.nextEncounterId=1; s.progress[partner-1].walked=steps;
@@ -120,24 +95,24 @@ static void schema2Upgrade() {
   CHECK(old->schema==2&&old->progress[3].walked==1000);
   Slots slots;slots.files[0]=bytes;FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   const auto& s=e.view();
-  CHECK(s.schema==6&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
+  CHECK(s.schema==7&&s.sequence==6&&slots.writes==1&&slots.files[0]==bytes);
   CHECK(s.partner==4&&s.progress[3].walked==1000&&s.totalSteps==1000&&s.explorationCredit==1000);
   CHECK(s.explorationSpent==0&&s.encounterTarget>=kEncounterMinSteps&&s.encounterTarget<=kEncounterMaxSteps);
   CHECK(s.rewardBaseSteps==0&&s.legacyChargedCount==0&&s.rosterRevision==1);
   for(uint16_t id=152;id<=251;++id)CHECK(!registered(s,id)&&!owns(s,id)&&!s.progress[id-1].walked&&!s.captureCounts[id-1]);
-  FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==6);
+  FileStore second(slots);Engine reboot(second);CHECK(reboot.begin()==CommandResult::Applied&&reboot.view().schema==7);
   CHECK(reboot.view().progress[3].walked==1000&&slots.writes==2);
   Save enc;CHECK(codec::decode(slots.files[0].data(),slots.files[0].size(),enc)==codec::DecodeStatus::Ok);
-  CHECK(enc.schema==6&&validate(enc));
+  CHECK(enc.schema==7&&validate(enc));
 }
 static void mixedSlots() {
   Slots slots;slots.files[0]=legacy(0);FileStore first(slots);Engine e(first);CHECK(e.begin()==CommandResult::Applied);
   const auto v2=slots.files[1];auto s=decoded(v2);s->sequence=10;slots.files[1]=encoded(*s);
   FileStore conflict(slots);std::unique_ptr<Save> out(new Save);CHECK(conflict.load(*out).status==LoadStatus::Corrupt);
-  slots.files[1]=v2;slots.files[1][4]=7;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
+  slots.files[1]=v2;slots.files[1][4]=8;FileStore unknown(slots);CHECK(unknown.load(*out).status==LoadStatus::UnsupportedVersion);
   slots.files[1]=v2;slots.files[1].back()^=1;FileStore corrupt(slots);
   CHECK(corrupt.load(*out).status==LoadStatus::Loaded&&out->schema==1&&out->sequence==10);
-  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==6);
+  slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==7);
 }
 static void activityTail() {
   // A real frame written by the unmerged activity-branch firmware: an ordinary
@@ -155,7 +130,7 @@ static void activityTail() {
   CHECK(s.nextEncounterId == 14 && s.ballsSpent == 6 && validate(s));
   MemoryStore store; store.disk = frame; Engine e(store);
   CHECK(e.begin() == CommandResult::Applied && e.ready());
-  CHECK(e.view().schema == 6 && e.view().totalSteps == 6293 && e.view().partner == 1);
+  CHECK(e.view().schema == 7 && e.view().totalSteps == 6293 && e.view().partner == 1);
   CHECK(e.view().phase == Phase::Walking && e.view().explorationCredit == 1293);
   // The zero-cost activity ids stay inside schema-4 bookkeeping bounds.
   CHECK(e.view().explorationSpent + e.view().explorationCredit == e.view().totalSteps);
@@ -172,18 +147,18 @@ static std::unique_ptr<Save> schema4Encounter(uint16_t species, Route route, Pha
   return s;
 }
 static void routeUpgrade() {
-  // #4 小火龙 was a Forest encounter under the frozen masks; Fire is Cave-only
-  // once schema 5 derives routes from types. Finished results keep their value.
+  // #4 小火龙 was a frozen-mask Forest encounter; schema 5 moves it to Cave and
+  // schema 7 to Kanto. Finished results keep their value.
   for(Phase phase:{Phase::EncounterReady,Phase::Resolved}){
     auto s=schema4Encounter(4,Route::Forest,phase,phase==Phase::Resolved?Result::Lost:Result::None);
     CHECK(validate(*s));
     MemoryStore store;store.disk=encoded(*s);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
-    CHECK(e.view().schema==6&&e.view().encounter.species==4&&e.view().encounter.route==Route::Cave);
+    CHECK(e.view().schema==7&&e.view().encounter.species==4&&e.view().encounter.route==Route::Kanto);
     CHECK(e.view().phase==phase&&e.view().result==s->result&&e.view().encounter.id==1&&e.view().encounter.seed==0);
   }
   // A retired activity boundary is repaired the same way and keeps its result.
   std::unique_ptr<Save> retired(new Save);
-  retired->schema=4; retired->sequence=3; retired->bootGeneration=1; retired->starter=retired->partner=1;
+  retired->schema=4; retired->route=Route::Forest; retired->sequence=3; retired->bootGeneration=1; retired->starter=retired->partner=1;
   retired->rosterRevision=1; setRegistered(*retired,1); setOwned(*retired,1);
   total(*retired,1000); retired->explorationSpent=0; retired->explorationCredit=1000;
   retired->nextEncounterId=2; retired->voidedLegacyCount=1; retired->legacyChargedCount=0;
@@ -193,13 +168,13 @@ static void routeUpgrade() {
   retired->phase=Phase::Resolved; retired->result=Result::MigrationRetired;
   CHECK(validate(*retired));
   MemoryStore retiredStore;retiredStore.disk=encoded(*retired);Engine retiredEngine(retiredStore);
-  CHECK(retiredEngine.begin()==CommandResult::Applied&&retiredEngine.view().schema==6);
+  CHECK(retiredEngine.begin()==CommandResult::Applied&&retiredEngine.view().schema==7);
   CHECK(retiredEngine.view().result==Result::MigrationRetired&&retiredEngine.view().voidedLegacyCount==1);
-  CHECK(retiredEngine.view().encounter.route==Route::Cave);
+  CHECK(retiredEngine.view().encounter.route==Route::Kanto);
 }
 static void captureRoutePreserved() {
-  // Historical capture and player-selected routes are history, not eligibility:
-  // schema 5 must leave them untouched even when the new masks disagree.
+  // Historical capture routes are history, not eligibility: no upgrade rewrites
+  // them, while the player's selection restarts in Kanto at schema 7.
   std::unique_ptr<Save> s(new Save);
   s->schema=4; s->sequence=3; s->bootGeneration=1; s->starter=s->partner=1;
   s->rosterRevision=1; setRegistered(*s,1); setOwned(*s,1); setRegistered(*s,4); setOwned(*s,4);
@@ -209,9 +184,37 @@ static void captureRoutePreserved() {
   s->firstCapture[3]=c; s->recent[0]=c; s->recentSize=1;
   CHECK(validate(*s));
   MemoryStore store;store.disk=encoded(*s);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
-  CHECK(e.view().schema==6&&e.view().route==Route::Forest);
+  CHECK(e.view().schema==7&&e.view().route==Route::Kanto);
   CHECK(e.view().firstCapture[3].route==Route::Forest&&e.view().recent[0].route==Route::Forest);
   CHECK(e.view().captureCounts[3]==1&&e.view().encounter.id==0);
 }
+static void schema6Upgrade() {
+  // Schema 6 to 7: the encounter in play moves to its species' region, the
+  // selection restarts in Kanto, history keeps its route.
+  struct Case { uint16_t species; Route from; Phase phase; Result result; Route region; };
+  const Case cases[]={{72,Route::Coast,Phase::EncounterReady,Result::None,Route::Kanto},
+    {158,Route::Coast,Phase::ThrowReady,Result::Won,Route::Johto},
+    {252,Route::Forest,Phase::Resolved,Result::Lost,Route::Hoenn}};
+  for(const Case& c:cases){
+    CHECK((catalogEntry(c.species)->routes&(1u<<uint8_t(c.from)))&&regionOf(c.species)==c.region);
+    auto old=schema4Encounter(c.species,c.from,c.phase,c.result);old->schema=6;old->route=Route::Cave;
+    setRegistered(*old,4);setOwned(*old,4);old->captureCounts[3]=1;
+    Capture caught;caught.species=4;caught.route=Route::Forest;caught.at.bootGeneration=1;caught.at.totalSteps=500;
+    old->firstCapture[3]=old->recent[0]=caught;old->recentSize=1;
+    CHECK(validate(*old));
+    Save premature(*old);premature.schema=7;CHECK(!validate(premature));
+    Slots slots;slots.files[0]=encoded(*old);const auto original=slots.files[0];slots.before=true;
+    {
+      FileStore store(slots);Engine e(store);CHECK(e.begin()==CommandResult::StorageError&&!e.ready());
+      const auto candidate=slots.attempt;slots.before=false;
+      CHECK(e.retrySave()==CommandResult::Applied&&e.ready()&&slots.files[1]==candidate&&slots.files[0]==original);
+    }
+    FileStore second(slots);Engine e(second);CHECK(e.begin()==CommandResult::Applied);
+    const Save& s=e.view();
+    CHECK(s.schema==7&&s.sequence==old->sequence+2&&s.route==Route::Kanto&&s.encounter.route==c.region);
+    CHECK(s.encounter.id==1&&s.encounter.species==c.species&&s.phase==c.phase&&s.result==c.result);
+    CHECK(s.firstCapture[3].route==Route::Forest&&s.recent[0].route==Route::Forest&&s.captureCounts[3]==1);
+  }
+}
 int main(){phases();failures();oldThrowsAndBase();creditAndBoundary();schema2Upgrade();mixedSlots();activityTail();
-  routeUpgrade();captureRoutePreserved();std::printf("migration: %u checks passed\n",checks);}
+  routeUpgrade();captureRoutePreserved();schema6Upgrade();std::printf("migration: %u checks passed\n",checks);}

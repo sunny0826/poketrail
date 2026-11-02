@@ -8,7 +8,7 @@ void savedVictory(MemoryStore& store, Save& s, bool captured) {
   s.clock.calibrated = true; s.clock.offsetMinutes = 480; s.clock.dayHighWater = 20261022;
   s.today.dayKey = 20261022; s.today.steps = s.bestDaySteps = 500;
   s.phase = Phase::ThrowReady; s.result = Result::Won;
-  s.encounter.id = 1; s.encounter.species = s.encounter.partner = 1;
+  s.encounter.id = 1; s.encounter.species = s.encounter.partner = 1; s.encounter.route = Route::Kanto;
   while ((throwRoll(s.encounter, 1, s.encounter.ruleVersion) >=
           captureProbability(s.encounter.ruleVersion, catalogEntry(1)->rare, Timing::Perfect)) == captured)
     ++s.encounter.seed;
