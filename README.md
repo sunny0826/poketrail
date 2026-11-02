@@ -7,7 +7,7 @@
 带着伙伴走路，遇见宝可梦，用节奏对战和投球完成捕捉。<br>
 运行在 M5Stack StopWatch（C152）圆屏上的离线步行探险。
 
-<img src="docs/images/readme/home.png" width="360" alt="圆屏首页：妙蛙种子站在森林路线上，标注携带中，下方为今日 4 步。主机 Runtime/M5GFX 渲染，不是实机拍摄。">
+<img src="docs/images/readme/home.png" width="360" alt="圆屏首页：妙蛙种子站在森林路线上，标注携带中，球图标旁显示已捕获 0 种，下方为今日 4 步。主机 Runtime/M5GFX 渲染，不是实机拍摄。">
 
 [开始使用](#开始使用) · [桌面模拟](#桌面模拟) · [构建和烧录](#构建和烧录) · [开发指南](docs/development.md) · [验证说明](docs/verification.md)
 
@@ -18,14 +18,14 @@
 ## 玩法
 
 - **走路探险**：森林、海边、洞窟三条路线，遭遇池各不相同。每走 200–500 步（随机）产生一次遭遇。
-- **节奏对战与捕捉**：按节拍攻击或躲避，胜利后最多投两球；精灵球不限量。成功捕获后该种永久退出遭遇池。
+- **节奏对战与捕捉**：提示圈圈住对手就按右键攻击，圈住伙伴就按左键躲避，底部轨道预告下一拍。胜利后最多投两球；精灵球不限量。成功捕获后该种永久退出遭遇池。
 - **伙伴培养**：一次携带一只，只有携带者获得培养步，达到条件后手动进化。
 - **图鉴**：自由浏览全国图鉴 1～649，涵盖关都、城都、丰缘、神奥与合众，动画为《黑／白》像素素材。
 
 <p align="center">
-  <a href="docs/images/readme/battle.png"><img src="docs/images/readme/battle.png" width="234" alt="圆屏对战：妙蛙种子对玛瑙水母，双方有生命格，提示右键攻击。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
-  <a href="docs/images/readme/throw.png"><img src="docs/images/readme/throw.png" width="234" alt="圆屏投球：玛瑙水母在瞄准圈中，提示按住蓄力、松手投球。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
-  <a href="docs/images/readme/viewer.png"><img src="docs/images/readme/viewer.png" width="234" alt="圆屏图鉴：编号 001／251 的妙蛙种子，属性为草、毒，显示当前拥有和预览进化。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <a href="docs/images/readme/battle.png"><img src="docs/images/readme/battle.png" width="234" alt="圆屏对战：小火龙对皮卡丘，双方有生命格；红色提示圈圈住右侧的皮卡丘并向内收拢，底部轨道显示当前与下一拍的右向箭头，提示右键攻击。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <a href="docs/images/readme/throw.png"><img src="docs/images/readme/throw.png" width="234" alt="圆屏投球：海边的爱心鱼，标题下两个球表示本场剩余两次，提示按住右键蓄力、松手投球。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <a href="docs/images/readme/viewer.png"><img src="docs/images/readme/viewer.png" width="234" alt="圆屏图鉴：编号 001／649 的妙蛙种子，属性为草、毒，显示当前拥有和预览进化。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
   <br>
   <sub>节奏对战 · 蓄力投球 · 图鉴</sub>
 </p>
@@ -38,25 +38,26 @@
   <sub>森林 · 海边 · 洞窟</sub>
 </p>
 
-概率、进化费用、按键和存档规则见[使用指南](docs/usage.md)。账户与迁移见[玩法契约](docs/design/walking-progression.md)。
+对战与捕获概率见[对战与投球](docs/usage-battle.md)，进化费用、按键和存档规则见[使用指南](docs/usage.md)。账户与迁移见[玩法契约](docs/design/walking-progression.md)。
 
 <details>
 <summary>画面来源</summary>
 
-全部画面是 2026-10-29 的 251 种版本用主机 Runtime/M5GFX 离屏渲染的截图，不是 C152 实机拍摄，也不能当作实机帧率、观感或验收结果。点图片打开 468×468 原文件。物理圆屏为 466×466，当前 M5GFX 驱动报告 468×468；PNG 只保留圆屏内像素，圆外透明。
+全部画面是 2026-11-02 的 649 种版本用主机 Runtime/M5GFX 离屏渲染的截图，不是 C152 实机拍摄，也不能当作实机帧率、观感或验收结果。点图片打开 468×468 原文件。物理圆屏为 466×466，当前 M5GFX 驱动报告 468×468；PNG 只保留圆屏内像素，圆外透明。
 
 | 画面 | 渲染套件 | 截图 |
 | --- | --- | --- |
-| 首屏首页 | `test_home_render` | `home-today-complete-live`：今日 4 步来自测试中的模拟走路 |
-| 森林、海边、洞窟 | `test_home_render` | `home-scene-0`～`home-scene-2`：未校时，所以今日显示 -- |
-| 节奏对战、蓄力投球 | `test_adventure_render` | `battle`、`throw-active`：海边路线，对手为玛瑙水母 |
+| 首屏首页 | `test_home_render` | `home-today-complete-live`：今日 4 步来自测试中的模拟走路，尚未捕获 |
+| 森林、海边、洞窟 | `test_home_render` | `home-scene-0`～`home-scene-2`：未校时，所以今日显示 --；测试档已捕获 2 种 |
+| 节奏对战 | `test_battle_render` | `battle-idle`：海边路线，小火龙对皮卡丘，攻击提示 |
+| 蓄力投球 | `test_adventure_render` | `throw-ready-1`：海边路线，对手为爱心鱼，剩余两次 |
 | 图鉴 | `test_adventure_render` | `viewer-entry`：测试档中的初始伙伴 |
 
 电量处的 -- 是因为渲染时没有电池读数。以下命令生成当前版本的对应测试截图，输出到新的验收目录；不会自动替换本页保留的历史图片：
 
 ```bash
 rtk proxy mise exec -- python3 scripts/run_render_tests.py \
-  test_home_render test_adventure_render
+  test_home_render test_adventure_render test_battle_render
 ```
 
 </details>
@@ -119,6 +120,7 @@ rtk proxy mise exec -- pio device monitor -p /dev/cu.usbmodemXXXX --baud 115200
 2026-10-30 的 649 种固件曾在 C152 启动并重载存档；这次有限观察不代表 schema6 的完整设备验收已完成。当前主机检查、设备观察，以及真实计步、实体交互、RTC 保持、断电恢复和功耗的待验项，见[验证说明](docs/verification.md)。
 
 - [使用指南](docs/usage.md)：操作、捕捉、培养、日期与存档。
+- [对战与投球](docs/usage-battle.md)：提示圈、判定窗口、必杀、振动、投球概率与捕获练习。
 - [Usage guide (English)](docs/usage.en.md)：English version of the usage guide.
 - [桌面模拟指南](docs/simulator.md)：键鼠操作、独立存档与模拟边界。
 - [开发指南](docs/development.md)：环境、素材生成、测试与模块职责。
