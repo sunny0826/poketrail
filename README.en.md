@@ -7,7 +7,7 @@
 Walk with your partner, encounter Pokémon, and catch them through rhythm battles and ball throws.<br>
 An offline walking adventure for the round screen of the M5Stack StopWatch (C152).
 
-<img src="docs/images/readme/home.png" width="360" alt="Round home screen: Bulbasaur stands on the forest route, marked as the carried partner, with 0 species caught beside the ball icon and 4 steps today shown below. Host Runtime/M5GFX render, not a device photo.">
+<img src="docs/images/readme/home.png" width="360" alt="Round home screen: Bulbasaur stands on a Kanto farm path, marked as the carried partner, with 0 species caught beside the ball icon and 4 steps today shown below. Host Runtime/M5GFX render, not a device photo.">
 
 [Getting started](#getting-started) · [Desktop simulation](#desktop-simulation) · [Build and flash](#build-and-flash) · [Development guide (Chinese only)](docs/development.md) · [Verification notes (Chinese only)](docs/verification.md)
 
@@ -17,25 +17,27 @@ An offline walking adventure for the round screen of the M5Stack StopWatch (C152
 
 ## Gameplay
 
-- **Walking adventures**: Explore forest, coast, and cave routes, each with its own encounter pool. An encounter occurs every 200–500 steps (random).
+- **Walking adventures**: Switch freely between five regions—Kanto, Johto, Hoenn, Sinnoh, and Unova. Each region only has Pokémon from its own generation. An encounter occurs every 200–500 steps (random).
 - **Rhythm battles and catching**: When the cue circles the opponent, press the right button to attack; when it circles your partner, press the left button to dodge. A track at the bottom previews the next beat. After winning, throw up to two balls; Poké Balls are unlimited. Catching a species permanently removes it from the encounter pool.
 - **Partner training**: Carry one partner at a time. Only the carried partner earns training steps. Evolve it manually once it meets the requirements.
 - **Pokédex**: Freely browse National Pokédex entries 1–649 across Kanto, Johto, Hoenn, Sinnoh, and Unova, with animated pixel art from Pokémon Black and White.
 
 <p align="center">
   <a href="docs/images/readme/battle.png"><img src="docs/images/readme/battle.png" width="234" alt="Round battle screen: Charmander faces Pikachu, with health segments for both. A red cue circles Pikachu on the right and closes inward, and the bottom track shows right-pointing arrows for the current and next beat, prompting a right-button attack. Host Runtime/M5GFX render, not a device photo."></a>
-  <a href="docs/images/readme/throw.png"><img src="docs/images/readme/throw.png" width="234" alt="Round ball-throwing screen: Luvdisc on the coast, with two balls under the title for the two attempts left and a prompt to hold the right button to charge and release to throw. Host Runtime/M5GFX render, not a device photo."></a>
+  <a href="docs/images/readme/throw.png"><img src="docs/images/readme/throw.png" width="234" alt="Round ball-throwing screen: Dunsparce in Johto, in front of a five-story pagoda and autumn maples, with two balls under the title for the two attempts left and a prompt to hold the right button to charge and release to throw. Host Runtime/M5GFX render, not a device photo."></a>
   <a href="docs/images/readme/viewer.png"><img src="docs/images/readme/viewer.png" width="234" alt="Round Pokédex screen: Bulbasaur, entry 001/649, with Grass and Poison types, ownership status, and an evolution preview. Host Runtime/M5GFX render, not a device photo."></a>
   <br>
   <sub>Rhythm battles · Charged throws · Pokédex · Host Runtime/M5GFX renders, not device photos</sub>
 </p>
 
 <p align="center">
-  <a href="docs/images/readme/route-forest.png"><img src="docs/images/readme/route-forest.png" width="234" alt="Forest route on the round home screen: a woodland path and trees. Host Runtime/M5GFX render, not a device photo."></a>
-  <a href="docs/images/readme/route-coast.png"><img src="docs/images/readme/route-coast.png" width="234" alt="Coast route on the round home screen: waves, sand, and rocks. Host Runtime/M5GFX render, not a device photo."></a>
-  <a href="docs/images/readme/route-cave.png"><img src="docs/images/readme/route-cave.png" width="234" alt="Cave route on the round home screen: stalactites and crystals. Host Runtime/M5GFX render, not a device photo."></a>
+  <a href="docs/images/readme/region-kanto.png"><img src="docs/images/readme/region-kanto.png" width="180" alt="Kanto on the round home screen: a red-roofed town, wooden fences, and a farm path. Host Runtime/M5GFX render, not a device photo."></a>
+  <a href="docs/images/readme/region-johto.png"><img src="docs/images/readme/region-johto.png" width="180" alt="Johto on the round home screen: a five-story pagoda at dusk, a torii gate, autumn maples, and stone lanterns. Host Runtime/M5GFX render, not a device photo."></a>
+  <a href="docs/images/readme/region-hoenn.png"><img src="docs/images/readme/region-hoenn.png" width="180" alt="Hoenn on the round home screen: a smoking volcano, palm trees, the sea, and a beach. Host Runtime/M5GFX render, not a device photo."></a>
+  <a href="docs/images/readme/region-sinnoh.png"><img src="docs/images/readme/region-sinnoh.png" width="180" alt="Sinnoh on the round home screen: snowy mountains, conifers, a snowfield, and a cabin. Host Runtime/M5GFX render, not a device photo."></a>
+  <a href="docs/images/readme/region-unova.png"><img src="docs/images/readme/region-unova.png" width="180" alt="Unova on the round home screen: a night skyline, a cable-stayed bridge, and a street. Host Runtime/M5GFX render, not a device photo."></a>
   <br>
-  <sub>Forest · Coast · Cave · Host Runtime/M5GFX renders, not device photos</sub>
+  <sub>Kanto · Johto · Hoenn · Sinnoh · Unova · Host Runtime/M5GFX renders, not device photos</sub>
 </p>
 
 See the [usage guide](docs/usage.en.md) for probabilities, evolution costs, controls, and save rules. See the [gameplay contract (Chinese only)](docs/design/walking-progression.md) for accounts and migration.
@@ -48,9 +50,9 @@ All images are screenshots rendered offscreen with the host Runtime/M5GFX from t
 | Screen | Render suite | Screenshot |
 | --- | --- | --- |
 | Initial home screen | `test_home_render` | `home-today-complete-live`: the 4 steps today come from simulated walking in the test; nothing caught yet |
-| Forest, coast, cave | `test_home_render` | `home-scene-0`–`home-scene-2`: today's count shows -- because the clock is not set; the test save has caught 2 species |
-| Rhythm battle | `test_battle_render` | `battle-idle`: coast route, Charmander against Pikachu, attack cue |
-| Charged throw | `test_adventure_render` | `throw-ready-1`: coast route, facing Luvdisc, two attempts left |
+| Five regions | `test_home_render` | `home-scene-0`–`home-scene-4`: today's count shows -- because the clock is not set; the test save has caught 2 species |
+| Rhythm battle | `test_battle_render` | `battle-idle`: Kanto, Charmander against Pikachu, attack cue |
+| Charged throw | `test_adventure_render` | `throw-ready-1`: Johto, facing Dunsparce, two attempts left |
 | Pokédex | `test_adventure_render` | `viewer-entry`: the starter partner in the test save |
 
 The battery display shows -- because no battery reading was available during rendering. This command generates the corresponding test screenshots for the current version in a new verification directory. It does not replace the historical images on this page:
@@ -117,7 +119,7 @@ The target device is the M5Stack StopWatch C152 with an ESP32-S3R8, 16 MB Flash,
 
 ## Documentation and licensing
 
-The 649-species firmware booted on a C152 and reloaded a save on 2026-10-30. That limited observation does not establish complete device acceptance for schema6. See the [verification notes (Chinese only)](docs/verification.md) for current host checks, device observations, and pending checks for real step counting, physical interaction, RTC retention, power-loss recovery, and power consumption. Host tests cannot establish real step counting, on-device feel, latency, or power-loss recovery.
+The 649-species firmware booted on a C152 and reloaded a save on 2026-10-30. That limited observation predates the schema7 five-region version and does not establish complete device acceptance for the current firmware. See the [verification notes (Chinese only)](docs/verification.md) for current host checks, device observations, and pending checks for real step counting, physical interaction, RTC retention, power-loss recovery, and power consumption. Host tests cannot establish real step counting, on-device feel, latency, or power-loss recovery.
 
 - [Usage guide](docs/usage.en.md): controls, catching, training, dates, and saves.
 - [Simulator guide (Chinese only)](docs/simulator.md): keyboard and mouse controls, separate saves, and simulation boundaries.

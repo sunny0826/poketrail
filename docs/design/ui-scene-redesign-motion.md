@@ -8,7 +8,7 @@
 
 ![三路线停止、行走和循环接缝](ui-scene-redesign/contacts/walking-animation.png)
 
-这些 GIF 是 Pillow 主机设计预览，不是 Runtime/M5GFX 或实体设备录像，也不作为 C152 帧率证据。固件已实现同一纵深契约，真实渲染检查入口见[UI 实现与设计稿维护](ui-scene-redesign-implementation.md)。
+这些 GIF 是 Pillow 主机设计预览，不是 Runtime/M5GFX 或实体设备录像，也不作为 C152 帧率证据。设计稿仍为五地区改版前的森林、海边、洞窟；固件的关都、城都、丰缘、神奥、合众沿用同一纵深契约，地面带高度见[视觉设计](ui-scene-redesign.md#地区场景)，下文的路线名与示例对战组合只作历史参考。真实渲染检查入口见[UI 实现与设计稿维护](ui-scene-redesign-implementation.md)。
 
 | 路线 | 固定远景 | 向屏幕下方靠近的地景 |
 | --- | --- | --- |
