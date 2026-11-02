@@ -14,7 +14,15 @@ void Driver::winBattle(bool practice) {
       check(!v.paused && !battleEffectActive(v, now()), "battle cue visible before input");
       const auto action = shownAction(v, now());
       event("visible-cue", std::to_string(v.cueIndex) + ":" + std::to_string(int(action)));
-      if (lastCue == 999) shot(practice ? "practice-cue" : "battle-cue");
+      if (lastCue == 999) {
+        shot(practice ? "practice-cue" : "battle-cue");
+        bool full = true;
+        for (unsigned i = 0; i < kPlayerHp; ++i)
+          full = full && M5.Display.readPixel(hpSegmentX(false, i, kPlayerHp), kHpSegmentY + 3) == theme::kMint;
+        for (unsigned i = 0; i < kEnemyHp; ++i)
+          full = full && M5.Display.readPixel(hpSegmentX(true, i, kEnemyHp), kHpSegmentY + 3) == theme::kGold;
+        check(full, "battle HUD plates show both full HP tracks at the first cue");
+      }
       lastCue = v.cueIndex;
       press(action == Action::Attack ? SDL_SCANCODE_RIGHT : SDL_SCANCODE_LEFT);
       const auto& settled = view();
@@ -56,9 +64,15 @@ void Driver::throwBall(bool perfect, bool practice) {
   check(active(), "holding right opens the throw window");
   check(screen().charging, "holding right charges ball");
   const auto target = practice ? screen().practiceTargetMs : runtime().engine().throwView().targetMs;
-  if (perfect) until([&] { return int32_t(target - now()) <= 20; }, 3000, "charge reaches release target");
-  // A miss still holds past the minimum hold, so it counts as one attempt.
-  else advance(400);
+  const auto arc = [](int dx) { return M5.Display.readPixel(233 + dx, kHandY) == theme::kGold; };
+  if (perfect) {
+    until([&] { return int32_t(target - now()) <= 20; }, 3000, "charge reaches release target");
+    check(arc(29) && arc(-29), "full charge closes the gold arc around the held ball");
+  } else {
+    // A miss still holds past the minimum hold, so it counts as one attempt.
+    advance(400);
+    check(arc(29) && !arc(-29), "half charge fills the arc clockwise past 3 o'clock only");
+  }
   key(SDL_SCANCODE_RIGHT, false, 1);
   check(!active(), "release settles throw");
   state("throw-settled");

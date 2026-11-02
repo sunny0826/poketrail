@@ -182,10 +182,7 @@ void Runtime::handle(const Input& raw) {
     return;
   }
   if (input.click) {
-    const int top = screen_.page == Page::Result
-                        ? (engine_.view().result == Result::Captured ? 372 : 355)
-                        : screen_.page == Page::Menu ? menu_layout::kMainTop : menu_layout::kTop;
-    const int row = menu_layout::rowAt(input.x, input.y, top);
+    const int row = menu_layout::rowAt(input.x, input.y, menuTop(screen_, engine_));
     if (row >= 0) {
       const unsigned selected = menu_layout::first(screen_.selected) + unsigned(row);
       if (selected < count) { screen_.selected = selected; confirm = true; }

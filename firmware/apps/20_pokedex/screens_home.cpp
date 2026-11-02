@@ -18,8 +18,8 @@ void bookIcon() {
   }
 }
 }
-void Screens::menu(const ScreenState& s, const Engine& e, int top) {
-  if (s.page == Page::Menu) top = menu_layout::kMainTop;
+void Screens::menu(const ScreenState& s, const Engine& e) {
+  const int top = menuTop(s, e);
   const auto phase = e.view().phase;
   char dexLabel[32], captureLabel[48];
   snprintf(dexLabel, sizeof(dexLabel), "%u 图鉴", unsigned(kSpeciesCount));
@@ -160,15 +160,13 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
         actorShadow(233, 168);
         sprite(v.encounter.species, now, resultPlayback_, 168, 233, 0, 2, 120);
         if (first) line("首次捕获", 246, theme::kGold);
-        if (c.at.timeKnown) {
-          calendar::CivilTime local;
-          if (calendar::fromUtc(c.at.utcSeconds, c.at.offsetMinutes, local)) {
-            snprintf(text, sizeof(text), "%04d-%02d-%02d %02d:%02d", local.year, local.month, local.day, local.hour, local.minute);
-            line(text, 270, theme::kMuted);
-          }
-        } else line("捕捉时间未知", 270, theme::kMuted);
-        line(routeName(c.route), 290, theme::kMint);
-        badges(c.achievementMask, 312);
+        calendar::CivilTime local;
+        if (c.at.timeKnown && calendar::fromUtc(c.at.utcSeconds, c.at.offsetMinutes, local))
+          snprintf(text, sizeof(text), "%s · %04d-%02d-%02d %02d:%02d", routeName(c.route),
+                   local.year, local.month, local.day, local.hour, local.minute);
+        else snprintf(text, sizeof(text), "%s · 时间未知", routeName(c.route));
+        line(text, 270, theme::kMuted);
+        badges(c.achievementMask, 294);
       } else {
         M5.Display.drawCircle(233, 164, 52, theme::kOutline);
         thumbnail(v.encounter.species, 233, 164, 2);
@@ -184,7 +182,7 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
           }
         } else line("伙伴仍在，继续步行探索", 249, theme::kMuted);
       }
-      menu(s, e, v.result == Result::Captured ? 372 : 355); return;
+      menu(s, e); return;
     case Page::Records:
       title("捕捉与步行记录", "", theme::kGold);
       snprintf(text, sizeof(text), "每日最高 %llu 步", static_cast<unsigned long long>(v.bestDaySteps));

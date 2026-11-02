@@ -9,6 +9,7 @@
 #include "encounter_catalog.hpp"
 #include "board.hpp"
 #include "../verification_output.hpp"
+#include "../round_layout_checks.hpp"
 uint32_t host_time_ms = 0;
 HostSerial Serial;
 HostM5 M5;

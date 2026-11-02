@@ -4,6 +4,7 @@
 #include "progression_support.hpp"
 #include "viewer_screen.hpp"
 #include "capture_badge_checks.hpp"
+#include "../support/round_layout_checks.hpp"
 
 namespace simulator {
 namespace e2e {
@@ -220,8 +221,30 @@ bool edgesRun(Driver& d) {
   if (!openPartners(d, "edges partners")) return false;
   REQUIRE(d, menuCount(d.screen(), d.runtime().engine()) == 6, "edges partner list has five owners and return");
   d.shot("edges-partners-first");
-  d.swipe(350, 100);
-  REQUIRE(d, d.screen().selected == 3, "edges partner list reaches its last page");
+  {
+    const auto low = menu_layout::rowBounds(2);
+    const int y = low.y + low.height / 2;
+    REQUIRE(d, low.width < menu_layout::kWidth && round_layout_test::insideRowRadius(low) &&
+                   round_layout_test::rowEdges(low),
+            "lowest partner row narrows with the circle and paints exactly its bounds");
+    d.tap(low.x - 3, y);
+    d.tap(low.x + low.width + 2, y);
+    REQUIRE(d, d.screen().page == Page::Partners && d.screen().selected == 0,
+            "taps beside the narrowed lowest row stay inert");
+    d.tap(low.x + 3, y);
+    REQUIRE(d, page(d, Page::PartnerDetail, "narrowed row edge opens its partner") && d.screen().species == 133,
+            "narrowed lowest row edge opens the third partner");
+    d.back();
+    REQUIRE(d, page(d, Page::Partners, "partner detail returns to the list"), "partner detail returns to the list");
+  }
+  d.frames();
+  REQUIRE(d, round_layout_test::pagerDots(2, 0, theme::kMint) &&
+                 round_layout_test::pillRow(menu_layout::rowBounds(0)),
+          "two-page partner list shows stadium rows and a dot pager");
+  d.tap(330, 425);
+  REQUIRE(d, d.screen().selected == 3, "enlarged next-page zone reaches the last partner page");
+  d.frames();
+  REQUIRE(d, round_layout_test::pagerDots(2, 1, theme::kMint), "dot pager follows the current page");
   d.shot("edges-partners-last");
   d.select(5);
   REQUIRE(d, page(d, Page::Menu, "last partner page returns to menu"), "last partner page returns to menu");

@@ -21,6 +21,9 @@ void iconAt(const data::Icon& icon, int x, int y, unsigned scale) {
 void pokemon(uint16_t id, int x, int y, unsigned scale = 1) {
   iconAt(data::kPokemonIcons[id - 1], x, y, scale);
 }
+void rowPokemon(uint16_t id, unsigned row) {
+  pokemon(id, menu_layout::rowBounds(row).x + menu_layout::kIconInset, menu_layout::center(row));
+}
 void ball(int y) {
   check(capture_badge_test::badge(0, 312, y), "gifted starter contributes zero captured species");
 }
@@ -77,7 +80,7 @@ void starters() {
             "starter preview preserves original animation pixels");
     }
     check(visible > 100, "starter preview contains visible pixels");
-    for (unsigned j = 0; j < 3; ++j) pokemon(ids[j], 107, 238 + j * 68);
+    for (unsigned j = 0; j < 3; ++j) rowPokemon(ids[j], j);
     char name[48]; std::snprintf(name, sizeof(name), "starter-%u", ids[i]); screenshot(runtime, name);
   }
   tap(runtime, 119, 276);
@@ -97,7 +100,7 @@ void collection() {
     check(runtime.screen().selected == selected, "all collection rows reachable by right button");
     const unsigned first = selected / 3 * 3;
     for (unsigned row = first; row < first + 3 && row < kSpeciesCount; ++row)
-      pokemon(row + 1, 107, 238 + (row - first) * 68);
+      rowPokemon(row + 1, row - first);
     if (selected < kSpeciesCount) pokemon(selected + 1, 233, 137, 2);
     if (selected == 82) screenshot(runtime, "partners-carried");
     if (selected == 150) screenshot(runtime, "partners-kanto-last");
@@ -109,7 +112,7 @@ void collection() {
   select(runtime, 7); openMenu(runtime); select(runtime, 2); tap(runtime, 119, 306);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 2,
         "thumbnail row opens matching partner detail");
-  pokemon(2, 233, 132, 2); pokemon(3, 107, 306);
+  pokemon(2, 233, 132, 2); rowPokemon(3, 1);
   screenshot(runtime, "partner-before-switch");
   tap(runtime, 233, 238);
   check(runtime.engine().view().partner == 2, "detail carry action switches selected species");
@@ -123,7 +126,7 @@ void evolution() {
   }
   HostPlatform platform; Runtime runtime(store, platform); start(runtime); openMenu(runtime); select(runtime, 2); select(runtime, 1);
   pokemon(133, 233, 132, 2);
-  for (unsigned i = 0; i < 2; ++i) pokemon(134 + i, 107, 306 + i * 68);
+  for (unsigned i = 0; i < 2; ++i) rowPokemon(134 + i, 1 + i);
   screenshot(runtime, "eevee-targets");
   tap(runtime, 119, 374);
   check(runtime.screen().page == Page::EvolutionConfirm && runtime.screen().evolution.to == 135,

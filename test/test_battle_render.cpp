@@ -1,6 +1,7 @@
 #include "support/progression_ui.hpp"
 #include "battle_presentation.hpp"
 #include "support/animation_feedback.hpp"
+#include "support/round_layout_checks.hpp"
 #include "sprite.hpp"
 #include "sprites_generated.hpp"
 #include <algorithm>
@@ -55,10 +56,15 @@ void actor(uint16_t id, uint32_t origin, int cx, int cy, unsigned scale, bool up
   check(ink > 20 && mismatch == 0, "visible actor preserves original frame duration, integer pixels and placement");
 }
 void hp(unsigned player, unsigned enemy) {
+  const int y = kHpSegmentY + 3;
   for (unsigned i = 0; i < kPlayerHp; ++i)
-    check(M5.Display.readPixel(92 + i * 18, 110) == (i < player ? theme::kMint : theme::kDisabled), "player HP immediately matches battle result");
+    check(M5.Display.readPixel(hpSegmentX(false, i, kPlayerHp), y) == (i < player ? theme::kMint : theme::kDisabled), "player HP immediately matches battle result");
   for (unsigned i = 0; i < kEnemyHp; ++i)
-    check(M5.Display.readPixel(283 + i * 11, 110) == (i < enemy ? theme::kGold : theme::kDisabled), "enemy HP immediately matches battle result");
+    check(M5.Display.readPixel(hpSegmentX(true, i, kEnemyHp), y) == (i < enemy ? theme::kGold : theme::kDisabled), "enemy HP immediately matches battle result");
+  for (const auto& plate : {kPlayerPlate, kEnemyPlate})
+    check(round_layout_test::insideRowRadius(plate) &&
+          M5.Display.readPixel(plate.x + plate.width / 2, plate.y + 2) == theme::kBackground,
+          "battle name plates sit on solid backing inside the round screen");
 }
 // Plays cues until the next one requires `want`, using perfect dodges and normal attacks.
 void until(Runtime& r, Action want) {

@@ -200,7 +200,11 @@ void captureAnimation() {
   const uint32_t target = r.engine().throwView().targetMs;
   p.next.right = p.next.held = true; frame(r);
   check(r.screen().charging, "holding the throw key charges the ball");
-  for (unsigned held = 0; held < 920; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
+  for (unsigned held = 0; held < 400; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
+  check(M5.Display.readPixel(233 + 29, kHandY) == theme::kGold && M5.Display.readPixel(233 - 29, kHandY) != theme::kGold,
+        "half charge fills the arc clockwise from 12 o'clock past 3 o'clock only");
+  snapCurrent(r, "capture-charge-half");
+  for (unsigned held = 400; held < 920; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
   p.next.rightDown = p.next.held = true; frame(r);
   check(M5.Display.readPixel(267, 344) == theme::kGold || M5.Display.readPixel(263, 344) == theme::kGold,
         "full charge shows a pulsing gold ring around the held ball");
@@ -247,6 +251,8 @@ void captureAnimation() {
   check(p.feedbacks >= 8, "animation played throw, landing, wiggle and success haptics");
   frame(r, 500);
   snapCurrent(r, "capture-result-first");
+  check(round_layout_test::clearAbove(menu_layout::rowBounds(0, menuTop(r.screen(), r.engine())), 8),
+        "first-capture result text keeps clear of its confirm button");
   unsigned halo = 0;
   for (int y = 60; y < 290; ++y) for (int x = 80; x < 390; ++x)
     if (M5.Display.readPixel(x, y) == theme::kGold) ++halo;

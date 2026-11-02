@@ -13,24 +13,12 @@ void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
   }
   if (s.capture.active) { capture(s, s.practiceSpecies, now); return; }
   if (s.practiceThrowing) {
-    actorShadow(233, 233);
-    sprite(s.practiceSpecies, now, battlePlayback_, 233, 233, 0, 2, 190);
-    const int32_t remaining = int32_t(s.practiceTargetMs - now);
-    const int radius = remaining > 1500 ? 130 : remaining > 0 ? 24 + remaining * 106 / 1500 : 24;
-    const bool perfect = remaining <= 70 && remaining >= -70;
-    M5.Display.drawCircle(233, 233, radius, remaining < 400 ? theme::kGold : theme::kMint);
-    M5.Display.drawCircle(233, 233, 24, perfect && (now / 100) % 2 ? theme::kText : theme::kGold);
-    const uint8_t charge = s.charging ? captureChargeLevel(now - s.chargeStartMs) : 0;
-    if (charge == 1) M5.Display.drawCircle(233, kHandY, 27, theme::kGold);
-    else if (charge == 2) M5.Display.drawCircle(233, kHandY, (now / 200) % 2 ? 34 : 30, theme::kGold);
-    ballAt(233, kHandY);
+    aim(s.practiceSpecies, now, true, int32_t(s.practiceTargetMs - now), s.charging, now - s.chargeStartMs);
     line("按住蓄力 · 松手投球", 399, theme::kMint);
     line("成功不会收入图鉴", 426, theme::kMuted);
     return;
   }
-  actorShadow(233, 233);
-  sprite(s.practiceSpecies, now, battlePlayback_, 233, 233, 0, 2, 190);
-  ballAt(233, kHandY);
+  aim(s.practiceSpecies, now, false, 0, false, 0);
   line("按住右键蓄力 · 松手投球", 399, theme::kMint);
   line("轻触顶部结束练习", 426, theme::kMuted);
 }
