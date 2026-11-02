@@ -124,5 +124,6 @@ rtk proxy mise exec -- pio device monitor -p /dev/cu.usbmodemXXXX --baud 115200
 - [开发指南](docs/development.md)：环境、素材生成、测试与模块职责。
 - [玩法与迁移契约](docs/design/walking-progression.md)：账户不变量、进化、旧档兼容。
 - [验证说明](docs/verification.md)：自动检查范围、当前限制和设备待验项。
+- [设备观察记录](docs/device-observations.md)：历次实机观察与本地证据索引。
 
 自写代码采用 [MIT](LICENSE) 许可证。宝可梦图像、名称、资料快照和第三方库不纳入本项目 MIT 授权；来源与各自声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。本项目与 Nintendo、Creatures、GAME FREAK 或 The Pokémon Company 无关联，也不代表其认可。
