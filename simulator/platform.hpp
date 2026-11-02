@@ -24,8 +24,10 @@ class Platform : public pokedex::ui::Platform {
   pokedex::device_clock::Reading readClock() override;
   pokedex::device_clock::Reading writeClock(int64_t utc) override;
   bool saveClock() { return storage_.saveClock(readClock().utcSeconds); }
-  void feedback(uint16_t ms) override { vibrationEnd_ = now() + ms; }
+  void feedback(uint16_t ms) override { vibrationEnd_ = now() + ms; ++feedbacks_; lastFeedback_ = ms; }
   bool vibrationActive() override { return int32_t(vibrationEnd_ - now()) > 0; }
+  unsigned feedbacks() const { return feedbacks_; }
+  uint16_t lastFeedback() const { return lastFeedback_; }
   void brightness(uint8_t value) override { M5.Display.setBrightness(value); }
   c152::DisplayTransition displaySleep(bool) override { return {true}; }
   c152::BatteryStatus readBattery() override { return {}; }
@@ -37,6 +39,8 @@ class Platform : public pokedex::ui::Platform {
   std::array<bool, SDL_NUM_SCANCODES> keys_{};
   int64_t clockUtc_;
   uint32_t clockAt_ = 0, vibrationEnd_ = 0, walkAt_ = 0;
+  unsigned feedbacks_ = 0;
+  uint16_t lastFeedback_ = 0;
   bool walking_ = false, fast_ = false, power_ = false, screenshot_ = false;
 };
 }

@@ -22,6 +22,7 @@ CASES = {
     "capture": ("P0-02", "blank", [("capture", "run"), ("capture", "reload")]),
     "capture-slow-save": ("P0-02", "blank", [("capture", "slow"), ("capture", "reload")]),
     "battle-fixed": ("P0-02", "blank", [("capture", "fixed"), ("capture", "reload")]),
+    "battle-cues": ("P0-02", "battle", [("battle", "cues"), ("battle", "reload")]),
     "capture-clock": ("P1-10", "blank", [("capture", "run"), ("clock", "captured"), ("clock", "reload")]),
     "throws": ("P0-03", "throw", [("throws", "run"), ("throws", "reload")]),
     "aim": ("P0-03", "throw", [("throws", "aim"), ("throws", "aim-reload")]),
@@ -225,8 +226,9 @@ def main():
                     from PIL import Image
                     with Image.open(stage / "fixed-cue-0.bmp") as image:
                         cue = hashlib.sha256(image.convert("RGB").crop((50, 24, 518, 492)).tobytes()).hexdigest()
-                    # Frozen from the reviewed 20261102T024019 trace (HUD plates, edge dither); inputs unchanged.
-                    expected = "6bdb5d535c264f598db2b3562e2e28f2d0de76e6924ac151ea432138f552303a"
+                    # Frozen from the reviewed simulator-e2e-dev-20261102T114338 trace (actor-anchored cue,
+                    # note lane, 3-2-1 opening); inputs keep their timing relative to each beat.
+                    expected = "0d5a5dd99edf34a300cd44b230e54899aa7feaf32e959402e0d93db040b94c1f"
                     write_json(stage / "cue-check.json", {"expected": expected, "actual": cue})
                     if cue != expected:
                         raise RuntimeError("fixed battle cue pixels differ from reviewed trace")

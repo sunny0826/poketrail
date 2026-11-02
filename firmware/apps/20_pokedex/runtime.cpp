@@ -151,6 +151,16 @@ void Runtime::feedback(uint16_t duration) {
   detector_.suppressUntil(platform_.now() + duration + 200);
   wasVibrating_ = true;
 }
+void Runtime::battleFeedback() {
+  const bool practice = screen_.page == Page::Practice;
+  if (!practice && screen_.page != Page::Battle) return;
+  const auto& b = practice ? practiceCapture_.battleView() : engine_.battleView();
+  // A fresh battle restarts its count at zero, so only an increase is a new settlement.
+  // Vibration blanks the step detector, so walkers keep their steps instead of the buzz.
+  if (b.settlements > battleSettlements_ && platform_.now() - lastStepEventMs_ >= kStepActiveMs)
+    feedback(b.special || b.lastTiming == Timing::Perfect ? 40 : b.lastTiming == Timing::Miss ? 10 : 20);
+  battleSettlements_ = b.settlements;
+}
 void Runtime::discardAnchors() {
   detector_.reset(); anchor_ = ClockReading(); clockDeferred_ = true;
 }
@@ -213,6 +223,7 @@ void Runtime::loop() {
   syncPracticeView();
   syncPracticePage();
   if (engine_.ready() && !engine_.savePending()) engine_.tick(platform_.now(), readingAt(platform_.now()));
+  battleFeedback();
   tickCapture(platform_.now());
   tickEvolution(platform_.now(), input.held);
   syncPage();

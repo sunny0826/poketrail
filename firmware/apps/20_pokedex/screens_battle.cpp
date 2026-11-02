@@ -4,7 +4,6 @@
 #include "sprites_generated.hpp"
 #include <algorithm>
 #include <cmath>
-#include <cstdio>
 namespace pokedex { namespace ui {
 using namespace adventure;
 namespace {
@@ -42,36 +41,74 @@ void impact(int x, int y, uint32_t age, uint16_t color, bool strong) {
     M5.Display.fillTriangle(x - radius, y, x, y + 5, x + radius, y, color);
   }
 }
+uint16_t cueColor(bool attack, bool blink) { return blink ? theme::kText : attack ? theme::kRed : theme::kBlue; }
+// The arrow points at the key: right for attack, left for dodge.
+void note(int x, bool attack, uint16_t color) {
+  if (attack) M5.Display.fillTriangle(x - 5, kLaneY - 7, x - 5, kLaneY + 7, x + 7, kLaneY, color);
+  else M5.Display.fillTriangle(x + 5, kLaneY - 7, x + 5, kLaneY + 7, x - 7, kLaneY, color);
+}
+void lane(const BattleView& b, uint32_t now) {
+  const int32_t normalMs = b.frenzy ? kFrenzyNormalWindowMs : kNormalWindowMs;
+  const int32_t perfectMs = b.frenzy ? kFrenzyPerfectWindowMs : kPerfectWindowMs;
+  const int32_t remaining = int32_t(b.targetMs - now);
+  const bool perfectWindow = remaining >= -perfectMs && remaining <= perfectMs;
+  M5.Display.fillRoundRect(233 - kLaneHalfWidth - 10, 344, 2 * kLaneHalfWidth + 21, 27, 13, theme::kBackground);
+  M5.Display.drawFastHLine(233 - kLaneHalfWidth, kLaneY, 2 * kLaneHalfWidth + 1, theme::kTrack);
+  for (int32_t boundary : {-normalMs, -perfectMs, perfectMs, normalMs})
+    M5.Display.drawFastVLine(233 + laneOffset(boundary), 352, 11, std::abs(boundary) == perfectMs ? theme::kGold : theme::kMuted);
+  const int box = laneOffset(normalMs) + 3;
+  M5.Display.drawRoundRect(233 - box, 346, 2 * box + 1, 22, 4, perfectWindow ? theme::kGold : theme::kMint);
+  if (!b.active || b.paused) return;
+  const bool next = b.cueIndex + 1 < kMaxCues;
+  const uint32_t nextTarget = b.targetMs + (b.enemyHp * 2 < kEnemyHp ? kFrenzyBeatIntervalMs : kBeatIntervalMs);
+  if (next && laneVisible(int32_t(nextTarget - now)))
+    note(233 + laneOffset(int32_t(nextTarget - now)), shownNextAction(b) == Action::Attack,
+         cueColor(shownNextAction(b) == Action::Attack, false));
+  if (!b.consumed && laneVisible(remaining)) {
+    const bool attack = shownAction(b, now) == Action::Attack;
+    note(233 + laneOffset(remaining), attack,
+         perfectWindow ? theme::kGold : cueColor(attack, b.frenzy && (now / 90) % 2));
+  }
+}
+void pauseGlyph() {
+  M5.Display.fillRect(226, 73, 5, 15, theme::kMuted);
+  M5.Display.fillRect(235, 73, 5, 15, theme::kMuted);
+}
 }
 void Screens::cueRing(const BattleView& b, uint32_t now) {
   if (!b.active || b.paused || b.consumed) return;
   const int32_t remaining = int32_t(b.targetMs - now);
-  if (remaining > int32_t(kCueLeadMs) || remaining < -int32_t(kNormalWindowMs)) return;
+  const int32_t normalMs = b.frenzy ? kFrenzyNormalWindowMs : kNormalWindowMs;
+  if (remaining > int32_t(kCueLeadMs) || remaining < -normalMs) return;
   const bool attack = shownAction(b, now) == Action::Attack;
-  const bool blink = b.frenzy && (now / 90) % 2;
-  const uint16_t color = blink ? theme::kText : attack ? theme::kRed : theme::kBlue;
-  // The arc shrinks clockwise toward 12 o'clock (under the battery bar) and vanishes on the judged beat.
-  // M5GFX wraps angles with fmod, so the sweep is split at 360 instead of passing 630.
-  const float sweep = remaining > 0 ? 360.0f * remaining / kCueLeadMs : 0.0f;
-  const float end = 270.0f + sweep;
-  if (sweep >= 1.0f) M5.Display.fillArc(233, 233, 214, 222, 270.0f, end < 360.0f ? end : 360.0f, color);
-  if (end > 360.0f) M5.Display.fillArc(233, 233, 214, 222, 0.0f, end - 360.0f, color);
+  const int cx = attack ? kEnemyX : kPartnerX, cy = attack ? kEnemyY : kPartnerY;
+  const uint16_t color = cueColor(attack, b.frenzy && (now / 90) % 2);
+  const int32_t perfectMs = b.frenzy ? kFrenzyPerfectWindowMs : kPerfectWindowMs;
+  const bool perfect = remaining >= -perfectMs && remaining <= perfectMs;
+  for (int i = 0; i < 2; ++i) M5.Display.drawCircle(cx, cy, kCueTargetRadius - i, perfect ? theme::kGold : color);
+  const int radius = cueRadius(remaining);
+  if (radius > kCueTargetRadius + 2)
+    for (int i = 0; i < 3; ++i) M5.Display.drawCircle(cx, cy, radius - i, color);
+}
+void Screens::ballSlots(uint8_t used) {
+  for (unsigned i = 0; i < 2; ++i) {
+    if (i >= used) { ballAt(ballSlotX(i), kBallSlotY); continue; }
+    M5.Display.drawCircle(ballSlotX(i), kBallSlotY, 13, theme::kDisabled);
+    M5.Display.drawCircle(ballSlotX(i), kBallSlotY, 12, theme::kDisabled);
+  }
 }
 void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& practice, uint32_t now) {
   const auto& v = e.view();
   if (s.page == Page::Throw) {
-    char text[60];
     scene(v.encounter.route, true);
     const bool legacyNoBalls = v.encounter.ruleVersion < 3 && !availableBalls(v);
-    snprintf(text, sizeof(text), "本场剩余 %u 次", 2 - v.encounter.usedBalls);
-    title(speciesName(v.encounter.species), s.capture.active ? "" : e.throwView().active ? "等待投球" :
-          text, theme::kGold);
+    title(speciesName(v.encounter.species), "", theme::kGold);
+    if (!s.capture.active && !legacyNoBalls) ballSlots(v.encounter.usedBalls);
     if (s.capture.active) {
       capture(s, v.encounter.species, now);
     } else if (e.throwView().active) {
       aim(v.encounter.species, now, true, int32_t(e.throwView().targetMs - now), s.charging, now - s.chargeStartMs);
-      line("按住蓄力 · 松手投球", 399, theme::kMint);
-      line("未投出也计一次投球", 426, theme::kMuted);
+      line("松手投球 · 未投出也计一次", 399, theme::kMint);
     } else if (legacyNoBalls) {
       // A legacy encounter with an empty ball stock cannot be thrown, and the
       // menu is gone, so the page carries its own way out.
@@ -84,7 +121,6 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
       // ring is drawn, so the ring only ever means "the clock is running".
       aim(v.encounter.species, now, false, 0, false, 0);
       line("按住右键蓄力 · 松手投球", 399, theme::kMint);
-      line("开始蓄力才开始计时", 426, theme::kMuted);
     }
     return;
   }
@@ -98,49 +134,37 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   const bool hit = b.lastTiming != Timing::Miss;
   const bool perfect = effect && (b.lastTiming == Timing::Perfect || b.special);
   const int shake = perfect && attack && age >= 100 && age < 200 ? ((age / 25) % 2 ? 2 : -2) : 0;
-  const int playerX = 155 + shake + (attack ? pulse(age, 0, 100, 400, 34) :
-                                     hit ? -pulse(age, 30, 120, 370, 26) : 0);
-  const int enemyX = 311 + shake + (attack ? (hit ? pulse(age, 100, 175, 330, 14) : 0) :
-                                    -pulse(age, 0, 80, 330, 30));
+  const int playerX = kPartnerX + shake + (attack ? pulse(age, 0, 100, 400, 34) :
+                                           hit ? -pulse(age, 30, 120, 370, 26) : 0);
+  const int enemyX = kEnemyX + shake + (attack ? (hit ? pulse(age, 100, 175, 330, 14) : 0) :
+                                        -pulse(age, 0, 80, 330, 30));
   const Route route = s.page == Page::Practice ? v.route : v.encounter.route;
   scene(route, true, shake);
-  title(s.page == Page::Practice ? "捕获练习" : "节奏对战", "轻触上方暂停", theme::kMint);
+  title(s.page == Page::Practice ? "捕获练习" : "节奏对战", "", theme::kMint);
+  pauseGlyph();
   hp(speciesName(partner), b.playerHp, kPlayerHp, false, theme::kMint);
   hp(speciesName(enemy), b.enemyHp, kEnemyHp, true, theme::kGold);
   const uint8_t playerScale = actorScale(partner), enemyScale = actorScale(enemy);
   if (!attack && hit && age >= 10 && age < 250) {
-    sprite(partner, now, battlePlayback_, 232, 145 + shake, theme::kOutline, playerScale);
-    sprite(partner, now, battlePlayback_, 232, 133 + shake, theme::kTrack, playerScale);
+    sprite(partner, now, battlePlayback_, kPartnerY, 145 + shake, theme::kOutline, playerScale);
+    sprite(partner, now, battlePlayback_, kPartnerY, 133 + shake, theme::kTrack, playerScale);
   }
   if (!attack && age < 100) M5.Display.fillRect(286 - int(age) * 65 / 100, 225, 9, 5, theme::kBlue);
-  const int32_t delta = int32_t(now - b.targetMs);
-  const int32_t perfectMs = b.frenzy ? kFrenzyPerfectWindowMs : kPerfectWindowMs;
-  const bool perfectWindow = delta >= -perfectMs && delta <= perfectMs;
-  if (attack && age < 100) brackets(enemyX, 226, perfect || perfectWindow ? theme::kGold : theme::routeColor(route));
-  else if (!effect && shownAction(b, now) == Action::Attack) brackets(enemyX, 226, perfectWindow ? theme::kGold : theme::routeColor(route));
-  actorShadow(playerX, 232); actorShadow(enemyX, 226);
+  if (attack && age < 100) brackets(enemyX, kEnemyY, perfect ? theme::kGold : theme::routeColor(route));
+  actorShadow(playerX, kPartnerY); actorShadow(enemyX, kEnemyY);
   const bool flash = effect && age >= 100 && age < 250 && (age / 50) % 2 == 0;
-  sprite(partner, now, battlePlayback_, 232, playerX, flash && !attack && !hit ? theme::kText : 0, playerScale);
-  sprite(enemy, now, enemyBattlePlayback_, 226, enemyX, flash && attack && hit ? theme::kText : 0, enemyScale);
-  if (effect && attack && hit) impact(enemyX, 222, age, perfect ? theme::kGold : theme::kText, perfect);
-  if (effect && !attack && !hit) impact(playerX, 228, age, theme::kRed, false);
-  const uint32_t beat = b.frenzy ? kFrenzyBeatIntervalMs : kBeatIntervalMs;
-  const int32_t normalMs = b.frenzy ? kFrenzyNormalWindowMs : kNormalWindowMs;
-  M5.Display.fillRoundRect(99, 344, 268, 27, 13, theme::kBackground);
-  M5.Display.drawFastHLine(103, 357, 260, theme::kTrack);
-  for (int boundary : {-normalMs, -perfectMs, perfectMs, normalMs}) {
-    const int x = 233 + boundary * 120 / int(beat);
-    M5.Display.drawFastVLine(x, 352, 11, std::abs(boundary) == perfectMs ? theme::kGold : theme::kMuted);
-  }
-  M5.Display.drawRoundRect(217, 346, 32, 22, 4, perfectWindow ? theme::kGold : theme::kMint);
-  const int x = 233 + std::max(-1625, std::min(1625, int(delta))) * 120 / int(beat);
-  M5.Display.fillCircle(x, 357, 5, perfect || perfectWindow ? theme::kGold : theme::kMint);
+  sprite(partner, now, battlePlayback_, kPartnerY, playerX, flash && !attack && !hit ? theme::kText : 0, playerScale);
+  sprite(enemy, now, enemyBattlePlayback_, kEnemyY, enemyX, flash && attack && hit ? theme::kText : 0, enemyScale);
+  if (effect && attack && hit) impact(enemyX, kEnemyY - 4, age, perfect ? theme::kGold : theme::kText, perfect);
+  if (effect && !attack && !hit) impact(playerX, kPartnerY - 4, age, theme::kRed, false);
+  lane(b, now);
   for (unsigned i = 0; i < kSpecialEnergy; ++i) {
     const bool full = b.energy >= kSpecialEnergy;
     const uint16_t color = i < b.energy ? (full && (now / 200) % 2 ? theme::kText : theme::kGold) : theme::kDisabled;
     M5.Display.fillCircle(209 + int(i) * 24, 326, 5, color);
   }
   cueRing(b, now);
+  const uint8_t countdown = countdownDigit(b, now);
   const char* result = attack ? (hit ? "命中" : "未命中") : (hit ? "躲开了" : "受伤了");
   const bool cueVisible = int32_t(b.targetMs - now) <= int32_t(kCueLeadMs);
   const bool shownAttack = shownAction(b, now) == Action::Attack;
@@ -148,10 +172,15 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     (b.energy >= kSpecialEnergy ? "右键攻击 · 双键必杀" : "右键 · 攻击") : "左键 · 躲避";
   const uint16_t promptColor = !cueVisible ? theme::kRed : shownAttack ? theme::kRed : theme::kBlue;
   if (b.pauseRequested) line("本拍结束后暂停", 401, theme::kText, true);
-  else if (effect || b.consumed)
+  else if (countdown) {
+    const char digit[2] = {char('0' + countdown), 0};
+    M5.Display.setTextDatum(middle_center);
+    M5.Display.setFont(&fonts::Font6);
+    M5.Display.setTextColor(theme::kGold);
+    M5.Display.drawString(digit, 233, kCountdownY);
+  } else if (effect || b.consumed)
     line(b.special ? "必杀命中" : result, 401,
          b.special || perfect ? theme::kGold : effect && !hit ? theme::kMuted : theme::kText, true);
   else if (*prompt) line(prompt, 401, promptColor, true);
-  line(b.frenzy ? "狂暴 · 节奏加快" : "看外圈颜色出招", 430, b.frenzy ? theme::kRed : theme::kMuted);
 }
 } }

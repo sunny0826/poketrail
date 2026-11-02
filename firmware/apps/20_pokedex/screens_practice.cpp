@@ -1,20 +1,15 @@
 #include "screens.hpp"
 #include "board.hpp"
-#include <cstdio>
 namespace pokedex { namespace ui {
 using namespace adventure;
 void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
   scene(Route::Forest, true);
-  if (s.practiceThrowing) title(speciesName(s.practiceSpecies), "捕获练习 · 不消耗精灵球", theme::kGold);
-  else {
-    char text[32];
-    snprintf(text, sizeof(text), "本场剩余 %u 次", 2 - s.practiceUsedBalls);
-    title(speciesName(s.practiceSpecies), text, theme::kGold);
-  }
+  title(speciesName(s.practiceSpecies), "", theme::kGold);
   if (s.capture.active) { capture(s, s.practiceSpecies, now); return; }
+  ballSlots(s.practiceUsedBalls);
   if (s.practiceThrowing) {
     aim(s.practiceSpecies, now, true, int32_t(s.practiceTargetMs - now), s.charging, now - s.chargeStartMs);
-    line("按住蓄力 · 松手投球", 399, theme::kMint);
+    line("松手投球 · 未投出也计一次", 399, theme::kMint);
     line("成功不会收入图鉴", 426, theme::kMuted);
     return;
   }

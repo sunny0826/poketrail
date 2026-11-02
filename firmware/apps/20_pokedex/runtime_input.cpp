@@ -103,6 +103,8 @@ void Runtime::handle(const Input& raw) {
         anim.wiggleBreak = a.captured ? 0 : uint8_t(1 + a.roll % 3);
         screen_.capture = anim;
         lastCaptureCue_ = 0;
+        // The throw just saved; a checkpoint write now would eat the first flight frames.
+        lastCheckpoint_ = anim.startMs;
         feedback(a.timing == Timing::Perfect ? 40 : 20);
       } else {
         screen_.command = result;

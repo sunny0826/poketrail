@@ -148,9 +148,13 @@ void practiceMidnightAchievement() {
   p.utc = 1792713595LL; p.rtcSetAt = host_time_ms;
   Runtime r(store, p); start(r); openMenu(r, p); select(r, p, 5);
   check(r.screen().page == Page::Practice, "practice opens before midnight");
+  const unsigned buzzes = p.feedbacks;
   walk(r, p, 6);
   check(r.engine().view().totalSteps == 9997, "practice buffers the six pre-midnight peaks");
-  idle(r, 3000); tap(r, p, 233, 30); idle(r, 2000); frame(r);
+  check(r.practiceView().settlements > 0 && p.feedbacks == buzzes, "beats judged while walking do not vibrate");
+  idle(r, 3000);
+  check(p.feedbacks > buzzes, "beats vibrate again once walking stops");
+  tap(r, p, 233, 30); idle(r, 2000); frame(r);
   const Save& s = r.engine().view();
   check(s.totalSteps == 10003 && s.today.dayKey == 20261023 && s.today.steps == 0 &&
         s.historySize == 1 && s.history[0].dayKey == 20261022 && s.history[0].steps == 10003,
