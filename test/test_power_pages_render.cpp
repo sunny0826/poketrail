@@ -106,7 +106,7 @@ void throwWaiting() {
   save.rosterRevision = 1; save.encounterTarget = 300;
   save.totalSteps = save.undatedSteps = 5000; save.explorationSpent = 5000; save.nextEncounterId = 2;
   save.phase = Phase::ThrowReady; save.result = Result::Won;
-  save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1;
+  save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1; save.encounter.route = Route::Kanto;
   check(validate(save) && store.commit(save) == CommitStatus::Committed, "pending victory fixture validates");
   PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
   const uint64_t balls = availableBalls(runtime.engine().view());

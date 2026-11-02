@@ -6,7 +6,7 @@
 using namespace pokedex::adventure;
 int main() {
   for (unsigned kind=0;kind<9;++kind) {
-    std::unique_ptr<Save> s(new Save); s->schema=1; s->sequence=10; s->bootGeneration=1;
+    std::unique_ptr<Save> s(new Save); s->schema=1; s->route=Route::Forest; s->sequence=10; s->bootGeneration=1;
     s->starter=s->partner=1; setOwned(*s,1);
     s->totalSteps=s->undatedSteps=500; s->nextEncounterId=2;
     Encounter& e=s->encounter; e.id=1;e.partner=1;e.species=kind==5?2:kind==6?147:1;e.ruleVersion=1;

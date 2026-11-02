@@ -1,6 +1,7 @@
 #include "screens.hpp"
 #include "board.hpp"
 #include "battle_presentation.hpp"
+#include "encounter_catalog.hpp"
 #include "sprites_generated.hpp"
 #include <algorithm>
 #include <cmath>
@@ -138,7 +139,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
                                            hit ? -pulse(age, 30, 120, 370, 26) : 0);
   const int enemyX = kEnemyX + shake + (attack ? (hit ? pulse(age, 100, 175, 330, 14) : 0) :
                                         -pulse(age, 0, 80, 330, 30));
-  const Route route = s.page == Page::Practice ? v.route : v.encounter.route;
+  const Route route = s.page == Page::Practice ? regionOf(enemy) : v.encounter.route;
   scene(route, true, shake);
   title(s.page == Page::Practice ? "捕获练习" : "节奏对战", "", theme::kMint);
   pauseGlyph();

@@ -37,7 +37,7 @@ void Driver::winBattle(bool practice) {
   until([&] { return screen().page == (practice ? Page::PracticeThrow : Page::Throw); }, 2000, "win reaches throw page");
 }
 void Driver::replayBattle() {
-  // Offsets and directions frozen from the recorded #590 encounter trace; each press lands
+  // Offsets and directions frozen from the recorded seed-1745833800 encounter trace; each press lands
   // about 100ms before its beat, the first beat being kOpeningMs after the battle starts.
   const uint32_t start = now();
   const uint32_t offsets[] = {2012, 3512, 4612, 5712, 6812};

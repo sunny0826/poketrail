@@ -3,10 +3,10 @@
 
 namespace {
 uint16_t expectedScenePixel(Route route, int x, int y, uint64_t visualSteps) {
-  const unsigned index = uint8_t(route);
+  const unsigned index = regionIndex(route);
   const unsigned sourceX = (x - 5) / 2, sourceY = (y - 92) / 2;
-  if (!visualSteps) return data::kRouteScenes[index].pixels[sourceY * data::kSceneWidth + sourceX];
-  const auto& layers = data::kRouteSceneLayers[index];
+  if (!visualSteps) return data::kRegionScenes[index].pixels[sourceY * data::kSceneWidth + sourceX];
+  const auto& layers = data::kRegionSceneLayers[index];
   const unsigned top = layers.groundTop, height = data::kSceneHeight - top;
   uint16_t pixel = layers.far.pixels[sourceY * data::kSceneWidth + sourceX];
   if (sourceY < top) return pixel;
@@ -47,53 +47,55 @@ std::vector<uint16_t> groundPixels() {
 }
 uint64_t defaultSceneSteps(uint32_t origin) { return (host_time_ms - origin) / 100; }
 void sceneDepthMotion() {
-  const char* names[] = {"forest", "coast", "cave"};
-  for (unsigned route = 0; route < 3; ++route) {
+  const char* names[] = {"kanto", "johto", "hoenn", "sinnoh", "unova"};
+  for (unsigned index = 0; index < kRegionCount; ++index) {
+    const Route route = regionAt(uint8_t(index));
     MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-    if (route) {
-      openMenu(runtime); select(runtime, 1); select(runtime, route); home(runtime);
+    if (index) {
+      openMenu(runtime); select(runtime, 1); select(runtime, index); home(runtime);
     }
+    check(runtime.engine().view().route == route, "real region menu selects the scene under test");
     const uint32_t origin = host_time_ms;
-    check(farScene(Route(route), 0) && groundScene(Route(route), 0), "selected route starts at its static scene");
+    check(farScene(route, 0) && groundScene(route, 0), "selected route starts at its static scene");
     idle(runtime, 700);
     uint64_t visualSteps = defaultSceneSteps(origin);
-    check(visualSteps == 7 && farScene(Route(route), visualSteps) && groundScene(Route(route), visualSteps),
+    check(visualSteps == 7 && farScene(route, visualSteps) && groundScene(route, visualSteps),
           "home animates by default without any walking input");
     walk(runtime, platform, 4);
     visualSteps = defaultSceneSteps(origin);
     check(runtime.engine().view().totalSteps > 0, "walking still updates the Engine step account");
-    check(farScene(Route(route), visualSteps) && groundScene(Route(route), visualSteps),
+    check(farScene(route, visualSteps) && groundScene(route, visualSteps),
           "walking does not accelerate the default scene timeline");
-    char name[48]; std::snprintf(name, sizeof(name), "home-depth-%s-moving", names[route]); screenshot(runtime, name);
+    char name[48]; std::snprintf(name, sizeof(name), "home-depth-%s-moving", names[index]); screenshot(runtime, name);
     idle(runtime, 700);
     visualSteps = defaultSceneSteps(origin);
-    check(farScene(Route(route), visualSteps) && groundScene(Route(route), visualSteps),
+    check(farScene(route, visualSteps) && groundScene(route, visualSteps),
           "default motion continues after walking stops");
-    std::snprintf(name, sizeof(name), "home-depth-%s-default", names[route]); screenshot(runtime, name);
+    std::snprintf(name, sizeof(name), "home-depth-%s-default", names[index]); screenshot(runtime, name);
     visualSteps = defaultSceneSteps(origin);
-    const unsigned height = data::kSceneHeight - data::kRouteSceneLayers[route].groundTop;
+    const unsigned height = data::kSceneHeight - data::kRegionSceneLayers[index].groundTop;
     idle(runtime, (height - visualSteps % height) * 100);
     visualSteps = defaultSceneSteps(origin);
     check(visualSteps % height == 0, "default timeline reaches the complete ground loop");
-    check(farScene(Route(route), 0) && groundScene(Route(route), 0) &&
-          farScene(Route(route), visualSteps) && groundScene(Route(route), visualSteps),
+    check(farScene(route, 0) && groundScene(route, 0) &&
+          farScene(route, visualSteps) && groundScene(route, visualSteps),
           "complete ground loop restores the exact static pixels");
-    std::snprintf(name, sizeof(name), "home-depth-%s-loop", names[route]); screenshot(runtime, name);
+    std::snprintf(name, sizeof(name), "home-depth-%s-loop", names[index]); screenshot(runtime, name);
   }
 }
 void sceneDepthNavigationAndSleep() {
   MemoryStore store; ready(store); HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-  const uint32_t forestOrigin = host_time_ms;
+  const uint32_t kantoOrigin = host_time_ms;
   walk(runtime, platform, 3);
-  const uint64_t forestSteps = defaultSceneSteps(forestOrigin);
+  const uint64_t kantoSteps = defaultSceneSteps(kantoOrigin);
   openMenu(runtime); walk(runtime, platform, 2); select(runtime, 7); home(runtime);
-  check(groundScene(Route::Forest, forestSteps), "menu time does not advance or jump the home scene");
+  check(groundScene(Route::Kanto, kantoSteps), "menu time does not advance or jump the home scene");
   openMenu(runtime); select(runtime, 1); select(runtime, 1); home(runtime);
-  check(farScene(Route::Coast, 0) && groundScene(Route::Coast, 0), "route change resets depth to the static coast");
-  const uint32_t coastOrigin = host_time_ms;
+  check(farScene(Route::Johto, 0) && groundScene(Route::Johto, 0), "region change resets depth to the static Johto scene");
+  const uint32_t johtoOrigin = host_time_ms;
   screenshot(runtime, "home-depth-route-reset");
   idle(runtime, 700);
-  check(groundScene(Route::Coast, defaultSceneSteps(coastOrigin)), "new route starts its default animation from zero");
+  check(groundScene(Route::Johto, defaultSceneSteps(johtoOrigin)), "new region starts its default animation from zero");
   idle(runtime, 30020); check(runtime.dimmed(), "depth scene enters power saving");
   const auto sleepingPixels = groundPixels();
   walk(runtime, platform, 3);
@@ -101,6 +103,6 @@ void sceneDepthNavigationAndSleep() {
   check(groundPixels() == sleepingPixels, "sleep and wake resume the same default scene position");
   screenshot(runtime, "home-depth-after-wake");
   openMenu(runtime); select(runtime, 1); select(runtime, 2); home(runtime);
-  check(farScene(Route::Cave, 0) && groundScene(Route::Cave, 0), "wake and later route change preserve reset semantics");
+  check(farScene(Route::Hoenn, 0) && groundScene(Route::Hoenn, 0), "wake and later region change preserve reset semantics");
 }
 }

@@ -8,7 +8,7 @@ void homeTouch() {
   for (int y : {30, 228, 276, 324, 372, 422}) for (int x : {90, 233, 375}) {
     tap(runtime, x, y);
     check(runtime.screen().page == Page::Menu && runtime.engine().view().partner == 1 &&
-          runtime.engine().view().route == Route::Forest,
+          runtime.engine().view().route == Route::Kanto,
           "every home touch opens the menu without changing partner or route");
     tap(runtime, 233, 52); home(runtime);
   }

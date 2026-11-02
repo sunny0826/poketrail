@@ -1,9 +1,10 @@
 #include "screens.hpp"
 #include "board.hpp"
+#include "encounter_catalog.hpp"
 namespace pokedex { namespace ui {
 using namespace adventure;
 void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
-  scene(Route::Forest, true);
+  scene(regionOf(s.practiceSpecies), true);
   title(speciesName(s.practiceSpecies), "", theme::kGold);
   if (s.capture.active) { capture(s, s.practiceSpecies, now); return; }
   ballSlots(s.practiceUsedBalls);

@@ -1,6 +1,38 @@
 {
   "ruleVersion": 3,
-  "note": "1-649 普通遭遇目录。1-251 的稀有度、权重、普通资格和活动保留原样；252-649 中会进化的形态及传说/幻兽为稀有权重 2，其余为 10。",
+  "note": "1-649 普通遭遇目录。1-251 的稀有度、权重、普通资格和活动保留原样；252-649 中会进化的形态及传说/幻兽为稀有权重 2，其余为 10。schema7 按 regions 的全国编号范围抽取遭遇；routeTypes 只校验 schema5-6 旧档。",
+  "regions": [
+    {
+      "key": "Kanto",
+      "name": "关都",
+      "first": 1,
+      "last": 151
+    },
+    {
+      "key": "Johto",
+      "name": "城都",
+      "first": 152,
+      "last": 251
+    },
+    {
+      "key": "Hoenn",
+      "name": "丰缘",
+      "first": 252,
+      "last": 386
+    },
+    {
+      "key": "Sinnoh",
+      "name": "神奥",
+      "first": 387,
+      "last": 493
+    },
+    {
+      "key": "Unova",
+      "name": "合众",
+      "first": 494,
+      "last": 649
+    }
+  ],
   "routeTypes": {
     "草": "Forest",
     "虫": "Forest",

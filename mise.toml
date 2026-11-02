@@ -78,7 +78,7 @@ description = "核对649种遭遇目录、显式普通池与320条进化边"
 run = ["python3 tools/build_adventure_catalog.py --check", "python3 tools/build_evolution_rules.py --check", "python3 -m unittest test/test_adventure_catalog.py test/test_progression_catalog.py"]
 
 [tasks.scenes]
-description = "生成定稿的森林、海边和洞窟场景"
+description = "生成定稿的关都、城都、丰缘、神奥和合众地区场景"
 run = "python3 tools/build_scene_backgrounds.py"
 
 [tasks.test-scenes]

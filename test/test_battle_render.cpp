@@ -60,7 +60,7 @@ void attackAndDodge() {
   snapshot("battle-attack-recovery");
 }
 void perfectAndFinal() {
-  MemoryStore store; fixture(store, 4, 41, Route::Forest); HostPlatform platform; Runtime r(store, platform); start(r);
+  MemoryStore store; fixture(store, 4, 41); HostPlatform platform; Runtime r(store, platform); start(r);
   const uint32_t origin = enter(r);
   // seed 0: D D A A D A* ... ; perfect dodges fill energy without hurting the enemy.
   for (unsigned i = 0; i < 2; ++i) {
@@ -122,7 +122,7 @@ void perfectAndFinal() {
 }
 void failureAndPractice() {
   for (unsigned practice = 0; practice < 2; ++practice) {
-    MemoryStore store; fixture(store, 7, 54, Route::Coast); HostPlatform platform; Runtime r(store, platform); start(r);
+    MemoryStore store; fixture(store, 7, 54); HostPlatform platform; Runtime r(store, platform); start(r);
     enter(r, practice); const unsigned commits = store.commits;
     unsigned missedDodges = 0;
     for (unsigned cue = 0; cue < kMaxCues; ++cue) {
@@ -162,7 +162,7 @@ void failureAndPractice() {
 void newGenerationActors() {
   const uint16_t partners[] = {252, 386, 470, 597, 600, 606, 615, 642, 644, 648, 649};
   for (uint16_t partner : partners) {
-    MemoryStore store; fixture(store, partner, 597, Route::Cave);
+    MemoryStore store; fixture(store, partner, 597);
     HostPlatform platform; Runtime runtime(store, platform); start(runtime);
     const uint32_t origin = enter(runtime);
     at(runtime, runtime.engine().battleView().targetMs - 750);
@@ -186,7 +186,7 @@ void timingAndPause() {
   b.resume(pause + 1); check(!battleEffectActive(b.view(), pause + 1), "resume does not replay prior cue");
   b.begin(UINT32_MAX - 200 - kOpeningMs); b.press(Action::Attack, UINT32_MAX - 200); b.tick(50);
   check(battleEffectActive(b.view(), 100) && battleEffectAction(b.view()) == Action::Dodge, "effect timing survives millis rollover");
-  MemoryStore store; fixture(store, 17, 25, Route::Coast); HostPlatform platform; Runtime r(store, platform); start(r);
+  MemoryStore store; fixture(store, 17, 25); HostPlatform platform; Runtime r(store, platform); start(r);
   const uint32_t origin = enter(r); at(r, r.engine().battleView().targetMs - 750);
   actor(17, origin, 155, 232, 1); actor(25, origin, 311, 226, 2); snapshot("battle-tall-partner");
   tap(r, 233, 30); at(r, r.engine().battleView().targetMs + 181);

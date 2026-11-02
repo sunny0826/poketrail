@@ -27,9 +27,16 @@ constexpr uint16_t kViewerRing = rgb(0x20, 0x3B, 0x32);
 constexpr uint16_t kViewerRingInner = rgb(0x16, 0x2C, 0x25);
 
 inline uint16_t routeColor(adventure::Route route) {
-  if (route == adventure::Route::Coast) return kBlue;
-  if (route == adventure::Route::Cave) return kPurple;
-  return kMint;
+  switch (route) {
+    case adventure::Route::Kanto: return rgb(0x8F, 0xD4, 0x6E);
+    case adventure::Route::Johto: return rgb(0xF0, 0x91, 0x5A);
+    case adventure::Route::Hoenn: return rgb(0x5F, 0xD0, 0xC8);
+    case adventure::Route::Sinnoh: return rgb(0xA9, 0xC8, 0xF0);
+    case adventure::Route::Unova: return rgb(0xB7, 0xA4, 0xF0);
+    case adventure::Route::Coast: return kBlue;
+    case adventure::Route::Cave: return kPurple;
+    default: return kMint;
+  }
 }
 
 enum class Icon : uint8_t {

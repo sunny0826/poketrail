@@ -12,15 +12,15 @@ from PIL import ImageEnhance
 
 if __package__:
     from tools.design_preview import pixel_scene_source
-    from tools.design_preview_scenes import GROUND_TOP, pixel_scene_layers
+    from tools.design_preview_scenes import GROUND_TOP, REGIONS, pixel_scene_layers
 else:
     from design_preview import pixel_scene_source
-    from design_preview_scenes import GROUND_TOP, pixel_scene_layers
+    from design_preview_scenes import GROUND_TOP, REGIONS, pixel_scene_layers
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_HEADER = ROOT / "firmware/apps/20_pokedex/scene_backgrounds_generated.hpp"
 MANIFEST = ROOT / "assets/scene-backgrounds.json"
-ROUTES = ("forest", "coast", "cave")
+ROUTES = REGIONS
 WIDTH = 228
 HEIGHT = 135
 DIM_FACTOR = 0.52
@@ -68,6 +68,8 @@ constexpr uint16_t kSceneScale = 2;
 constexpr uint16_t kSceneThumbTop = 18;
 constexpr uint16_t kSceneThumbHeight = 90;
 constexpr uint16_t kSceneTransparentKey = 0x{TRANSPARENT_KEY:04X};
+// 与 Route::Kanto..Route::Unova 顺序一致。
+constexpr uint8_t kSceneCount = {len(ROUTES)};
 struct SceneBackground {{
   const uint16_t* pixels;
 }};
@@ -77,9 +79,9 @@ struct SceneLayerSet {{
   SceneBackground near;
   uint8_t groundTop;
 }};
-extern const SceneBackground kRouteScenes[3];
-extern const SceneBackground kRouteScenesDim[3];
-extern const SceneLayerSet kRouteSceneLayers[3];
+extern const SceneBackground kRegionScenes[kSceneCount];
+extern const SceneBackground kRegionScenesDim[kSceneCount];
+extern const SceneLayerSet kRegionSceneLayers[kSceneCount];
 
 }}  // namespace data
 }}  // namespace pokedex
@@ -106,13 +108,13 @@ def generate_source() -> str:
             lines.append(f"// {route} {layer}, {WIDTH}x{HEIGHT}")
             emit_array(lines, f"kScene{route.title()}{layer.title()}", layer_pixels(route, layer))
     lines.extend(["}  // namespace", "",
-                  "const SceneBackground kRouteScenes[3] = {"])
+                  "const SceneBackground kRegionScenes[kSceneCount] = {"])
     for route in ROUTES:
         lines.append(f"    {{kScene{route.title()}}},")
-    lines.extend(["};", "", "const SceneBackground kRouteScenesDim[3] = {"])
+    lines.extend(["};", "", "const SceneBackground kRegionScenesDim[kSceneCount] = {"])
     for route in ROUTES:
         lines.append(f"    {{kScene{route.title()}Dim}},")
-    lines.extend(["};", "", "const SceneLayerSet kRouteSceneLayers[3] = {"])
+    lines.extend(["};", "", "const SceneLayerSet kRegionSceneLayers[kSceneCount] = {"])
     for route in ROUTES:
         lines.append(f"    {{{{kScene{route.title()}Far}}, {{kScene{route.title()}Middle}}, "
                      f"{{kScene{route.title()}Near}}, {GROUND_TOP[route]}}},")
@@ -149,12 +151,12 @@ def main() -> int:
         for path, expected in outputs:
             if not path.exists() or path.read_text(encoding="utf-8") != expected:
                 raise ValueError(f"生成物缺失或不是最新内容: {path}")
-        print(f"scene check ok: {len(ROUTES)} routes, normal + dim, {WIDTH}x{HEIGHT}")
+        print(f"scene check ok: {len(ROUTES)} regions, normal + dim + layers, {WIDTH}x{HEIGHT}")
         return 0
     for path, content in outputs:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
-    print(f"generated {len(ROUTES)} route scenes, normal + dim, {WIDTH}x{HEIGHT}")
+    print(f"generated {len(ROUTES)} region scenes, normal + dim + layers, {WIDTH}x{HEIGHT}")
     return 0
 
 

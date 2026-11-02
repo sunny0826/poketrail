@@ -73,6 +73,11 @@ class ProgressionCatalogTests(unittest.TestCase):
 #include <cassert>
 #include <cstdio>
 using namespace pokedex::adventure;
+// Pokédex generation spans, written out independently of the generated table.
+static bool inRegion(unsigned id, unsigned route) {
+  const unsigned first[] = {1, 152, 252, 387, 494}, last[] = {151, 251, 386, 493, 649};
+  return route >= 3 && route <= 7 && id >= first[route - 3] && id <= last[route - 3];
+}
 int main() {
   const unsigned roots[] = {ROOTS};
   bool expected[650] = {};
@@ -81,14 +86,14 @@ int main() {
   for (unsigned mode = 0; mode < 3; ++mode) {
     for (unsigned id = 1; id <= 649; ++id)
       if (mode == 2 || (mode == 1 && id % 2)) setOwned(s, id);
-    for (unsigned route = 0; route < 3; ++route) {
+    for (unsigned route = 3; route <= 7; ++route) {
       unsigned total = 0, pool = 0;
       bool seen[650] = {};
       for (unsigned id = 1; id <= 649; ++id) {
         const auto* e = catalogEntry(id);
         assert(e && e->weight > 0);
         assert(ordinaryEncounter(id) == expected[id]);
-        if (expected[id] && (e->routes & (1u << route))) {
+        if (expected[id] && inRegion(id, route)) {
           total += e->weight * (owns(s, id) ? 1 : 3); ++pool;
         }
       }
@@ -97,7 +102,7 @@ int main() {
         unsigned draw = mixRandom(seed) % total, want = 0;
         for (unsigned id = 1; id <= 649; ++id) {
           const auto* e = catalogEntry(id);
-          if (!expected[id] || !(e->routes & (1u << route))) continue;
+          if (!expected[id] || !inRegion(id, route)) continue;
           const unsigned weight = e->weight * (owns(s, id) ? 1 : 3);
           if (draw < weight) { want = id; break; }
           draw -= weight;
@@ -106,11 +111,11 @@ int main() {
         assert(got == want && expected[got]); seen[got] = true;
       }
       for (unsigned id = 1; id <= 649; ++id)
-        if (expected[id] && (catalogEntry(id)->routes & (1u << route))) assert(seen[id]);
+        if (expected[id] && inRegion(id, route)) assert(seen[id]);
     }
   }
   assert(!catalogEntry(0) && !catalogEntry(650) && catalogEntry(1) && catalogEntry(649));
-  assert(chooseEncounter(s, Route(3), 42) == 0);
+  for (unsigned route : {0u, 1u, 2u, 8u}) assert(chooseEncounter(s, Route(route), 42) == 0);
   puts("deterministic weighted draws over 649 species passed");
 }
 '''.replace("ROOTS", ",".join(map(str, ordinary))))

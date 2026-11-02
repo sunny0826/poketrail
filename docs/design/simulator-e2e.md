@@ -1,8 +1,8 @@
 # 模拟器 E2E
 
-本文维护已实现的测试结构、覆盖矩阵与证据格式。运行 `rtk proxy mise run test-simulator-e2e` 后，以本轮输出判断结果；已知失败与设备边界见[验证说明](../verification.md)。
+本文维护已实现的测试结构与证据格式，场景覆盖见[覆盖矩阵](simulator-e2e-coverage.md)。运行 `rtk proxy mise run test-simulator-e2e` 后，以本轮输出判断结果；已知失败与设备边界见[验证说明](../verification.md)。
 
-测试从桌面输入进入真实 Runtime、玩法和 M5GFX，将结果写入真实双槽文件，再启动新进程验证恢复。当前源码使用 schema6、ruleVersion 3。SDL 事件队列证明应用层输入接入；操作系统键鼠和实体设备另行验收。
+测试从桌面输入进入真实 Runtime、玩法和 M5GFX，将结果写入真实双槽文件，再启动新进程验证恢复。当前源码使用 schema7、ruleVersion 3，新档从关都出发。SDL 事件队列证明应用层输入接入；操作系统键鼠和实体设备另行验收。
 
 ## 结构与归属
 
@@ -22,7 +22,7 @@ C++ Driver 复用 SDL 输入与固件类型；Python 管理独立进程和文件
 - [test/simulator](../../test/simulator)：输入、场景、断言、业务快照、fixture 生成器。场景只能取得 const Runtime/Save，不通过可变 Engine 制造结果。
 - [simulator](../../simulator)：固定种子和墙钟、错误展示、窗口事件观察、存储故障接缝。正常桌面模式仍保留阻塞错误框和关闭失败保护。
 - [run_simulator_e2e.py](../../scripts/run_simulator_e2e.py)：构建、独立目录、启动、重载、FIFO/SIGKILL、超时和结果汇总。
-- [test/fixtures/simulator](../../test/fixtures/simulator)：历史 schema3/rule2 字节和来源哈希。重建命令为 `rtk proxy mise exec -- python3 scripts/build_simulator_legacy_fixture.py`。
+- [test/fixtures/simulator](../../test/fixtures/simulator)：历史 schema3/rule2 与 schema6 海边在途场字节，清单按文件记录来源提交、源文件、生成器和字节哈希。重建命令为 `rtk proxy mise exec -- python3 scripts/build_simulator_legacy_fixture.py`。
 
 调用示例与实际 [Driver](../../test/simulator/driver.hpp) 一致：
 
@@ -45,7 +45,7 @@ d.close();
 
 通常的战斗驱动只读取当前可见的 `shownAction`，不读 `BattleView.expected`。`battle-fixed` 额外重放冻结轨迹：战斗页开始后的2012、3512、4612、5712、6812 ms，依次按右、右、左、左、右，每次约在节拍前 100 ms；不观察提示来选择输入。首拍在开战后 2200 ms（3、2、1 倒计时 1500 ms 加 700 ms 提示），轨迹随首拍时间平移，相对节拍的时机不变。第一帧提示圆屏 RGB 与留存轨迹的 SHA256 比较，其余提示也截图留证。战斗页视觉改版会改变该哈希：先逐像素对比新旧首帧，确认只有改版区域变化、角色与提示不变，再更新 `run_simulator_e2e.py` 中的期望值与来源目录。
 
-捕获预期来自固定运行记录，不用生产概率函数生成断言，也不搜索种子直到成功：新档首场为 #590、seed `1745833800`，Perfect 为 roll33／概率90；投球 fixture 为 #072、seed `0x2468ace0`，两次 Miss 为 roll16、roll5／概率0，Perfect 重试为 roll16。
+捕获预期来自固定运行记录，不用生产概率函数生成断言，也不搜索种子直到成功：新档首场在关都为 #108、seed `1745833800`，Perfect 为 roll33／概率98（五地区前同一 seed 为森林 #590、概率90）；投球 fixture 为关都 #072、seed `0x2468ace0`，两次 Miss 为 roll16、roll5／概率0，Perfect 重试为 roll16；schema6 升级场为同一 seed 的遭遇 ID 2，Perfect 为 roll91／概率98。`battle-fixed` 的提示轨迹取决于 seed，换成 #108 后仍按原时刻获胜；首帧哈希更新前已逐像素对比，变化只在场景带与对手（`.pio/verification/region-cue-review-20261102/`）。
 
 GUI 串行运行，实际窗口事件写入日志。E2E 开启 `isolateHostFocus`：宿主窗口的失焦事件仍记录，但不改变脚本输入；Driver 主动注入的 `windowID=0` 失焦事件照常进入 Platform，验证释放按键、停止走路和结算蓄力。正常桌面模式不开启隔离，宿主失焦照常处理，`test-simulator` 用真实窗口 ID 验证释放。相同新档输入在独立目录运行，比较逻辑输入事件、业务结果和截图；受桌面影响的 OS 事件不参与重复性比较，原始日志完整保留。
 
@@ -53,7 +53,7 @@ GUI 串行运行，实际窗口事件写入日志。E2E 开启 `isolateHostFocus
 
 N 表示新档旅程，F 表示合法 fixture 起步，X 表示预制坏文件。F 证明起点之后的操作链，不宣称此前培养步来自用户走路。
 
-当前 fixture 经生产 codec 编解码、语义校验及 FileStore 加载。旧格式使用冻结旧字节：v1 引用已有 progression fixture；schema3/rule2 由历史提交 `53ebf948c998af69b1da06f125c224ccb4f44ccc` 的编码器生成，清单记录历史源文件、生成器和字节哈希。schema3/rule2 升级为 rule3；v1 在途场仍保留 rule1，检查库存并扣球。
+当前 fixture 经生产 codec 编解码、语义校验及 FileStore 加载。旧格式使用冻结旧字节：v1 引用已有 progression fixture；schema3/rule2 由历史提交 `53ebf948c998af69b1da06f125c224ccb4f44ccc` 的编码器生成；schema6 由五地区改动前的提交 `05432f6138310b5e9507cad4d25a525ecadd32b2` 的编码器生成，含选定海边、海边在途 #072（ThrowReady）和一条森林 #016 捕捉记录。schema3/rule2 升级为 rule3；v1 在途场仍保留 rule1，检查库存并扣球；schema6 升级为关都，在途场改到关都，森林记录保留。`sinnoh-done` 是当前格式的 F 起点：神奥 38 种普通种均已在神奥捕获，探索余额 400 步。
 
 故障在真实 SlotIO 外包一层适配，不替换 FileStore 或 codec。场景显式武装并解除故障，记录命中次数。
 
@@ -69,30 +69,6 @@ N 表示新档旅程，F 表示合法 fixture 起步，X 表示预制坏文件�
 FileStore 在 write 返回 false 后立即结束本次提交；下次重试扫描同 sequence、同字节候选。写后报错的有效新槽可能已经持久化，强杀恢复应采用该槽，不能强制回退到最后一次 UI 已确认状态。
 
 强杀场景先截图和快照，flush `kill-ready`，写 FIFO，然后停在系统 `pause()`。此时不再推进 Runtime、绘制或逻辑时间，文件锁仍保留。Python 收到握手后发送 SIGKILL，再启动新进程核对实际磁盘恢复。普通退出始终走 SDL_QUIT。
-
-## 覆盖矩阵
-
-默认全量运行 30 场：P0 17 场、P1 13 场。`--suite core` 仅运行 P0。所有场景名称以 runner 的 `CASES` 为准。
-
-| ID／起点 | 场景 | 核心断言 |
-| --- | --- | --- |
-| P0-01／N | journey | 引导、伙伴、图鉴、W计步、遭遇、正常关闭和重载 |
-| P0-02／N、F | capture、battle-fixed、capture-slow-save、battle-cues | battle-cues 从待战 fixture 经菜单开战：开战与暂停恢复均显示 3、2、1 且期间双键不生效、不振动；每拍提示圈只圈住对应按键一侧的角色，外圈仍在收拢，轨道当前箭头与提示同向并预告下一拍，假动作截图留证；按提示出招后每拍振动一次且时长对应判定；胜利后标题下两个球位，Miss 后第一个变空圈，新进程恢复相同球位；其余场景：真实胜利与捕获；首个可见提示时对战信息底板显示双方满生命格；按住投球时蓄力弧闭合；#590图鉴、伙伴、首捕卡；结果页文字与确认按钮之间留空；两页捕获徽标从0到1及重载像素检查；投球页无静态球徽标；保存后飞行起点、攻击／躲避结果文字与成功保留帧像素；slow-save 在真实写盘中注入5000ms逻辑时间延迟，仍从飞行开始并通过新进程恢复；动画期间投球次数、奖励不变，允许正常后台checkpoint |
-| P0-03／F | throws、aim | 两次Miss逃脱、球不扣库；Miss 按住时蓄力弧只到半圈；throws 检查挣脱文字与结果保留阶段，动画不重复消耗机会或发放奖励；瞄准态空等与轻触不消耗机会，左键按住时右键／触摸短按仍可取消，按住才起算窗口，重载回到瞄准态 |
-| P0-04／F | retry-before/after/readback | 提交前无奖励；重试同一attempt；按住重试不能连带确认结果 |
-| P0-05／F | progression | 只有携带者获步；来源扣7500，目标使用自己200历史步；重载不重扣；进化及重载后两页捕获种数仍为0 |
-| P0-06／F | target-owned、evolution-retry | 目标已有则整笔拒绝；保存失败不播进化，重试一次并持久化 |
-| P0-07／F、X | storage | 有效+截断恢复；双坏、未来版本、目录锁拒绝且文件不变 |
-| P0-08／F | crash-pause/write/partial | 暂停、写后报错、部分写后三种SIGKILL及新进程账户恢复 |
-| P1-09／F | isolation | 预览、分支、练习不改真实账户；静止区间不写槽 |
-| P1-10／N | clock、capture-clock | 未知步数/捕获不回填；UI校时、新步可信、重载UTC与账户 |
-| P1-11／F | midnight | 自然跨日、回拨一天归档、epoch增加一次、离线1小时及重载 |
-| P1-12／旧F | migration、migration-activity、migration-rule2 | rule1零球时可先后按住双键确认投球页出口、活动场退休、rule2升级rule3继续投球 |
-| P1-13／F | lifecycle-* | 触摸不唤醒、P唤醒、宿主焦点隔离与脚本失焦停步/释放、蓄力关闭、两类关闭失败保护 |
-| P1-14／F | edges | 伙伴列表第三行按圆弦收窄，旧全宽区域点击无效、新边缘点击打开对应伙伴；胶囊按钮与页码点，放大后的翻页触摸区翻到末页且页码点跟随；长名、图鉴、伊布分支末页和返回；真实截图供视觉审阅 |
-| P1-15／N | 尚未接入默认 runner | 原生 OS 键鼠路径待验收；不计入上述 30 场 |
-
-预览和练习的零写入在启动已提交、关闭步态且时钟稳定的区间判断。正常启动、checkpoint、关闭可能合法写槽，不能对整个场景笼统要求字节不变。重启允许 sequence/bootGeneration 变化；时钟场景另比较 UTC（1秒容差）、日桶、历史、epoch、总账与培养账户。
 
 ## 执行与证据
 

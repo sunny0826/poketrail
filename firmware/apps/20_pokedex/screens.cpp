@@ -25,8 +25,8 @@ uint16_t accentFor(Page page) {
 }
 }
 const char* routeName(Route r) {
-  const char* names[] = {"森林", "海边", "洞窟"};
-  return uint8_t(r) < 3 ? names[uint8_t(r)] : "未知";
+  const char* names[] = {"森林", "海边", "洞窟", "关都", "城都", "丰缘", "神奥", "合众"};
+  return r <= Route::Unova ? names[uint8_t(r)] : "未知";
 }
 const char* speciesName(uint16_t id) {
   return id && id <= data::kSpriteCount ? data::kSprites[id - 1].name : "未选择";
@@ -37,7 +37,7 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::Resources: return 3;
     case Page::DateWelcome: return 3;
     case Page::Starter: return 4;
-    case Page::Routes: return 4;
+    case Page::Routes: return kRegionCount + 1;
     case Page::Partners: {
       unsigned n = 1; for (unsigned id = 1; id <= kSpeciesCount; ++id) n += owns(e.view(), id); return n;
     }
@@ -157,7 +157,8 @@ void Screens::item(const ScreenState& s, unsigned index, const char* label, int 
   const auto bounds = menu_layout::rowBounds(index - first, top);
   const int y = menu_layout::center(index - first, top);
   const bool active = index == s.selected;
-  const uint16_t accent = accentFor(s.page);
+  const uint16_t accent = s.page == Page::Routes && index < kRegionCount ? theme::routeColor(regionAt(uint8_t(index)))
+                                                                           : accentFor(s.page);
   const uint16_t background = active ? theme::kPanelActive : theme::kPanel;
   const uint16_t color = active ? accent : theme::kText;
   const int radius = bounds.height / 2;

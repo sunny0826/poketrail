@@ -175,7 +175,7 @@ void throwEntry() {
 }
 void exhaustedRoutes() {
   MemoryStore store; std::vector<uint16_t> captured;
-  for (uint16_t id = 1; id <= kSpeciesCount; ++id) if (ordinaryEncounter(id) && id != 129) captured.push_back(id);
+  for (uint16_t id = 1; id <= kSpeciesCount; ++id) if (ordinaryEncounter(id) && id != 387) captured.push_back(id);
   modernOwned(store, captured);
   Save old; check(store.load(old).status == LoadStatus::Loaded, "read exhausted fixture");
   old.captureCounts[0] = 1; old.firstCapture[0] = old.firstCapture[3]; old.firstCapture[0].species = 1;
@@ -183,12 +183,14 @@ void exhaustedRoutes() {
   old.explorationSpent += kLegacyEncounterSteps;
   check(store.commit(old) == CommitStatus::Committed, "starter previously captured in old save");
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 4); screenshot(runtime, "forest-exhausted");
-  check(glyph("本路线已捕获完 · 可换路线", 183, theme::kGold), "exhausted route explains next action");
-  tap(runtime, 233, 52); select(runtime, 1); select(runtime, 1);
-  check(runtime.engine().view().route == Route::Coast, "route can change after exhaustion");
-  screenshot(runtime, "coast-available");
-  captured.push_back(129); MemoryStore full; modernOwned(full, captured);
+  check(runtime.engine().view().route == Route::Kanto && !remainingEncounters(runtime.engine().view(), Route::Kanto) &&
+        remainingEncounters(runtime.engine().view(), Route::Sinnoh) == 1, "only Sinnoh still has an ordinary species");
+  openMenu(runtime); select(runtime, 4); screenshot(runtime, "kanto-exhausted");
+  check(glyph("本地区已捕获完 · 可换地区", 183, theme::kGold), "exhausted region explains next action");
+  tap(runtime, 233, 52); select(runtime, 1); select(runtime, 3);
+  check(runtime.engine().view().route == Route::Sinnoh, "region can change after exhaustion");
+  screenshot(runtime, "sinnoh-available");
+  captured.push_back(387); MemoryStore full; modernOwned(full, captured);
   check(full.load(old).status == LoadStatus::Loaded, "read all-captured fixture");
   old.captureCounts[0] = 1; old.firstCapture[0] = old.firstCapture[3]; old.firstCapture[0].species = 1;
   ++old.nextEncounterId; old.totalSteps += kLegacyEncounterSteps; old.undatedSteps += kLegacyEncounterSteps;

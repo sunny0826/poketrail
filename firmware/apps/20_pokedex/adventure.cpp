@@ -117,7 +117,7 @@ CommandResult Engine::selectPartner(uint16_t id) {
 }
 CommandResult Engine::selectRoute(Route route) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
-  if (uint8_t(route) > 2) return CommandResult::InvalidInput;
+  if (!isRegion(route)) return CommandResult::InvalidInput;
   if ((battle_.view().active && !battle_.view().paused) || throw_.active) return CommandResult::Deferred;
   if (state_.route == route) return CommandResult::Duplicate;
   stage(); candidate_.route = route;

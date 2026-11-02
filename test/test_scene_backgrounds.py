@@ -42,6 +42,16 @@ class SceneBackgroundTests(unittest.TestCase):
                                  pixel_digest(layer_pixels(route, layer)))
         self.assertEqual(manifest["transparentKey"], TRANSPARENT_KEY)
 
+    def test_tables_follow_firmware_region_order(self):
+        self.assertEqual(ROUTES, ("kanto", "johto", "hoenn", "sinnoh", "unova"))
+        self.assertIn("kSceneCount = 5;", self.header)
+        enum = (ROOT / "firmware/apps/20_pokedex/adventure_model.hpp").read_text(encoding="utf-8")
+        self.assertIn("enum class Route : uint8_t { Forest, Coast, Cave, Kanto, Johto, Hoenn, Sinnoh, Unova };", enum)
+        for name in ("kRegionScenes", "kRegionScenesDim", "kRegionSceneLayers"):
+            table = re.search(rf"{name}\[kSceneCount\] = \{{(.*?)\}};", self.source, re.S).group(1)
+            entries = [line.strip() for line in table.strip().splitlines()]
+            self.assertEqual([re.search(r"kScene([A-Z][a-z]+)", e).group(1).lower() for e in entries], list(ROUTES))
+
     def test_canvas_palette_and_route_tables(self):
         self.assertIn(f"kSceneWidth = {WIDTH}", self.header)
         self.assertIn(f"kSceneHeight = {HEIGHT}", self.header)

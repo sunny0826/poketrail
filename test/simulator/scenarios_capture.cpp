@@ -10,6 +10,7 @@ namespace {
 // Frozen from observed runs; acceptance never searches seeds or recomputes odds.
 constexpr uint16_t kThrowSpecies = 72;
 constexpr uint32_t kThrowSeed = 0x2468ace0u;
+}  // namespace
 
 // 投球后等待结算落定：提交完成进 Result，保存故障进 Error，
 // 未结束时回到 Throw。
@@ -22,6 +23,7 @@ void waitSettled(Driver& d, const char* what) {
       20000, what);
 }
 
+namespace {
 unsigned captureSpeciesTotal(const Save& s) {
   unsigned total = 0;
   for (uint16_t id = 1; id <= kSpeciesCount; ++id)
@@ -34,6 +36,7 @@ uint16_t capturedSpecies(const Save& s) {
     if (s.captureCounts[id - 1]) return id;
   return 0;
 }
+}  // namespace
 
 // 新档引导：跳过日期 → 选择伙伴 1 → Home（路径与 smoke 一致）
 void bootNewSave(Driver& d) {
@@ -50,7 +53,7 @@ void bootNewSave(Driver& d) {
 }
 
 // EncounterReady 遭遇从菜单推进到战斗并真实获胜
-void enterAndWinBattle(Driver& d, bool fixed = false) {
+void enterAndWinBattle(Driver& d, bool fixed) {
   d.homeMenu();
   d.select(0);
   d.until([&] { return d.screen().page == Page::Encounter; }, 4000, "menu opens the encounter");
@@ -71,6 +74,7 @@ void acknowledge(Driver& d) {
           "acknowledge closes old encounter; saved credit may start the next");
 }
 
+namespace {
 // 捕获记录的数据级断言（供 run 与 reload 复用）
 void checkCaptureRecord(Driver& d, uint16_t species) {
   const Save& s = d.save();
@@ -126,9 +130,9 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.walk(500);
     d.check(d.save().phase == Phase::EncounterReady, "encounter ready after walk");
     const uint16_t species = d.save().encounter.species;
-    d.check(species == 590 && d.save().encounter.seed == 1745833800u, "frozen new-save encounter package");
     d.event("capture-encounter", "species=" + std::to_string(species) +
                                      " seed=" + std::to_string(d.save().encounter.seed));
+    d.check(species == 108 && d.save().encounter.seed == 1745833800u, "frozen new-save encounter package");
     enterAndWinBattle(d, phase == "fixed");
     d.check(!capture_badge_test::iconAt(312, 109), "throw page removes the static ball badge");
     const auto writes = d.writes();
@@ -153,7 +157,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     waitSettled(d, "commit settles after the throw");
     d.check(d.screen().page == Page::Result, "result page shown only after commit");
     d.check(d.save().result == Result::Captured, "capture result published");
-    d.check(d.save().encounter.attempts[0].roll == 33 && d.save().encounter.attempts[0].probability == 90,
+    d.check(d.save().encounter.attempts[0].roll == 33 && d.save().encounter.attempts[0].probability == 98,
             "frozen perfect capture roll and probability");
     checkCaptureRecord(d, species);
     d.shot("result-captured");

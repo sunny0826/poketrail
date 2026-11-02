@@ -52,8 +52,13 @@ int main() {
     CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
   }
   CHECK(encode(decoded) == original); // all failures preserve the destination
-  data = original; data[22 + 4] = 3; checksum(data);
-  CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
+  CHECK(original[22 + 4] == uint8_t(Route::Kanto));
+  for (uint8_t route : {0, 1, 2, 8}) {  // schema 7 stores a region, never a legacy type route
+    data = original; data[22 + 4] = route; checksum(data);
+    CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
+  }
+  data = original; data[22 + 4] = uint8_t(Route::Unova); checksum(data);
+  CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Ok && decoded.route == Route::Unova);
   Save toggled = s; toggled.stepsIncomplete = true; const auto incomplete = encode(toggled);
   data = original; data[firstPayloadDiff(original, incomplete)] = 2; checksum(data); // bool is 0/1
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Corrupt);
@@ -64,7 +69,8 @@ int main() {
   std::vector<uint8_t> small(original.size() - 1); size_t n = 12;
   CHECK(!codec::encode(s, small.data(), small.size(), n) && n == 0);
   CHECK(!codec::encode(s, nullptr, 0, n));
-  Save bad = s; bad.route = Route(3); reject(bad);
+  Save bad = s; bad.route = Route::Forest; reject(bad);
+  bad = s; bad.route = Route(8); reject(bad);
   bad = s; bad.starter = 2; reject(bad);
   bad = s; bad.partner = 151; reject(bad);
   bad = s; bad.owned[kSpeciesBytes - 1] = 0x02; reject(bad);
@@ -109,7 +115,7 @@ int main() {
   s.clock.offsetMinutes = -720;
   data = encode(s); CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Ok);
   CHECK(decoded.clock.offsetMinutes == -720 && encode(decoded) == data);
-  s.schema = 1; s.encounter.ruleVersion = 1;
+  s.schema = 1; s.route = Route::Forest; s.encounter.ruleVersion = 1;
   for (auto& a : s.encounter.attempts) a.ruleVersion = 1;
   s.starter = s.partner = 1; s.totalSteps = 100000; s.undatedSteps = 100000;
   s.nextEncounterId = 152; s.explorationCredit = 24500;
@@ -185,7 +191,7 @@ int main() {
   CHECK(captureProbability(2, true, Timing::Normal) == 30 && captureProbability(2, true, Timing::Nice) == 45 &&
         captureProbability(2, true, Timing::Perfect) == 60);
   CHECK(captureProbability(kRuleVersion, true, Timing::Miss) == 0);
-  std::printf("codec: %u checks passed; v1=%zu, v2=%zu, v6=%zu (max=%zu); pools=%u/%u/%u\n",
+  std::printf("codec: %u checks passed; v1=%zu, v2=%zu, v7=%zu (max=%zu); legacy type pools=%u/%u/%u\n",
               checks, data.size(), twoBytes.size(), fullBytes.size(), codec::maxEncodedSize,
               routes[0], routes[1], routes[2]);
 }

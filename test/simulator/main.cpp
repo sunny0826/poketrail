@@ -18,7 +18,7 @@ int main(int argc,char** argv) {
         {"retry",scenarioRetry},{"progression",scenarioProgression},{"conflict",scenarioConflict},
         {"isolation",scenarioIsolation},{"clock",scenarioClock},{"lifecycle",scenarioLifecycle},
         {"edges",scenarioEdges},{"crash",scenarioCrash},{"migration",scenarioMigration},
-        {"battle",scenarioBattle}};
+        {"battle",scenarioBattle},{"regions",scenarioRegions}};
       if(name=="load") {
         if(phase=="error") d.check(!d.runtime().engine().ready() && d.screen().page==Page::Error,"bad save rejected");
         else d.check(d.runtime().engine().ready() && d.save().starter!=0,"valid save loaded");

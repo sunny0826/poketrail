@@ -48,7 +48,7 @@ void buildScenario(Save& s, TestScenario scenario, uint64_t sequence) {
     e.id = 1;
     e.species = 16;
     e.partner = s.partner;
-    e.route = Route::Forest;
+    e.route = Route::Kanto;
     e.seed = 0x2468ace0u;
     e.ruleVersion = kRuleVersion;
     e.usedBalls = 1;
@@ -73,7 +73,7 @@ void buildScenario(Save& s, TestScenario scenario, uint64_t sequence) {
   e.id = 1;
   e.species = 16;
   e.partner = s.partner;
-  e.route = Route::Forest;
+  e.route = Route::Kanto;
   e.seed = 0x12345678u;
   e.ruleVersion = 1;
   e.usedBalls = 1;

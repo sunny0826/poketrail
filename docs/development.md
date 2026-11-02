@@ -31,7 +31,7 @@ PlatformIO 使用当前用户的 `~/.platformio` 工具缓存，项目依赖位�
 
 ## 新功能与任务交付
 
-新功能必须随实现新增对应 E2E 测试：在 [test/simulator](../test/simulator) 新增场景或扩展已有场景的操作链和断言，接入 [runner](../scripts/run_simulator_e2e.py) 的默认全量运行，并更新[覆盖矩阵](design/simulator-e2e.md#覆盖矩阵)。测试复用真实 SDL → Runtime 路径；涉及持久状态时验证新进程恢复。
+新功能必须随实现新增对应 E2E 测试：在 [test/simulator](../test/simulator) 新增场景或扩展已有场景的操作链和断言，接入 [runner](../scripts/run_simulator_e2e.py) 的默认全量运行，并更新[覆盖矩阵](design/simulator-e2e-coverage.md)。测试复用真实 SDL → Runtime 路径；涉及持久状态时验证新进程恢复。
 
 每次仓库任务完成最终改动后、报告完成前，都必须运行 `rtk proxy mise run test-simulator-e2e`，包括仅修改文档、配置或测试的任务。`--case`、`--suite core`、`--build-only` 或以前的通过记录不能代替本轮全量结果。失败或阻塞须报告为未完成验收，并保留新一轮证据。详细要求见[验证指南](verification.md#每次任务的-e2e-验收要求)。
 
@@ -54,14 +54,14 @@ rtk proxy mise run icons-download
 | `test-clock-sync` | USB 校时协议、主机重试、Runtime 校时事务与存档保护 |
 | `test-rtc` | 真实 RX8130 驱动、初始化与校时故障 |
 | `test-storage` | 双槽、I/O、文件系统与分配失败；测试目录隔离、模式标记、重启恢复、清理失败、RAM-only 与存储故障开关 |
-| `check-adventure-catalog` | 649 目录、属性路线掩码、普通资格与 320 条进化边；旧 124 种资格、122 条费用和历史路线不变 |
+| `check-adventure-catalog` | 649 目录、五个地区编号范围与普通池、旧档属性路线掩码、普通资格与 320 条进化边；旧 124 种资格、122 条费用和历史路线不变 |
 | `test-pokedex` | 649 资料、Gen2–5 来源哈希与 Gen1／Gen2 快照一致性 |
 | `test-sprites` | 649 个 GIF 哈希、完整帧和固件逐像素解码 |
 | `test-icons` | 649 个 PNG 哈希、透明规则与生成像素 |
-| `test-scenes` | 三路线场景来源、RGB565 像素与生成物 |
+| `test-scenes` | 五地区场景来源、图层透明规则、RGB565 像素、生成物与固件地区顺序 |
 | `test-render` | 15 套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归；含测试模式入口、控制台、场景、标识与退出 |
 | `test-simulator` | SDL 桌面输入、图鉴、走路遭遇、窗口退出、双槽存档重启与目录隔离 |
-| `test-simulator-e2e` | 捕获、培养进化、失败重试、强杀恢复、旧档迁移、时钟和练习隔离；真实文件及新进程重载 |
+| `test-simulator-e2e` | 捕获、培养进化、失败重试、强杀恢复、旧档迁移、地区切换与捕完、时钟和练习隔离；真实文件及新进程重载 |
 | `build` | ESP32-S3 固件 |
 | `check-startup-stack` | 构建后 Engine 启动局部栈帧 |
 

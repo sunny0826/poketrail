@@ -75,7 +75,7 @@ static void failedFirstThrow(Save& s) {
 }
 static Save modernEncounter(uint16_t schema, uint16_t species) {
   Save s; s.schema = schema; s.sequence = 7; s.bootGeneration = 1; s.starter = 1; s.partner = 1;
-  s.rosterRevision = 1; setRegistered(s, 1); setOwned(s, 1);
+  s.route = Route::Forest; s.rosterRevision = 1; setRegistered(s, 1); setOwned(s, 1);
   s.totalSteps = s.undatedSteps = 5000; s.explorationCredit = 0; s.nextEncounterId = 2;
   s.encounter.id = 1; s.encounter.species = species; s.encounter.partner = 1;
   s.encounter.route = Route::Forest; s.encounter.ruleVersion = 2;
@@ -168,10 +168,34 @@ static void routeMasks() {
   both.encounter.route = Route::Forest; CHECK(validate(both));
   Save stage = both; stage.encounter.route = Route::Cave; CHECK(validate(stage));
   rejectBytes(forged(both, stage, uint8_t(Route::Coast)));
+  // Schema 7: the selected route and an in-play encounter are regions, and the
+  // encounter must sit in its species' generation. Capture history may still
+  // name the type route an old save caught it on.
+  Save regional = modernEncounter(7, 4);
+  regional.route = Route::Hoenn; regional.encounter.route = Route::Kanto;
+  regional.explorationSpent = 5000; regional.encounterTarget = 300; regional.encounter.ruleVersion = 3;
+  CHECK(validate(regional)); acceptAtStartup(regional);
+  Save johto = modernEncounter(7, 152);
+  johto.encounter.route = Route::Johto; johto.explorationSpent = 5000; johto.encounterTarget = 300;
+  johto.encounter.ruleVersion = 3; johto.route = Route::Kanto; CHECK(validate(johto));
+  for (Route wrong : {Route::Forest, Route::Cave, Route::Johto, Route::Unova}) {
+    Save bad = regional; bad.encounter.route = wrong; rejectAtStartup(bad);
+  }
+  Save selection = regional; selection.route = Route::Cave; rejectAtStartup(selection);
+  Save probe = regional; probe.route = Route::Sinnoh; CHECK(validate(probe));
+  rejectBytes(forged(regional, probe, uint8_t(Route::Coast)));
+  rejectBytes(forged(regional, probe, 8));
+  Save history = regional;
+  history.encounter = Encounter(); history.phase = Phase::Walking;
+  history.captureCounts[3] = 1;
+  Capture caught; caught.species = 4; caught.route = Route::Cave; caught.at.bootGeneration = 1; caught.at.totalSteps = 500;
+  history.firstCapture[3] = caught; history.recent[0] = caught; history.recentSize = 1;
+  setRegistered(history, 4); CHECK(validate(history)); acceptAtStartup(history);
+  Save beyond = history; beyond.firstCapture[3].route = Route(8); rejectAtStartup(beyond);
 }
 int main() {
   // Minimal schema-1 save with a charged legacy encounter boundary.
-  Save legacy1; legacy1.schema = 1; legacy1.bootGeneration = 1;
+  Save legacy1; legacy1.schema = 1; legacy1.route = Route::Forest; legacy1.bootGeneration = 1;
   legacy1.starter = legacy1.partner = 1; setOwned(legacy1, 1);
   legacy1.totalSteps = legacy1.undatedSteps = 5000;
   legacy1.nextEncounterId = 2; legacy1.explorationCredit = 4500;

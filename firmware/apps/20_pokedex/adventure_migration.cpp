@@ -26,7 +26,7 @@ bool migrateLegacy(Save& s) {
     }
     if (!validate(s)) return false;
   }
-  if (s.schema < 2 || s.schema > 5 || !validate(s)) return false;
+  if (s.schema < 2 || s.schema > 6 || !validate(s)) return false;
   // Schema 3 widens the catalog. Existing fields and the current encounter stay
   // verbatim; species 152-251 start empty and unregistered.
   if (s.schema == 2) {
@@ -52,6 +52,16 @@ bool migrateLegacy(Save& s) {
     if (!validate(s)) return false;
     // The old schema's validated empty tail becomes the new permanent accounts.
     s.schema = 6;
+  }
+  // Schema 7 selects regions instead of type routes. Old routes have no
+  // regional counterpart, so the selection restarts in Kanto and an in-play
+  // encounter moves to its species' region; capture history keeps the route
+  // it was caught on.
+  if (s.schema == 6) {
+    if (!validate(s)) return false;
+    s.route = Route::Kanto;
+    if (s.phase != Phase::Walking && s.encounter.id) s.encounter.route = regionOf(s.encounter.species);
+    s.schema = 7;
   }
   return validate(s);
 }
