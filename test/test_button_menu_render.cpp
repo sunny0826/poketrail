@@ -153,7 +153,7 @@ void pauseAndResume(bool practice) {
   release(r); chord(r, false); idle(r, 80);
   check(r.screen().page == active && !battleView(r, practice).consumed,
         "staggered resume keeps new beat free from residual edges");
-  release(r); buttons(true, true); frame(r); idle(r, 1800);
+  release(r); buttons(true, true); frame(r); idle(r, kOpeningMs + kNormalWindowMs + 200);
   check(r.screen().page == Page::Pause, "fresh long chord can pause again");
   release(r); edge(r, false, true); chord(r, true); release(r);
   check(r.screen().page == (practice ? Page::Home : Page::Result), "staggered retreat confirms the selected pause item");

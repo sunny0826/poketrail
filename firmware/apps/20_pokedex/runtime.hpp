@@ -120,6 +120,7 @@ class Runtime {
   void syncPracticeView();
   void startPracticeCapture(const adventure::PracticeOutcome&);
   void tickCapture(uint32_t now);
+  void battleFeedback();
   void startEvolution();
   void openEvolutionPreview(uint16_t species);
   void chooseEvolutionPreview(unsigned item);
@@ -173,6 +174,7 @@ class Runtime {
   Page testEntryReturn_ = Page::Resources;
   uint32_t testHoldStarted_ = 0;
   uint8_t lastCaptureCue_ = 0;
+  uint8_t battleSettlements_ = 0;
   bool testHoldActive_ = false;
   enum class PendingRoster : uint8_t { None, Select, Evolve };
   PendingRoster pendingRoster_ = PendingRoster::None;

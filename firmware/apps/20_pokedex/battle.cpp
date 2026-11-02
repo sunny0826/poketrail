@@ -21,27 +21,44 @@ Action shownAction(const BattleView& v, uint32_t now) {
   if (!v.feint || !timeAfter(v.targetMs - kFeintFlipMs, now)) return v.expected;
   return opposite(v.expected);
 }
+Action shownNextAction(const BattleView& v) { return v.nextFeint ? opposite(v.nextExpected) : v.nextExpected; }
+uint8_t countdownDigit(const BattleView& v, uint32_t now) {
+  const uint32_t cue = v.targetMs - kCueLeadMs;
+  if (!v.active || v.paused || !v.opening || !timeAfter(cue, now)) return 0;
+  return uint8_t((cue - now + kCountdownStepMs - 1) / kCountdownStepMs);
+}
+namespace {
+struct Cue { bool attack, feint; uint8_t history; };
+Cue decide(uint32_t seed, uint8_t index, uint8_t history, uint8_t feintPercent) {
+  const uint32_t h = mixRandom(seed ^ (uint32_t(index) * 0x9e3779b9u) ^ 0x5bd1e995u);
+  // Two equal actions in a row force a switch, so every seed offers at least 5 attack cues.
+  const uint8_t last = history & 3;
+  const bool attack = index >= 2 && last == 0 ? true : index >= 2 && last == 3 ? false : h % 100 < 55;
+  return {attack, index > 0 && (h >> 8) % 100 < feintPercent, uint8_t((history << 1 | (attack ? 1 : 0)) & 3)};
+}
+}
 uint32_t Battle::interval() const { return view_.frenzy ? kFrenzyBeatIntervalMs : kBeatIntervalMs; }
 void Battle::plan() {
-  const uint32_t h = mixRandom(seed_ ^ (uint32_t(view_.cueIndex) * 0x9e3779b9u) ^ 0x5bd1e995u);
-  // Two equal actions in a row force a switch, so every seed offers at least 5 attack cues.
-  const uint8_t last = history_ & 3;
-  const bool attack = view_.cueIndex >= 2 && last == 0 ? true :
-                      view_.cueIndex >= 2 && last == 3 ? false : h % 100 < 55;
-  view_.expected = attack ? Action::Attack : Action::Dodge;
-  history_ = uint8_t((history_ << 1 | (attack ? 1 : 0)) & 3);
-  view_.feint = view_.cueIndex > 0 && (h >> 8) % 100 < feintPercent_;
+  const Cue cue = decide(seed_, view_.cueIndex, history_, feintPercent_);
+  view_.expected = cue.attack ? Action::Attack : Action::Dodge;
+  view_.feint = cue.feint;
+  history_ = cue.history;
+  const Cue next = decide(seed_, uint8_t(view_.cueIndex + 1), history_, feintPercent_);
+  view_.nextExpected = next.attack ? Action::Attack : Action::Dodge;
+  view_.nextFeint = next.feint;
 }
 void Battle::begin(uint32_t now, uint32_t seed, bool rare) {
   view_ = BattleView();
   seed_ = seed; history_ = 0;
   feintPercent_ = rare ? kRareFeintPercent : kFeintPercent;
   view_.active = true;
+  view_.opening = true;
   plan();
-  view_.targetMs = now + kBeatIntervalMs + seed % 301;
+  view_.targetMs = now + kOpeningMs;
   view_.settledMs = now - kBeatIntervalMs;
 }
 void Battle::settle(Action action, Timing timing, uint32_t now) {
+  ++view_.settlements;
   view_.settledMs = now;
   view_.consumed = true;
   view_.settledAction = action;
@@ -87,6 +104,7 @@ void Battle::advance() {
     return;
   }
   view_.frenzy = view_.enemyHp * 2 < kEnemyHp;
+  view_.opening = false;
   view_.consumed = false;
   view_.special = false;
   plan();
@@ -105,7 +123,7 @@ bool Battle::tick(uint32_t now) {
 bool Battle::press(Action action, uint32_t now) {
   const uint8_t previous = view_.cueIndex;
   tick(now);
-  if (!view_.active || view_.paused || previous != view_.cueIndex) return false;
+  if (!view_.active || view_.paused || previous != view_.cueIndex || countdownDigit(view_, now)) return false;
   if (view_.consumed) return upgrade(action, now);
   pressMs_ = now;
   beforePlayerHp_ = view_.playerHp; beforeEnemyHp_ = view_.enemyHp; beforeEnergy_ = view_.energy;
@@ -120,7 +138,8 @@ bool Battle::requestPause() {
 bool Battle::resume(uint32_t now) {
   if (!view_.active || !view_.paused) return false;
   view_.paused = false;
-  view_.targetMs = now + interval();
+  view_.opening = true;
+  view_.targetMs = now + kOpeningMs;
   view_.settledMs = now - interval();
   return true;
 }

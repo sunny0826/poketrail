@@ -184,15 +184,67 @@ void timeoutsAndBounds() {
 
 void wraparoundAndPause() {
   Battle b; b.begin(UINT32_MAX - 1000, 0);
-  CHECK(b.view().targetMs == 499 && !b.view().feint);
+  const uint32_t target = kOpeningMs - 1001;
+  CHECK(b.view().targetMs == target && !b.view().feint);
   const BattleView first = b.view();
-  CHECK(b.press(first.expected, 499)); CHECK(b.view().settledMs == 499);
-  CHECK(!b.press(first.expected, 500));
-  CHECK(b.requestPause()); b.tick(680); CHECK(b.view().paused && b.view().cueIndex == 1);
-  CHECK(b.resume(10000)); CHECK(b.view().targetMs == 11500 && 10000u - b.view().settledMs >= 450);
-  b.begin(0); CHECK(!b.press(Action::Dodge, 1700)); CHECK(b.view().cueIndex == 1 && !b.view().consumed);
-  CHECK(b.view().settledMs == 1700);
+  CHECK(b.press(first.expected, target)); CHECK(b.view().settledMs == target);
+  CHECK(!b.press(first.expected, target + 1));
+  CHECK(b.requestPause()); b.tick(target + 181); CHECK(b.view().paused && b.view().cueIndex == 1);
+  CHECK(b.resume(10000)); CHECK(b.view().targetMs == 10000 + kOpeningMs && 10000u - b.view().settledMs >= 450);
+  b.begin(0); CHECK(!b.press(Action::Dodge, kOpeningMs + 200)); CHECK(b.view().cueIndex == 1 && !b.view().consumed);
+  CHECK(b.view().settledMs == kOpeningMs + 200);
   std::puts("PASS millis wraparound, duplicate press, pause at cue boundary and resume");
+}
+
+void countdownIgnoresKeys() {
+  Battle b; b.begin(1000, 5);
+  const uint32_t cue = 1000 + kOpeningMs - kCueLeadMs;
+  CHECK(b.view().targetMs == 1000 + kOpeningMs);
+  CHECK(countdownDigit(b.view(), 1000) == 3 && countdownDigit(b.view(), 1499) == 3);
+  CHECK(countdownDigit(b.view(), 1500) == 2 && countdownDigit(b.view(), 2000) == 1);
+  CHECK(countdownDigit(b.view(), cue - 1) == 1 && countdownDigit(b.view(), cue) == 0);
+  for (Action a : {Action::Dodge, Action::Attack, Action::Both}) CHECK(!b.press(a, cue - 1));
+  CHECK(!b.view().consumed && !b.view().settlements && b.view().playerHp == kPlayerHp && b.view().enemyHp == kEnemyHp);
+  CHECK(b.press(b.view().expected, b.view().targetMs) && b.view().settlements == 1);
+  b.tick(b.view().targetMs + 181);
+  CHECK(!b.view().opening && !countdownDigit(b.view(), b.view().targetMs - kCueLeadMs - 1));
+  CHECK(b.requestPause()); b.tick(b.view().targetMs + 181); CHECK(b.view().paused);
+  CHECK(!countdownDigit(b.view(), 50000));
+  CHECK(b.resume(50000) && countdownDigit(b.view(), 50000) == 3);
+  const uint8_t hp = b.view().playerHp;
+  CHECK(!b.press(Action::Dodge, 50000 + kCountdownSteps * kCountdownStepMs - 1) && b.view().playerHp == hp);
+  std::puts("PASS 3-2-1 countdown at begin and resume ignores every key");
+}
+
+void nextCuePreview() {
+  for (uint32_t seed = 0; seed < 200; ++seed) {
+    Battle b; b.begin(0, seed, seed % 2);
+    while (b.view().active) {
+      const BattleView v = b.view();
+      b.tick(v.targetMs + kNormalWindowMs + 1);
+      if (!b.view().active) break;
+      CHECK(b.view().expected == v.nextExpected && b.view().feint == v.nextFeint);
+      CHECK(shownNextAction(v) == (v.nextFeint ? (v.nextExpected == Action::Attack ? Action::Dodge : Action::Attack) : v.nextExpected));
+    }
+  }
+  std::puts("PASS next-cue preview always matches the cue that follows");
+}
+
+void settlementCount() {
+  for (uint32_t seed = 0; seed < 50; ++seed) {
+    Battle b; b.begin(0, seed);
+    chargeUntil(b, Action::Attack);
+    if (!b.view().active || b.view().enemyHp <= kSpecialDamage) continue;
+    const BattleView v = b.view();
+    CHECK(v.settlements == v.cueIndex);
+    CHECK(b.press(Action::Attack, v.targetMs) && b.view().settlements == v.settlements + 1);
+    CHECK(b.press(Action::Dodge, v.targetMs + 10) && b.view().special && b.view().settlements == v.settlements + 2);
+    b.tick(b.view().targetMs + 181);
+    if (b.view().active) { b.tick(b.view().targetMs + 181); CHECK(b.view().settlements == v.settlements + 3); }
+    std::puts("PASS every settlement, timeout and chord upgrade counts once");
+    return;
+  }
+  CHECK(false);
 }
 
 // Rough difficulty model: a skilled player hits most beats, reads most feints, sometimes slips.
@@ -228,6 +280,9 @@ int main() {
   staggeredChord();
   timeoutsAndBounds();
   wraparoundAndPause();
+  countdownIgnoresKeys();
+  nextCuePreview();
+  settlementCount();
   skilledWinRate();
   std::printf("battle: %u checks passed\n", checks);
 }

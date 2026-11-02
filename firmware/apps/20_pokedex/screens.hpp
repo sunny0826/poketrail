@@ -54,6 +54,9 @@ int menuTop(const ScreenState&, const adventure::Engine&);
 // Home shows the evolve button only while the carried partner can evolve now.
 constexpr menu_layout::Rect kHomeEvolveButton = {173, 67, 120, 30};
 bool homeEvolutionReady(const adventure::Engine&);
+// Throw pages show both attempts under the title; used ones become empty rings.
+constexpr int kBallSlotY = 82;
+constexpr int ballSlotX(unsigned index) { return 213 + 40 * int(index); }
 // Route scenes dissolve into the page over their outer three source rows (25/50/75% kept).
 inline bool sceneEdgeVisible(unsigned sourceX, unsigned sourceY) {
   const unsigned last = data::kSceneHeight - 1;
@@ -90,6 +93,7 @@ class Screens {
   void practiceResult(const ScreenState&, uint32_t now);
   void capture(const ScreenState&, uint16_t species, uint32_t now);
   void ballAt(int x, int y, float angle = 0);
+  void ballSlots(uint8_t used);
   void records(const ScreenState&, const adventure::Engine&);
   void clock(const ScreenState&);
   void testEntry(const ScreenState&);

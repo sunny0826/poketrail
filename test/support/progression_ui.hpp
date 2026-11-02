@@ -75,7 +75,9 @@ class HostPlatform : public Platform {
   }
   device_clock::Reading readClock() override { return {}; }
   device_clock::Reading writeClock(int64_t) override { return {}; }
-  void feedback(uint16_t ms) override { vibrationEnd = now() + ms; }
+  unsigned feedbacks = 0;
+  uint16_t lastFeedback = 0;
+  void feedback(uint16_t ms) override { ++feedbacks; lastFeedback = ms; vibrationEnd = now() + ms; }
   bool vibrationActive() override { return int32_t(vibrationEnd - now()) > 0; }
   void brightness(uint8_t value) override { M5.Display.setBrightness(value); }
   c152::DisplayTransition displaySleep(bool) override { return {true}; }

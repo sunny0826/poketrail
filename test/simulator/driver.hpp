@@ -46,6 +46,8 @@ class Driver {
   void fault(Fault);
   unsigned faultHits() const;
   unsigned writes() const;
+  unsigned feedbacks() const;
+  uint16_t lastFeedback() const;
   unsigned closeErrors() const { return closeErrors_; }
   void focusLost(bool hostWindow = false);
   void freeze();
@@ -70,6 +72,7 @@ void scenarioLifecycle(Driver&, const std::string& phase);
 void scenarioEdges(Driver&, const std::string& phase);
 void scenarioCrash(Driver&, const std::string& phase);
 void scenarioMigration(Driver&, const std::string& phase);
+void scenarioBattle(Driver&, const std::string& phase);
 void makeFixture(const std::string& name, const std::string& directory);
 }
 }

@@ -53,12 +53,12 @@ void bootAndCapture() {
         "route selection preserves the existing encounter");
   openMenu(r, p); select(r, p, 0); published(r, "encounter"); frozenScene(Route::Coast);
   select(r, p, 1); check(r.screen().page == Page::Practice, "encounter offers free practice");
-  tap(r, p, 233, 30); idle(r, 1800);
+  tap(r, p, 233, 30); idle(r, kOpeningMs + 300);
   check(r.screen().page == Page::Pause, "practice pauses after current cue");
   select(r, p, 1);
   check(r.engine().view().totalSteps == total && r.engine().view().phase == Phase::EncounterReady, "practice grants no rewards and consumes no encounter");
   reachBattle(r, p); published(r, "battle");
-  tap(r, p, 233, 30); idle(r, 1800);
+  tap(r, p, 233, 30); idle(r, kOpeningMs + 300);
   check(r.screen().page == Page::Pause, "battle pauses after cue closes"); published(r, "pause");
   idle(r, 30020); check(r.dimmed(), "paused battle enters power saving without resuming");
   p.next.power = true; frame(r); frame(r);

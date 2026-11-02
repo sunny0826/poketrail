@@ -1,4 +1,5 @@
 #include "support/progression_ui.hpp"
+#include "support/capture_badge.hpp"
 using namespace progression_ui;
 namespace {
 void evolveAndRetry() {
@@ -285,8 +286,8 @@ void aimStateLayout() {
         "the throw page opens as an aiming state with no menu");
   check(glyph("按住右键蓄力 · 松手投球", 399, theme::kMint),
         "the aiming state shows how to throw");
-  check(glyph("开始蓄力才开始计时", 426, theme::kMuted),
-        "the aiming state explains that the clock waits for the hold");
+  check(capture_badge_test::iconAt(ballSlotX(0), kBallSlotY) && capture_badge_test::iconAt(ballSlotX(1), kBallSlotY),
+        "both unused attempts show as balls under the title");
   check(!glyph("准备投球", 238, theme::kGold, 233, false, true) &&
         !glyph("保留遭遇 · 继续走路", 238, theme::kGold, 233, false, true) &&
         !glyph("放弃这次捕捉", 238, theme::kGold, 233, false, true),

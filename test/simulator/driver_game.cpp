@@ -37,9 +37,10 @@ void Driver::winBattle(bool practice) {
   until([&] { return screen().page == (practice ? Page::PracticeThrow : Page::Throw); }, 2000, "win reaches throw page");
 }
 void Driver::replayBattle() {
-  // Offsets and directions frozen from the recorded #590 encounter trace.
+  // Offsets and directions frozen from the recorded #590 encounter trace; each press lands
+  // about 100ms before its beat, the first beat being kOpeningMs after the battle starts.
   const uint32_t start = now();
-  const uint32_t offsets[] = {1400, 2900, 4000, 5100, 6200};
+  const uint32_t offsets[] = {2012, 3512, 4612, 5712, 6812};
   const SDL_Scancode keys[] = {SDL_SCANCODE_RIGHT, SDL_SCANCODE_RIGHT,
                              SDL_SCANCODE_LEFT, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT};
   check(screen().page == Page::Battle, "fixed replay starts on battle page");

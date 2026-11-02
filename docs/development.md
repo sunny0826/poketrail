@@ -75,7 +75,7 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_previe
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 ```
 
-`test_battle_render` 通过真实按键、Runtime 和 M5GFX 核对双角色原帧时长、攻击与躲避位移、即时 HP、最终动作窗口、暂停恢复和保存失败。`test_evolution_render` 覆盖保存后播放、形态交替、跳过与释放门、重试与重启、播放中计步及圆屏边界。`test_evolution_preview_render` 遍历全部 320 条进化边，核对新档、坏档、未拥有和零培养步下的预览、伊布七分支与无畏小子三分支、连续刷新、原条目返回、账户不变及真实进化重试隔离。输出是主机截图，不表示设备已达到目标帧率。
+`test_battle_render` 通过真实按键、Runtime 和 M5GFX 核对开场与恢复的 3、2、1 倒计时（期间按键无效）、提示圈只圈住对应按键一侧的角色并向内收拢、假动作跳到另一侧、轨道箭头方向与下一拍预告、每拍判定振动时长、双角色原帧时长、攻击与躲避位移、即时 HP、最终动作窗口、暂停恢复和保存失败。`test_evolution_render` 覆盖保存后播放、形态交替、跳过与释放门、重试与重启、播放中计步及圆屏边界。`test_evolution_preview_render` 遍历全部 320 条进化边，核对新档、坏档、未拥有和零培养步下的预览、伊布七分支与无畏小子三分支、连续刷新、原条目返回、账户不变及真实进化重试隔离。输出是主机截图，不表示设备已达到目标帧率。
 
 `test_test_mode_render` 覆盖资源页和错误页顶部长按、来源确认、控制台翻页与返回、四种固定场景、手动 +1 步触发遭遇、模拟校时、故障选择、重置和退出。测试使用主机输入与存储替身，不执行 `main.cpp` 的完整设备切换链。操作入口见[设备内测试模式](usage-test-mode.md)，未覆盖边界见[测试模式验证说明](verification.md#测试模式的验证边界)。
 
@@ -98,7 +98,7 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 | [runtime_input.cpp](../firmware/apps/20_pokedex/runtime_input.cpp)、[screens_test.cpp](../firmware/apps/20_pokedex/screens_test.cpp) | 隐藏入口与测试控制请求、测试页面绘制；模式切换请求交给 `main.cpp`，页面不直接写档 |
 | [screens.cpp](../firmware/apps/20_pokedex/screens.cpp) 及同名前缀文件 | 从已发布状态绘制页面；公共组件位于 `screens_components.cpp` |
 | [screen_theme.hpp](../firmware/apps/20_pokedex/screen_theme.hpp) | 页面与 Viewer 的颜色和图标类型 |
-| [battle_presentation.hpp](../firmware/apps/20_pokedex/battle_presentation.hpp) | 从 `BattleView` 判定动作及 450ms 显示窗口，不结算玩法 |
+| [battle_presentation.hpp](../firmware/apps/20_pokedex/battle_presentation.hpp) | 从 `BattleView` 判定动作及 450ms 显示窗口，定义提示圈、音符轨道与倒计时的布局，不结算玩法 |
 | [game.cpp](../firmware/apps/20_pokedex/game.cpp)、[sprite.cpp](../firmware/apps/20_pokedex/sprite.cpp) | 不依赖 Arduino 的图鉴时序与解码 |
 | [firmware/shared](../firmware/shared) | C152 初始化、电源与反馈 |
 | [tools](../tools)、[assets](../assets) | 生成器、固定来源、资料与哈希清单 |
