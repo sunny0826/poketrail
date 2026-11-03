@@ -33,7 +33,9 @@ PlatformIO 使用当前用户的 `~/.platformio` 工具缓存，项目依赖位�
 
 新功能必须随实现新增对应 E2E 测试：在 [test/simulator](../test/simulator) 新增场景或扩展已有场景的操作链和断言，接入 [runner](../scripts/run_simulator_e2e.py) 的默认全量运行，并更新[覆盖矩阵](design/simulator-e2e-coverage.md)。测试复用真实 SDL → Runtime 路径；涉及持久状态时验证新进程恢复。
 
-每次仓库任务完成最终改动后、报告完成前，都必须运行 `rtk proxy mise run test-simulator-e2e`，包括仅修改文档、配置或测试的任务。`--case`、`--suite core`、`--build-only` 或以前的通过记录不能代替本轮全量结果。失败或阻塞须报告为未完成验收，并保留新一轮证据。详细要求见[验证指南](verification.md#每次任务的-e2e-验收要求)。
+开发迭代按改动范围运行专项检查，必要时用 `--case` 或 `--suite core` 验证相关路径，不要每次小修改都跑全量。多 agent 协作时，子 agent 默认负责定向验证，主 agent 汇总代码、测试和文档改动后，在报告完成前统一运行一次 `rtk proxy mise run test-simulator-e2e`；也可指定一个验收 agent 执行，避免重复或并发跑全量。仅修改文档、配置或测试的任务也须完成这次交付检查。
+
+全量失败后先排障和定向复测，修复集中完成后再跑全量。全量通过后，若无新改动或未解决的验证问题，不因总结、交接或准备 PR 重跑；验收后又有改动时，集中完成后重新验收。`--case`、`--suite core`、`--build-only` 或以前的通过记录不能代替本次最终改动的全量结果。失败或阻塞须报告为未完成验收，并保留新一轮证据。详细要求见[验证指南](verification.md#每次任务的-e2e-验收要求)。
 
 ## 检查入口
 
