@@ -20,7 +20,7 @@ void scenarioClock(Driver& d,const std::string& phase) {
   }
   start(d);
   if(phase=="captured") {
-    d.check(d.save().captureCounts[107]==1 && !d.save().firstCapture[107].at.timeKnown,
+    d.check(d.save().captureCounts[115]==1 && !d.save().firstCapture[115].at.timeKnown,
             "unknown-date capture loaded before calibration");
   }
   if(phase!="midnight") d.walk(10);
@@ -51,7 +51,7 @@ void scenarioClock(Driver& d,const std::string& phase) {
     d.check(d.save().today.steps>dated,"new walking uses calibrated date");
     d.check(d.save().undatedSteps==unknown,"earlier unknown steps remain unknown");
   }
-  if(phase=="captured") d.check(d.save().captureCounts[107]==1 && !d.save().firstCapture[107].at.timeKnown,
+  if(phase=="captured") d.check(d.save().captureCounts[115]==1 && !d.save().firstCapture[115].at.timeKnown,
                                  "calibration preserves unknown capture timestamp");
   d.state("clock-final"); d.shot("clock-final"); d.close(); d.state("closed");
 }

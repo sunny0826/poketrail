@@ -35,6 +35,25 @@ void makeFixture(const std::string& requested, const std::string& directory) {
     setRegistered(s,2); s.progress[1].walked=200; setRegistered(s,4); setOwned(s,4);
     if(name=="target-owned") setOwned(s,2);
     if(name=="edges") for(unsigned id : {133u,439u,649u}) { setRegistered(s,id); setOwned(s,id); }
+  } else if (name == "history-evolution" || name == "history-branches") {
+    s.totalSteps=s.explorationCredit=8000; s.progress[0].walked=8000;
+    const uint16_t last=name == "history-branches" ? 251 : kSpeciesCount;
+    for (uint16_t id=1; id<=last; ++id) {
+      if (!ordinaryEncounter(id)) continue;
+      if (name == "history-branches" && (id==25 || id==106 || id==107 || id==172 || id==236)) continue;
+      setRegistered(s,id);
+    }
+    if (name == "history-branches") {
+      setRegistered(s,26);  // Neither Pikachu nor Pichu was registered in this sparse history.
+      setRegistered(s,237); setOwned(s,237); s.partner=237; s.route=Route::Johto;
+    }
+  } else if (name == "history-pending") {
+    // A valid pre-change encounter of a gifted source, already evolved to #2.
+    s.totalSteps=8000; s.explorationSpent=300; s.explorationCredit=7700;
+    s.progress[0].walked=8000; s.progress[0].spent=7500;
+    s.owned.fill(0); setOwned(s,2); setRegistered(s,2); s.partner=2;
+    s.nextEncounterId=2; s.phase=Phase::ThrowReady; s.result=Result::Won;
+    auto& e=s.encounter; e.id=1; e.species=1; e.partner=2; e.route=Route::Kanto; e.seed=0x2468ace0u;
   } else if (name == "sinnoh-done") {
     unsigned captures=0;
     for(uint16_t id=387; id<=493; ++id) {

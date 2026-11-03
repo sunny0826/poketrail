@@ -40,6 +40,9 @@ CASES = {
     **{f"retry-{kind}": ("P0-04", "throw", [("retry", kind), ("retry", "reload")])
        for kind in ("before", "after", "readback")},
     "progression": ("P0-05", "evolution", [("progression", "run"), ("progression", "reload")]),
+    **{f"encounter-history-{kind}": ("P0-19", f"history-{kind}",
+       [("encounter-history", kind), ("encounter-history", f"{kind}-reload")])
+       for kind in ("evolution", "branches", "pending")},
     "target-owned": ("P0-06", "target-owned", [("conflict", "owned")]),
     "evolution-retry": ("P0-06", "evolution", [("conflict", "retry"), ("conflict", "reload")]),
     "storage": ("P0-07", "starter", []),
@@ -262,11 +265,11 @@ def main():
                     from PIL import Image
                     with Image.open(stage / "fixed-cue-0.bmp") as image:
                         cue = hashlib.sha256(image.convert("RGB").crop((50, 24, 518, 492)).tobytes()).hexdigest()
-                    # Issue #49: neutral next-beat dot, no current arrow/judgment box/action text.
-                    # Frozen from simulator-e2e-20261103T032316.041567Z; pixel comparison with
-                    # the previous passing trace differs only in the lane and action-text bands.
+                    # Issue #32: acquired starters leave new encounter pools, selecting Horsea.
+                    # Frozen from simulator-e2e-20261103T091103.877196Z; native image review
+                    # and cue-pixel-review.json confirm only opponent name/artwork changed.
                     # Inputs keep their timing relative to each beat; battle-cues checks semantics.
-                    expected = "6b020830e1426c1898c4baf2e8369a5a8c0e1522fb03a5cdbf27fb449cf06645"
+                    expected = "3a09b506bec59e0c3bf6cf9f2540d8a1f8441716177c0ab4c3e4d350e4c5f284"
                     write_json(stage / "cue-check.json", {"expected": expected, "actual": cue})
                     if cue != expected:
                         raise RuntimeError("fixed battle cue pixels differ from reviewed trace")

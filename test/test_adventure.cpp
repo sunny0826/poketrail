@@ -84,12 +84,12 @@ static void throwsAndRecords() {
   miss.now = miss.e.throwView().targetMs + 181;
   CHECK(miss.e.tick(miss.now, miss.clock(false)) == CommandResult::Applied);
   CHECK(miss.e.view().result == Result::Escaped && miss.e.view().recentSize == 0);
-  World unknown; unknown.walkToEncounter(seedFor(unknown.e.view(), true, true, 1)); unknown.win();
+  World unknown; unknown.walkToEncounter(seedFor(unknown.e.view(), true, true, 4)); unknown.win();
   CHECK(unknown.ball(1) == CommandResult::Applied);
-  CHECK(unknown.e.view().captureCounts[0] == 1 && !unknown.e.view().firstCapture[0].at.timeKnown);
-  CHECK(unknown.e.view().firstCapture[0].at.bootGeneration == unknown.e.view().bootGeneration);
-  CHECK(unknown.e.view().firstCapture[0].at.monotonicMs == unknown.now);
-  unknown.calibrate(); CHECK(!unknown.e.view().firstCapture[0].at.timeKnown);
+  CHECK(unknown.e.view().captureCounts[3] == 1 && !unknown.e.view().firstCapture[3].at.timeKnown);
+  CHECK(unknown.e.view().firstCapture[3].at.bootGeneration == unknown.e.view().bootGeneration);
+  CHECK(unknown.e.view().firstCapture[3].at.monotonicMs == unknown.now);
+  unknown.calibrate(); CHECK(!unknown.e.view().firstCapture[3].at.timeKnown);
   CHECK(throwTiming(1120, 1000) == Timing::Nice && throwTiming(1121, 1000) == Timing::Normal);
   std::puts("PASS two throws, deduplication, capture atomic fields, permanent first and recent32");
 }
@@ -222,7 +222,8 @@ static void battleCommitRecovery() {
 static void regions() {
   World w;
   CHECK(w.e.view().route == Route::Kanto);
-  const unsigned pools[kRegionCount] = {73, 51, 63, 38, 69};
+  // The gifted Bulbasaur is already registered and no longer eligible in Kanto.
+  const unsigned pools[kRegionCount] = {72, 51, 63, 38, 69};
   const uint16_t spans[kRegionCount][2] = {{1, 151}, {152, 251}, {252, 386}, {387, 493}, {494, 649}};
   for (uint8_t i = 0; i < kRegionCount; ++i) {
     const Route region = regionAt(i);
