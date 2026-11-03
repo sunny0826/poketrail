@@ -138,7 +138,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     const uint16_t species = d.save().encounter.species;
     d.event("capture-encounter", "species=" + std::to_string(species) +
                                      " seed=" + std::to_string(d.save().encounter.seed));
-    d.check(species == 108 && d.save().encounter.seed == 1745833800u, "frozen new-save encounter package");
+    d.check(species == 116 && d.save().encounter.seed == 1745833800u, "frozen new-save encounter package");
     enterAndWinBattle(d, phase == "fixed");
     d.check(!capture_badge_test::iconAt(312, 109), "throw page removes the static ball badge");
     const auto writes = d.writes();
@@ -168,7 +168,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     checkCaptureRecord(d, species);
     d.shot("result-captured");
     if (english) d.check(rendered_text::contains("Caught!", theme::kText) &&
-                         rendered_text::contains("Lickitung", theme::kGold), "capture result displays English outcome and species");
+                         rendered_text::contains("Horsea", theme::kGold), "capture result displays English outcome and species");
     d.check(round_layout_test::clearAbove(menu_layout::rowBounds(0, menuTop(d.screen(), d.runtime().engine())), 8),
             "captured result text keeps clear of its confirm button");
     acknowledge(d);
@@ -177,13 +177,13 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.select(4);
     d.until([&] { return d.screen().page == Page::Viewer; }, 4000, "viewer opens after capture");
     d.frames();
-    // The frozen target is #108: walk forward from #1, avoiding a full-catalog detour.
+    // The frozen target is #116: walk forward from #1, avoiding a full-catalog detour.
     for (unsigned i = 0; pokedex::viewer_screen::species() != species && i < kSpeciesCount; ++i)
       d.press(SDL_SCANCODE_RIGHT);
     d.check(pokedex::viewer_screen::species() == species, "viewer displays captured species");
     d.shot("viewer-after-capture");
-    if (english) d.check(rendered_text::contains("Lickitung", theme::kText) &&
-                         rendered_text::contains("Normal", theme::kBlue), "captured viewer renders English name and type");
+    if (english) d.check(rendered_text::contains("Horsea", theme::kText) &&
+                         rendered_text::contains("Water", theme::kBlue), "captured viewer renders English name and type");
     d.back();
     d.until([&] { return d.screen().page == Page::Home; }, 4000, "back home from viewer");
     d.homeMenu();
@@ -209,7 +209,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.check(d.screen().selected == species - 1 && d.save().firstCapture[d.screen().selected].species == species,
             "first capture card displays actual capture");
     d.shot("first-captures");
-    if (english) d.check(rendered_text::contains("#108 Lickitung", theme::kGold), "first-capture card renders the English record");
+    if (english) d.check(rendered_text::contains("#116 Horsea", theme::kGold), "first-capture card renders the English record");
     d.back();
     d.until([&] { return d.screen().page == Page::Records; }, 4000, "back to records");
     d.back();

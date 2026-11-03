@@ -36,28 +36,49 @@ const EvolutionRule* evolutionRule(uint16_t from, uint16_t to) {
     if (rule.from == from && rule.to == to) return &rule;
   return nullptr;
 }
-static bool eligible(const Save& s, Route region, uint16_t id) {
-  return ordinaryEncounter(id) && !s.captureCounts[id - 1] && regionOf(id) == region;
+using SpeciesMask = std::array<uint8_t, kSpeciesBytes>;
+static bool marked(const SpeciesMask& mask, uint16_t id) {
+  return mask[(id - 1) / 8] & (1u << ((id - 1) % 8));
+}
+static SpeciesMask retiredSpecies(const Save& s) {
+  SpeciesMask retired = s.registered;
+  // Walk backwards to a fixed point: edges are not ordered by ancestry or dex ID.
+  // Only ancestors inherit retirement; unregistered siblings remain available.
+  bool changed;
+  do {
+    changed = false;
+    for (const auto& rule : kEvolutionRules) {
+      if (!marked(retired, rule.to) || marked(retired, rule.from)) continue;
+      retired[(rule.from - 1) / 8] |= uint8_t(1u << ((rule.from - 1) % 8));
+      changed = true;
+    }
+  } while (changed);
+  return retired;
+}
+static bool eligible(const Save& s, const SpeciesMask& retired, Route region, uint16_t id) {
+  return ordinaryEncounter(id) && !s.captureCounts[id - 1] && !marked(retired, id) && regionOf(id) == region;
 }
 unsigned remainingEncounters(const Save& s, Route region) {
   if (!isRegion(region)) return 0;
+  const SpeciesMask retired = retiredSpecies(s);
   const RegionRange& span = kRegionRanges[regionIndex(region)];
   unsigned count = 0;
-  for (uint16_t id = span.first; id <= span.last; ++id) count += eligible(s, region, id);
+  for (uint16_t id = span.first; id <= span.last; ++id) count += eligible(s, retired, region, id);
   return count;
 }
 uint16_t chooseEncounter(const Save& s, Route region, uint32_t seed) {
   if (!isRegion(region)) return 0;
+  const SpeciesMask retired = retiredSpecies(s);
   const RegionRange& span = kRegionRanges[regionIndex(region)];
   uint32_t total = 0;
   for (uint16_t i = span.first; i <= span.last; ++i) {
-    if (!eligible(s, region, i)) continue;
+    if (!eligible(s, retired, region, i)) continue;
     total += uint32_t(kCatalog[i - 1].weight) * (owns(s, i) ? 1 : 3);
   }
   if (!total) return 0;
   uint32_t draw = mixRandom(seed) % total;
   for (uint16_t i = span.first; i <= span.last; ++i) {
-    if (!eligible(s, region, i)) continue;
+    if (!eligible(s, retired, region, i)) continue;
     const uint32_t weight = uint32_t(kCatalog[i - 1].weight) * (owns(s, i) ? 1 : 3);
     if (draw < weight) return i;
     draw -= weight;

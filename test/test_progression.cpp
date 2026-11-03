@@ -149,11 +149,16 @@ static void ballsAndRelease() {
 }
 static void recaptureAndGuards() {
   auto initial=fixture(1,8000);initial->progress[0].walked=8000;
+  // A pre-change saved encounter remains capturable after its gifted source evolves.
+  initial->phase=Phase::EncounterReady;initial->nextEncounterId=2;
+  initial->encounter.id=1;initial->encounter.species=initial->encounter.partner=1;
+  initial->encounter.route=Route::Kanto;initial->explorationSpent=300;initial->explorationCredit-=300;
+  while(throwRoll(initial->encounter,1,kRuleVersion)>=98)++initial->encounter.seed;
+  uint32_t seed=initial->encounter.seed;
   MemoryStore store;store.disk=encoded(*initial);Engine e(store);CHECK(e.begin()==CommandResult::Applied);
   const auto req=request(e,1,2);CHECK(e.evolve(req,clockFor(e))==CommandResult::Applied);
-  uint32_t seed=0;for(;seed<1000000;++seed){Encounter encounter;encounter.id=1;encounter.seed=seed;
-    if(chooseEncounter(e.view(),Route::Kanto,seed)==1&&throwRoll(encounter,1,3)<98)break;}
-  CHECK(seed<1000000);StepEvent event;event.batchId=1;event.clock=clockFor(e);event.partner=2;
+  for(unsigned draw=0;draw<1000;++draw) CHECK(chooseEncounter(e.view(),Route::Kanto,draw)!=1);
+  StepEvent event;event.batchId=1;event.clock=clockFor(e);event.partner=2;
   CHECK(e.observeSteps(&event,1,seed)==CommandResult::Applied);
   CHECK(e.view().encounter.species==1);
   CHECK(e.evolve(request(e,2,3),clockFor(e))==CommandResult::InsufficientProgress);

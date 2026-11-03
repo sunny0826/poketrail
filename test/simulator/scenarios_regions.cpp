@@ -107,7 +107,7 @@ void scenarioRegions(Driver& d, const std::string& phase) {
             "an exhausted region keeps every exploration step");
     d.homeMenu();
     openPage(d, 5, Page::Resources, "resources open");
-    d.check(textAt("本地区已捕获完 · 可换地区", 183, pokedex::ui::theme::kGold), "exhausted region suggests switching");
+    d.check(textAt("本地区暂无新遭遇 · 可换地区", 183, pokedex::ui::theme::kGold), "exhausted region suggests switching");
     d.shot("sinnoh-exhausted");
     d.back();
     d.until([&] { return d.screen().page == Page::Menu; }, 4000, "back to menu");
