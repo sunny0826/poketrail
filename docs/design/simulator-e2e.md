@@ -28,7 +28,7 @@ C++ Driver 复用 SDL 输入与固件类型；Python 管理独立进程和文件
 
 ```cpp
 d.press(SDL_SCANCODE_RIGHT);
-d.select(3);
+d.select(4);
 d.until([&] { return d.screen().page == Page::Viewer; },
         4000, "viewer opens");
 d.shot("viewer");

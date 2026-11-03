@@ -21,7 +21,7 @@ PlatformIO 使用当前用户的 `~/.platformio` 工具缓存，项目依赖位�
 
 完成首次构建并安装 SDL2 后，运行 `rtk proxy mise run simulate` 打开桌面窗口。支持键盘、鼠标、模拟走路、时间快进和独立双槽存档。操作与平台限制见[桌面模拟指南](simulator.md)。模拟器与离屏渲染共用 [host_build.py](../scripts/host_build.py) 的编译入口和 Runtime 源文件清单。
 
-运行 `rtk proxy mise run test-simulator-e2e` 验证完整用户旅程、保存失败重试和进程强杀恢复。默认用 `-- --case capture` 等选项验证受影响场景，必要时用 `-- --suite core` 覆盖 P0；局部改动的定向检查可作为交付验收。全量仅在[验证指南](verification.md#每次任务的-e2e-验收要求)的条件触发时执行。覆盖与限制见[模拟器 E2E](design/simulator-e2e.md)。
+E2E 入口为 `rtk proxy mise run test-simulator-e2e`，可加 `-- --case capture` 选择场景或 `-- --suite core` 覆盖 P0。验收范围按下文交付规则选择；覆盖与限制见[模拟器 E2E](design/simulator-e2e.md)。
 
 ## GitHub Actions
 
@@ -63,7 +63,7 @@ rtk proxy mise run icons-download
 | `test-sprites` | 649 个 GIF 哈希、完整帧和固件逐像素解码 |
 | `test-icons` | 649 个 PNG 哈希、透明规则与生成像素 |
 | `test-scenes` | 五地区场景来源、图层透明规则、RGB565 像素、生成物与固件地区顺序 |
-| `test-render` | 16 套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归；含中英文设置、文字与图鉴、测试模式入口、控制台、场景、标识与退出 |
+| `test-render` | 17 套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归；启动页覆盖原素材像素、时长、圆屏、按键／触摸释放、时钟回绕、慢加载与存储失败；含中英文设置、文字与图鉴、测试模式入口、控制台、场景、标识与退出 |
 | `test-simulator` | SDL 桌面输入、图鉴、走路遭遇、窗口退出、双槽存档重启与目录隔离 |
 | `test-simulator-e2e` | 捕获、培养进化、失败重试、强杀恢复、旧档迁移、地区切换与捕完、时钟和练习隔离；真实文件及新进程重载 |
 | `build` | ESP32-S3 固件 |
@@ -83,7 +83,7 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 
 `test_test_mode_render` 覆盖资源页和错误页顶部长按、来源确认、控制台翻页与返回、四种固定场景、手动 +1 步触发遭遇、模拟校时、故障选择、重置和退出。测试使用主机输入与存储替身，不执行 `main.cpp` 的完整设备切换链。操作入口见[设备内测试模式](usage-test-mode.md)，未覆盖边界见[测试模式验证说明](verification.md#测试模式的验证边界)。
 
-详细覆盖与限制见[验证说明](verification.md)。按变更范围运行专项检查和相关 E2E 场景，命中全量条件时再运行完整套件；固件变更还须运行 `build`。只改文档时核对命令、链接和事实，不重建固件或重跑全量 E2E。UI 变更须读取真实渲染截图，交互变更须验证实际输入路径。
+详细覆盖与限制见[验证说明](verification.md)。固件变更还须运行 `build`；UI 与交互变更须核对真实渲染截图及输入路径。
 
 烧录后自动校时、单独校时与只读查询的命令见[时钟恢复](design/clock-recovery.md#单独校时与查询)。
 
@@ -109,6 +109,8 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 | [tools](../tools)、[assets](../assets) | 生成器、固定来源、资料与哈希清单 |
 | [simulator](../simulator) | SDL 桌面窗口、输入与时钟适配、独立主机存档；复用固件 Runtime |
 | [test](../test)、[scripts](../scripts) | 回归、构建及设备工具 |
+
+设备冷启动在板级初始化后构造 Runtime，调用 `startStartup()` 先分配绘图缓冲并显示首帧，再初始化 RTC、挂载存储并执行 `begin()`。`Screens::begin()` 复用已分配缓冲。启动页按平台时钟至少显示 1200ms，循环期间持续采样并消耗输入；结束后等待释放再操作原目的页面。普通 Runtime 重建不调用 `startStartup()`；存储错误沿用错误页，图形分配失败直接显示图形错误。启动绘制不增加存档字段或提交。
 
 培养、进化和兼容修改先读[玩法契约](design/walking-progression.md)。schema1、旧字节 fixture、RTC 故障和按键回归仍是当前契约的一部分。页面不写账户、不直接提交存档。
 

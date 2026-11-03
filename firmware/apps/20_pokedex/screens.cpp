@@ -118,8 +118,31 @@ void drawGraphicsError(const c152::BatteryStatus& battery, i18n::Language langua
 }
 Screens::~Screens() { free(pixels_); }
 bool Screens::begin() {
-  pixels_ = static_cast<uint16_t*>(malloc(size_t(kMaxDisplayWidth) * kMaxDisplayHeight * 2));
+  if (!pixels_) pixels_ = static_cast<uint16_t*>(malloc(size_t(kMaxDisplayWidth) * kMaxDisplayHeight * 2));
   return pixels_ != nullptr;
+}
+bool Screens::startup(uint32_t elapsed) {
+  M5.Display.startWrite();
+  M5.Display.fillScreen(TFT_BLACK);
+  M5.Display.fillCircle(233, 233, 227, theme::kBackground);
+  M5.Display.fillCircle(233, 207, 91, theme::kPanel);
+  M5.Display.fillEllipse(233, 259, 45, 9, theme::kBackground);
+  // The brand illustration uses 3x pixels without changing gameplay scaling.
+  advance(startupPlayback_, 1, elapsed);
+  const auto& sprite = data::kSprites[0];
+  const bool rendered = decodeFrame(sprite, startupPlayback_.state.frame_index, 3,
+                                    pixels_, size_t(kMaxDisplayWidth) * kMaxDisplayHeight);
+  if (rendered) M5.Display.pushImage(233 - sprite.width * 3 / 2, 207 - sprite.height * 3 / 2,
+                                   sprite.width * 3, sprite.height * 3, pixels_, kTransparentKey);
+  decodedId_ = 0;  // The shared pixel buffer no longer contains the previous page's sprite.
+  M5.Display.setTextDatum(middle_center);
+  M5.Display.setFont(&fonts::Font4);
+  M5.Display.setTextSize(2);
+  M5.Display.setTextColor(theme::kText);
+  M5.Display.drawString("PokeTrail", 233, 333);
+  M5.Display.setTextSize(1);
+  M5.Display.endWrite();
+  return rendered;
 }
 void Screens::invalidate() {
   battlePlayback_.species = enemyBattlePlayback_.species = resultPlayback_.species = decodedId_ = 0;

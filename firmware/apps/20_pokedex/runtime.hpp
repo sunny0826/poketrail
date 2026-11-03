@@ -59,6 +59,10 @@ class Runtime {
   };
   Runtime(adventure::Store& store, Platform& platform,
           adventure::TestModeHost* testHost = nullptr);
+  // Cold boot only: draw before mounting storage, then call begin(). Rebuilds skip it.
+  bool startStartup();
+  bool startupActive() const { return startupActive_; }
+  static constexpr uint32_t kStartupDurationMs = 1200;
   bool begin(bool persistBoot = true);
   void loop();
   // Mode changes run from main.cpp after loop() returns; handle() only records
@@ -194,5 +198,7 @@ class Runtime {
   uint32_t wakeStarted_ = 0, wakeDelay_ = 0, lastBattery_ = 0;
   bool clockDeferred_ = true, dirty_ = true, releaseGate_ = false;
   bool dateSkipped_ = false, graphicsReady_ = false;
+  uint32_t startupStarted_ = 0, startupRendered_ = 0;
+  bool startupActive_ = false;
 };
 } }

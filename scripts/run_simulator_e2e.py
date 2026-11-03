@@ -18,6 +18,9 @@ from host_build import APP, ROOT, HostBuild, RUNTIME_SOURCES
 SEED = 20261031
 UTC = 1793376000
 CASES = {
+    "startup-new": ("P0-18", "blank", [("startup", "new"), ("startup", "reload")]),
+    "startup-existing": ("P0-18", "starter", [("startup", "existing"), ("startup", "reload")]),
+    "startup-corrupt": ("P0-18", "language-corrupt", [("startup", "error"), ("startup", "error")]),
     "language": ("P0-17", "blank", [("language", "new"), ("language", "english"), ("language", "chinese")]),
     **{f"language-retry-{kind}": ("P0-17", "starter", [("language", kind), ("language", "retry-reload")])
        for kind in ("before", "after", "readback")},
@@ -248,7 +251,7 @@ def main():
             write_json(output / "fixture.json", hashes(save))
             shutil.copytree(save, output / "before")
             utc = UTC if name != "midnight" else 1793375990
-            protected = hashes(save) if name in ("language-corrupt", "language-future") else None
+            protected = hashes(save) if name in ("language-corrupt", "language-future", "startup-corrupt") else None
             previous = None
             offline = 3600 if name == "midnight" else 5
             for index, (scenario, phase) in enumerate(stages):
@@ -277,6 +280,12 @@ def main():
                         # Compare the watch content, excluding the simulator's changing sidebar.
                         if a.convert("RGB").crop((50, 24, 518, 492)).tobytes() != b.convert("RGB").crop((50, 24, 518, 492)).tobytes():
                             raise RuntimeError("carried partner page pixels changed across restart")
+                if scenario == "startup" and phase == "reload":
+                    before = json.loads((previous / "startup-end.json").read_text())
+                    after = json.loads((stage / "startup-end.json").read_text())
+                    keys = ("starter", "partner", "totalSteps", "explorationCredit", "explorationSpent", "accounts")
+                    if any(before[key] != after[key] for key in keys):
+                        raise RuntimeError("startup changed persisted walking or partner progress across processes")
                 if scenario == "clock" and phase == "reload":
                     check_clock_restart(previous / "closed.json", stage / "reloaded.json", offline)
                 if protected is not None:

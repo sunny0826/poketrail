@@ -59,6 +59,7 @@ class Driver {
   unsigned closeErrors_ = 0;
   std::unique_ptr<App> app_;
 };
+void scenarioStartup(Driver&, const std::string& phase);
 void scenarioLanguage(Driver&, const std::string& phase);
 void scenarioLanguagePages(Driver&, const std::string& phase);
 void scenarioJourney(Driver&, const std::string& phase);

@@ -80,6 +80,7 @@ class Screens {
  public:
   ~Screens();
   bool begin();
+  bool startup(uint32_t elapsed);
   void invalidate();
   bool advanceHome(uint16_t partner, uint32_t now);
   bool advanceResult(uint16_t species, uint32_t now);
@@ -144,7 +145,7 @@ class Screens {
   i18n::Language language_ = i18n::Language::Chinese;
   uint16_t* pixels_ = nullptr;
   uint16_t sceneRow_[456];
-  Playback homePlayback_, battlePlayback_, enemyBattlePlayback_, resultPlayback_;
+  Playback startupPlayback_, homePlayback_, battlePlayback_, enemyBattlePlayback_, resultPlayback_;
   adventure::Route sceneRoute_ = adventure::Route::Forest;
   uint64_t sceneSteps_ = 0;
   uint32_t sceneLastMs_ = 0;
