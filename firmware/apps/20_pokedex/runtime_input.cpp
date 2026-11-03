@@ -42,6 +42,10 @@ void Runtime::goBack() {
   else if (screen_.page == Page::EvolutionPreviewTargets) navigate(Page::Viewer);
   else if (screen_.page == Page::EvolutionConfirm) leaveEvolutionConfirm();
   else if (screen_.page == Page::PartnerDetail) navigate(Page::Partners);
+  else if (screen_.page == Page::CarriedPartner) {
+    partnersFromCarried_ = false;
+    navigate(Page::Menu); screen_.selected = 3;
+  } else if (screen_.page == Page::Partners && partnersFromCarried_) openCarriedPartner();
   else if (screen_.page == Page::Partners || screen_.page == Page::Routes) navigate(Page::Menu);
   else navigate(Page::Home);
 }
@@ -283,12 +287,13 @@ void Runtime::activate(unsigned item, uint32_t at) {
         else if (v.phase == Phase::ThrowReady) navigate(Page::Throw);
       }
       else if (item == 1) navigate(Page::Routes);
-      else if (item == 2) navigate(Page::Partners);
-      else if (item == 3) navigate(Page::Viewer);
-      else if (item == 4) navigate(Page::Resources);
-      else if (item == 5) beginPractice(at);
-      else if (item == 6) sleepDisplay();
-      else if (item == 7) openLanguage();
+      else if (item == 2) { partnersFromCarried_ = false; navigate(Page::Partners); }
+      else if (item == 3) openCarriedPartner();
+      else if (item == 4) navigate(Page::Viewer);
+      else if (item == 5) navigate(Page::Resources);
+      else if (item == 6) beginPractice(at);
+      else if (item == 7) sleepDisplay();
+      else if (item == 8) openLanguage();
       else navigate(Page::Home);
       break;
     case Page::Resources:
@@ -307,13 +312,13 @@ void Runtime::activate(unsigned item, uint32_t at) {
       }
       goBack(); break;
     }
-    case Page::PartnerDetail: case Page::EvolutionConfirm:
+    case Page::CarriedPartner: case Page::PartnerDetail: case Page::EvolutionConfirm:
       activateProgression(item, at); break;
     case Page::EvolutionPreviewTargets: chooseEvolutionPreview(item); break;
     case Page::Encounter:
       if (item == 0) { engine_.startBattle(at); navigate(Page::Battle); }
       else if (item == 1) beginPractice(at);
-      else if (item == 2) navigate(Page::Partners);
+      else if (item == 2) { partnersFromCarried_ = false; navigate(Page::Partners); }
       else navigate(Page::Home);
       break;
     case Page::Pause:

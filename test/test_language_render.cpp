@@ -9,7 +9,7 @@ void text(Runtime& runtime, const char* expected, uint16_t color = theme::kText)
   check(rendered_text::contains(expected, color), expected);
 }
 void switchFromMenu(Runtime& runtime, Language language) {
-  openMenu(runtime); select(runtime, 7);
+  openMenu(runtime); select(runtime, 8);
   check(runtime.screen().page == Page::Language, "menu opens language page");
   select(runtime, unsigned(language)); frame(runtime);
 }
@@ -33,11 +33,11 @@ void normal() {
   select(runtime, 2); select(runtime, 1);
   text(runtime, "Choose your starter"); screenshot(runtime, "english-starter");
   select(runtime, 0); text(runtime, "Bulbasaur"); screenshot(runtime, "english-home");
-  openMenu(runtime); select(runtime, 3);
+  openMenu(runtime); select(runtime, 4);
   text(runtime, "Bulbasaur"); text(runtime, "Grass / Poison", theme::kBlue);
   screenshot(runtime, "english-viewer"); tap(runtime, 233, 30);
   switchFromMenu(runtime, Language::Chinese);
-  select(runtime, 2); select(runtime, 8); text(runtime, "妙蛙种子");
+  select(runtime, 2); select(runtime, 9); text(runtime, "妙蛙种子");
   Runtime reboot(store, platform); start(reboot);
   check(reboot.language() == Language::Chinese, "Runtime rebuild restores final language");
 }

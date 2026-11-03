@@ -267,6 +267,16 @@ def main():
                     write_json(stage / "cue-check.json", {"expected": expected, "actual": cue})
                     if cue != expected:
                         raise RuntimeError("fixed battle cue pixels differ from reviewed trace")
+                if scenario == "progression" and phase == "reload":
+                    from PIL import Image
+                    before = json.loads((previous / "progression-end.json").read_text())
+                    after = json.loads((stage / "progression-reload.json").read_text())
+                    if any(before[key] != after[key] for key in ("partner", "accounts", "rosterRevision")):
+                        raise RuntimeError("carried partner or training accounts changed across restart")
+                    with Image.open(previous / "carried-before-reload.bmp") as a, Image.open(stage / "carried-after-reload.bmp") as b:
+                        # Compare the watch content, excluding the simulator's changing sidebar.
+                        if a.convert("RGB").crop((50, 24, 518, 492)).tobytes() != b.convert("RGB").crop((50, 24, 518, 492)).tobytes():
+                            raise RuntimeError("carried partner page pixels changed across restart")
                 if scenario == "clock" and phase == "reload":
                     check_clock_restart(previous / "closed.json", stage / "reloaded.json", offline)
                 if protected is not None:

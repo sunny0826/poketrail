@@ -12,7 +12,7 @@ void english(Driver& d, const char* text, uint16_t color = theme::kText) {
 }
 void openLanguage(Driver& d) {
   const Page source = d.screen().page;
-  const unsigned item = source == Page::DateWelcome ? 3 : source == Page::Error ? 2 : 7;
+  const unsigned item = source == Page::DateWelcome ? 3 : source == Page::Error ? 2 : 8;
   d.select(item);
   d.check(d.screen().page == Page::Language && menuCount(d.screen(), d.runtime().engine()) == 3,
           "real keys open three language choices");
@@ -54,9 +54,9 @@ void normalJourney(Driver& d, const std::string& phase) {
     english(d, "Bulbasaur");
     d.homeMenu(); d.shot("english-menu"); english(d, "My partners");
     openLanguage(d); noOp(d); d.back();
-    d.check(d.screen().page == Page::Menu && d.screen().selected == 7, "back restores menu language selection");
-    openLanguage(d); choose(d, Language::Chinese); d.select(2); d.select(8);
-    d.check(d.screen().page == Page::Home, "ninth main menu item returns home");
+    d.check(d.screen().page == Page::Menu && d.screen().selected == 8, "back restores menu language selection");
+    openLanguage(d); choose(d, Language::Chinese); d.select(2); d.select(9);
+    d.check(d.screen().page == Page::Home, "tenth main menu item returns home");
     d.shot("chinese-restored");
   } else {
     d.check(d.runtime().language() == Language::Chinese && d.save().starter == 1,

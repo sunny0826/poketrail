@@ -88,7 +88,7 @@ void sceneDepthNavigationAndSleep() {
   const uint32_t kantoOrigin = host_time_ms;
   walk(runtime, platform, 3);
   const uint64_t kantoSteps = defaultSceneSteps(kantoOrigin);
-  openMenu(runtime); walk(runtime, platform, 2); select(runtime, 8); home(runtime);
+  openMenu(runtime); walk(runtime, platform, 2); select(runtime, 9); home(runtime);
   check(groundScene(Route::Kanto, kantoSteps), "menu time does not advance or jump the home scene");
   openMenu(runtime); select(runtime, 1); select(runtime, 1); home(runtime);
   check(farScene(Route::Johto, 0) && groundScene(Route::Johto, 0), "region change resets depth to the static Johto scene");

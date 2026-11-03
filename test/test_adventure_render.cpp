@@ -40,7 +40,7 @@ void bootAndCapture() {
   check(r.engine().view().route == Route::Johto, "region selection uses Engine command");
   openMenu(r, p); select(r, p, 2);
   check(menuCount(r.screen(), r.engine()) == 2, "partner menu only owns starter plus back");
-  select(r, p, 1); select(r, p, 8);
+  select(r, p, 1); select(r, p, 9);
   walk(r, p, 10008);
   check(r.engine().view().phase == Phase::EncounterReady && r.engine().view().totalSteps >= 10000, "continuous IMU steps create 5000-step encounter and bank next cycle");
   check(r.dimmed() && p.light == 0, "30-second inactivity dims but continues sampling");
@@ -103,7 +103,7 @@ void bootAndCapture() {
   select(r, p, 0); check(r.screen().page == Page::Home, "acknowledge result returns home");
   check(r.engine().view().phase == Phase::EncounterReady && r.engine().view().encounter.id != key.encounterId,
         "result acknowledgement immediately redeems saved credit without extra steps");
-  openMenu(r, p); select(r, p, 4); published(r, "resources"); select(r, p, 0);
+  openMenu(r, p); select(r, p, 5); published(r, "resources"); select(r, p, 0);
   published(r, "records"); select(r, p, 0); published(r, "first-capture");
   select(r, p, 150); check(r.screen().selected == 150, "permanent Kanto 151st species reachable independently of recent ring");
   published(r, "first-capture-151"); tap(r, p, 233, 360);
@@ -122,7 +122,7 @@ void bootAndCapture() {
   tap(r, p, 233, 30);
   frame(r);
   openMenu(r, p);
-  select(r, p, 3);
+  select(r, p, 4);
   check(r.screen().page == Page::Viewer, "real menu enters legacy viewer");
   screenshot("viewer-entry");
   tap(r, p, 233, 30); check(r.screen().page == Page::Home, "viewer top press returns without giving ownership");
@@ -152,7 +152,7 @@ void fullRecordRestart() {
   check(validate(save), "ring eviction restart fixture passes domain semantic validator");
   check(store.commit(save) == CommitStatus::Committed, "restart fixture is encoded by production codec");
   TestPlatform p; Runtime r(store, p); start(r);
-  openMenu(r, p); select(r, p, 4); select(r, p, 0); select(r, p, 0); select(r, p, 150);
+  openMenu(r, p); select(r, p, 5); select(r, p, 0); select(r, p, 0); select(r, p, 150);
   check(r.engine().view().firstCapture[150].species == 151 && r.engine().view().recent[0].species == 25,
         "permanent record remains available after recent capture eviction");
   published(r, "permanent-after-ring-eviction");
@@ -168,13 +168,13 @@ void viewerWakeAndPractice() {
   MemoryStore store; TestPlatform p; Runtime r(store, p); start(r); skipDateAndStarter(r, p);
   openMenu(r, p); tap(r, p, 298, 430);
   M5.Touch.detail.base_x = M5.Touch.detail.x = 233;
-  M5.Touch.detail.base_y = M5.Touch.detail.y = 150;
+  M5.Touch.detail.base_y = M5.Touch.detail.y = 218;
   M5.Touch.detail.pressed = true;
-  p.next.touch = p.next.held = true; p.next.x = 233; p.next.y = 150; frame(r);
+  p.next.touch = p.next.held = true; p.next.x = 233; p.next.y = 218; frame(r);
   check(r.screen().page == Page::Menu && r.screen().selected == 3,
         "visible viewer button waits for click release");
   M5.Touch.detail.pressed = false; M5.Touch.detail.released = M5.Touch.detail.clicked = true;
-  p.next.click = true; p.next.x = 233; p.next.y = 150; frame(r);
+  p.next.click = true; p.next.x = 233; p.next.y = 218; frame(r);
   check(r.screen().page == Page::Viewer, "visible menu click release enters real viewer");
   M5.Touch.detail = HostTouchDetail(); idle(r, 240);
   check(p.feedbacks == 0 && M5.Display.readPixel(410, 154) == theme::kViewerBackground, "entry touch release cannot trigger viewer reaction");
@@ -199,7 +199,7 @@ void viewerWakeAndPractice() {
   check(r.screen().page == Page::Viewer && p.feedbacks == 2, "horizontal swipe at top remains a viewer swipe");
   p.next.pause = true; frame(r);
   check(r.screen().page == Page::Viewer, "long dual-button gesture does not accidentally leave viewer");
-  tap(r, p, 233, 30); openMenu(r, p); select(r, p, 5);
+  tap(r, p, 233, 30); openMenu(r, p); select(r, p, 6);
   check(r.screen().page == Page::Practice, "home free practice reachable");
   idle(r, 240);
   unsigned commits = store.commits; uint64_t steps = r.engine().view().totalSteps;

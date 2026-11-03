@@ -106,7 +106,7 @@ void scenarioRegions(Driver& d, const std::string& phase) {
             d.save().explorationCredit - credit == d.save().totalSteps - steps,
             "an exhausted region keeps every exploration step");
     d.homeMenu();
-    openPage(d, 4, Page::Resources, "resources open");
+    openPage(d, 5, Page::Resources, "resources open");
     d.check(textAt("本地区已捕获完 · 可换地区", 183, pokedex::ui::theme::kGold), "exhausted region suggests switching");
     d.shot("sinnoh-exhausted");
     d.back();
@@ -156,7 +156,7 @@ void scenarioSchema6Upgrade(Driver& d, const std::string& phase) {
     acknowledge(d);
     d.check(sceneShows(Route::Kanto, false), "home shows Kanto scenery");
     d.homeMenu();
-    openPage(d, 4, Page::Resources, "resources open");
+    openPage(d, 5, Page::Resources, "resources open");
     openPage(d, 0, Page::Records, "records open");
     openPage(d, 1, Page::Recent, "recent captures open");
     recentRecord(d, "关都 · 累计捕捉 1 次", "schema6-recent-kanto");

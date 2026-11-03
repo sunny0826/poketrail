@@ -18,7 +18,8 @@ enum class Page : uint8_t {
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
   Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, Evolution,
   EvolutionPreviewTargets, EvolutionPreview,
-  TestEntry, TestHub, TestSteps, TestScenarios, TestFaults, TestDiagnostics, TestExit, Language
+  TestEntry, TestHub, TestSteps, TestScenarios, TestFaults, TestDiagnostics, TestExit, Language,
+  CarriedPartner
 };
 enum class LanguagePersistence : uint8_t { Saved, SessionOnly };
 struct ScreenState {
@@ -117,7 +118,7 @@ class Screens {
                 unsigned count, int top = menu_layout::kTop);
   void menu(const ScreenState&, const adventure::Engine&);
   void item(const ScreenState&, unsigned index, const char*, int top = menu_layout::kTop,
-            uint16_t species = 0, bool carried = false, const char* note = nullptr);
+            uint16_t species = 0, bool carried = false, const char* note = nullptr, bool disabled = false);
   void pager(const ScreenState&, unsigned count);
   void thumbnail(uint16_t species, int x, int y, unsigned scale = 1);
   void captureBadge(const adventure::Save&, int x, int y);

@@ -129,7 +129,7 @@ void pagination() {
   openMenu(runtime); edge(runtime, false, true); tap(runtime, 298, 430);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 3, "menu flips to second page start");
   screenshot(runtime, "menu-second-page");
-  check(round_layout_test::pagerDots(3, 1, theme::kMint), "three-page menu shows a dot pager on page two");
+  check(round_layout_test::pagerDots(4, 1, theme::kMint), "four-page menu shows a dot pager on page two");
   for (unsigned row = 0; row < 3; ++row)
     check(round_layout_test::pillRow(menu_layout::rowBounds(row, menu_layout::kMainTop)),
           "menu rows are stadium shaped");
@@ -139,19 +139,21 @@ void pagination() {
   check(runtime.screen().selected == 3, "enlarged previous-page zone turns back one page");
   tap(runtime, 298, 430);
   check(runtime.screen().selected == 6, "menu reaches third page");
-  tap(runtime, 233, 150);
-  check(runtime.dimmed() && runtime.screen().page == Page::Menu && runtime.screen().selected == 6,
+  tap(runtime, 233, 218);
+  check(runtime.dimmed() && runtime.screen().page == Page::Menu && runtime.screen().selected == 7,
         "menu sleep button acts once on release");
   tap(runtime, 233, 150);
   check(runtime.dimmed(), "touch cannot wake the locked menu");
   M5.powerClick(); frame(runtime); idle(runtime, 160); frame(runtime);
-  check(!runtime.dimmed() && runtime.screen().page == Page::Menu && runtime.screen().selected == 6,
+  check(!runtime.dimmed() && runtime.screen().page == Page::Menu && runtime.screen().selected == 7,
         "power wake cannot activate a menu row");
+  tap(runtime, 298, 430);
+  check(runtime.screen().selected == 9, "next page reaches the single return row");
   screenshot(runtime, "menu-last-page");
   tap(runtime, 298, 430);
   check(runtime.screen().selected == 0, "menu last page wraps without carrying row offset");
   tap(runtime, 168, 430);
-  check(runtime.screen().selected == 6, "menu previous button wraps from first to last");
+  check(runtime.screen().selected == 9, "menu previous button wraps from first to last");
   tap(runtime, 298, 430);
   swipe(runtime, 233, 150, 120, 150);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 3,
@@ -159,13 +161,13 @@ void pagination() {
   swipe(runtime, 233, 218, 380, 218);
   check(runtime.screen().page == Page::Menu && runtime.screen().selected == 0,
         "right swipe returns without activating its start button");
-  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 218);
-  check(runtime.screen().page == Page::Language, "menu second row on the last page opens language");
+  tap(runtime, 298, 430); tap(runtime, 298, 430); tap(runtime, 233, 286);
+  check(runtime.screen().page == Page::Language, "menu third row on page three opens language");
   tap(runtime, 233, 52);
-  check(runtime.screen().page == Page::Menu && runtime.screen().selected == 7,
+  check(runtime.screen().page == Page::Menu && runtime.screen().selected == 8,
         "language top-back restores its menu row");
-  tap(runtime, 233, 286);
-  check(runtime.screen().page == Page::Home, "menu last-row return restores exploration");
+  tap(runtime, 298, 430); tap(runtime, 233, 150);
+  check(runtime.screen().page == Page::Home, "menu final page return restores exploration");
   MemoryStore four; legacyOwned(four, {1,4,7,25});
   Runtime partners(four, platform); start(partners); openMenu(partners); select(partners, 2);
   tap(partners, 298, 430);
@@ -206,7 +208,7 @@ void resourcesAndHomeTouch() {
   check(runtime.screen().page == Page::Menu, "routes top touch returns to the moved main menu");
   tap(runtime, 233, 52);
   check(runtime.screen().page == Page::Home, "main-menu top touch returns home");
-  tap(runtime, 233, 233); tap(runtime, 298, 430); tap(runtime, 233, 218);
+  tap(runtime, 233, 233); tap(runtime, 298, 430); tap(runtime, 233, 286);
   check(runtime.screen().page == Page::Resources, "resources entry opens its own page");
   screenshot(runtime, "resources");
   tap(runtime, 233, 306);

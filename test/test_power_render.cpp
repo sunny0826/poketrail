@@ -12,7 +12,7 @@ void powerOnlyWake() {
     openMenu(runtime);
     if (entry == 0) idle(runtime, 30020);
     else if (entry == 1) { powerClick(runtime); frame(runtime); }
-    else select(runtime, 6);
+    else select(runtime, 7);
     const auto before = runtime.screen();
     check(runtime.dimmed(), "all sleep entries leave the screen dark");
     M5.Display.beginObservation();
@@ -115,7 +115,7 @@ void powerBlocked() {
   {
     MemoryStore store; ready(store);
     PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-    openMenu(runtime); select(runtime, 5);
+    openMenu(runtime); select(runtime, 6);
     check(runtime.screen().page == Page::Practice, "practice is active");
     powerClick(runtime);
     check(!runtime.dimmed() && platform.sleeps == 0, "power click cannot sleep active practice");
@@ -153,7 +153,7 @@ void powerBlocked() {
 void powerSafePages() {
   {
     MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-    openMenu(runtime); select(runtime, 5);
+    openMenu(runtime); select(runtime, 6);
     for (unsigned elapsed = 0; elapsed < 6500; elapsed += 20) frame(runtime);
     tap(runtime, 233, 30); idle(runtime, 1700);
     check(runtime.screen().page == Page::Pause && runtime.practiceView().paused, "practice reaches pause");
@@ -168,7 +168,7 @@ void powerSafePages() {
   }
   {
     MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-    openMenu(runtime); select(runtime, 4); select(runtime, 1); select(runtime, 0); edge(runtime, false, true);
+    openMenu(runtime); select(runtime, 5); select(runtime, 1); select(runtime, 0); edge(runtime, false, true);
     const auto draft = runtime.screen(); const unsigned writes = platform.clockWrites;
     check(draft.page == Page::Clock && draft.editing, "clock editor is open with a draft");
     powerClick(runtime);

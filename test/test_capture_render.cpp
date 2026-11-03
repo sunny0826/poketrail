@@ -82,7 +82,7 @@ void practiceCapture() {
   const uint32_t failSeed = practiceSeed(false, firstSpecies);
   check(successSeed && failSeed, "deterministic practice seeds available");
   p.seed = successSeed;
-  openMenu(r, p); select(r, p, 5);
+  openMenu(r, p); select(r, p, 6);
   check(r.screen().page == Page::Practice, "menu offers capture practice");
   check(firstSpecies == r.screen().practiceSpecies,
         "practice rolls a random species for each session");
@@ -129,7 +129,7 @@ void singleRingAim() {
     if (!practice) savedVictory(store, s, true);
     TestPlatform p; Runtime r(store, p); start(r);
     if (practice) {
-      skipDateAndStarter(r, p); openMenu(r, p); select(r, p, 5); winPractice(r, p);
+      skipDateAndStarter(r, p); openMenu(r, p); select(r, p, 6); winPractice(r, p);
     }
     frame(r, 40);
     const auto baseline = capture_aim_test::lowerBand();
