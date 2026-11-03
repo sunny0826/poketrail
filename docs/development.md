@@ -21,7 +21,7 @@ PlatformIO 使用当前用户的 `~/.platformio` 工具缓存，项目依赖位�
 
 完成首次构建并安装 SDL2 后，运行 `rtk proxy mise run simulate` 打开桌面窗口。支持键盘、鼠标、模拟走路、时间快进和独立双槽存档。操作与平台限制见[桌面模拟指南](simulator.md)。模拟器与离屏渲染共用 [host_build.py](../scripts/host_build.py) 的编译入口和 Runtime 源文件清单。
 
-运行 `rtk proxy mise run test-simulator-e2e` 验证完整用户旅程、保存失败重试和进程强杀恢复。开发时可用 `-- --suite core` 只跑 P0，或 `-- --case capture` 选单场景；代码、测试或影响运行的配置改动交付前运行无筛选的全量套件，纯文档等非行为改动不要求执行。覆盖与限制见[模拟器 E2E](design/simulator-e2e.md)。
+运行 `rtk proxy mise run test-simulator-e2e` 验证完整用户旅程、保存失败重试和进程强杀恢复。默认用 `-- --case capture` 等选项验证受影响场景，必要时用 `-- --suite core` 覆盖 P0；局部改动的定向检查可作为交付验收。全量仅在[验证指南](verification.md#每次任务的-e2e-验收要求)的条件触发时执行。覆盖与限制见[模拟器 E2E](design/simulator-e2e.md)。
 
 ## GitHub Actions
 
@@ -33,9 +33,11 @@ PlatformIO 使用当前用户的 `~/.platformio` 工具缓存，项目依赖位�
 
 新功能必须随实现新增对应 E2E 测试：在 [test/simulator](../test/simulator) 新增场景或扩展已有场景的操作链和断言，接入 [runner](../scripts/run_simulator_e2e.py) 的默认全量运行，并更新[覆盖矩阵](design/simulator-e2e-coverage.md)。测试复用真实 SDL → Runtime 路径；涉及持久状态时验证新进程恢复。
 
-开发迭代按改动范围运行专项检查，必要时用 `--case` 或 `--suite core` 验证相关路径，不要每次小修改都跑全量。多 agent 协作时，子 agent 默认负责定向验证，主 agent 汇总代码、测试和文档改动后，在报告完成前统一运行一次 `rtk proxy mise run test-simulator-e2e`；也可指定一个验收 agent 执行，避免重复或并发跑全量。纯文档、注释、说明截图等非行为改动，只核对内容、链接与格式，不触发全量 E2E，也不中断正在运行的验收。
+默认按影响范围运行专项检查和相关 `--case`，包括新增功能、局部 UI、单流程修复和单场景测试调整。纯文档、注释、说明截图只核对内容、链接与格式，不触发 E2E，也不中断运行中的验收。
 
-全量失败后先排障和定向复测，修复集中完成后再跑全量。全量通过后，若无新改动或未解决的验证问题，不因总结、交接或准备 PR 重跑；验收后又有影响程序行为或测试有效性的改动时，集中完成后重新验收；纯文档等非行为改动复用已有结果。`--case`、`--suite core`、`--build-only` 或以前的通过记录不能代替本次最终改动的全量结果。失败或阻塞须报告为未完成验收，并保留新一轮证据。详细要求见[验证指南](verification.md#每次任务的-e2e-验收要求)。
+全量仅用于定向检查不足以覆盖的跨流程核心变化、存档协议与迁移、全局 E2E 基础设施变化，或明确的完整回归要求；边界见[验证指南](verification.md#每次任务的-e2e-验收要求)。主 agent 先说明触发理由，再自己或指定一个验收 agent 统一执行，子 agent 默认只做定向检查。
+
+失败先排障并定向复测，后续改动只重验受影响范围；只有再次命中全量条件才重跑。可组合未受影响的已有结果与修复后的定向结果，但须分别列出，不称为最终全量通过。`--build-only` 不证明行为通过，失败或阻塞必须如实报告，保留各轮证据。
 
 ## 检查入口
 
@@ -81,7 +83,7 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 
 `test_test_mode_render` 覆盖资源页和错误页顶部长按、来源确认、控制台翻页与返回、四种固定场景、手动 +1 步触发遭遇、模拟校时、故障选择、重置和退出。测试使用主机输入与存储替身，不执行 `main.cpp` 的完整设备切换链。操作入口见[设备内测试模式](usage-test-mode.md)，未覆盖边界见[测试模式验证说明](verification.md#测试模式的验证边界)。
 
-详细覆盖与限制见[验证说明](verification.md)。代码、测试或运行配置改动交付前运行全量 E2E，并按变更范围运行专项检查；固件变更还须运行 `build`。只改文档时核对命令、链接和事实，不重建固件或重跑全量 E2E。UI 变更须读取真实渲染截图，交互变更须验证实际输入路径。
+详细覆盖与限制见[验证说明](verification.md)。按变更范围运行专项检查和相关 E2E 场景，命中全量条件时再运行完整套件；固件变更还须运行 `build`。只改文档时核对命令、链接和事实，不重建固件或重跑全量 E2E。UI 变更须读取真实渲染截图，交互变更须验证实际输入路径。
 
 烧录后自动校时、单独校时与只读查询的命令见[时钟恢复](design/clock-recovery.md#单独校时与查询)。
 
