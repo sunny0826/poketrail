@@ -3,7 +3,7 @@
 namespace simulator { namespace e2e {
 void scenarioMigration(Driver& d,const std::string& phase) {
   if(phase=="schema6" || phase=="schema6-reload") { scenarioSchema6Upgrade(d,phase); return; }
-  d.check(d.save().schema==7,"legacy bytes upgraded to schema7");
+  d.check(d.save().schema==8,"legacy bytes upgraded to schema8");
   if(phase=="activity") {
     d.check(d.save().totalSteps==6293 && d.save().explorationCredit==1293,"frozen activity archive preserves accounting");
     d.check(d.save().phase==Phase::Walking && d.save().encounter.id==0,"obsolete activity encounter retired");

@@ -8,6 +8,7 @@
 #include <cstring>
 namespace pokedex { namespace ui {
 using namespace adventure;
+using i18n::Text;
 namespace {
 void bookIcon() {
   M5.Display.drawRect(207, 124, 52, 44, theme::kGold);
@@ -18,21 +19,35 @@ void bookIcon() {
   }
 }
 }
+void Screens::language(const ScreenState& s, const Engine& e) {
+  title(tr(Text::LanguageTitle), "", theme::kMint);
+  if (e.savePending()) alert(tr(Text::RetrySaveFirst), 180, theme::kGold);
+  else if (s.command != CommandResult::Applied && s.command != CommandResult::Duplicate)
+    line(s.command == CommandResult::Deferred && e.view().clock.pending.active ?
+         tr(Text::FinishClockFirst) : progressionMessage(s.command), 180, theme::kGold);
+  else if (s.languagePersistence == LanguagePersistence::SessionOnly)
+    line(tr(Text::SessionOnly), 180, theme::kGold);
+  item(s, 0, tr(Text::LanguageChinese), menu_layout::kTop, 0, false,
+       s.language == i18n::Language::Chinese ? tr(Text::InUse) : nullptr);
+  item(s, 1, tr(Text::LanguageEnglish), menu_layout::kTop, 0, false,
+       s.language == i18n::Language::English ? tr(Text::InUse) : nullptr);
+  item(s, 2, tr(Text::Back));
+}
 void Screens::menu(const ScreenState& s, const Engine& e) {
   const int top = menuTop(s, e);
   const auto phase = e.view().phase;
   char dexLabel[32], captureLabel[48];
-  snprintf(dexLabel, sizeof(dexLabel), "%u 图鉴", unsigned(kSpeciesCount));
-  snprintf(captureLabel, sizeof(captureLabel), "永久首捕 · %u种", unsigned(kSpeciesCount));
-  const char* const home[] = {phase == Phase::Walking ? "暂无遭遇" : phase == Phase::ThrowReady ? "继续捕捉" : "继续遭遇", "选择地区", "我的伙伴", dexLabel, "资源与数据", "捕获练习", "立即省电", "返回探索"};
-  const char* const resources[] = {"捕捉与步行记录", "日期与时间", "返回"};
-  const char* const date[] = {"设置日期时间", "暂不设置", "浏览图鉴"};
-  const char* const starters[] = {"妙蛙种子", "小火龙", "杰尼龟", "返回"};
-  const char* const routes[] = {"关都", "城都", "丰缘", "神奥", "合众", "返回"};
-  const char* const encounter[] = {"开始对战", "捕获练习", "选择伙伴", "稍后再战"};
-  const char* const pause[] = {"继续", "确认撤退"};
-  const char* const records[] = {captureLabel, "最近32次捕捉", "今日与14日日汇总", "每日与长期里程碑", "返回"};
-  const char* const error[] = {"重试保存 / 读取", "浏览图鉴"};
+  snprintf(dexLabel, sizeof(dexLabel), tr(Text::PokedexCount), unsigned(kSpeciesCount));
+  snprintf(captureLabel, sizeof(captureLabel), tr(Text::FirstCapturesCount), unsigned(kSpeciesCount));
+  const char* const home[] = {phase == Phase::Walking ? tr(Text::NoEncounter) : phase == Phase::ThrowReady ? tr(Text::ResumeCatch) : tr(Text::ResumeEncounter), tr(Text::ChooseRegion), tr(Text::MyPartners), dexLabel, tr(Text::Resources), tr(Text::CapturePractice), tr(Text::SleepNow), tr(Text::LanguageMenu), tr(Text::ReturnExploration)};
+  const char* const resources[] = {tr(Text::CaptureWalkRecords), tr(Text::DateTime), tr(Text::Back)};
+  const char* const date[] = {tr(Text::SetDateTime), tr(Text::SkipDateTime), tr(Text::BrowsePokedex), tr(Text::LanguageMenu)};
+  const char* const starters[] = {speciesName(1), speciesName(4), speciesName(7), tr(Text::Back)};
+  const char* const routes[] = {tr(Text::RouteKanto), tr(Text::RouteJohto), tr(Text::RouteHoenn), tr(Text::RouteSinnoh), tr(Text::RouteUnova), tr(Text::Back)};
+  const char* const encounter[] = {tr(Text::StartBattle), tr(Text::CapturePractice), tr(Text::ChoosePartner), tr(Text::BattleLater)};
+  const char* const pause[] = {tr(Text::Continue), tr(Text::ConfirmRetreat)};
+  const char* const records[] = {captureLabel, tr(Text::RecentThirtyTwo), tr(Text::TodayAndHistory), tr(Text::DailyLifetime), tr(Text::Back)};
+  const char* const error[] = {tr(Text::RetrySaveLoad), tr(Text::BrowsePokedex), tr(Text::LanguageMenu)};
   const char* const* labels = nullptr;
   switch (s.page) {
     case Page::Menu: labels = home; break;
@@ -53,9 +68,9 @@ void Screens::menu(const ScreenState& s, const Engine& e) {
       for (unsigned id = 1; id <= kSpeciesCount; ++id) if (owns(e.view(), id)) {
         item(s, row++, speciesName(id), top, id, id == e.view().partner);
       }
-      item(s, row, "返回", top); return;
+      item(s, row, tr(Text::Back), top); return;
     }
-    case Page::Result: item(s, 0, "确认结果 · 继续探索", top); return;
+    case Page::Result: item(s, 0, tr(Text::AcceptResult), top); return;
     default: return;
   }
   for (unsigned i = 0; i < menuCount(s, e); ++i) item(s, i, labels[i], top);
@@ -65,46 +80,52 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
   char text[100];
   switch (s.page) {
     case Page::Menu:
-      title("步行探险", "", theme::kMint);
+      fitLine(tr(Text::WalkingAdventure), 52, 140, theme::kText);
       break;
     case Page::Resources: {
-      title("资源与数据", "", theme::kGold);
-      snprintf(text, sizeof(text), "%s %llu 步 · %s", v.clock.trusted ? "今日" : "上次记录",
+      title(tr(Text::Resources), "", theme::kGold);
+      snprintf(text, sizeof(text), tr(Text::StepsRoute), v.clock.trusted ? tr(Text::Today) : tr(Text::LastRecord),
                static_cast<unsigned long long>(v.today.steps), routeName(v.route));
-      line(text, 80, theme::kMint);
+      M5.Display.setFont(&fonts::efontCN_16);
+      if (s.language == i18n::Language::English && M5.Display.textWidth(text) > 300) {
+        snprintf(text, sizeof(text), tr(Text::StepsContext), v.clock.trusted ? tr(Text::Today) : tr(Text::LastRecord),
+                 static_cast<unsigned long long>(v.today.steps));
+        line(text, 80, theme::kMint);
+        line(routeName(v.route), 110, theme::kMint);
+      } else line(text, 80, theme::kMint);
       captureBadge(v, 312, 110);
       const EvolutionView progress = e.evolutionView(v.partner);
-      snprintf(text, sizeof(text), "%s · %s", speciesName(v.partner), progress.count ? "培养" : "最终形态");
+      snprintf(text, sizeof(text), "%s · %s", speciesName(v.partner), progress.count ? tr(Text::Training) : tr(Text::FinalForm));
       line(text, 132, theme::kMuted);
-      if (!progress.count) snprintf(text, sizeof(text), "陪伴 %llu 步", static_cast<unsigned long long>(progress.walked));
-      else snprintf(text, sizeof(text), "%llu / %lu 步", static_cast<unsigned long long>(progress.available),
+      if (!progress.count) snprintf(text, sizeof(text), tr(Text::WalkedSteps), static_cast<unsigned long long>(progress.walked));
+      else snprintf(text, sizeof(text), tr(Text::TrainingRatio), static_cast<unsigned long long>(progress.available),
                     static_cast<unsigned long>(progress.options[0].cost));
       line(text, 156, theme::kText);
-      if (e.stepsIncomplete()) alert("部分步数缺失", 183, theme::kRed);
-      else if (e.loadResult().degraded) alert("已从备用存档恢复", 183, theme::kGold);
+      if (e.stepsIncomplete()) alert(tr(Text::StepsIncomplete), 183, theme::kRed);
+      else if (e.loadResult().degraded) alert(tr(Text::BackupRestored), 183, theme::kGold);
       else if (v.phase == Phase::Walking) {
         if (!remainingEncounters(v, v.route)) {
           bool all = true;
           for (uint8_t i = 0; i < kRegionCount; ++i) all = all && !remainingEncounters(v, regionAt(i));
-          alert(all ? "普通宝可梦已全部捕获" : "本地区已捕获完 · 可换地区", 183, theme::kGold);
+          alert(all ? tr(Text::AllCaught) : tr(Text::RegionCaught), 183, theme::kGold);
         } else {
-          snprintf(text, sizeof(text), "下次遭遇还差 %llu 步", static_cast<unsigned long long>(
+          snprintf(text, sizeof(text), tr(Text::NextEncounterSteps), static_cast<unsigned long long>(
             v.explorationCredit < v.encounterTarget ? v.encounterTarget - v.explorationCredit : 0));
           alert(text, 183, theme::kGold);
         }
-      } else alert("已有遭遇 · 随时继续", 183, theme::kGold);
+      } else alert(tr(Text::EncounterWaiting), 183, theme::kGold);
       break;
     }
     case Page::DateWelcome:
-      title("先确认日期", v.clock.pending.active ? "上次校时未完成，请重新确认" : "设备离线计时，无需手机", theme::kGold);
+      title(tr(Text::ConfirmDate), v.clock.pending.active ? tr(Text::ClockPending) : tr(Text::OfflineClock), theme::kGold);
       M5.Display.drawCircle(233, 133, 29, theme::kGold);
       M5.Display.drawLine(233, 111, 233, 133, theme::kGold);
       M5.Display.drawLine(233, 133, 249, 142, theme::kGold);
-      line("暂不设置仍可累计步数", 174, theme::kText);
-      line("捕捉时间会记为未知", 194, theme::kMuted);
+      line(tr(Text::SkipKeepsSteps), 174, theme::kText);
+      line(tr(Text::CaptureTimeUnknown), 194, theme::kMuted);
       break;
     case Page::Starter:
-      title("选择最初的伙伴", "只能领取一次", theme::kGold);
+      title(tr(Text::ChooseStarter), tr(Text::StarterOnce), theme::kGold);
       if (s.selected < 3) {
         const uint16_t ids[] = {1, 4, 7};
         actorShadow(233, 151);
@@ -113,15 +134,15 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
       break;
     case Page::Routes: {
       const Route region = s.selected < kRegionCount ? regionAt(uint8_t(s.selected)) : v.route;
-      title("选择地区", "只影响下一场遭遇", theme::routeColor(region));
+      title(tr(Text::ChooseRegion), tr(Text::NextEncounterOnly), theme::routeColor(region));
       sceneThumbnail(region, 233, 151);
       break;
     }
     case Page::Partners: {
-      title("我的伙伴", "", theme::kMint);
+      title(tr(Text::MyPartners), "", theme::kMint);
       unsigned owned = 0, row = 0;
       for (uint16_t id = 1; id <= kSpeciesCount; ++id) if (owns(v, id)) ++owned;
-      snprintf(text, sizeof(text), "%u 位已拥有", owned); line(text, 80, theme::kMint);
+      snprintf(text, sizeof(text), tr(Text::OwnedCount), owned); line(text, 80, theme::kMint);
       for (uint16_t id = 1; id <= kSpeciesCount; ++id) if (owns(v, id) && row++ == s.selected) {
         M5.Display.drawCircle(233, 136, 48, theme::kOutline);
         thumbnail(id, 233, 137, 2); break;
@@ -130,20 +151,20 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
     }
     case Page::Encounter:
       scene(v.encounter.route, true);
-      title("发现宝可梦", speciesName(v.encounter.species), theme::kGold);
+      title(tr(Text::PokemonFound), speciesName(v.encounter.species), theme::kGold);
       actorShadow(233, 147);
       sprite(v.encounter.species, now, resultPlayback_, 147, 233, 0, 2, 110);
       break;
     case Page::Pause:
-      title("已暂停", s.practice ? "练习不消耗机会" : "继续后进入下一拍", theme::kGold);
+      title(tr(Text::Paused), s.practice ? tr(Text::PracticeFree) : tr(Text::ResumeNextBeat), theme::kGold);
       M5.Display.fillRect(216, 120, 13, 44, theme::kGold);
       M5.Display.fillRect(239, 120, 13, 44, theme::kGold);
       break;
     case Page::Result:
-      title(v.result == Result::Captured ? "捕捉成功" : v.result == Result::Lost ? "对战结束" :
-            v.result == Result::Retreated ? "已经撤退" : v.result == Result::Released ?
-            (v.captureCounts[v.encounter.species - 1] ? "已捕获 · 遭遇结束" : "已放弃捕捉") :
-            v.result == Result::MigrationRetired ? "旧遭遇已结清" : "宝可梦离开了",
+      title(v.result == Result::Captured ? tr(Text::CaptureSuccess) : v.result == Result::Lost ? tr(Text::BattleOver) :
+            v.result == Result::Retreated ? tr(Text::Retreated) : v.result == Result::Released ?
+            (v.captureCounts[v.encounter.species - 1] ? tr(Text::AlreadyCaughtEnd) : tr(Text::CaptureAbandoned)) :
+            v.result == Result::MigrationRetired ? tr(Text::LegacySettled) : tr(Text::PokemonLeft),
             speciesName(v.encounter.species),
             v.result == Result::Captured || v.result == Result::MigrationRetired ? theme::kGold : theme::kMuted);
       if (v.result == Result::Captured && v.recentSize) {
@@ -161,46 +182,46 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
         }
         actorShadow(233, 168);
         sprite(v.encounter.species, now, resultPlayback_, 168, 233, 0, 2, 120);
-        if (first) line("首次捕获", 246, theme::kGold);
+        if (first) line(tr(Text::FirstCapture), 246, theme::kGold);
         calendar::CivilTime local;
         if (c.at.timeKnown && calendar::fromUtc(c.at.utcSeconds, c.at.offsetMinutes, local))
           snprintf(text, sizeof(text), "%s · %04d-%02d-%02d %02d:%02d", routeName(c.route),
                    local.year, local.month, local.day, local.hour, local.minute);
-        else snprintf(text, sizeof(text), "%s · 时间未知", routeName(c.route));
+        else snprintf(text, sizeof(text), tr(Text::RouteTimeUnknown), routeName(c.route));
         line(text, 270, theme::kMuted);
         badges(c.achievementMask, 294);
       } else {
         M5.Display.drawCircle(233, 164, 52, theme::kOutline);
         thumbnail(v.encounter.species, 233, 164, 2);
         if (v.result == Result::MigrationRetired) {
-          line("升级已退回 500 探索步", 249, theme::kGold);
-          line("精灵球不限量", 277, theme::kText);
+          line(tr(Text::MigrationRefund), 249, theme::kGold);
+          line(tr(Text::UnlimitedBalls), 277, theme::kText);
         } else if (v.result == Result::Released && !v.captureCounts[v.encounter.species - 1]) {
           if (v.encounter.ruleVersion < 3 && !availableBalls(v)) {
-            line("本场没有可用精灵球", 249, theme::kRed);
-            line("已结束本场", 277, theme::kMuted);
+            line(tr(Text::NoBalls), 249, theme::kRed);
+            line(tr(Text::EncounterEnded), 277, theme::kMuted);
           } else {
-            line("不退探索步数或已用精灵球", 249, theme::kRed);
+            line(tr(Text::NoRefund), 249, theme::kRed);
           }
-        } else line("伙伴仍在，继续步行探索", 249, theme::kMuted);
+        } else line(tr(Text::KeepExploring), 249, theme::kMuted);
       }
       menu(s, e); return;
     case Page::Records:
-      title("捕捉与步行记录", "", theme::kGold);
-      snprintf(text, sizeof(text), "每日最高 %llu 步", static_cast<unsigned long long>(v.bestDaySteps));
+      title(tr(Text::CaptureWalkRecords), "", theme::kGold);
+      snprintf(text, sizeof(text), tr(Text::BestDaySteps), static_cast<unsigned long long>(v.bestDaySteps));
       line(text, 80, theme::kGold); bookIcon();
       break;
     case Page::Error:
-      title(e.savePending() ? "暂时无法保存" : "存储不可用", e.savePending() ? "结果尚未确认" : "玩法已暂停", theme::kRed);
+      title(e.savePending() ? tr(Text::SaveUnavailable) : tr(Text::StorageUnavailable), e.savePending() ? tr(Text::ResultUnconfirmed) : tr(Text::GameplayPaused), theme::kRed);
       warning(233, 133, theme::kRed);
       if (e.savePending()) {
-        line("保存失败 · 重试将保留同一次结果", 184, theme::kGold);
+        line(tr(Text::RetrySameResult), 184, theme::kGold);
       } else {
-        const char* message = "存储读写失败";
+        const char* message = tr(Text::StorageIoFailed);
         switch (e.loadResult().status) {
-          case LoadStatus::NeedsProvisioning: message = "存储未初始化"; break;
-          case LoadStatus::Corrupt: message = "存档损坏 · 保留原文件"; break;
-          case LoadStatus::UnsupportedVersion: message = "存档版本较新 · 请升级"; break;
+          case LoadStatus::NeedsProvisioning: message = tr(Text::StorageUninitialized); break;
+          case LoadStatus::Corrupt: message = tr(Text::CorruptPreserved); break;
+          case LoadStatus::UnsupportedVersion: message = tr(Text::NewerSave); break;
           default: break;
         }
         line(message, 184, theme::kGold);

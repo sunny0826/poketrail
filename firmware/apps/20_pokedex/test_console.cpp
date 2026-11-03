@@ -13,10 +13,11 @@ void starter(Save& s) {
   setRegistered(s, 1);
   setOwned(s, 1);
 }
-void buildScenario(Save& s, TestScenario scenario, uint64_t sequence) {
+void buildScenario(Save& s, TestScenario scenario, uint64_t sequence, i18n::Language language) {
   s.~Save();
   new (&s) Save();
   s.schema = kSchemaVersion;
+  s.language = language;
   s.sequence = sequence;
   s.bootGeneration = 1;
   s.encounterTarget = 300;
@@ -92,12 +93,16 @@ bool TestConsole::seed(Store& store, TestModeHost& host, TestScenario scenario) 
   if (!candidate) return false;
   const LoadResult loaded = store.load(*candidate);
   uint64_t sequence = 0;
-  if (loaded.status == LoadStatus::Loaded) sequence = candidate->sequence;
+  i18n::Language language = i18n::Language::Chinese;
+  if (loaded.status == LoadStatus::Loaded) {
+    sequence = candidate->sequence;
+    language = candidate->language;
+  }
   else if (loaded.status != LoadStatus::Empty) {
     if (!host.enterTest(TestSeed::Blank)) return false;
   }
   if (sequence == UINT64_MAX) return false;
-  buildScenario(*candidate, scenario, sequence + 1);
+  buildScenario(*candidate, scenario, sequence + 1, language);
   if (!validate(*candidate)) return false;
   auto bytes = makeLargeObject<std::array<uint8_t, codec::maxEncodedSize>>();
   if (!bytes) return false;
@@ -106,26 +111,6 @@ bool TestConsole::seed(Store& store, TestModeHost& host, TestScenario scenario) 
   if (codec::decode(bytes->data(), length, *candidate) != codec::DecodeStatus::Ok ||
       !validate(*candidate)) return false;
   return store.commit(*candidate) == CommitStatus::Committed;
-}
-
-const char* testScenarioLabel(TestScenario scenario) {
-  switch (scenario) {
-    case TestScenario::AccountBalls: return "账户 · 2000步 / 1球";
-    case TestScenario::NearEncounter: return "临近遭遇 · 299/300步";
-    case TestScenario::CurrentThrow: return "当前投球 · 已用1球";
-    case TestScenario::LegacyEncounter: return "旧规则 · rule1 在途";
-  }
-  return "";
-}
-
-const char* testFaultLabel(TestFault fault) {
-  switch (fault) {
-    case TestFault::None: return "无故障";
-    case TestFault::CommitBefore: return "写入前失败";
-    case TestFault::CommitAfter: return "写入后失败";
-    case TestFault::Load: return "读取失败";
-  }
-  return "";
 }
 
 } }

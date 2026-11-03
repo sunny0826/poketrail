@@ -1,10 +1,6 @@
 {
   "revision": "f38eb24b70f8462976154f534e79bf2bdd7af847",
-  "language": {
-    "id": 12,
-    "identifier": "zh-hans"
-  },
-  "scope": "National Pokedex 152-251 default forms; Chinese names, types, height and weight only.",
+  "scope": "National Pokedex 1-649 default forms; Chinese metadata and English names and types.",
   "sources": {
     "pokemon.csv": {
       "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/f38eb24b70f8462976154f534e79bf2bdd7af847/data/v2/csv/pokemon.csv",
@@ -26,5 +22,15 @@
       "sha256": "685230c51074cf2f723debcf827a4df4c36ab0ec7e929c806ad65a3e40958705",
       "bytes": 2843
     }
-  }
+  },
+  "languages": [
+    {
+      "id": 12,
+      "identifier": "zh-hans"
+    },
+    {
+      "id": 9,
+      "identifier": "en"
+    }
+  ]
 }

@@ -19,7 +19,5 @@ class TestConsole {
   static bool seed(Store&, TestModeHost&, TestScenario);
 };
 
-const char* testScenarioLabel(TestScenario);
-const char* testFaultLabel(TestFault);
 
 } }

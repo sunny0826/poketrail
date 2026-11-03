@@ -21,7 +21,7 @@ void selectEveryRegion(MemoryStore& store, Runtime& runtime) {
     select(runtime, index);
     settle(runtime); home(runtime);
     check(runtime.engine().view().route == region, "real region menu updates the displayed region");
-    check(glyph(routeName(region), 81, theme::routeColor(region), 107, true), "home labels the actual current scene");
+    check(glyph(routeName(pokedex::i18n::Language::Chinese, region), 81, theme::routeColor(region), 107, true), "home labels the actual current scene");
     colors[index] = M5.Display.readPixel(233, 110);
     char name[40]; std::snprintf(name, sizeof(name), "home-scene-%u", index); screenshot(runtime, name);
     Save loaded; check(store.load(loaded).status == LoadStatus::Loaded && loaded.route == region,

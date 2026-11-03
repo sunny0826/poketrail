@@ -10,6 +10,7 @@
 #include <vector>
 using namespace pokedex::adventure;
 using storage_test::state;
+using pokedex::i18n::Language;
 static int checks;
 #define CHECK(x) do { ++checks; if (!(x)) { std::fprintf(stderr, "test_mode line %d: %s\n", __LINE__, #x); std::exit(1); } } while (0)
 
@@ -40,7 +41,7 @@ static void officialBytesStay() {
   CHECK(d.begin() == LoadStatus::Loaded);
   Save a; a.sequence = 1; a.encounterTarget = 300;
   CHECK(d.commit(a) == CommitStatus::Committed);
-  Save b = a; b.sequence = 2; b.encounterTarget = 333;
+  Save b = a; b.sequence = 2; b.encounterTarget = 333; b.language = Language::English;
   CHECK(d.commit(b) == CommitStatus::Committed);
   const auto beforeA = raw("/adventure/save-a.bin");
   const auto beforeB = raw("/adventure/save-b.bin");
@@ -54,8 +55,8 @@ static void officialBytesStay() {
   CHECK(raw("/adventure-test/save-a.bin") == beforeA);
   CHECK(raw("/adventure-test/save-b.bin") == beforeB);
   Save loaded;
-  CHECK(d.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 2);
-  Save test = loaded; test.sequence = 3; test.encounterTarget = 333;
+  CHECK(d.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 2 && loaded.language == Language::English);
+  Save test = loaded; test.sequence = 3; test.encounterTarget = 333; test.language = Language::Chinese;
   CHECK(d.commit(test) == CommitStatus::Committed);
   CHECK(raw("/adventure/save-a.bin") == beforeA);
   CHECK(raw("/adventure/save-b.bin") == beforeB);
@@ -69,7 +70,7 @@ static void officialBytesStay() {
   CHECK(node("/adventure-test/active") == nullptr);
   CHECK(node("/adventure-test") == nullptr);
   Save after;
-  CHECK(d.load(after).status == LoadStatus::Loaded && after.sequence == 2);
+  CHECK(d.load(after).status == LoadStatus::Loaded && after.sequence == 2 && after.language == Language::English);
   CHECK(state.formats == 0);
 }
 
@@ -78,7 +79,7 @@ static void blankSeed() {
   officialDirectory();
   DeviceStore d;
   CHECK(d.begin() == LoadStatus::Loaded);
-  Save a; a.sequence = 1; a.encounterTarget = 300;
+  Save a; a.sequence = 1; a.encounterTarget = 300; a.language = Language::English;
   CHECK(d.commit(a) == CommitStatus::Committed);
   const auto before = raw("/adventure/save-a.bin");
   CHECK(d.enterTest(TestSeed::Blank));
@@ -88,10 +89,12 @@ static void blankSeed() {
   Save empty;
   CHECK(d.load(empty).status == LoadStatus::Empty);
   Save fresh; fresh.sequence = 1; fresh.encounterTarget = 320;
+  CHECK(fresh.language == Language::Chinese);
   CHECK(d.commit(fresh) == CommitStatus::Committed);
   CHECK(!raw("/adventure-test/save-a.bin").empty());
   CHECK(raw("/adventure/save-a.bin") == before);
   CHECK(d.leaveTest());
+  Save restored; CHECK(d.load(restored).status == LoadStatus::Loaded && restored.language == Language::English);
   CHECK(raw("/adventure/save-a.bin") == before);
   CHECK(state.formats == 0);
 }
@@ -219,10 +222,10 @@ static void ramOnlySession() {
   CHECK(d.testMode() && d.ramOnly());
   Save empty;
   CHECK(d.load(empty).status == LoadStatus::Empty);
-  Save a; a.sequence = 1; a.encounterTarget = 300;
+  Save a; a.sequence = 1; a.encounterTarget = 300; a.language = Language::English;
   CHECK(d.commit(a) == CommitStatus::Committed);
   Save loaded;
-  CHECK(d.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 1);
+  CHECK(d.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 1 && loaded.language == Language::English);
   CHECK(state.writes == 0);
   d.setFault(TestFault::Load);
   CHECK(d.load(loaded).status == LoadStatus::IoError);

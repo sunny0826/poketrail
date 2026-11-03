@@ -25,13 +25,15 @@
 
 上游采用 BSD 三条款形式的许可，版权为 Paul Hallett 与 PokéAPI contributors。原文保存在 [pokeapi-LICENSE.md](docs/licenses/pokeapi-LICENSE.md)，适用于保留的来源及其派生进化目录；分发固件时也须保留该声明。游戏中等级差 ×500 步、道具／交换 10000 步是本项目玩法规则，并非官方游戏参数。
 
-## 中文资料快照
+## 中英文资料
 
 [pokedex-gen1.json](assets/pokedex-gen1.json) 保存 151 种中文名称、属性、身高和体重，来源标注为 [dex.pokemon.cn 图鉴](https://dex.pokemon.cn/play/pokedex)，从早期生成数据保留。该快照没有随附明确的再分发许可证，本项目不对其主张 MIT 授权，也不声称已核实权利人授权。
 
 [Gen2](assets/pokedex-gen2.json)、[Gen3](assets/pokedex-gen3.json)、[Gen4](assets/pokedex-gen4.json)、[Gen5](assets/pokedex-gen5.json) 分别保存第二至第五世代（#152–649）的中文名称、属性、身高和体重，由 [build_pokedex.py](tools/build_pokedex.py) 从 [pokedex-source](assets/pokedex-source) 内的四份 PokeAPI CSV 离线生成。CSV 固定提交 `f38eb24b70f8462976154f534e79bf2bdd7af847`，版本、URL、字节数和 SHA256 见同目录 `manifest.json`；上游许可与进化资料相同，见 [pokeapi-LICENSE.md](docs/licenses/pokeapi-LICENSE.md)。生成器同时核对 Gen1 快照与同一来源一致。纯主机测试验证资料与来源，不改变第一世代既有再分发说明。
 
 [assets/sprite-scales.json](assets/sprite-scales.json) 是本项目手写的整数缩放类别表，不是上游素材。
+
+[pokedex_en_generated.hpp/.cpp](firmware/apps/20_pokedex/pokedex_en_generated.cpp) 的 #1–649 英文名称与属性也由 `build_pokedex.py` 从同一固定 PokeAPI CSV 生成，使用语言编号 9；中文资料使用语言编号 12。来源哈希和许可沿用上述清单，英文表不包含动画像素，也不替换第一世代中文快照。
 
 ## 固件依赖
 

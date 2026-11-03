@@ -7,6 +7,7 @@
 #include <cmath>
 namespace pokedex { namespace ui {
 using namespace adventure;
+using i18n::Text;
 namespace {
 int pulse(uint32_t age, unsigned start, unsigned peak, unsigned end, int amount) {
   if (age <= start || age >= end) return 0;
@@ -109,19 +110,19 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
       capture(s, v.encounter.species, now);
     } else if (e.throwView().active) {
       aim(v.encounter.species, now, true, int32_t(e.throwView().targetMs - now), s.charging, now - s.chargeStartMs);
-      line("松手投球 · 未投出也计一次", 399, theme::kMint);
+      line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
     } else if (legacyNoBalls) {
       // A legacy encounter with an empty ball stock cannot be thrown, and the
       // menu is gone, so the page carries its own way out.
       actorShadow(233, 147);
       sprite(v.encounter.species, now, battlePlayback_, 147, 233, 0, 2, 110);
-      line("本场没有可用精灵球", 196, theme::kRed);
-      item(s, 0, "结束本场 · 返回探索", menu_layout::kTop);
+      line(tr(Text::NoBalls), 196, theme::kRed);
+      item(s, 0, tr(Text::EndEncounter), menu_layout::kTop);
     } else {
       // Aiming state: the ball waits in the hand, no window runs yet and no
       // ring is drawn, so the ring only ever means "the clock is running".
       aim(v.encounter.species, now, false, 0, false, 0);
-      line("按住右键蓄力 · 松手投球", 399, theme::kMint);
+      line(tr(Text::HoldThrow), 399, theme::kMint);
     }
     return;
   }
@@ -141,7 +142,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
                                         -pulse(age, 0, 80, 330, 30));
   const Route route = s.page == Page::Practice ? regionOf(enemy) : v.encounter.route;
   scene(route, true, shake);
-  title(s.page == Page::Practice ? "捕获练习" : "节奏对战", "", theme::kMint);
+  title(s.page == Page::Practice ? tr(Text::CapturePractice) : tr(Text::RhythmBattle), "", theme::kMint);
   pauseGlyph();
   hp(speciesName(partner), b.playerHp, kPlayerHp, false, theme::kMint);
   hp(speciesName(enemy), b.enemyHp, kEnemyHp, true, theme::kGold);
@@ -166,13 +167,13 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   }
   cueRing(b, now);
   const uint8_t countdown = countdownDigit(b, now);
-  const char* result = attack ? (hit ? "命中" : "未命中") : (hit ? "躲开了" : "受伤了");
+  const char* result = attack ? (hit ? tr(Text::Hit) : tr(Text::Miss)) : (hit ? tr(Text::Dodged) : tr(Text::Hurt));
   const bool cueVisible = int32_t(b.targetMs - now) <= int32_t(kCueLeadMs);
   const bool shownAttack = shownAction(b, now) == Action::Attack;
-  const char* prompt = !cueVisible ? (b.frenzy ? "狂暴" : "") : shownAttack ?
-    (b.energy >= kSpecialEnergy ? "右键攻击 · 双键必杀" : "右键 · 攻击") : "左键 · 躲避";
+  const char* prompt = !cueVisible ? (b.frenzy ? tr(Text::Frenzy) : "") : shownAttack ?
+    (b.energy >= kSpecialEnergy ? tr(Text::AttackSpecial) : tr(Text::Attack)) : tr(Text::Dodge);
   const uint16_t promptColor = !cueVisible ? theme::kRed : shownAttack ? theme::kRed : theme::kBlue;
-  if (b.pauseRequested) line("本拍结束后暂停", 401, theme::kText, true);
+  if (b.pauseRequested) line(tr(Text::PauseAfterBeat), 401, theme::kText, true);
   else if (countdown) {
     const char digit[2] = {char('0' + countdown), 0};
     M5.Display.setTextDatum(middle_center);
@@ -180,7 +181,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     M5.Display.setTextColor(theme::kGold);
     M5.Display.drawString(digit, 233, kCountdownY);
   } else if (effect || b.consumed)
-    line(b.special ? "必杀命中" : result, 401,
+    line(b.special ? tr(Text::SpecialHit) : result, 401,
          b.special || perfect ? theme::kGold : effect && !hit ? theme::kMuted : theme::kText, true);
   else if (*prompt) line(prompt, 401, promptColor, true);
 }

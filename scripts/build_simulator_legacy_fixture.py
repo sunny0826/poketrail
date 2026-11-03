@@ -18,6 +18,9 @@ FIXTURES = {
     "schema6-coast.bin": ("05432f6", "test/simulator/schema6_fixture.cpp.txt",
                           CODEC + ("adventure_migration.hpp", "adventure_migration.cpp",
                                    "large_object.hpp", "route_masks_v4_generated.hpp")),
+    "schema7-progress.bin": ("95df92f1", "scripts/fixtures/schema7_progress.cpp",
+                             CODEC + ("adventure_migration.hpp", "adventure_migration.cpp",
+                                      "large_object.hpp", "route_masks_v4_generated.hpp")),
 }
 
 

@@ -3,6 +3,7 @@
 #include <cmath>
 
 namespace pokedex { namespace ui {
+using i18n::Text;
 namespace {
 void sparkle(int x, int y, int size, uint16_t color) {
   M5.Display.fillRect(x - size, y - 1, size * 2 + 2, 2, color);
@@ -21,17 +22,17 @@ void particles(uint32_t elapsed, bool outward) {
 }
 void Screens::evolutionPreviewTargets(const ScreenState& s, const adventure::Engine& e) {
   const auto view = e.evolutionView(s.evolutionAnim.from);
-  title("进化预览", speciesName(view.from), theme::kGold);
+  title(tr(Text::EvolutionPreview), speciesName(view.from), theme::kGold);
   thumbnail(view.from, 233, 140, 2);
   for (unsigned i = 0; i < view.count; ++i)
     item(s, i, speciesName(view.options[i].target), menu_layout::kTop, view.options[i].target);
-  item(s, view.count, "返回");
+  item(s, view.count, tr(Text::Back));
 }
 bool Screens::evolution(const ScreenState& s, uint32_t now) {
   const auto& anim = s.evolutionAnim;
   const auto frame = evolutionFrameAt(anim, now);
   const bool revealed = frame.stage == EvolutionStage::Reveal || frame.stage == EvolutionStage::Done;
-  title(s.page == Page::EvolutionPreview ? "进化预览" : revealed ? "进化完成" : "正在进化",
+  title(s.page == Page::EvolutionPreview ? tr(Text::EvolutionPreview) : revealed ? tr(Text::EvolutionComplete) : tr(Text::Evolving),
         nullptr, theme::kGold);
   M5.Display.drawCircle(233, 233, 155, theme::kPanelActive);
   M5.Display.drawCircle(233, 233, 160, theme::kPanel);
@@ -60,7 +61,7 @@ bool Screens::evolution(const ScreenState& s, uint32_t now) {
   const bool rendered = sprite(id, now, frame.target ? enemyBattlePlayback_ : battlePlayback_,
                                233, 233, glowing ? theme::kText : 0, 3, 250);
   fitLine(speciesName(revealed ? anim.to : anim.from), 379, 300, revealed ? theme::kMint : theme::kText);
-  line(revealed ? "按键 / 轻触继续" : "按键 / 轻触跳过", 411, theme::kMuted);
+  line(revealed ? tr(Text::PressContinue) : tr(Text::PressSkip), 411, theme::kMuted);
   return rendered;
 }
 } }

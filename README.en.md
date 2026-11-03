@@ -66,6 +66,8 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py \
 
 ## Getting started
 
+Choose **语言 / Language → English** from the main menu. The choice is saved and restored after restart, including Pokémon names, types, and instructions. On first launch, the same entry is on the second page of the date setup screen. New and upgraded saves default to Chinese. See [language settings](docs/usage.en.md#language-settings) for save errors and temporary use.
+
 After flashing with the project's script, the device synchronizes its clock to the flashing computer's current time. Once storage is available, choose Bulbasaur, Charmander, or Squirtle as your starter partner. You can also set the clock manually on the device or leave it unset for now. Total steps and exploration continue to increase; steps recorded while the date is unknown are not added to today's count later.
 
 On the home screen, press either side button or tap the screen to open the menu. The screen turns off after 30 seconds of inactivity; step counting and saving continue. Only a short press of the power key wakes the screen; touch and side buttons do not. See the [usage guide](docs/usage.en.md) for page controls.

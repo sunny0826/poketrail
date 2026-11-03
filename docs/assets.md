@@ -6,7 +6,7 @@
 | --- | --- |
 | 动画 | `rtk proxy mise run sprites` |
 | 缩略图 | `rtk proxy mise run icons`，初次用 `icons-download` |
-| 中文资料 | `rtk proxy mise run pokedex` |
+| 中文资料与英文名称属性 | `rtk proxy mise run pokedex` |
 | 地区场景 | `rtk proxy mise run scenes` |
 | 进化规则 | `rtk proxy mise exec -- python3 tools/build_evolution_rules.py` |
 | 遭遇目录 | `rtk proxy mise exec -- python3 tools/build_adventure_catalog.py` |
@@ -32,5 +32,7 @@ rtk proxy mise exec -- python3 tools/build_sprites.py --ids 1,4,7 --out /tmp/spr
 关都、城都、丰缘、神奥、合众五个地区场景由 `tools/design_preview_scenes.py` 汇总生成：绘制工具在 `tools/scene_paint.py`，每个地区一个模块（`tools/scene_kanto.py`、`scene_johto.py`、`scene_hoenn.py`、`scene_sinnoh.py`、`scene_unova.py`）；清单位于 `assets/scene-backgrounds.json`，生成表按固件地区顺序排列。普通与暗色合成图，以及首页远景／中层／近层均为 228×135 RGB565，绘制时逐行放大 2 倍；远景不得含透明像素，中层与近层在地面线以上为透明。场景数组存于 Flash，只需 456 像素的行缓冲。首页由 `Screens::advanceScene()` 持有视觉步数，屏幕唤醒且首页可见时每 100ms 默认推进一次，地面向下循环，地区切换归零；走路不加速，其他页面和熄屏期间暂停。该进度不进入 Engine 或存档。遭遇、战斗和投球使用已保存遭遇地区的静态暗色图，选择新地区不改变当前遭遇背景；捕获练习使用对手物种所属地区。
 
 第二至第五世代中文名、属性、身高和体重来自 PokeAPI 提交 `f38eb24b70f8462976154f534e79bf2bdd7af847` 的四份 CSV，保存在 [pokedex-source](../assets/pokedex-source)，哈希和字节数见同目录 `manifest.json`；[build_pokedex.py](../tools/build_pokedex.py) 只读本地缓存生成各世代图鉴 JSON，保留既有 Gen1／Gen2 快照，普通构建不访问网络。
+
+同一生成器还读取语言编号 9 的英文名称和属性，生成 `pokedex_en_generated.hpp/.cpp`，覆盖 #1–649；中文使用编号 12。英文显示资料独立于动画数组，语言切换不改动像素、缩放或帧时长。`test-pokedex` 核对两种语言所用来源、全部英文条目与生成表。
 
 动画按原始帧时长推进，点击和战斗动作不会重启动画。双角色各自持有播放位置，共用解码缓冲；白闪和残影只改变本帧颜色与位置。Engine 与 HP 在判定后立即更新，结束战斗时页面保留最多 450ms 动作窗口，失败保存立即转到错误页。判定窗口和下一拍时间不变。进化关系使用编号 1～649，缩放不代表实际身高比例。

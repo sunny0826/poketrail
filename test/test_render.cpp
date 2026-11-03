@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <vector>
 #include "support/verification_output.hpp"
+#include "support/rendered_text.hpp"
 
 #include "../firmware/apps/20_pokedex/viewer_screen.cpp"
 
@@ -356,6 +357,26 @@ void checkViewerReentry() {
   }
 }
 
+void checkLanguageAnimation() {
+  resetFrame(); begin();
+  host_time_ms = 240; loop();
+  const auto state = g_state;
+  const auto before = M5.Display.framebuffer();
+  setLanguage(pokedex::i18n::Language::English);
+  check(g_state.sprite_index == state.sprite_index && g_state.frame_index == state.frame_index &&
+        g_state.animation_started_ms == state.animation_started_ms,
+        "language invalidates text without resetting selected species or animation time");
+  check(render(), "language redraw renders the same animation frame");
+  bool sameActor = true;
+  for (int y = 90; y < 330; ++y) for (int x = 80; x < 386; ++x)
+    if (before[y * 468 + x] != M5.Display.framebuffer()[y * 468 + x]) sameActor = false;
+  check(sameActor, "language redraw preserves every actor pixel");
+  check(rendered_text::contains("Bulbasaur", theme::kText) &&
+        rendered_text::contains("Grass / Poison", theme::kBlue), "viewer renders independent English name and type oracle");
+  savePPM(verificationOutput("viewer-language-english.ppm").c_str());
+  setLanguage(pokedex::i18n::Language::Chinese); render();
+}
+
 void writeAnimationEvidence() {
   for (const uint16_t id : {83, 150, 146, 249}) {
     resetFrame();
@@ -400,6 +421,7 @@ int main() {
   checkInputLoop();
   checkButtonLoop();
   checkViewerReentry();
+  checkLanguageAnimation();
   checkEvolutionSizes();
   writeAnimationEvidence();
   std::free(g_pixels);

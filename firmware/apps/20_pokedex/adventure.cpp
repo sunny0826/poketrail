@@ -124,6 +124,16 @@ CommandResult Engine::selectRoute(Route route) {
   createEncounter(candidate_, mixRandom(state_.bootGeneration ^ uint32_t(state_.nextEncounterId)));
   return submit();
 }
+CommandResult Engine::selectLanguage(i18n::Language language) {
+  const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
+  if (!i18n::validLanguage(language)) return CommandResult::InvalidInput;
+  if (state_.clock.pending.active ||
+      (battle_.view().active && !battle_.view().paused) || throw_.active)
+    return CommandResult::Deferred;
+  if (state_.language == language) return CommandResult::Duplicate;
+  stage(); candidate_.language = language;
+  return submit();
+}
 CommandResult Engine::startBattle(uint32_t now) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
   if (state_.phase != Phase::EncounterReady || !owns(state_, state_.encounter.partner)) return CommandResult::InvalidPhase;

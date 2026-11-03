@@ -2,6 +2,7 @@
 #include "viewer_screen.hpp"
 #include "capture_badge_checks.hpp"
 #include "../support/round_layout_checks.hpp"
+#include "../support/rendered_text.hpp"
 
 namespace simulator {
 namespace e2e {
@@ -43,8 +44,7 @@ void bootNewSave(Driver& d) {
   d.frames();
   d.check(d.screen().page == Page::DateWelcome, "new save opens date welcome");
   d.shot("date-welcome");
-  d.press(SDL_SCANCODE_RIGHT);
-  d.press(SDL_SCANCODE_RETURN);
+  d.select(1);
   d.until([&] { return d.screen().page == Page::Starter; }, 4000, "starter page after skipping date");
   d.shot("starter");
   d.select(0);
@@ -124,7 +124,13 @@ void scenarioJourney(Driver& d, const std::string& phase) {
 // P0-02：新档走路遭遇 → 真实对战获胜 → 完美投球捕获 → 确认；
 // 检查图鉴/伙伴/记录入口与未知日期，reload 断言无重复奖励。
 void scenarioCapture(Driver& d, const std::string& phase) {
-  if (phase == "run" || phase == "fixed" || phase == "slow") {
+  const bool english = phase == "english" || phase == "english-reload";
+  if (phase == "run" || phase == "fixed" || phase == "slow" || phase == "english") {
+    if (english) {
+      d.select(3); d.select(1); d.select(2);
+      d.check(d.runtime().language() == pokedex::i18n::Language::English, "capture journey selects English through welcome");
+      d.check(d.screen().selected == 3, "language returns to the same welcome entry");
+    }
     bootNewSave(d);
     checkCaptureBadge(d, 0, "gifted-starter");
     d.walk(500);
@@ -161,6 +167,8 @@ void scenarioCapture(Driver& d, const std::string& phase) {
             "frozen perfect capture roll and probability");
     checkCaptureRecord(d, species);
     d.shot("result-captured");
+    if (english) d.check(rendered_text::contains("Caught!", theme::kText) &&
+                         rendered_text::contains("Lickitung", theme::kGold), "capture result displays English outcome and species");
     d.check(round_layout_test::clearAbove(menu_layout::rowBounds(0, menuTop(d.screen(), d.runtime().engine())), 8),
             "captured result text keeps clear of its confirm button");
     acknowledge(d);
@@ -173,6 +181,8 @@ void scenarioCapture(Driver& d, const std::string& phase) {
       d.press(SDL_SCANCODE_LEFT);
     d.check(pokedex::viewer_screen::species() == species, "viewer displays captured species");
     d.shot("viewer-after-capture");
+    if (english) d.check(rendered_text::contains("Lickitung", theme::kText) &&
+                         rendered_text::contains("Normal", theme::kBlue), "captured viewer renders English name and type");
     d.back();
     d.until([&] { return d.screen().page == Page::Home; }, 4000, "back home from viewer");
     d.homeMenu();
@@ -198,6 +208,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.check(d.screen().selected == species - 1 && d.save().firstCapture[d.screen().selected].species == species,
             "first capture card displays actual capture");
     d.shot("first-captures");
+    if (english) d.check(rendered_text::contains("#108 Lickitung", theme::kGold), "first-capture card renders the English record");
     d.back();
     d.until([&] { return d.screen().page == Page::Records; }, 4000, "back to records");
     d.back();
@@ -208,7 +219,9 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.until([&] { return d.screen().page == Page::Home; }, 4000, "back home from menu");
     d.event("capture-run-done", "species=" + std::to_string(species));
     d.close();
-  } else if (phase == "reload") {
+  } else if (phase == "reload" || phase == "english-reload") {
+    if (english) d.check(d.runtime().language() == pokedex::i18n::Language::English,
+                         "capture journey restores English in a new process");
     d.frames();
     d.check(d.screen().page == Page::Home, "reload lands on home");
     d.check(d.save().starter == 1, "starter survives restart");

@@ -10,14 +10,19 @@
 #include "sprites_generated.hpp"
 #include "battery_screen.hpp"
 #include "screen_theme.hpp"
+#include "i18n.hpp"
+#include "pokedex_text.hpp"
 
 namespace pokedex { namespace viewer_screen {
 
+using i18n::Text;
 using pokedex::viewer::State;
 using pokedex::viewer::Input;
 using namespace pokedex::ui;
 
 State g_state;
+i18n::Language g_language = i18n::Language::Chinese;
+const char* tr(Text id) { return i18n::text(g_language, id); }
 uint16_t* g_pixels = nullptr;
 constexpr size_t kPixelCapacity = size_t(pokedex::kMaxDisplayWidth) * pokedex::kMaxDisplayHeight;
 constexpr int32_t kFieldTop = 84;
@@ -48,7 +53,7 @@ void drawLabels(const pokedex::Sprite& sprite) {
   snprintf(label, sizeof(label), "#%03u / %03u", unsigned(sprite.id),
            unsigned(pokedex::data::kSpriteCount));
   text(label, 42, theme::kMuted, &fonts::Font2);
-  text(sprite.name, 72, theme::kText, &fonts::efontCN_24);
+  text(i18n::speciesName(g_language, sprite.id), 72, theme::kText, &fonts::efontCN_24);
   if (collectionCallback) {
     const char* status = collectionCallback(sprite.id, collectionContext);
     text(status, 390, theme::kMint, &fonts::efontCN_16);
@@ -57,12 +62,15 @@ void drawLabels(const pokedex::Sprite& sprite) {
     const auto& button = kEvolutionPreviewButton;
     M5.Display.fillRoundRect(button.x, button.y, button.width, button.height, 12, theme::kPanelActive);
     M5.Display.drawRoundRect(button.x, button.y, button.width, button.height, 12, theme::kGold);
-    text("预览进化", 423, theme::kGold, &fonts::efontCN_16);
-  } else text("互动 · 按键切换 · 顶部返回", 423, theme::kMuted, &fonts::efontCN_16);
+    text(tr(Text::PreviewEvolution), 423, theme::kGold, &fonts::efontCN_16);
+  } else if (g_language == i18n::Language::English) {
+    text(tr(Text::ViewerControls), 412, theme::kMuted, &fonts::efontCN_16);
+    text(tr(Text::ViewerBack), 434, theme::kMuted, &fonts::efontCN_16);
+  } else text(tr(Text::ViewerControls), 423, theme::kMuted, &fonts::efontCN_16);
 }
 
 void paintTestBadge() {
-  text("测试", 452, theme::kGold, &fonts::efontCN_16);
+  text(tr(Text::TestBadge), 452, theme::kGold, &fonts::efontCN_16);
 }
 
 void drawHeart() {
@@ -107,9 +115,9 @@ bool render() {
   M5.Display.fillCircle(233, 233, 227, theme::kViewerBackground);
   M5.Display.clearClipRect();
   M5.Display.setFont(&fonts::efontCN_16);
-  const int typeWidth = M5.Display.textWidth(sprite.types) + 24;
+  const int typeWidth = M5.Display.textWidth(i18n::speciesTypes(g_language, sprite.id)) + 24;
   M5.Display.fillRoundRect(233 - typeWidth / 2, 340, typeWidth, 26, 7, theme::kPanelActive);
-  text(sprite.types, 353, theme::kBlue, &fonts::efontCN_16);
+  text(i18n::speciesTypes(g_language, sprite.id), 353, theme::kBlue, &fonts::efontCN_16);
   M5.Display.drawEllipse(233, 223, 120, 120, theme::kViewerRing);
   M5.Display.drawEllipse(233, 223, 90, 90, theme::kViewerRingInner);
   for (const auto& point : {std::pair<int,int>{125,147}, {335,159}, {131,294}, {329,283}})
@@ -136,7 +144,7 @@ void begin() {
     clearBackground();
     M5.Display.drawTriangle(233, 153, 184, 239, 282, 239, theme::kRed);
     text("!", 208, theme::kRed, &fonts::efontCN_24);
-    text("动画内存不足", 290, theme::kRed, &fonts::efontCN_16);
+    text(tr(Text::AnimationMemory), 290, theme::kRed, &fonts::efontCN_16);
     M5.Display.endWrite();
     return;
   }
@@ -191,6 +199,11 @@ bool redraw(uint32_t now) {
   invalidate();
   g_ready = render();
   return g_ready;
+}
+void setLanguage(i18n::Language language) {
+  if (g_language == language) return;
+  g_language = language;
+  invalidate();
 }
 void setBattery(const c152::BatteryStatus& status) {
   if (g_battery.percent == status.percent && g_battery.charge == status.charge) return;

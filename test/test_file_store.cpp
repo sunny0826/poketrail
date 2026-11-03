@@ -156,6 +156,36 @@ static void commits() {
   skip.sequence = UINT64_MAX; io.put(0, skip); io.present[1] = false;
   CHECK(store.commit(one) == CommitStatus::Conflict);
 }
+static void languageTransactions() {
+  using pokedex::i18n::Language;
+  for (unsigned failure = 0; failure < 3; ++failure) {
+    Save old; old.sequence = 1; old.encounterTarget = 300;
+    Save english = old; english.sequence = 2; english.language = Language::English;
+    MemoryIO io; io.put(0, old); FileStore store(io); Save out;
+    const auto original = io.files[0];
+    io.rejectWrite = failure == 0; io.failAfterWrite = failure == 1;
+    if (failure == 2) io.failReadCall = io.reads + 3;
+    CHECK(store.commit(english) == CommitStatus::IoError && io.files[0] == original);
+    Save replacement = english; replacement.language = Language::Chinese;
+    CHECK(store.commit(replacement) == CommitStatus::Conflict);
+    io.rejectWrite = io.failAfterWrite = false; io.failReadCall = -1;
+    FileStore restarted(io);
+    CHECK(restarted.load(out).status == LoadStatus::Loaded);
+    CHECK(out.language == (failure == 0 ? Language::Chinese : Language::English));
+    const int writes = io.writes;
+    CHECK(store.commit(english) == CommitStatus::Committed);
+    CHECK(io.writes == writes + (failure == 0 ? 1 : 0));
+    CHECK(store.load(out).status == LoadStatus::Loaded && out.language == Language::English);
+  }
+  Save english; english.sequence = 1; english.encounterTarget = 300; english.language = Language::English;
+  Save newer = english; newer.sequence = 2;
+  MemoryIO io; io.put(0, english); io.put(1, newer);
+  io.files[1].back() = 2; checksum(io.files[1]);
+  const auto invalid = io.files[1]; FileStore store(io); Save out;
+  const auto loaded = store.load(out);
+  CHECK(loaded.status == LoadStatus::Loaded && loaded.degraded && out.language == Language::English);
+  CHECK(io.files[1] == invalid && io.writes == 0);
+}
 static void truncations() {
   Save a; a.sequence = 1; a.encounterTarget = 300;
   Save b = a; b.sequence = 2;
@@ -187,7 +217,7 @@ static void truncations() {
               n, 2*n, sizeof(Save), FileStore::workspaceBytes(), FileStore::workspaceBytes()+sizeof(Save));
 }
 int main() {
-  selection(); unsupportedVersions(); commits(); truncations();
+  selection(); unsupportedVersions(); commits(); truncations(); languageTransactions();
   CHECK(FileStore::slotPath(2) == nullptr);
   std::printf("PASS file_store: %d checks\n", checks);
 }

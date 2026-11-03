@@ -12,9 +12,9 @@ void viewer(Runtime& runtime, uint16_t species) {
   else if (runtime.screen().page == Page::DateWelcome) select(runtime, 2);
   frame(runtime);
   check(runtime.screen().page == Page::Viewer, "real menu input opens the free Pokedex");
-  for (unsigned i = 0; i < kSpeciesCount && !glyph(speciesName(species), 72, theme::kText, 233, false, true); ++i)
+  for (unsigned i = 0; i < kSpeciesCount && !glyph(speciesName(pokedex::i18n::Language::Chinese, species), 72, theme::kText, 233, false, true); ++i)
     edge(runtime, false, true);
-  check(glyph(speciesName(species), 72, theme::kText, 233, false, true), "real navigation selects requested species");
+  check(glyph(speciesName(pokedex::i18n::Language::Chinese, species), 72, theme::kText, 233, false, true), "real navigation selects requested species");
 }
 std::vector<uint8_t> encoded(const Save& save) {
   std::vector<uint8_t> bytes(codec::maxEncodedSize); size_t size = 0;
@@ -178,9 +178,9 @@ void everyEvolutionEdge() {
           runtime.screen().evolutionAnim.to == rules[i].to, "each catalog edge opens through real viewer input");
     const uint32_t origin = runtime.screen().evolutionAnim.startMs;
     frame(runtime, origin + kEvolutionRevealMs - host_time_ms);
-    check(glyph(speciesName(rules[i].to), 379, theme::kMint, 233, false, true), "each target reveal shows its name");
+    check(glyph(speciesName(pokedex::i18n::Language::Chinese, rules[i].to), 379, theme::kMint, 233, false, true), "each target reveal shows its name");
     frame(runtime, origin + kEvolutionTotalMs - host_time_ms); frame(runtime);
-    check(runtime.screen().page == Page::Viewer && glyph(speciesName(rules[i].from), 72, theme::kText, 233, false, true),
+    check(runtime.screen().page == Page::Viewer && glyph(speciesName(pokedex::i18n::Language::Chinese, rules[i].from), 72, theme::kText, 233, false, true),
           "each preview returns to its source");
   }
   Save expected;

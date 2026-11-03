@@ -1,12 +1,14 @@
 #pragma once
 #include <cstdint>
 #include "board_power.hpp"
+#include "locale.hpp"
 #include "menu_layout.hpp"
 namespace pokedex { namespace viewer_screen {
 void begin();
 void update(uint32_t now);
 bool render();
 void invalidate();
+void setLanguage(i18n::Language);
 void setBattery(const c152::BatteryStatus&);
 bool redraw(uint32_t now);
 void paintTestBadge();

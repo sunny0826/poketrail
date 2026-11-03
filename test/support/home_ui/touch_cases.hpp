@@ -22,6 +22,6 @@ void homeTouch() {
   check(runtime.screen().page == Page::Menu && store.bytes == bytes && store.commits == commits,
         "home menu gestures perform no save transaction");
   tap(runtime, 233, 52); home(runtime);
-  openMenu(runtime, true); select(runtime, 7); settle(runtime); home(runtime);
+  openMenu(runtime, true); select(runtime, 8); settle(runtime); home(runtime);
 }
 }

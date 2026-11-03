@@ -6,8 +6,22 @@
 #include <vector>
 
 namespace simulator { namespace e2e {
-void makeFixture(const std::string& name, const std::string& directory) {
+void makeFixture(const std::string& requested, const std::string& directory) {
+  const bool english = requested.compare(0, 8, "english-") == 0;
+  const std::string name = english ? requested.substr(8) : requested;
   if (name == "blank") return;
+  if (name == "language-corrupt" || name == "language-future") {
+    Storage storage(directory);
+    std::vector<uint8_t> bytes(24, 0);
+    if (name == "language-future") {
+      bytes[0] = 'A'; bytes[1] = 'V'; bytes[2] = 'D'; bytes[3] = '1'; bytes[4] = 99;
+    }
+    if (!storage.write(0, bytes.data(), bytes.size()) || !storage.write(1, bytes.data(), bytes.size()))
+      throw std::runtime_error("cannot write unavailable-language fixture");
+    FILE* clock = std::fopen((directory + "/clock.txt").c_str(), "w");
+    if (!clock) throw std::runtime_error("cannot write fixture clock");
+    std::fputs("0\n", clock); std::fclose(clock); return;
+  }
   Save s; s.sequence=1; s.bootGeneration=1; s.encounterTarget=300;
   s.starter=s.partner=1; s.rosterRevision=1; setRegistered(s,1); setOwned(s,1);
   if (name == "throw" || name == "battle" || name == "legacy") {
@@ -33,6 +47,10 @@ void makeFixture(const std::string& name, const std::string& directory) {
     s.totalSteps=s.undatedSteps=s.explorationSpent+s.explorationCredit; s.progress[0].walked=s.totalSteps;
     s.nextEncounterId=captures+1; s.route=Route::Sinnoh;
   } else if (name != "starter" && name != "clock") throw std::runtime_error("unknown fixture: " + name);
+  if (english) {
+    s.language = pokedex::i18n::Language::English;
+    if (name == "edges") for (uint16_t id : {115, 160}) { setRegistered(s, id); setOwned(s, id); }
+  }
   if (!validate(s)) throw std::runtime_error("fixture semantic validation failed: " + name);
   std::vector<uint8_t> bytes(codec::maxEncodedSize); size_t length=0; Save decoded;
   if(!codec::encode(s,bytes.data(),bytes.size(),length) || codec::decode(bytes.data(),length,decoded)!=codec::DecodeStatus::Ok || !validate(decoded))

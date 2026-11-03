@@ -1,6 +1,6 @@
 # 全场景页面覆盖
 
-返回[视觉设计](ui-scene-redesign.md)。下表按 [screens.hpp](../../firmware/apps/20_pokedex/screens.hpp) 的 `Page` 枚举列出当前 35 页。历史设计画廊保留原 26 页（含已删除的放弃确认页），三张进化／预览页和七张测试模式页尚无设计帧，表中链接到对应行为契约与主机测试。联系表和设计帧保留旧规则示例，不表示当前 Runtime 的完整页面覆盖。
+返回[视觉设计](ui-scene-redesign.md)。下表按 [screens.hpp](../../firmware/apps/20_pokedex/screens.hpp) 的 `Page` 枚举列出当前 36 页。历史设计画廊保留原 26 页（含已删除的放弃确认页），三张进化／预览页、七张测试模式页和语言页尚无设计帧，表中链接到对应行为契约与主机测试。联系表和设计帧保留旧规则示例，不表示当前 Runtime 的完整页面覆盖。
 
 | Page | 设计帧与状态 |
 | --- | --- |
@@ -39,5 +39,6 @@
 | `TestFaults` | 无设计帧；存储故障选择，见[测试模式指南](../usage-test-mode.md) |
 | `TestDiagnostics` | 无设计帧；模式、容量、版本与故障诊断，见[页面实现](../../firmware/apps/20_pokedex/screens_test.cpp) |
 | `TestExit` | 无设计帧；退出确认，见[测试模式指南](../usage-test-mode.md) |
+| `Language` | 无设计帧；中文／English选择、当前标记、“仅本次生效”提示与待保存限制，见[语言契约](i18n.md) |
 
 分组联系表：[探索与菜单](ui-scene-redesign/contacts/exploration.png) · [遭遇与捕捉](ui-scene-redesign/contacts/capture.png) · [伙伴与图鉴](ui-scene-redesign/contacts/partners.png) · [步行记录](ui-scene-redesign/contacts/records.png) · [日期与异常](ui-scene-redesign/contacts/system.png) · [步行纵深关键帧](ui-scene-redesign/contacts/walking-animation.png) · [战斗动画分镜](ui-scene-redesign/contacts/battle-animation.png)

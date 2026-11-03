@@ -102,11 +102,11 @@ description = "校验649只动画及固件解码与原GIF逐帧一致性"
 run = "python3 -m unittest test/test_sprites.py"
 
 [tasks.pokedex]
-description = "用固定来源CSV生成第二至第五世代中文图鉴资料"
+description = "用固定CSV生成中文图鉴与649种英文名称属性"
 run = "python3 tools/build_pokedex.py"
 
 [tasks.test-pokedex]
-description = "核对第二至第五世代资料、来源哈希、旧快照与生成器"
+description = "核对中文资料、649种英文名称属性、来源哈希与生成器"
 run = ["python3 tools/build_pokedex.py --check", "python3 -m unittest test/test_pokedex.py"]
 
 [tasks.flash]
