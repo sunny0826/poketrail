@@ -23,14 +23,14 @@ void attackAndDodge() {
   at(r, origin + 1100); check(countdownDigitShown(1), "countdown reaches 1");
   at(r, first - 900);
   check(noCue(), "ring stays hidden before the 700ms lead");
-  check(noteNear(233 + laneOffset(900), false, theme::kBlue), "lane note for the dodge leads the ring");
+  check(nextOnlyLane(r.engine().battleView(), host_time_ms), "lane stays empty until the next beat preview enters");
   at(r, first - 400);
   check(!countdownDigit(r.engine().battleView(), host_time_ms) && cueOn(Action::Dodge, theme::kBlue),
         "dodge cue circles the partner on the left-key side"); hp(3, 5);
   const int early = approachRadius(Action::Dodge, theme::kBlue);
   check(early >= cueRadius(440) - 2 && early <= cueRadius(400), "approach ring closes toward the target ring");
-  check(noteNear(233 + laneOffset(400), false, theme::kBlue) && noteNear(233 + laneOffset(1900), false, theme::kBlue),
-        "lane shows the current dodge and previews the next dodge");
+  check(nextOnlyLane(r.engine().battleView(), host_time_ms) && noActionPrompt(),
+        "only a neutral next-beat dot is previewed; current timing and direction belong to the ring");
   snapshot("battle-cue-dodge");
   at(r, first - 200);
   check(approachRadius(Action::Dodge, theme::kBlue) < early, "approach ring keeps shrinking");
@@ -46,7 +46,7 @@ void attackAndDodge() {
   at(r, target - 750); actor(4, origin, 155, 232, 2); actor(25, origin, 311, 226, 2);
   at(r, target - 400);
   check(cueOn(Action::Attack, theme::kRed), "attack cue circles the enemy on the right-key side");
-  check(noteNear(233 + laneOffset(400), true, theme::kRed), "attack note points right");
+  check(nextOnlyLane(r.engine().battleView(), host_time_ms) && noActionPrompt(), "attack has no duplicate arrow or action caption");
   snapshot("battle-idle");
   action(r, Action::Attack, target - 100); const uint32_t settled = target - 100;
   check(r.engine().battleView().consumed && r.engine().battleView().lastTiming == Timing::Normal &&
@@ -89,15 +89,20 @@ void perfectAndFinal() {
   at(r, blinkOff(r.engine().battleView().targetMs - 440));
   check(cueOn(Action::Dodge, theme::kBlue), "feint decoy circles the partner early");
   check(r.engine().battleView().expected == Action::Attack, "decoy never changes the judged action");
+  check(nextOnlyLane(r.engine().battleView(), host_time_ms) && noActionPrompt(), "feint decoy has only a next-beat preview");
+  check(animation_feedback_test::label("狂暴", theme::kRed, 401), "frenzy status remains visible while the ring is active");
   snapshot("battle-feint-decoy");
   at(r, blinkOff(r.engine().battleView().targetMs - 300));
   check(cueOn(Action::Attack, theme::kRed), "feint jumps to the enemy 350ms before the beat");
+  check(nextOnlyLane(r.engine().battleView(), host_time_ms), "current feint jumps while the next-beat dot stays neutral");
+  snapshot("battle-feint-revealed");
   // Use a white slot 80–170ms before the beat, at least 40ms after the last render.
   uint32_t blink = r.engine().battleView().targetMs - 170;
   if (!(blink / 90 % 2)) blink += 90 - blink % 90;
   check(blink - host_time_ms >= 40, "frenzy sample allows a fresh Runtime frame");
   at(r, blink);
   check((host_time_ms / 90) % 2 && cueOn(Action::Attack, theme::kText), "frenzy cue blinks white while it closes");
+  check(nextOnlyLane(r.engine().battleView(), host_time_ms) && noActionPrompt(), "full energy and frenzy add no current-beat arrow or action caption");
   snapshot("battle-frenzy-special-ready");
   const uint32_t final = r.engine().battleView().targetMs; const unsigned commits = store.commits;
   const unsigned buzzes = platform.feedbacks;
@@ -174,6 +179,34 @@ void newGenerationActors() {
     snapshot(name);
   }
 }
+void previewThroughLastBeat() {
+  for (bool practice : {false, true}) for (auto language : {i18n::Language::Chinese, i18n::Language::English}) {
+    MemoryStore store; fixture(store);
+    Save save; check(store.load(save).status == LoadStatus::Loaded, "load preview fixture");
+    save.language = language; check(store.commit(save) == CommitStatus::Committed, "set preview language");
+    HostPlatform platform; Runtime r(store, platform); start(r); enter(r, practice);
+    const auto view = [&]() -> const BattleView& { return practice ? r.practiceView() : r.engine().battleView(); };
+    bool sawNextFeint = false;
+    for (unsigned cue = 0; cue < kMaxCues; ++cue) {
+      const auto b = view();
+      check(b.active && b.cueIndex == cue, "normal keys reach each beat without changing battle rules");
+      at(r, b.targetMs - 400);
+      check(nextOnlyLane(view(), host_time_ms) && noActionPrompt(), "battle and practice preview only the next beat in both languages");
+      sawNextFeint |= b.nextFeint && cue + 1 < kMaxCues;
+      if (cue + 1 == kMaxCues) {
+        const bool english = language == i18n::Language::English;
+        snapshot(practice ? (english ? "practice-last-cue-en" : "practice-last-cue-zh") :
+                            (english ? "battle-last-cue-en" : "battle-last-cue-zh"));
+      }
+      // Dodge correctly, miss attacks: keep both actors alive through the sixteenth beat.
+      action(r, Action::Dodge, b.targetMs - 100);
+      at(r, b.targetMs + kNormalWindowMs + 1);
+    }
+    check(!view().active && view().result == Result::Lost, "last beat still ends an undefeated battle");
+    check(nextOnlyLane(view(), host_time_ms), "finished battle has no preview dot");
+    if (!practice) check(sawNextFeint, "preview stays neutral even when the next beat is a feint");
+  }
+}
 void timingAndPause() {
   Battle b; b.begin(UINT32_MAX - kOpeningMs + 1);
   check(!battleEffectActive(b.view(), UINT32_MAX - kOpeningMs + 1), "begin never plays an old effect");
@@ -189,7 +222,10 @@ void timingAndPause() {
   MemoryStore store; fixture(store, 17, 25); HostPlatform platform; Runtime r(store, platform); start(r);
   const uint32_t origin = enter(r); at(r, r.engine().battleView().targetMs - 750);
   actor(17, origin, 155, 232, 1); actor(25, origin, 311, 226, 2); snapshot("battle-tall-partner");
-  tap(r, 233, 30); at(r, r.engine().battleView().targetMs + 181);
+  tap(r, 233, 30); frame(r, 40);
+  check(animation_feedback_test::label("本拍结束后暂停", theme::kText, 401), "pause request retains its status text");
+  snapshot("battle-pause-requested");
+  at(r, r.engine().battleView().targetMs + 181);
   check(r.screen().page == Page::Pause, "real top touch pauses on cue boundary"); screenshot(r, "battle-paused");
   select(r, 0); check(r.screen().page == Page::Battle && !battleEffectActive(r.engine().battleView(), host_time_ms), "real resume begins a clean beat");
   frame(r, 40);
@@ -200,6 +236,6 @@ void timingAndPause() {
 }
 int main() {
   c152::begin("BATTLE TEST");
-  attackAndDodge(); perfectAndFinal(); failureAndPractice(); newGenerationActors(); timingAndPause();
+  attackAndDodge(); perfectAndFinal(); failureAndPractice(); newGenerationActors(); previewThroughLastBeat(); timingAndPause();
   std::printf("%u battle Runtime/Button_Class/M5GFX checks, 0 failures\n", checks);
 }

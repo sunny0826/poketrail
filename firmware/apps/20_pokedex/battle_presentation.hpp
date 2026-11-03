@@ -19,7 +19,7 @@ inline int cueRadius(int32_t remaining) {
   const int32_t left = remaining < 0 ? 0 : remaining > lead ? lead : remaining;
   return kCueTargetRadius + int((kCueStartRadius - kCueTargetRadius) * left / lead);
 }
-// Notes slide right-to-left into the judgment box at 0.07 px/ms.
+// A neutral next-beat dot slides left at 0.07 px/ms; no direction or judgment target.
 constexpr int kLaneY = 357, kLaneHalfWidth = 165;
 constexpr int laneOffset(int32_t remaining) { return int(remaining * 7 / 100); }
 inline bool laneVisible(int32_t remaining) {

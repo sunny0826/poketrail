@@ -2,6 +2,7 @@
 #include "battle_presentation.hpp"
 #include "board.hpp"
 #include "screen_theme.hpp"
+#include "rendered_text.hpp"
 
 namespace battle_cue_test {
 using pokedex::adventure::Action;
@@ -31,15 +32,47 @@ inline int approachRadius(Action action, uint16_t color) {
     if (M5.Display.readPixel(cx - radius, cy) == color) return radius;
   return 0;
 }
-// An arrow note: its tip points to the key and its flat side is empty.
-inline bool noteNear(int x, bool attack, uint16_t color, int tolerance = 4) {
+// A round, neutral marker has no tip or action colour. Allow one Runtime frame of movement.
+inline bool previewDotNear(int x, int tolerance = 4) {
   for (int at = x - tolerance; at <= x + tolerance; ++at) {
-    const int tip = attack ? at + 6 : at - 6, back = attack ? at - 6 : at + 6;
-    if (M5.Display.readPixel(at, kLaneY) == color && M5.Display.readPixel(tip, kLaneY) == color &&
-        M5.Display.readPixel(back, kLaneY) != color && M5.Display.readPixel(at, kLaneY - 5) == color)
-      return true;
+    bool round = true;
+    for (int dy = -4; dy <= 4; ++dy) for (int dx = -4; dx <= 4; ++dx) {
+      const bool ink = M5.Display.readPixel(at + dx, kLaneY + dy) == theme::kMuted;
+      if (ink != (M5.Display.readPixel(at - dx, kLaneY + dy) == theme::kMuted) ||
+          ink != (M5.Display.readPixel(at + dx, kLaneY - dy) == theme::kMuted)) round = false;
+    }
+    if (round && ringAround(at, kLaneY, 4, theme::kMuted) &&
+        M5.Display.readPixel(at, kLaneY) == theme::kMuted &&
+        M5.Display.readPixel(at + 4, kLaneY + 4) != theme::kMuted) return true;
   }
   return false;
+}
+// Scan the lane for extra markers, direction colours, timing boxes and window ticks.
+inline bool nextOnlyLane(const pokedex::adventure::BattleView& b, uint32_t now) {
+  using namespace pokedex::adventure;
+  const int32_t next = int32_t(b.targetMs + (b.enemyHp * 2 < kEnemyHp ? kFrenzyBeatIntervalMs : kBeatIntervalMs) - now);
+  const bool visible = b.active && !b.paused && b.cueIndex + 1 < kMaxCues && laneVisible(next);
+  const int x = 233 + laneOffset(next);
+  if (visible && !previewDotNear(x)) return false;
+  unsigned runs = 0; bool inDot = false;
+  for (int px = 68; px <= 398; ++px) {
+    const bool dot = M5.Display.readPixel(px, kLaneY) == theme::kMuted;
+    if (dot && !inDot) ++runs;
+    inDot = dot;
+    for (int py = 350; py <= 364; ++py) {
+      const uint16_t ink = M5.Display.readPixel(px, py);
+      if (ink == theme::kGold || ink == theme::kMint || ink == theme::kRed || ink == theme::kBlue || ink == theme::kText) return false;
+      if (ink == theme::kMuted && (!visible || px < x - 8 || px > x + 8 || py < kLaneY - 4 || py > kLaneY + 4)) return false;
+    }
+  }
+  return runs == unsigned(visible);
+}
+inline bool noActionPrompt() {
+  for (const char* text : {"右键 · 攻击", "左键 · 躲避", "右键攻击 · 双键必杀",
+                           "Right · Attack", "Left · Dodge", "Right: attack · Both: special"})
+    for (uint16_t color : {theme::kRed, theme::kBlue})
+      if (rendered_text::contains(text, color, 385, 418)) return false;
+  return true;
 }
 inline bool countdownDigitShown(unsigned digit) {
   lgfx::LGFX_Sprite expected;

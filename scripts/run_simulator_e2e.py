@@ -259,10 +259,11 @@ def main():
                     from PIL import Image
                     with Image.open(stage / "fixed-cue-0.bmp") as image:
                         cue = hashlib.sha256(image.convert("RGB").crop((50, 24, 518, 492)).tobytes()).hexdigest()
-                    # Frozen from the reviewed simulator-e2e-20261102T070951.426579Z trace (Kanto #108; versus
-                    # simulator-e2e-dev-20261102T114338 only the scene band and enemy changed); inputs keep their
-                    # timing relative to each beat.
-                    expected = "105f80735539a38ef56bd1d51033e5750a761a5f1bc689577edb3b3017184810"
+                    # Issue #49: neutral next-beat dot, no current arrow/judgment box/action text.
+                    # Frozen from simulator-e2e-20261103T032316.041567Z; pixel comparison with
+                    # the previous passing trace differs only in the lane and action-text bands.
+                    # Inputs keep their timing relative to each beat; battle-cues checks semantics.
+                    expected = "6b020830e1426c1898c4baf2e8369a5a8c0e1522fb03a5cdbf27fb449cf06645"
                     write_json(stage / "cue-check.json", {"expected": expected, "actual": cue})
                     if cue != expected:
                         raise RuntimeError("fixed battle cue pixels differ from reviewed trace")
