@@ -1,6 +1,7 @@
 #include "support/adventure_ui/harness.hpp"
 #include "battle_presentation.hpp"
 #include "support/capture_badge.hpp"
+#include "support/capture_aim_checks.hpp"
 
 namespace {
 void savedVictory(MemoryStore& store, Save& s, bool captured) {
@@ -122,6 +123,44 @@ void practiceCapture() {
   check(r.screen().page == Page::Home && r.engine().view().phase == Phase::Walking,
         "practice exit keeps the real encounter untouched");
 }
+void singleRingAim() {
+  for (bool practice : {false, true}) for (bool touch : {false, true}) {
+    MemoryStore store; Save s;
+    if (!practice) savedVictory(store, s, true);
+    TestPlatform p; Runtime r(store, p); start(r);
+    if (practice) {
+      skipDateAndStarter(r, p); openMenu(r, p); select(r, p, 5); winPractice(r, p);
+    }
+    frame(r, 40);
+    const auto baseline = capture_aim_test::lowerBand();
+    const std::string prefix = std::string(practice ? "practice-aim-" : "throw-aim-") + (touch ? "touch-" : "key-");
+    snapCurrent(r, (prefix + "ready").c_str());
+    p.next.held = true;
+    if (touch) { p.next.touch = true; p.next.x = 233; p.next.y = kHandY; }
+    else p.next.right = true;
+    frame(r);
+    const uint32_t began = r.screen().chargeStartMs;
+    check(r.screen().charging, "key and touch both start the single-ring timeline");
+    for (uint32_t held : {400u, 800u, 1000u, 1440u, 1520u}) {
+      while (host_time_ms < began + held) {
+        p.next.held = true;
+        if (touch) p.next.touchDown = true; else p.next.rightDown = true;
+        frame(r, std::min(40u, began + held - host_time_ms));
+      }
+      check(capture_aim_test::lowerBand() == baseline, "holding never adds a lower arc or full-charge pulse");
+      check(capture_badge_test::iconAt(kBallX, kHandY), "held ball stays visible without a charge ring");
+      const int radius = held < 1500 ? 24 + (1500 - held) * 106 / 1500 : 24;
+      const uint16_t color = held > 1100 ? theme::kGold : theme::kMint;
+      if (radius > 25)
+        check(M5.Display.readPixel(233 + radius, 233) == color, "upper timing ring continues closing toward the target");
+      snapCurrent(r, (prefix + std::to_string(held)).c_str());
+    }
+    if (touch) { p.next.click = true; p.next.x = 233; p.next.y = kHandY; }
+    frame(r, 0);
+    check(r.screen().capture.active && r.screen().capture.timing == Timing::Perfect,
+          "key and touch releases keep Perfect timing in real and practice throws");
+  }
+}
 void slowSaveCapture() {
   for (uint32_t delay : {650u, 5000u}) for (bool captured : {false, true}) for (bool touch : {false, true}) {
     MemoryStore store; Save s;
@@ -196,18 +235,17 @@ void captureAnimation() {
   MemoryStore store; Save s;
   savedVictory(store, s, true);
   TestPlatform p; Runtime r(store, p); start(r);
-  edge(r, p, false, true);
-  const uint32_t target = r.engine().throwView().targetMs;
+  frame(r, 40);
+  const auto lower = capture_aim_test::lowerBand();
   p.next.right = p.next.held = true; frame(r);
+  const uint32_t target = r.engine().throwView().targetMs;
   check(r.screen().charging, "holding the throw key charges the ball");
   for (unsigned held = 0; held < 400; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
-  check(M5.Display.readPixel(233 + 29, kHandY) == theme::kGold && M5.Display.readPixel(233 - 29, kHandY) != theme::kGold,
-        "half charge fills the arc clockwise from 12 o'clock past 3 o'clock only");
+  check(capture_aim_test::lowerBand() == lower, "400ms hold has no lower progress arc");
   snapCurrent(r, "capture-charge-half");
   for (unsigned held = 400; held < 920; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
   p.next.rightDown = p.next.held = true; frame(r);
-  check(M5.Display.readPixel(267, 344) == theme::kGold || M5.Display.readPixel(263, 344) == theme::kGold,
-        "full charge shows a pulsing gold ring around the held ball");
+  check(capture_aim_test::lowerBand() == lower, "holding beyond 800ms has no lower pulse");
   snapCurrent(r, "capture-charge");
   while (int32_t(target - host_time_ms) > 20) { p.next.rightDown = p.next.held = true; frame(r); }
   p.next.rightDown = p.next.held = true;
@@ -264,6 +302,6 @@ void captureAnimation() {
 }
 int main() {
   c152::begin("CAPTURE TEST");
-  slowSaveCapture(); firstBallSuccess(); practiceCapture(); captureAnimation();
+  singleRingAim(); slowSaveCapture(); firstBallSuccess(); practiceCapture(); captureAnimation();
   std::printf("%u capture Runtime/Button_Class/M5GFX checks, 0 failures\n", checks);
 }

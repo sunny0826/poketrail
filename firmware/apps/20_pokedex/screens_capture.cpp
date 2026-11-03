@@ -1,7 +1,6 @@
 #include "screens.hpp"
 #include "board.hpp"
 #include "icons_generated.hpp"
-#include <algorithm>
 namespace pokedex { namespace ui {
 using namespace adventure;
 using i18n::Text;
@@ -16,7 +15,7 @@ void star(int x, int y, int r, uint16_t color) {
   M5.Display.drawFastVLine(x, y - r, 2 * r + 1, color);
 }
 }
-void Screens::aim(uint16_t species, uint32_t now, bool timing, int32_t remaining, bool charging, uint32_t heldMs) {
+void Screens::aim(uint16_t species, uint32_t now, bool timing, int32_t remaining) {
   actorShadow(233, 233);
   sprite(species, now, battlePlayback_, 233, 233, 0, 2, 190);
   if (timing) {
@@ -28,14 +27,6 @@ void Screens::aim(uint16_t species, uint32_t now, bool timing, int32_t remaining
     M5.Display.drawCircle(233, 233, radius - 1, ring);
     M5.Display.drawCircle(233, 233, 24, target);
     M5.Display.drawCircle(233, 233, 25, target);
-    if (charging) {
-      const float sweep = 360.0f * std::min<uint32_t>(heldMs, kChargeFullMs) / kChargeFullMs;
-      const float end = 270.0f + sweep;
-      M5.Display.drawCircle(233, kHandY, 28, theme::kTrack);
-      if (sweep >= 1.0f) M5.Display.fillArc(233, kHandY, 27, 31, 270.0f, end < 360.0f ? end : 360.0f, theme::kGold);
-      if (end > 360.0f) M5.Display.fillArc(233, kHandY, 27, 31, 0.0f, end - 360.0f, theme::kGold);
-      if (heldMs >= kChargeFullMs && (now / 200) % 2) M5.Display.drawCircle(233, kHandY, 35, theme::kGold);
-    }
   }
   ballAt(233, kHandY);
 }

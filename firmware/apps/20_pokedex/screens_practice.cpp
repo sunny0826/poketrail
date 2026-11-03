@@ -10,12 +10,12 @@ void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
   if (s.capture.active) { capture(s, s.practiceSpecies, now); return; }
   ballSlots(s.practiceUsedBalls);
   if (s.practiceThrowing) {
-    aim(s.practiceSpecies, now, true, int32_t(s.practiceTargetMs - now), s.charging, now - s.chargeStartMs);
+    aim(s.practiceSpecies, now, true, int32_t(s.practiceTargetMs - now));
     line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
     line(tr(Text::PracticeNoCollection), 426, theme::kMuted);
     return;
   }
-  aim(s.practiceSpecies, now, false, 0, false, 0);
+  aim(s.practiceSpecies, now, false, 0);
   line(tr(Text::HoldThrow), 399, theme::kMint);
   line(tr(Text::EndPracticeTop), 426, theme::kMuted);
 }

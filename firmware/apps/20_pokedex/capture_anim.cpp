@@ -97,9 +97,4 @@ void captureStarPos(unsigned index, float t, int& x, int& y) {
   y = 250 + int(r * std::sin(angle));
 }
 
-uint8_t captureChargeLevel(uint32_t heldMs) {
-  if (heldMs >= kChargeFullMs) return 2;
-  return heldMs >= kChargeFullMs / 2 ? 1 : 0;
-}
-
 } }

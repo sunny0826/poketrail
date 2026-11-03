@@ -36,7 +36,7 @@ Your partner has 3 health segments and the opponent has 5. A battle opens with a
 
 After a victory, each encounter allows at most two Poké Balls, and a successful capture ends the encounter immediately. For common Pokémon, the normal / nice / perfect capture rates are 85% / 92% / 98%. For rare Pokémon, they are 70% / 80% / 90%. Missing the window gives a 0% chance. Even a perfect throw can fail.
 
-After a victory you go straight to the throwing page: hold the right button or touch and hold to charge, then release to throw. Waiting does not start the window and does not spend an attempt. The encounter must finish (a capture, or both balls used) before you can confirm the result and return home; there is no mid-encounter abandon or keep-walking option. If an old save has no usable Poké Balls, the throwing page shows "End encounter · Explore" as its only exit.
+After a victory you go straight to the throwing page: hold the right button or touch and hold, then release as the outer ring around the Pokémon closes onto the inner ring (about 1.5 seconds after holding). This upper ring is the only release cue; the ball below has no charge ring. Waiting does not start the window and does not spend an attempt. The encounter must finish (a capture, or both balls used) before you can confirm the result and return home; there is no mid-encounter abandon or keep-walking option. If an old save has no usable Poké Balls, the throwing page shows "End encounter · Explore" as its only exit.
 
 ## Partners and evolution
 

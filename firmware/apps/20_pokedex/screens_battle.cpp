@@ -91,7 +91,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     if (s.capture.active) {
       capture(s, v.encounter.species, now);
     } else if (e.throwView().active) {
-      aim(v.encounter.species, now, true, int32_t(e.throwView().targetMs - now), s.charging, now - s.chargeStartMs);
+      aim(v.encounter.species, now, true, int32_t(e.throwView().targetMs - now));
       line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
     } else if (legacyNoBalls) {
       // A legacy encounter with an empty ball stock cannot be thrown, and the
@@ -103,7 +103,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     } else {
       // Aiming state: the ball waits in the hand, no window runs yet and no
       // ring is drawn, so the ring only ever means "the clock is running".
-      aim(v.encounter.species, now, false, 0, false, 0);
+      aim(v.encounter.species, now, false, 0);
       line(tr(Text::HoldThrow), 399, theme::kMint);
     }
     return;

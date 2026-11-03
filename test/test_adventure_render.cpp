@@ -1,5 +1,6 @@
 #include "support/adventure_ui/harness.hpp"
 #include "support/adventure_ui/clock_cases.hpp"
+#include "support/capture_aim_checks.hpp"
 #include "support/adventure_ui/capture_cases.hpp"
 #include "scene_backgrounds_generated.hpp"
 

@@ -61,6 +61,8 @@ void captureAnimation() {
   MemoryStore store; Save s;
   savedVictory(store, s, true);
   TestPlatform p; Runtime r(store, p); start(r);
+  frame(r, 40);
+  const auto lower = capture_aim_test::lowerBand();
   const uint32_t heldAt = host_time_ms;
   p.next.right = p.next.held = true; frame(r);
   check(r.engine().throwView().active && r.screen().charging,
@@ -71,8 +73,8 @@ void captureAnimation() {
         "the window targets one charge span after the hold starts");
   for (unsigned held = 0; held < 920; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
   p.next.rightDown = p.next.held = true; frame(r);
-  check(M5.Display.readPixel(267, 344) == theme::kGold || M5.Display.readPixel(263, 344) == theme::kGold,
-        "full charge shows a pulsing gold ring around the held ball");
+  check(capture_aim_test::lowerBand() == lower,
+        "holding past 800ms keeps the lower ball free of charge arcs and pulses");
   snapCurrent(r, "capture-charge");
   while (int32_t(target - host_time_ms) > 20) { p.next.rightDown = p.next.held = true; frame(r); }
   p.next.rightDown = p.next.held = true;
