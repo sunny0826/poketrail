@@ -18,12 +18,12 @@ An offline walking adventure for the round screen of the M5Stack StopWatch (C152
 ## Gameplay
 
 - **Walking adventures**: Switch freely between five regions—Kanto, Johto, Hoenn, Sinnoh, and Unova. Each region only has Pokémon from its own generation. An encounter occurs every 200–500 steps (random).
-- **Rhythm battles and catching**: When the cue circles the opponent, press the right button to attack; when it circles your partner, press the left button to dodge. A track at the bottom previews the next beat. After winning, throw up to two balls; Poké Balls are unlimited. Catching a species permanently removes it from the encounter pool.
+- **Rhythm battles and catching**: When the cue circles the opponent, press the right button to attack; when it circles your partner, press the left button to dodge. Time your press by the closing ring. A neutral dot on the bottom track previews the next beat without indicating a button. After winning, throw up to two balls; Poké Balls are unlimited. Catching a species permanently removes it from the encounter pool.
 - **Partner training**: Carry one partner at a time. Only the carried partner earns training steps. Evolve it manually once it meets the requirements.
 - **Pokédex**: Freely browse National Pokédex entries 1–649 across Kanto, Johto, Hoenn, Sinnoh, and Unova, with animated pixel art from Pokémon Black and White.
 
 <p align="center">
-  <a href="docs/images/readme/battle.png"><img src="docs/images/readme/battle.png" width="234" alt="Round battle screen: Charmander faces Pikachu, with health segments for both. A red cue circles Pikachu on the right and closes inward, and the bottom track shows right-pointing arrows for the current and next beat, prompting a right-button attack. Host Runtime/M5GFX render, not a device photo."></a>
+  <a href="docs/images/readme/battle-neutral-preview.png"><img src="docs/images/readme/battle-neutral-preview.png" width="234" alt="Round battle screen: Charmander faces Pikachu, with health segments for both. A red cue circles Pikachu on the right and closes inward; a neutral grey dot on the bottom track previews the next beat. Host Runtime/M5GFX render, not a device photo."></a>
   <a href="docs/images/readme/throw.png"><img src="docs/images/readme/throw.png" width="234" alt="Round ball-throwing screen: Dunsparce in Johto, in front of a five-story pagoda and autumn maples, with two balls under the title for the two attempts left and a prompt to hold the right button to charge and release to throw. Host Runtime/M5GFX render, not a device photo."></a>
   <a href="docs/images/readme/viewer.png"><img src="docs/images/readme/viewer.png" width="234" alt="Round Pokédex screen: Bulbasaur, entry 001/649, with Grass and Poison types, ownership status, and an evolution preview. Host Runtime/M5GFX render, not a device photo."></a>
   <br>
@@ -45,7 +45,7 @@ See the [usage guide](docs/usage.en.md) for probabilities, evolution costs, cont
 <details>
 <summary>Image sources</summary>
 
-All images are screenshots rendered offscreen with the host Runtime/M5GFX from the 649-species version on 2026-11-02. They are not C152 device photos and cannot establish on-device frame rate, visual quality, or acceptance results. Click an image to open the original 468×468 file. The physical round screen is 466×466; the current M5GFX driver reports 468×468. The PNGs retain only pixels inside the round screen, with transparency outside it.
+All images are screenshots rendered offscreen with the host Runtime/M5GFX from the 649-species version. The battle image was updated on 2026-11-03; the other images are from 2026-11-02. They are not C152 device photos and cannot establish on-device frame rate, visual quality, or acceptance results. Click an image to open the original 468×468 file. The physical round screen is 466×466; the current M5GFX driver reports 468×468. The PNGs retain only pixels inside the round screen, with transparency outside it.
 
 | Screen | Render suite | Screenshot |
 | --- | --- | --- |

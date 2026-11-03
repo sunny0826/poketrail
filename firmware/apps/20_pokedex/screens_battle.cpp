@@ -44,33 +44,15 @@ void impact(int x, int y, uint32_t age, uint16_t color, bool strong) {
   }
 }
 uint16_t cueColor(bool attack, bool blink) { return blink ? theme::kText : attack ? theme::kRed : theme::kBlue; }
-// The arrow points at the key: right for attack, left for dodge.
-void note(int x, bool attack, uint16_t color) {
-  if (attack) M5.Display.fillTriangle(x - 5, kLaneY - 7, x - 5, kLaneY + 7, x + 7, kLaneY, color);
-  else M5.Display.fillTriangle(x + 5, kLaneY - 7, x + 5, kLaneY + 7, x - 7, kLaneY, color);
-}
 void lane(const BattleView& b, uint32_t now) {
-  const int32_t normalMs = b.frenzy ? kFrenzyNormalWindowMs : kNormalWindowMs;
-  const int32_t perfectMs = b.frenzy ? kFrenzyPerfectWindowMs : kPerfectWindowMs;
-  const int32_t remaining = int32_t(b.targetMs - now);
-  const bool perfectWindow = remaining >= -perfectMs && remaining <= perfectMs;
+  // A neutral dot previews the following beat, never its action or key direction.
   M5.Display.fillRoundRect(233 - kLaneHalfWidth - 10, 344, 2 * kLaneHalfWidth + 21, 27, 13, theme::kBackground);
   M5.Display.drawFastHLine(233 - kLaneHalfWidth, kLaneY, 2 * kLaneHalfWidth + 1, theme::kTrack);
-  for (int32_t boundary : {-normalMs, -perfectMs, perfectMs, normalMs})
-    M5.Display.drawFastVLine(233 + laneOffset(boundary), 352, 11, std::abs(boundary) == perfectMs ? theme::kGold : theme::kMuted);
-  const int box = laneOffset(normalMs) + 3;
-  M5.Display.drawRoundRect(233 - box, 346, 2 * box + 1, 22, 4, perfectWindow ? theme::kGold : theme::kMint);
   if (!b.active || b.paused) return;
   const bool next = b.cueIndex + 1 < kMaxCues;
   const uint32_t nextTarget = b.targetMs + (b.enemyHp * 2 < kEnemyHp ? kFrenzyBeatIntervalMs : kBeatIntervalMs);
   if (next && laneVisible(int32_t(nextTarget - now)))
-    note(233 + laneOffset(int32_t(nextTarget - now)), shownNextAction(b) == Action::Attack,
-         cueColor(shownNextAction(b) == Action::Attack, false));
-  if (!b.consumed && laneVisible(remaining)) {
-    const bool attack = shownAction(b, now) == Action::Attack;
-    note(233 + laneOffset(remaining), attack,
-         perfectWindow ? theme::kGold : cueColor(attack, b.frenzy && (now / 90) % 2));
-  }
+    M5.Display.fillCircle(233 + laneOffset(int32_t(nextTarget - now)), kLaneY, 4, theme::kMuted);
 }
 void pauseGlyph() {
   M5.Display.fillRect(226, 73, 5, 15, theme::kMuted);
@@ -168,11 +150,6 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   cueRing(b, now);
   const uint8_t countdown = countdownDigit(b, now);
   const char* result = attack ? (hit ? tr(Text::Hit) : tr(Text::Miss)) : (hit ? tr(Text::Dodged) : tr(Text::Hurt));
-  const bool cueVisible = int32_t(b.targetMs - now) <= int32_t(kCueLeadMs);
-  const bool shownAttack = shownAction(b, now) == Action::Attack;
-  const char* prompt = !cueVisible ? (b.frenzy ? tr(Text::Frenzy) : "") : shownAttack ?
-    (b.energy >= kSpecialEnergy ? tr(Text::AttackSpecial) : tr(Text::Attack)) : tr(Text::Dodge);
-  const uint16_t promptColor = !cueVisible ? theme::kRed : shownAttack ? theme::kRed : theme::kBlue;
   if (b.pauseRequested) line(tr(Text::PauseAfterBeat), 401, theme::kText, true);
   else if (countdown) {
     const char digit[2] = {char('0' + countdown), 0};
@@ -183,6 +160,6 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   } else if (effect || b.consumed)
     line(b.special ? tr(Text::SpecialHit) : result, 401,
          b.special || perfect ? theme::kGold : effect && !hit ? theme::kMuted : theme::kText, true);
-  else if (*prompt) line(prompt, 401, promptColor, true);
+  else if (b.frenzy) line(tr(Text::Frenzy), 401, theme::kRed, true);
 }
 } }
