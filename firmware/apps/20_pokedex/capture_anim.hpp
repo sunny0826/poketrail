@@ -9,7 +9,6 @@ namespace pokedex { namespace ui {
 constexpr int kBallX = 233;
 constexpr int kHandY = 344;
 constexpr int kGroundY = 300;
-constexpr uint32_t kChargeFullMs = 800;
 constexpr uint32_t kFlightMs = 450;
 constexpr uint32_t kFlashMs = 120;
 constexpr uint32_t kDropMs = 500;
@@ -48,6 +47,5 @@ void captureFlightPos(float t, int& x, int& y);
 int captureDropY(float t);
 float captureWiggleAngle(float t);
 void captureStarPos(unsigned index, float t, int& x, int& y);
-uint8_t captureChargeLevel(uint32_t heldMs);
 
 } }

@@ -1,4 +1,6 @@
 #include "driver.hpp"
+#include "../support/capture_aim_checks.hpp"
+#include "../support/capture_badge.hpp"
 
 namespace simulator {
 namespace e2e {
@@ -30,12 +32,26 @@ void aimBeforeThrow(Driver& d) {
   d.check(!d.runtime().engine().throwView().active && d.save().encounter.usedBalls == 0,
           "short touch release cancels even while left remains held");
   d.key(SDL_SCANCODE_LEFT, false);
-  d.key(SDL_SCANCODE_RIGHT, true);
-  d.check(d.runtime().engine().throwView().active, "holding right opens the throw window");
+  d.frames();
+  const auto lower = capture_aim_test::lowerBand();
+  d.mouse(233, kHandY, true);
+  d.check(d.runtime().engine().throwView().active, "holding touch opens the throw window");
   d.check(d.save().encounter.usedBalls == 0, "the hold does not spend an attempt yet");
-  // 超过短按阈值但远早于目标窗口，必须记为 Miss。
-  d.advance(600);
-  d.key(SDL_SCANCODE_RIGHT, false, 1);
+  const auto began = d.screen().chargeStartMs;
+  int previousRadius = 131;
+  for (uint32_t held : {400u, 800u, 1000u}) {
+    d.until([&] { return d.now() - began >= held; }, 2000, "touch reaches timing sample");
+    d.check(capture_aim_test::lowerBand() == lower, "touch hold adds no lower progress ring or pulse");
+    d.check(capture_badge_test::iconAt(kBallX, kHandY), "touch hold keeps the ball visible");
+    int radius = 0;
+    for (int dx = 26; dx <= 130; ++dx)
+      if (M5.Display.readPixel(233 + dx, 233) == theme::kMint) radius = dx;
+    d.check(radius > 25 && radius < previousRadius, "upper ring shrinks as the only release cue");
+    previousRadius = radius;
+    d.shot("throw-touch-single-ring-" + std::to_string(held));
+  }
+  // 超过短按阈值但仍早于目标窗口，必须记为 Miss。
+  d.mouse(233, kHandY, false);
   d.check(!d.runtime().engine().throwView().active, "the release settles the throw");
   d.finishCapture();
   d.until([&] {

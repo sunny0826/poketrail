@@ -69,4 +69,4 @@
 | [成功](ui-scene-redesign/frames/capture-success.png) | 六颗白金十字星、金环收球 | Reveal 600ms |
 | [挣脱](ui-scene-redesign/frames/capture-escape.png) | 白环、角色回到原位、球落底部 | 失败时机仍由存档 roll 派生 |
 
-蓄力仍是 400ms 半充、800ms 充满；松手时刻决定判定。投球菜单继续“左键切换、右键确认”，不能套用普通菜单的双键提示。
+历史设计稿中的 400ms 半充／800ms 满环及投球菜单已停用。当前直接按住右键或触摸投球，只用上方判定圈提示约 1500ms 的松手时机，下方球没有蓄力圈；以[捕获动画契约](capture-animation.md)为准，保留旧图供追溯。

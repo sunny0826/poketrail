@@ -25,7 +25,7 @@
 
 <p align="center">
   <a href="docs/images/readme/battle-neutral-preview.png"><img src="docs/images/readme/battle-neutral-preview.png" width="234" alt="圆屏对战：小火龙对皮卡丘，双方有生命格；红色提示圈圈住右侧的皮卡丘并向内收拢，底部轨道仅用灰色小圆点预告下一拍。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
-  <a href="docs/images/readme/throw.png"><img src="docs/images/readme/throw.png" width="234" alt="圆屏投球：城都的土龙弟弟，背后是五重塔与红叶，标题下两个球表示本场剩余两次，提示按住右键蓄力、松手投球。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
+  <a href="docs/images/readme/throw-single-ring.png"><img src="docs/images/readme/throw-single-ring.png" width="234" alt="圆屏投球：关都的妙蛙种子，按住 800ms 时上方判定圈向靶心收拢，下方精灵球没有蓄力圈；标题下两个球表示剩余两次。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
   <a href="docs/images/readme/viewer.png"><img src="docs/images/readme/viewer.png" width="234" alt="圆屏图鉴：编号 001／649 的妙蛙种子，属性为草、毒，显示当前拥有和预览进化。主机 Runtime/M5GFX 渲染，不是实机拍摄。"></a>
   <br>
   <sub>节奏对战 · 蓄力投球 · 图鉴</sub>
@@ -46,21 +46,21 @@
 <details>
 <summary>画面来源</summary>
 
-全部画面是 649 种版本用主机 Runtime/M5GFX 离屏渲染的截图；对战画面更新于 2026-11-03，其余画面为 2026-11-02。不是 C152 实机拍摄，也不能当作实机帧率、观感或验收结果。点图片打开 468×468 原文件。物理圆屏为 466×466，当前 M5GFX 驱动报告 468×468；PNG 只保留圆屏内像素，圆外透明。
+全部画面是 649 种版本用主机 Runtime/M5GFX 离屏渲染的截图；对战和投球画面更新于 2026-11-03，其余画面为 2026-11-02。不是 C152 实机拍摄，也不能当作实机帧率、观感或验收结果。点图片打开 468×468 原文件。物理圆屏为 466×466，当前 M5GFX 驱动报告 468×468；PNG 只保留圆屏内像素，圆外透明。
 
 | 画面 | 渲染套件 | 截图 |
 | --- | --- | --- |
 | 首屏首页 | `test_home_render` | `home-today-complete-live`：今日 4 步来自测试中的模拟走路，尚未捕获 |
 | 五个地区 | `test_home_render` | `home-scene-0`～`home-scene-4`：未校时，所以今日显示 --；测试档已捕获 2 种 |
 | 节奏对战 | `test_battle_render` | `battle-idle`：关都，小火龙对皮卡丘，攻击提示 |
-| 蓄力投球 | `test_adventure_render` | `throw-ready-1`：城都，对手为土龙弟弟，剩余两次 |
+| 蓄力投球 | `test_capture_render` | `throw-aim-key-800`：关都，对手为妙蛙种子，按住 800ms，上方判定圈收拢，剩余两次 |
 | 图鉴 | `test_adventure_render` | `viewer-entry`：测试档中的初始伙伴 |
 
 电量处的 -- 是因为渲染时没有电池读数。以下命令生成当前版本的对应测试截图，输出到新的验收目录；不会自动替换本页保留的历史图片：
 
 ```bash
 rtk proxy mise exec -- python3 scripts/run_render_tests.py \
-  test_home_render test_adventure_render test_battle_render
+  test_home_render test_adventure_render test_battle_render test_capture_render
 ```
 
 </details>

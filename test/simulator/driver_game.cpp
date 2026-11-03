@@ -2,6 +2,7 @@
 #include "battle_presentation.hpp"
 #include "../support/animation_feedback.hpp"
 #include "../support/capture_badge.hpp"
+#include "../support/capture_aim_checks.hpp"
 
 namespace simulator { namespace e2e {
 void Driver::winBattle(bool practice) {
@@ -64,19 +65,20 @@ void Driver::throwBall(bool perfect, bool practice) {
   // The window opens on the first hold, so a tap must not start it.
   tap(233, 238);
   check(!active(), "a tap before the hold does not open the throw window");
+  const auto lower = capture_aim_test::lowerBand();
   key(SDL_SCANCODE_RIGHT, true);
   check(active(), "holding right opens the throw window");
   check(screen().charging, "holding right charges ball");
   const auto target = practice ? screen().practiceTargetMs : runtime().engine().throwView().targetMs;
-  const auto arc = [](int dx) { return M5.Display.readPixel(233 + dx, kHandY) == theme::kGold; };
   if (perfect) {
-    until([&] { return int32_t(target - now()) <= 20; }, 3000, "charge reaches release target");
-    check(arc(29) && arc(-29), "full charge closes the gold arc around the held ball");
+    until([&] { return int32_t(target - now()) <= 20; }, 3000, "hold reaches release target");
   } else {
     // A miss still holds past the minimum hold, so it counts as one attempt.
     advance(400);
-    check(arc(29) && !arc(-29), "half charge fills the arc clockwise past 3 o'clock only");
   }
+  check(capture_aim_test::lowerBand() == lower, "holding adds no lower charge arc or pulse");
+  check(capture_badge_test::iconAt(kBallX, kHandY), "held ball remains visible");
+  shot(perfect ? "throw-single-ring-perfect" : "throw-single-ring-early");
   key(SDL_SCANCODE_RIGHT, false, 1);
   check(!active(), "release settles throw");
   state("throw-settled");
