@@ -41,7 +41,7 @@ void autoSleepAndWalk() {
 void manualAndBoundary() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
   openMenu(runtime);
-  for (unsigned i = 0; i < 6; ++i) edge(runtime, false, true);
+  for (unsigned i = 0; i < 7; ++i) edge(runtime, false, true);
   buttons(true, true); frame(runtime); idle(runtime, 400);
   check(runtime.dimmed() && platform.sleeps == 1 && platform.wakes == 0, "held manual confirmation cannot immediately wake itself");
   buttons(false, false); frame(runtime); frame(runtime);
@@ -52,11 +52,11 @@ void manualAndBoundary() {
   check(host_time_ms - wakeAt == 149 && runtime.dimmed() && M5.Display.brightness == 0,
         "display remains dark at 149ms even when a second key is pressed");
   frame(runtime, 1); endWake(platform);
-  check(!runtime.dimmed() && runtime.screen().selected == 6, "150ms boundary lights without executing waiting-period key");
+  check(!runtime.dimmed() && runtime.screen().selected == 7, "150ms boundary lights without executing waiting-period key");
   idle(runtime, 300); buttons(false, false); frame(runtime); frame(runtime);
-  check(runtime.screen().selected == 6, "held wake key and release cannot move selection");
+  check(runtime.screen().selected == 7, "held wake key and release cannot move selection");
   edge(runtime, true, false);
-  check(runtime.screen().selected == 5, "first fresh key after release moves once");
+  check(runtime.screen().selected == 6, "first fresh key after release moves once");
   screenshot(runtime, "power-home-menu");
   buttons(false, true); frame(runtime); idle(runtime, 30200);
   check(!runtime.dimmed(), "continuous held input prevents automatic sleep");
@@ -65,7 +65,7 @@ void manualAndBoundary() {
 
 void clockDraft() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 4); select(runtime, 1); select(runtime, 0); edge(runtime, false, true);
+  openMenu(runtime); select(runtime, 5); select(runtime, 1); select(runtime, 0); edge(runtime, false, true);
   const auto draft = runtime.screen(); const unsigned writes = platform.clockWrites;
   idle(runtime, 30020); check(runtime.dimmed() && draft.editing, "clock editor can sleep with an unsaved draft");
   tap(runtime, 233, 390); idle(runtime, 160);
@@ -83,7 +83,7 @@ void clockDraft() {
 
 void pausedAndActive() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 5); const unsigned reads = platform.reads;
+  openMenu(runtime); select(runtime, 6); const unsigned reads = platform.reads;
   for (unsigned elapsed = 0; elapsed < 6500; elapsed += 20) {
     frame(runtime); check(!runtime.dimmed(), "active practice never sleeps");
   }
@@ -126,7 +126,7 @@ void throwWaiting() {
 
 void viewerWakeInputs() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 3); frame(runtime); edge(runtime, false, true); idle(runtime, 1000);
+  openMenu(runtime); select(runtime, 4); frame(runtime); edge(runtime, false, true); idle(runtime, 1000);
   auto& state = viewer_screen::g_state;
   const unsigned species = state.sprite_index; const uint32_t origin = state.animation_started_ms;
   check(species != 0, "viewer is on a noninitial species");
@@ -184,7 +184,7 @@ void batteryStates() {
   platform.battery.percent = 0; platform.battery.charge = c152::ChargeState::Unknown;
   edge(runtime, false, true); idle(runtime, 5000); screenshot(runtime, "battery-zero");
   check(M5.Display.readPixel(209, 16) == theme::kBackground, "charging symbol clears when status becomes unknown");
-  select(runtime, 3); frame(runtime);
+  select(runtime, 4); frame(runtime);
   platform.battery.percent = 100; idle(runtime, 5000); screenshot(runtime, "battery-viewer-full");
   platform.battery.percent = 9; idle(runtime, 5000); screenshot(runtime, "battery-viewer-low");
   check(M5.Display.readPixel(198, 16) == theme::kRed, "viewer receives battery updates without species changes");
@@ -192,19 +192,19 @@ void batteryStates() {
 
 void failedCommandsAndSave() {
   MemoryStore store; ready(store); PowerPlatform platform; platform.failSleep = true;
-  Runtime runtime(store, platform); start(runtime); openMenu(runtime); select(runtime, 6);
+  Runtime runtime(store, platform); start(runtime); openMenu(runtime); select(runtime, 7);
   check(!runtime.dimmed() && M5.Display.brightness == 96 && runtime.metrics().displayErrors == 1,
         "rejected sleep restores visible UI and records failure");
-  platform.failSleep = false; select(runtime, 6); wake(runtime);
+  platform.failSleep = false; select(runtime, 7); wake(runtime);
 }
 
 void wakeFailureAndSaveRetry() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 6); platform.failWake = true; M5.powerClick(); frame(runtime); idle(runtime, 180);
+  openMenu(runtime); select(runtime, 7); platform.failWake = true; M5.powerClick(); frame(runtime); idle(runtime, 180);
   check(runtime.dimmed() && platform.wakes == 1 && runtime.metrics().displayErrors == 1,
         "failed wake stays dark without busy retries");
   platform.failWake = false; wake(runtime); check(platform.wakes == 2, "fresh wake retries failed command");
-  select(runtime, 6); store.fail = true; walk(runtime, platform, 4); idle(runtime, 30020);
+  select(runtime, 7); store.fail = true; walk(runtime, platform, 4); idle(runtime, 30020);
   check(runtime.dimmed() && runtime.engine().savePending(), "sleep preserves a failed checkpoint for retry");
   const uint64_t total = runtime.engine().view().totalSteps;
   observeWake(platform); wake(runtime); endWake(platform);
@@ -217,7 +217,7 @@ void wakeFailureAndSaveRetry() {
 
 void viewerErrorWake() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 3); frame(runtime); idle(runtime, 30020);
+  openMenu(runtime); select(runtime, 4); frame(runtime); idle(runtime, 30020);
   viewer_screen::g_ready = false;
   observeWake(platform); wake(runtime); endWake(platform);
   check(runtime.metrics().displayErrors == 1 && glyph("画面不可用，请重启", 290, theme::kRed),

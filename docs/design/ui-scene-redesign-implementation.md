@@ -4,7 +4,7 @@
 
 ## 当前实现
 
-`screen_theme.hpp` 定义主题，`screens_components.cpp` 提供公共组件，`screens*.cpp` 和 `viewer_screen.cpp` 绘制页面。`Page` 包含 28 个玩法页面、7 个测试模式页面和1个语言页面，共 36 页。普通列表由 `menu_layout.hpp` 统一为每页 3 项，输入和选择由 Runtime 管理，绘制不修改 Engine 或存档。
+`screen_theme.hpp` 定义主题，`screens_components.cpp` 提供公共组件，`screens*.cpp` 和 `viewer_screen.cpp` 绘制页面。`Page` 包含 29 个玩法页面、7 个测试模式页面和1个语言页面，共 37 页。普通列表由 `menu_layout.hpp` 统一为每页 3 项，输入和选择由 Runtime 管理，绘制不修改 Engine 或存档。
 
 `tools/design_preview_scenes.py` 汇总关都、城都、丰缘、神奥、合众五个地区的场景来源（共用绘制工具在 `tools/scene_paint.py`，各地区分别在 `tools/scene_kanto.py`、`scene_johto.py`、`scene_hoenn.py`、`scene_sinnoh.py`、`scene_unova.py`）；`tools/build_scene_backgrounds.py` 按固件地区顺序生成普通、暗色与分层 RGB565 数据。`Screens::advanceScene()` 持有展示层进度：首页且屏幕唤醒时每 100ms 推进一次，走路不加速；地区切换归零，其他页面和熄屏期间暂停。绘制使用 456 像素行缓冲，远景和 UI 不动。遭遇、对战和投球使用已保存遭遇地区的静态暗色图，捕获练习使用对手所属地区。“选择地区”菜单两页列出五个地区，选中项的强调色取 `theme::routeColor`，标题下方显示选中地区（选到“返回”时为当前地区）的场景缩略图。
 
@@ -21,7 +21,7 @@ rtk proxy mise exec -- python3 -m unittest test.test_ui_design_previews
 
 画廊仍是原 26 页、77 帧和 6 条动画的历史视觉参考。`tools/design_preview.py` 的 `GeneratedAssets` 仍按 1～251 和旧 Sprite／帧字段布局解析数据，无法读取当前 649 种的 zlib 格式。2026-10-31 执行两个设计文档检查时均在 `setUpClass` 报 `generated sprite table must contain IDs 1-251`，尚未执行测试断言。五地区改版后 `design_preview_scenes.py` 只提供 `kanto`～`unova`，而 `design_preview_screens.py`、`design_preview_walk.py`、`design_preview_battle.py` 仍请求 `forest`、`coast`、`cave`；修复画廊时须同时改用地区名，画廊中的三路线图仅作历史参考。
 
-另一个静态可确认的缺口是页面覆盖：`test_every_firmware_page_is_covered` 比较全部 36 个 `Page`，但清单缺少三张进化／预览页、七张测试模式页和语言页，还保留已删除的 `ReleaseConfirm`；测试仍硬编码了 26 页。修复需要同步素材解析、生成器、页面清单和测试；只更新文档不能使该检查通过。
+另一个静态可确认的缺口是页面覆盖：`test_every_firmware_page_is_covered` 比较全部 37 个 `Page`，但清单缺少三张进化／预览页、七张测试模式页、语言页和携带伙伴页，还保留已删除的 `ReleaseConfirm`；测试仍硬编码了 26 页。修复需要同步素材解析、生成器、页面清单和测试；只更新文档不能使该检查通过。
 
 `test_design_document_links_and_frame_count` 直接读取 UI 主文档及 `pages`、`motion`、`implementation` 三个文件。这些入口与 HTML 画廊仍被维护流程使用。设计测试还检查路线、六个捕获关键帧、圆外像素、sprite 像素、联系表、50ms 战斗 GIF 和 100ms 步行动画时间槽；这些是设计产物检查，不能替代 Runtime 验收。
 
@@ -38,4 +38,4 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
 
 首页回归检查默认移动、走路不加速、完整循环、菜单返回、五个地区的切换与熄屏唤醒；交互回归从真实 Button_Class 或 SDL 输入进入 Runtime。修改 UI 后还须读取生成截图，核对圆形边缘、长名称、列表末页和返回入口。主机截图不证明实体屏幕观感、帧率、双角色解码耗时或计步精度。
 
-每次任务交付前仍须运行全量 `rtk proxy mise run test-simulator-e2e`。各类检查的职责、已知失败与设备待验事项统一见[验证说明](../verification.md)。
+按影响范围运行定向 E2E；只有命中全量触发条件才运行 `rtk proxy mise run test-simulator-e2e`。触发边界、各类检查的职责、已知失败与设备待验事项统一见[验证说明](../verification.md)。

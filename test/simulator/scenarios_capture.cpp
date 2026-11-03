@@ -96,7 +96,7 @@ void scenarioJourney(Driver& d, const std::string& phase) {
     d.shot("home-starter");
     d.homeMenu();
     d.check(d.screen().page == Page::Menu, "keyboard opens menu");
-    d.select(3);
+    d.select(4);
     d.until([&] { return d.screen().page == Page::Viewer; }, 4000, "pokedex viewer opens");
     d.press(SDL_SCANCODE_RIGHT);
     d.frames(8);
@@ -174,7 +174,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     acknowledge(d);
     checkCaptureBadge(d, 1, "first-capture");
     d.homeMenu();
-    d.select(3);
+    d.select(4);
     d.until([&] { return d.screen().page == Page::Viewer; }, 4000, "viewer opens after capture");
     d.frames();
     for (unsigned i = 0; pokedex::viewer_screen::species() != species && i < kSpeciesCount; ++i)
@@ -196,7 +196,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.until([&] { return d.screen().page == Page::Partners; }, 4000, "back to partners");
     d.back();
     d.until([&] { return d.screen().page == Page::Menu; }, 4000, "back to menu");
-    d.select(4);
+    d.select(5);
     d.until([&] { return d.screen().page == Page::Resources; }, 4000, "resources opens");
     d.select(0);
     d.until([&] { return d.screen().page == Page::Records; }, 4000, "records opens");

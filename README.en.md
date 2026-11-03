@@ -19,7 +19,7 @@ An offline walking adventure for the round screen of the M5Stack StopWatch (C152
 
 - **Walking adventures**: Switch freely between five regions—Kanto, Johto, Hoenn, Sinnoh, and Unova. Each region only has Pokémon from its own generation. An encounter occurs every 200–500 steps (random).
 - **Rhythm battles and catching**: When the cue circles the opponent, press the right button to attack; when it circles your partner, press the left button to dodge. Time your press by the closing ring. A neutral dot on the bottom track previews the next beat without indicating a button. After winning, throw up to two balls; Poké Balls are unlimited. Catching a species permanently removes it from the encounter pool.
-- **Partner training**: Carry one partner at a time. Only the carried partner earns training steps. Evolve it manually once it meets the requirements.
+- **Partner training**: Carry one partner at a time. Only the carried partner earns training steps. Open "Carried partner" from the menu to view training and evolution requirements, switch partners, or confirm an evolution.
 - **Pokédex**: Freely browse National Pokédex entries 1–649 across Kanto, Johto, Hoenn, Sinnoh, and Unova, with animated pixel art from Pokémon Black and White.
 
 <p align="center">

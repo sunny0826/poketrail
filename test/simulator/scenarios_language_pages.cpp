@@ -22,7 +22,7 @@ void pages(Driver& d) {
   d.check(d.runtime().language() == Language::English, "English fixture is restored before first frame");
   text(d, "Bulbasaur");
   d.homeMenu(); text(d, "My partners"); d.shot("english-menu");
-  d.select(3);
+  d.select(4);
   viewerSpecies(d, 1, "Bulbasaur", "Grass / Poison");
   viewerSpecies(d, 29, "Nidoran♀", "Poison");
   viewerSpecies(d, 32, "Nidoran♂", "Poison");
@@ -37,7 +37,7 @@ void pages(Driver& d) {
   d.shot("english-partners-last-page");
   text(d, "Back"); d.select(7);
   d.check(d.screen().page == Page::Menu, "partner last-page Back returns to menu");
-  d.select(4); text(d, "Stats and records"); d.select(1);
+  d.select(5); text(d, "Stats and records"); d.select(1);
   d.check(d.screen().page == Page::Clock, "English menu opens clock");
   d.shot("english-clock"); text(d, "Date and time");
   d.homeMenu(); d.select(2); d.select(0); d.select(1);

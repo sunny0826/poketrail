@@ -32,7 +32,8 @@ const char* routeName(i18n::Language language, Route r) {
 }
 unsigned menuCount(const ScreenState& s, const Engine& e) {
   switch (s.page) {
-    case Page::Menu: return 9;
+    case Page::Menu: return 10;
+    case Page::CarriedPartner: return e.view().partner ? 2 + e.evolutionView(e.view().partner).count : 1;
     case Page::Resources: return 3;
     case Page::DateWelcome: return 4;
     case Page::Starter: return 4;
@@ -87,7 +88,7 @@ bool homeEvolutionReady(const Engine& e) {
 bool touchBackEnabled(Page page) {
   switch (page) {
     case Page::Menu: case Page::Resources: case Page::Routes: case Page::Partners:
-    case Page::PartnerDetail: case Page::EvolutionConfirm:
+    case Page::CarriedPartner: case Page::PartnerDetail: case Page::EvolutionConfirm:
     case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
     case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets:
     case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
@@ -152,7 +153,7 @@ void Screens::captureBadge(const Save& save, int x, int y) {
   M5.Display.drawString(text, x + icon.width / 2 + 8, y);
 }
 void Screens::item(const ScreenState& s, unsigned index, const char* label, int top,
-                   uint16_t species, bool carried, const char* note) {
+                   uint16_t species, bool carried, const char* note, bool disabled) {
   const unsigned first = menu_layout::first(s.selected);
   if (index < first || index >= first + menu_layout::kPageSize) return;
   const auto bounds = menu_layout::rowBounds(index - first, top);
@@ -161,7 +162,7 @@ void Screens::item(const ScreenState& s, unsigned index, const char* label, int 
   const uint16_t accent = s.page == Page::Routes && index < kRegionCount ? theme::routeColor(regionAt(uint8_t(index)))
                                                                            : accentFor(s.page);
   const uint16_t background = active ? theme::kPanelActive : theme::kPanel;
-  const uint16_t color = active ? accent : theme::kText;
+  const uint16_t color = disabled ? theme::kMuted : active ? accent : theme::kText;
   const int radius = bounds.height / 2;
   M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, radius, background);
   if (active) {
@@ -293,12 +294,12 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     case Page::TestFaults: testFaults(s); break;
     case Page::TestDiagnostics: testDiagnostics(s, e); break;
     case Page::TestExit: testExit(s); break;
-    case Page::PartnerDetail: case Page::EvolutionConfirm:
+    case Page::CarriedPartner: case Page::PartnerDetail: case Page::EvolutionConfirm:
       progression(s, e); break;
     default: home(s, e, now); break;
   }
   const bool listPage = s.page == Page::DateWelcome || s.page == Page::Menu || s.page == Page::Resources || s.page == Page::Clock ||
-                        s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::Records ||
+                        s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::CarriedPartner || s.page == Page::Records ||
                         s.page == Page::EvolutionPreviewTargets || s.page == Page::TestHub ||
                         s.page == Page::TestSteps || s.page == Page::TestScenarios ||
                         s.page == Page::TestFaults;

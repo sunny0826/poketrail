@@ -1,6 +1,6 @@
 # 全场景页面覆盖
 
-返回[视觉设计](ui-scene-redesign.md)。下表按 [screens.hpp](../../firmware/apps/20_pokedex/screens.hpp) 的 `Page` 枚举列出当前 36 页。历史设计画廊保留原 26 页（含已删除的放弃确认页），三张进化／预览页、七张测试模式页和语言页尚无设计帧，表中链接到对应行为契约与主机测试。联系表和设计帧保留旧规则示例，不表示当前 Runtime 的完整页面覆盖。
+返回[视觉设计](ui-scene-redesign.md)。下表按 [screens.hpp](../../firmware/apps/20_pokedex/screens.hpp) 的 `Page` 枚举列出当前 37 页。历史设计画廊保留原 26 页（含已删除的放弃确认页），三张进化／预览页、七张测试模式页、语言页和携带伙伴页尚无设计帧，表中链接到对应行为契约与主机测试。联系表和设计帧保留旧规则示例，不表示当前 Runtime 的完整页面覆盖。
 
 | Page | 设计帧与状态 |
 | --- | --- |
@@ -28,6 +28,7 @@
 | `Error` | [保存重试](ui-scene-redesign/frames/error-save.png) · [未初始化](ui-scene-redesign/frames/error-storage.png) · [坏档](ui-scene-redesign/frames/error-corrupt.png) · [较新版本](ui-scene-redesign/frames/error-unsupported.png) · [画面不可用](ui-scene-redesign/frames/error-graphics.png) |
 | `Viewer` | [拥有](ui-scene-redesign/frames/viewer-owned.png) · [曾经获得](ui-scene-redesign/frames/viewer-history.png) · [未获得](ui-scene-redesign/frames/viewer-unowned.png) · [互动](ui-scene-redesign/frames/viewer-reacting.png) · [内存不足](ui-scene-redesign/frames/viewer-memory-error.png) |
 | `PartnerDetail` | [进化就绪](ui-scene-redesign/frames/partner-ready.png) · [进化已保存](ui-scene-redesign/frames/partner-saved.png) · [最终形态](ui-scene-redesign/frames/partner-final.png) · [目标已拥有](ui-scene-redesign/frames/partner-owned.png) · [步数不足](ui-scene-redesign/frames/partner-unready.png) |
+| `CarriedPartner` | 无设计帧；当前携带者、培养账户、切换入口、进化费用与不可用原因，见[玩法契约](walking-progression.md)与[伙伴渲染测试](../../test/test_progression_render.cpp) |
 | `EvolutionConfirm` | [进化确认](ui-scene-redesign/frames/evolution-confirm.png) |
 | `Evolution` | 无独立设计帧；保存成功后的真实进化动画，见[动画契约](evolution-animation.md)与[渲染测试](../../test/test_evolution_render.cpp) |
 | `EvolutionPreviewTargets` | 无独立设计帧；伊布七分支、无畏小子三分支的预览选择，见[预览契约](evolution-animation.md)与[预览测试](../../test/test_evolution_preview_render.cpp) |

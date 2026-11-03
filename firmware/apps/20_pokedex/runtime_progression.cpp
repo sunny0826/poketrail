@@ -11,11 +11,18 @@ const char* Runtime::collectionLabel(uint16_t species, void* context) {
   return i18n::text(runtime.language(), owns(save, species) ? i18n::Text::Owned :
                     registered(save, species) ? i18n::Text::Registered : i18n::Text::Unregistered);
 }
+void Runtime::openCarriedPartner() {
+  screen_.species = engine_.view().partner;
+  screen_.evolved = false;
+  partnersFromCarried_ = true;
+  navigate(Page::CarriedPartner);
+}
 void Runtime::openPartner(uint16_t species) {
   screen_.species = species; screen_.evolved = false;
   navigate(Page::PartnerDetail);
 }
 void Runtime::openHomeEvolution() {
+  partnersFromCarried_ = false;
   const uint16_t partner = engine_.view().partner;
   const EvolutionView view = engine_.evolutionView(partner);
   unsigned ready = view.count;
@@ -31,11 +38,12 @@ void Runtime::openHomeEvolution() {
   screen_.evolution.from = view.from;
   screen_.evolution.to = view.options[ready].target;
   screen_.evolution.rosterRevision = view.revision;
-  evolutionFromHome_ = true;
+  evolutionReturn_ = Page::Home;
   navigate(Page::EvolutionConfirm);
 }
 void Runtime::leaveEvolutionConfirm() {
-  if (evolutionFromHome_) navigate(Page::Home);
+  if (evolutionReturn_ == Page::Home) navigate(Page::Home);
+  else if (evolutionReturn_ == Page::CarriedPartner) openCarriedPartner();
   else openPartner(screen_.species);
 }
 void Runtime::startEvolution() {
@@ -100,9 +108,13 @@ void Runtime::activateProgression(unsigned item, uint32_t at) {
     }
     return;
   }
+  const bool carried = screen_.page == Page::CarriedPartner;
+  if (carried) screen_.species = engine_.view().partner;
   const EvolutionView view = engine_.evolutionView(screen_.species);
+  if (carried && (!screen_.species || item == view.count + 1)) { goBack(); return; }
   if (item == view.count + 1) { navigate(Page::Partners); return; }
   if (item == 0) {
+    if (carried) { navigate(Page::Partners); return; }
     const CommandResult result = engine_.selectPartner(screen_.species);
     screen_.command = result; screen_.evolved = false; waitForRelease();
     if (engine_.savePending()) pendingRoster_ = PendingRoster::Select;
@@ -116,7 +128,7 @@ void Runtime::activateProgression(unsigned item, uint32_t at) {
   screen_.evolution.from = view.from;
   screen_.evolution.to = option.target;
   screen_.evolution.rosterRevision = view.revision;
-  evolutionFromHome_ = false;
+  evolutionReturn_ = screen_.page;
   navigate(Page::EvolutionConfirm);
 }
 void Runtime::tickCapture(uint32_t now) {

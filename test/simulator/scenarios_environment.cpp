@@ -7,7 +7,7 @@ void start(Driver& d) {
   d.check(d.save().starter==1,"starter available");
 }
 void clockPage(Driver& d) {
-  d.homeMenu(); d.select(4); d.select(1);
+  d.homeMenu(); d.select(5); d.select(1);
   d.check(d.screen().page==Page::Clock,"clock settings visible");
 }
 }
@@ -71,7 +71,7 @@ void scenarioLifecycle(Driver& d,const std::string& phase) {
     d.advance(3000);
     d.check(d.save().totalSteps == stopped,"scripted focus loss stops walking");
     d.key(SDL_SCANCODE_RIGHT,true); d.focusLost();
-    d.homeMenu(); d.select(8); d.shot("awake-after-focus"); d.close();
+    d.homeMenu(); d.select(9); d.shot("awake-after-focus"); d.close();
   } else if(phase=="close-save" || phase=="close-clock") {
     d.walk(10);
     d.fault(phase=="close-clock" ? Fault::ClockWrite : Fault::BeforeWrite);

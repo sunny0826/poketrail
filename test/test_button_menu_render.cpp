@@ -103,7 +103,7 @@ void wakeAndRecords() {
   check(!r.dimmed() && r.screen().page == Page::DateWelcome && r.screen().selected == 1,
         "power wakes without executing the held staggered chord");
   release(r); chord(r, false); release(r); select(r, 0);
-  openMenu(r); select(r, 4); select(r, 0); select(r, 1);
+  openMenu(r); select(r, 5); select(r, 0); select(r, 1);
   check(r.screen().page == Page::Recent && menuCount(r.screen(), r.engine()) == 1,
         "empty recent records still have a return item");
   chord(r, true); release(r); check(r.screen().page == Page::Records, "empty record return accepts staggered chord");
@@ -135,7 +135,7 @@ BattleView battleView(const Runtime& r, bool practice) { return practice ? r.pra
 void pauseAndResume(bool practice) {
   MemoryStore store; seedEncounter(store); HostPlatform platform; Runtime r(store, platform); start(r);
   openMenu(r);
-  if (practice) select(r, 5); else { select(r, 0); select(r, 0); }
+  if (practice) select(r, 6); else { select(r, 0); select(r, 0); }
   const Page active = practice ? Page::Practice : Page::Battle;
   check(r.screen().page == active && !battleView(r, practice).consumed,
         "entering battle consumes held menu confirmation without attacking");

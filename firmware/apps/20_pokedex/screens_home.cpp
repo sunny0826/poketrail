@@ -39,7 +39,7 @@ void Screens::menu(const ScreenState& s, const Engine& e) {
   char dexLabel[32], captureLabel[48];
   snprintf(dexLabel, sizeof(dexLabel), tr(Text::PokedexCount), unsigned(kSpeciesCount));
   snprintf(captureLabel, sizeof(captureLabel), tr(Text::FirstCapturesCount), unsigned(kSpeciesCount));
-  const char* const home[] = {phase == Phase::Walking ? tr(Text::NoEncounter) : phase == Phase::ThrowReady ? tr(Text::ResumeCatch) : tr(Text::ResumeEncounter), tr(Text::ChooseRegion), tr(Text::MyPartners), dexLabel, tr(Text::Resources), tr(Text::CapturePractice), tr(Text::SleepNow), tr(Text::LanguageMenu), tr(Text::ReturnExploration)};
+  const char* const home[] = {phase == Phase::Walking ? tr(Text::NoEncounter) : phase == Phase::ThrowReady ? tr(Text::ResumeCatch) : tr(Text::ResumeEncounter), tr(Text::ChooseRegion), tr(Text::MyPartners), tr(Text::CarriedPartner), dexLabel, tr(Text::Resources), tr(Text::CapturePractice), tr(Text::SleepNow), tr(Text::LanguageMenu), tr(Text::ReturnExploration)};
   const char* const resources[] = {tr(Text::CaptureWalkRecords), tr(Text::DateTime), tr(Text::Back)};
   const char* const date[] = {tr(Text::SetDateTime), tr(Text::SkipDateTime), tr(Text::BrowsePokedex), tr(Text::LanguageMenu)};
   const char* const starters[] = {speciesName(1), speciesName(4), speciesName(7), tr(Text::Back)};

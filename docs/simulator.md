@@ -56,7 +56,7 @@ rtk proxy mise run simulate -- --save-dir .simulator/another-save
 
 `test-simulator` 检查基础集成；`test-simulator-e2e` 检查捕获、培养进化、保存失败重试、强杀恢复、旧档迁移和时钟。结构与覆盖边界见[模拟器 E2E](design/simulator-e2e.md)。
 
-新功能必须新增对应 E2E 覆盖；每次任务最终改动完成后、报告完成前必须运行全量 `test-simulator-e2e`，包括仅修改文档的任务。下面的 `--suite core`、`--case` 和 `--build-only` 用于开发调试，不能代替交付前全量运行。完整规则见[验证指南](verification.md#每次任务的-e2e-验收要求)。
+新功能必须新增对应 E2E 覆盖；默认按影响范围运行专项检查和定向 E2E，命中全量触发条件或用户明确要求时才运行全量 `test-simulator-e2e`。未触发全量时，相关 `--case` 可作为交付验收；触发全量时，`--suite core` 或 `--case` 不能替代全量。`--build-only` 只证明编译，纯文档改动只核对内容、链接及格式。完整规则见[验证指南](verification.md#每次任务的-e2e-验收要求)。
 
 ```bash
 rtk proxy mise run test-simulator

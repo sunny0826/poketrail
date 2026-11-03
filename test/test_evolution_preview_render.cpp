@@ -7,7 +7,7 @@ void fresh(MemoryStore& store) {
   check(engine.chooseStarter(1) == CommandResult::Applied, "preview fixture has an untrained starter");
 }
 void viewer(Runtime& runtime, uint16_t species) {
-  if (runtime.screen().page == Page::Home) { openMenu(runtime); select(runtime, 3); }
+  if (runtime.screen().page == Page::Home) { openMenu(runtime); select(runtime, 4); }
   else if (runtime.screen().page == Page::Error) select(runtime, 1);
   else if (runtime.screen().page == Page::DateWelcome) select(runtime, 2);
   frame(runtime);

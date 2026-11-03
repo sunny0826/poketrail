@@ -56,7 +56,7 @@ void captureCounts() {
     HostPlatform platform; Runtime runtime(store, platform); start(runtime);
     check(capture_badge_test::badge(count, 318, 81), "home displays distinct captures, not total captures");
     char name[48]; std::snprintf(name, sizeof(name), "home-captured-%u", count); screenshot(runtime, name);
-    openMenu(runtime); select(runtime, 4);
+    openMenu(runtime); select(runtime, 5);
     check(capture_badge_test::badge(count, 312, 110), "resources matches home captured species count");
     std::snprintf(name, sizeof(name), "resources-captured-%u", count); screenshot(runtime, name);
   }
@@ -87,7 +87,7 @@ void starters() {
   check(runtime.screen().page == Page::Home && runtime.engine().view().partner == 4,
         "touch thumbnail selects its visible starter row");
   screenshot(runtime, "home-starter");
-  openMenu(runtime); select(runtime, 4); ball(110); screenshot(runtime, "resources-unlimited-balls");
+  openMenu(runtime); select(runtime, 5); ball(110); screenshot(runtime, "resources-unlimited-balls");
 }
 void collection() {
   MemoryStore store; std::vector<uint16_t> ids;
@@ -109,7 +109,7 @@ void collection() {
   screenshot(runtime, "partners-last-back");
   tap(runtime, 233, 306);
   check(runtime.screen().page == Page::Menu, "last-page back row returns to the main menu");
-  select(runtime, 8); openMenu(runtime); select(runtime, 2); tap(runtime, 119, 306);
+  select(runtime, 9); openMenu(runtime); select(runtime, 2); tap(runtime, 119, 306);
   check(runtime.screen().page == Page::PartnerDetail && runtime.screen().species == 2,
         "thumbnail row opens matching partner detail");
   pokemon(2, 233, 132, 2); rowPokemon(3, 1);
@@ -185,7 +185,7 @@ void exhaustedRoutes() {
   HostPlatform platform; Runtime runtime(store, platform); start(runtime);
   check(runtime.engine().view().route == Route::Kanto && !remainingEncounters(runtime.engine().view(), Route::Kanto) &&
         remainingEncounters(runtime.engine().view(), Route::Sinnoh) == 1, "only Sinnoh still has an ordinary species");
-  openMenu(runtime); select(runtime, 4); screenshot(runtime, "kanto-exhausted");
+  openMenu(runtime); select(runtime, 5); screenshot(runtime, "kanto-exhausted");
   check(glyph("本地区已捕获完 · 可换地区", 183, theme::kGold), "exhausted region explains next action");
   tap(runtime, 233, 52); select(runtime, 1); select(runtime, 3);
   check(runtime.engine().view().route == Route::Sinnoh, "region can change after exhaustion");
@@ -196,7 +196,7 @@ void exhaustedRoutes() {
   ++old.nextEncounterId; old.totalSteps += kLegacyEncounterSteps; old.undatedSteps += kLegacyEncounterSteps;
   old.explorationSpent += kLegacyEncounterSteps;
   check(full.commit(old) == CommitStatus::Committed, "all ordinary species have permanent records");
-  Runtime complete(full, platform); start(complete); openMenu(complete); select(complete, 4);
+  Runtime complete(full, platform); start(complete); openMenu(complete); select(complete, 5);
   screenshot(complete, "all-captured");
   check(glyph("普通宝可梦已全部捕获", 183, theme::kGold), "completed pool explained without promising impossible encounter");
 }

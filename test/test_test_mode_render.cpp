@@ -169,7 +169,7 @@ void testModeFlow() {
   f.boot();
   skipDateAndStarter(f.r(), f.p());
   openMenu(f.r(), f.p());
-  select(f.r(), f.p(), 4);
+  select(f.r(), f.p(), 5);
   check(f.r().screen().page == Page::Resources, "resources page opens for hidden entry");
   published(f.r(), "resources-hidden-entry");
 
@@ -292,7 +292,7 @@ void testModeFlow() {
   badge("home page keeps the test badge after clock edit");
 
   openMenu(f.r(), f.p());
-  select(f.r(), f.p(), 4);
+  select(f.r(), f.p(), 5);
   published(f.r(), "test-resources");
   badge("test-mode resources keeps the test badge");
   idle(f.r(), 40);
@@ -365,7 +365,7 @@ void viewerBadge() {
   f.boot();
   f.r().openTestPage(Page::Home);
   openMenu(f.r(), f.p());
-  select(f.r(), f.p(), 3);
+  select(f.r(), f.p(), 4);
   idle(f.r(), 80);
   check(f.r().screen().page == Page::Viewer, "pokedex viewer opens in test mode");
   snapCurrent(f.r(), "test-viewer");

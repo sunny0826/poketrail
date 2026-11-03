@@ -40,8 +40,16 @@ void Screens::progression(const ScreenState& s, const Engine& e) {
     if (s.command != CommandResult::Applied) line(progressionMessage(s.command), 402, theme::kGold);
     return;
   }
-  const EvolutionView view = e.evolutionView(s.species);
-  title(speciesName(s.species), "", theme::kMint);
+  const bool carried = s.page == Page::CarriedPartner;
+  const uint16_t species = carried ? save.partner : s.species;
+  if (carried && !species) {
+    title(tr(Text::CarriedPartner), "", theme::kMint);
+    line(tr(Text::NoCarriedPartner), 150, theme::kMuted);
+    item(s, 0, tr(Text::BackToMenu));
+    return;
+  }
+  const EvolutionView view = e.evolutionView(species);
+  title(speciesName(species), "", theme::kMint);
   snprintf(text, sizeof(text), tr(Text::WalkedAvailable), static_cast<unsigned long long>(view.walked),
            static_cast<unsigned long long>(view.available));
   M5.Display.setFont(&fonts::efontCN_16);
@@ -52,24 +60,30 @@ void Screens::progression(const ScreenState& s, const Engine& e) {
     snprintf(text, sizeof(text), tr(Text::AvailableSteps), static_cast<unsigned long long>(view.available));
     line(text, 165, theme::kMint);
   }
-  thumbnail(s.species, 233, 132, 2);
+  thumbnail(species, 233, 132, 2);
   if (s.evolved) alert(tr(Text::EvolutionSaved), 188, theme::kMint);
-  else if (s.command != CommandResult::Applied && s.command != CommandResult::Duplicate)
+  else if (!carried && s.command != CommandResult::Applied && s.command != CommandResult::Duplicate)
     alert(s.command == CommandResult::InvalidInput && s.species != save.partner ?
           tr(Text::CarryFirst) : progressionMessage(s.command), 188, theme::kGold);
   else if (!view.count) alert(tr(Text::FinalFormReady), 188, theme::kMuted);
   else {
     const EvolutionOption& option = view.options[s.selected > 0 && s.selected <= view.count ? s.selected - 1 : 0];
     snprintf(text, sizeof(text), tr(Text::EvolutionNeeds), speciesName(option.target), static_cast<unsigned long>(option.cost));
-    alert(text, 188, theme::kGold);
+    alert(carried && option.status != CommandResult::Applied ? progressionMessage(option.status) : text,
+          188, theme::kGold);
   }
-  item(s, 0, save.partner == s.species ? tr(Text::Carried) : tr(Text::SelectPartner), menu_layout::kTop);
+  item(s, 0, carried ? tr(Text::SwitchPartner) : save.partner == species ? tr(Text::Carried) : tr(Text::SelectPartner), menu_layout::kTop);
   for (unsigned i = 0; i < view.count; ++i) {
     const EvolutionOption& option = view.options[i];
     const char* note = option.status == CommandResult::TargetOwned ? tr(Text::OwnedNote) :
       option.status == CommandResult::InsufficientProgress ? tr(Text::NotReady) : nullptr;
-    item(s, i + 1, speciesName(option.target), menu_layout::kTop, option.target, false, note);
+    if (carried) {
+      snprintf(text, sizeof(text), "%lu %s", static_cast<unsigned long>(option.cost), tr(Text::Steps));
+      note = text;
+    }
+    item(s, i + 1, speciesName(option.target), menu_layout::kTop, option.target, false, note,
+         carried && option.status != CommandResult::Applied);
   }
-  item(s, view.count + 1, tr(Text::BackToPartners), menu_layout::kTop);
+  item(s, view.count + 1, tr(carried ? Text::BackToMenu : Text::BackToPartners), menu_layout::kTop);
 }
 } }
