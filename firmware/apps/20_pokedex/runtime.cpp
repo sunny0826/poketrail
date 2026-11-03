@@ -20,6 +20,16 @@ CommitStatus TimedStore::commit(const Save& s) {
 }
 Runtime::Runtime(Store& store, Platform& platform, TestModeHost* testHost)
     : platform_(platform), testHost_(testHost), store_(store, platform, metrics_), engine_(store_) {}
+bool Runtime::startStartup() {
+  graphicsReady_ = screens_.begin();
+  startupActive_ = graphicsReady_ && screens_.startup(0);
+  startupStarted_ = startupRendered_ = platform_.now();
+  if (!startupActive_) {
+    drawGraphicsError(screen_.battery, language());
+    ++metrics_.displayErrors;
+  }
+  return startupActive_;
+}
 bool Runtime::begin(bool persistBoot) {
   graphicsReady_ = screens_.begin();
   viewer_screen::setFeedback([](uint16_t d, void* context) { static_cast<Runtime*>(context)->feedback(d); }, this);
@@ -203,6 +213,26 @@ void Runtime::loop() {
   Input input = platform_.pollInput();
   metrics_.maxInputGapMs = std::max(metrics_.maxInputGapMs, input.at - lastInput_); lastInput_ = input.at;
   if (input.any() || input.held) lastActivity_ = input.at;
+  if (startupActive_) {
+    const uint32_t elapsed = start - startupStarted_;
+    if (elapsed < kStartupDurationMs) {
+      if (start - startupRendered_ >= 40) {
+        if (!screens_.startup(elapsed)) {
+          startupActive_ = false;
+          drawGraphicsError(screen_.battery, language());
+          ++metrics_.displayErrors;
+        }
+        startupRendered_ = start;
+        metrics_.maxRenderMs = std::max(metrics_.maxRenderMs, platform_.now() - start);
+      }
+      return;  // Sample and drain boot input, but never play a battle behind the splash.
+    }
+    startupActive_ = false;
+    waitForRelease();
+    input.power = false;
+    lastActivity_ = start;
+    dirty_ = true;
+  }
   if (pendingStepCount_ && !(practiceCapture_.stage() == PracticeStage::Battle &&
                              !practiceCapture_.battleView().paused)) {
     engine_.observeSteps(pendingSteps_, pendingStepCount_, platform_.randomSeed());

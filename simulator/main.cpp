@@ -11,8 +11,11 @@ int main(int argc, char** argv) {
       throw std::runtime_error("请用 mise run simulate 启动，或 mise run test-simulator 验证");
     simulator::App app(argv[1], argv[2]);
     if (argc == 4 && !std::strcmp(argv[3], "--corrupt")) {
-      app.step();
-      if (app.runtime().engine().ready() || app.runtime().screen().page != pokedex::ui::Page::Error)
+      for (unsigned i = 0; app.runtime().startupActive() && i < 100; ++i) {
+        if (!app.step()) throw std::runtime_error("启动页期间窗口意外关闭");
+      }
+      if (app.runtime().startupActive() || app.runtime().engine().ready() ||
+          app.runtime().screen().page != pokedex::ui::Page::Error)
         throw std::runtime_error("损坏存档未进入错误页");
       app.screenshot("corrupt-save");
       if (!app.close()) throw std::runtime_error("无法关闭损坏存档页面");

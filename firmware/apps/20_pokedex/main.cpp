@@ -262,9 +262,13 @@ void handleTestRequest(pokedex::ui::Runtime::TestRequest request) {
 }}
 void setup() {
   c152::begin("PokeTrail");
+  runtime = pokedex::makeLargeObject<pokedex::ui::Runtime>(
+    store, static_cast<pokedex::ui::Platform&>(testPlatform), &store);
+  if (runtime) runtime->startStartup();
+  else pokedex::ui::drawGraphicsError({}, pokedex::i18n::Language::Chinese);
   platform.beginClock();
   store.begin();
-  rebuildRuntime();
+  ready = runtime && runtime->begin();
   if (!ready && runtime) {
     pokedex::ui::drawGraphicsError(runtime->screen().battery, runtime->language());
   }

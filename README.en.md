@@ -66,6 +66,8 @@ rtk proxy mise exec -- python3 scripts/run_render_tests.py \
 
 ## Getting started
 
+On boot, a Bulbasaur animation and the PokeTrail title appear for at least 1.2 seconds, followed by setup or the page restored from your save. Storage failures lead to the error screen.
+
 Choose **语言 / Language → English** from the main menu. The choice is saved and restored after restart, including Pokémon names, types, and instructions. On first launch, the same entry is on the second page of the date setup screen. New and upgraded saves default to Chinese. See [language settings](docs/usage.en.md#language-settings) for save errors and temporary use.
 
 After flashing with the project's script, the device synchronizes its clock to the flashing computer's current time. Once storage is available, choose Bulbasaur, Charmander, or Squirtle as your starter partner. You can also set the clock manually on the device or leave it unset for now. Total steps and exploration continue to increase; steps recorded while the date is unknown are not added to today's count later.

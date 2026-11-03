@@ -38,7 +38,6 @@ void begin(const char* title) {
   M5.Display.setSwapBytes(true);  // 素材数组保存原生 RGB565 数值。
   M5.Speaker.setVolume(72);
   previous_touch_down = M5.Touch.getDetail().isPressed();
-  drawFooter(title, TFT_CYAN);
 
   Serial.printf("\nM5Stack StopWatch C152: %s\n", title);
   Serial.printf("display=%dx%d board=%d\n", M5.Display.width(),

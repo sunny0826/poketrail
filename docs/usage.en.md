@@ -2,6 +2,10 @@
 
 # Usage guide
 
+## Startup
+
+A Bulbasaur animation and the PokeTrail title appear for at least 1.2 seconds on boot. The save then determines whether you see date setup, starter selection, Home, or a pending encounter page. Unavailable storage leads to the error screen. Release any side buttons or touch held during startup before operating the next page. Switching test modes or waking the screen does not replay the splash.
+
 ## Language settings
 
 Open the main menu from Home, go to its third page, then choose **语言 / Language → English**. The active language has a selection mark. A successful save applies the change immediately and keeps it after restart. Back returns to the previous page; selecting the active language does not save again.

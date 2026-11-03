@@ -31,6 +31,8 @@ App::App(const std::string& saveDir, const std::string& screenshots, const Optio
   c152::begin("PokeTrail Simulator");
   if (!M5.Display.getBuffer()) throw std::runtime_error(tr(Text::ScreenAllocation));
   runtime_.reset(new pokedex::ui::Runtime(store_, platform_));
+  runtime_->startStartup();
+  draw();
   if (!runtime_->begin()) throw std::runtime_error(tr(Text::RuntimeInitFailed));
   std::printf(tr(Text::SimulatorPaths), saveDir.c_str(), screenshots.c_str());
 }

@@ -177,8 +177,9 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.select(4);
     d.until([&] { return d.screen().page == Page::Viewer; }, 4000, "viewer opens after capture");
     d.frames();
+    // The frozen target is #108: walk forward from #1, avoiding a full-catalog detour.
     for (unsigned i = 0; pokedex::viewer_screen::species() != species && i < kSpeciesCount; ++i)
-      d.press(SDL_SCANCODE_LEFT);
+      d.press(SDL_SCANCODE_RIGHT);
     d.check(pokedex::viewer_screen::species() == species, "viewer displays captured species");
     d.shot("viewer-after-capture");
     if (english) d.check(rendered_text::contains("Lickitung", theme::kText) &&
@@ -204,7 +205,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.until([&] { return d.screen().page == Page::FirstCaptures; }, 4000, "first captures opens");
     d.frames();
     for (unsigned i = 0; d.screen().selected != species - 1 && i <= kSpeciesCount; ++i)
-      d.press(SDL_SCANCODE_LEFT);
+      d.press(SDL_SCANCODE_RIGHT);
     d.check(d.screen().selected == species - 1 && d.save().firstCapture[d.screen().selected].species == species,
             "first capture card displays actual capture");
     d.shot("first-captures");

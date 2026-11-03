@@ -58,6 +58,8 @@ void smoke(App& app, bool reload) {
   using pokedex::ui::Page;
   using pokedex::adventure::Phase;
   std::printf("SDL video driver: %s\n", SDL_GetCurrentVideoDriver());
+  for (unsigned i = 0; app.runtime().startupActive() && i < 100; ++i) frames(app, 1);
+  check(!app.runtime().startupActive(), "cold boot splash completes");
   frames(app);
   if (reload) {
     home(app);
@@ -81,7 +83,7 @@ void smoke(App& app, bool reload) {
   check(app.runtime().screen().page == Page::Menu, "keyboard opens menu");
   mouse(app, 350, 300, true); mouse(app, 100, 300, false);
   check(app.runtime().screen().selected == 3, "mouse swipe reaches second menu page");
-  tap(app, 233, 150);
+  tap(app, 233, 238);
   check(app.runtime().screen().page == Page::Viewer, "touch opens real Pokedex viewer");
   const auto species = pokedex::viewer_screen::species();
   press(app, SDL_SCANCODE_RIGHT);
