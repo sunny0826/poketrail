@@ -20,6 +20,9 @@ unsigned capturedSpeciesCount(const Save& s) {
   for (const auto captures : s.captureCounts) if (captures) ++count;
   return count;
 }
+unsigned pendingEncounterCount(const Save& s) {
+  return unsigned(s.encounterQueueSize) + (s.phase == Phase::EncounterReady ? 1u : 0u);
+}
 bool owns(const Save& s, uint16_t id) {
   return id >= 1 && id <= kSpeciesCount && (s.owned[(id - 1) / 8] & (1u << ((id - 1) % 8)));
 }
@@ -118,6 +121,7 @@ static bool validDay(const DayBucket& d, const Save& s) {
   return true;
 }
 bool validate(const Save& s) {
+  if (!save_validation::validQueue(s)) return false;
   if (!i18n::validLanguage(s.language) ||
       (s.schema < 8 && s.language != i18n::Language::Chinese)) return false;
   const size_t capacity = speciesCapacity(s.schema).count;
@@ -243,9 +247,9 @@ bool validate(const Save& s) {
     if (e.id || e.species || e.partner || e.usedBalls || s.result != Result::None) return false;
   } else {
     const CatalogEntry* entry = catalogEntry(e.species);
-    if (!e.id || e.id != s.nextEncounterId - 1 || !entry ||
+    if (!e.id || e.id != s.nextEncounterId - 1 - s.encounterQueueSize || !entry ||
         !(savedRouteMask(e.species, s.schema) & (1u << uint8_t(e.route))) ||
-        !owns(s, e.partner)) return false;
+        !(s.schema >= 9 ? registered(s, e.partner) : owns(s, e.partner))) return false;
     if ((s.phase == Phase::EncounterReady || s.phase == Phase::Battle) && (e.usedBalls || s.result != Result::None)) return false;
     if (s.phase == Phase::ThrowReady && (s.result != Result::Won || e.usedBalls > 1)) return false;
     if (s.phase == Phase::Resolved && s.result != Result::Lost && s.result != Result::Retreated &&

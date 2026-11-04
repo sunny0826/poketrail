@@ -74,6 +74,7 @@ void scenarioMigration(Driver&, const std::string& phase);
 void scenarioBattle(Driver&, const std::string& phase);
 void scenarioRegions(Driver&, const std::string& phase);
 void scenarioEncounterHistory(Driver&, const std::string& phase);
+void scenarioEncounterQueue(Driver&, const std::string& phase);
 void scenarioSchema6Upgrade(Driver&, const std::string& phase);
 void bootNewSave(Driver&);
 void enterAndWinBattle(Driver&, bool fixed = false);

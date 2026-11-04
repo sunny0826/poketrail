@@ -75,21 +75,23 @@ CommandResult Engine::checkpoint() {
   stage(); return submit();
 }
 void Engine::createEncounter(Save& s, uint32_t seed) {
-  if (s.phase != Phase::Walking || !s.starter || s.nextEncounterId == UINT64_MAX) return;
-  if (s.encounterTarget < kEncounterMinSteps || s.explorationCredit < s.encounterTarget) return;
-  const uint16_t species = chooseEncounter(s, s.route, seed);
-  if (!species) return;
-  s.explorationSpent += s.encounterTarget;
-  s.explorationCredit -= s.encounterTarget;
-  s.encounter = Encounter();
-  s.encounter.id = s.nextEncounterId++;
-  s.encounter.species = species;
-  s.encounter.partner = s.partner;
-  s.encounter.route = s.route;
-  s.encounter.seed = seed;
-  s.encounterTarget = nextEncounterTarget(seed ^ uint32_t(s.nextEncounterId));
-  s.phase = Phase::EncounterReady;
-  s.result = Result::None;
+  if (!s.starter) return;
+  while (s.nextEncounterId != UINT64_MAX &&
+         s.encounterQueueSize < s.encounterQueue.size() &&
+         s.encounterTarget >= kEncounterMinSteps && s.explorationCredit >= s.encounterTarget) {
+    const uint16_t species = chooseEncounter(s, s.route, seed);
+    if (!species) return;
+    s.explorationSpent += s.encounterTarget;
+    s.explorationCredit -= s.encounterTarget;
+    Encounter e;
+    e.id = s.nextEncounterId++; e.species = species; e.partner = s.partner;
+    e.route = s.route; e.seed = seed;
+    if (s.phase == Phase::Walking) {
+      s.encounter = e; s.phase = Phase::EncounterReady; s.result = Result::None;
+    } else s.encounterQueue[s.encounterQueueSize++] = e;
+    s.encounterTarget = nextEncounterTarget(seed ^ uint32_t(s.nextEncounterId));
+    seed = mixRandom(seed ^ uint32_t(e.id) ^ uint32_t(e.id >> 32));
+  }
 }
 CommandResult Engine::chooseStarter(uint16_t id) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
@@ -112,7 +114,6 @@ CommandResult Engine::selectPartner(uint16_t id) {
   if (state_.partner == id) return CommandResult::Duplicate;
   if (state_.rosterRevision == UINT64_MAX) return CommandResult::InvalidInput;
   stage(); ++candidate_.rosterRevision; candidate_.partner = id;
-  if (candidate_.phase == Phase::EncounterReady) candidate_.encounter.partner = id;
   return submit();
 }
 CommandResult Engine::selectRoute(Route route) {
@@ -136,7 +137,7 @@ CommandResult Engine::selectLanguage(i18n::Language language) {
 }
 CommandResult Engine::startBattle(uint32_t now) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
-  if (state_.phase != Phase::EncounterReady || !owns(state_, state_.encounter.partner)) return CommandResult::InvalidPhase;
+  if (state_.phase != Phase::EncounterReady || !registered(state_, state_.encounter.partner)) return CommandResult::InvalidPhase;
   state_.phase = Phase::Battle; dirty_ = true;
   const CatalogEntry* entry = catalogEntry(state_.encounter.species);
   battle_.begin(now, state_.encounter.seed, entry && entry->rare);
@@ -189,7 +190,15 @@ CommandResult Engine::acknowledgeResult(uint64_t id, uint32_t seed) {
   if (state_.phase != Phase::Resolved) return CommandResult::InvalidPhase;
   if (id != state_.encounter.id) return CommandResult::InvalidInput;
   stage(); candidate_.phase = Phase::Walking; candidate_.result = Result::None;
-  candidate_.encounter = Encounter(); createEncounter(candidate_, seed);
+  candidate_.encounter = Encounter();
+  if (candidate_.encounterQueueSize) {
+    candidate_.encounter = candidate_.encounterQueue[0];
+    for (size_t i = 1; i < candidate_.encounterQueueSize; ++i)
+      candidate_.encounterQueue[i - 1] = candidate_.encounterQueue[i];
+    candidate_.encounterQueue[--candidate_.encounterQueueSize] = Encounter();
+    candidate_.phase = Phase::EncounterReady;
+  }
+  createEncounter(candidate_, seed);
   return submit();
 }
 } }

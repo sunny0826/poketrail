@@ -2,7 +2,7 @@
 
 测试结构、确定性与证据格式见[模拟器 E2E](simulator-e2e.md)。新功能新增场景或断言时同步更新本表。
 
-当前默认全量注册 45 场：P0 24 场、P1 21 场。`--suite core` 仅运行 P0。场景名称与分组 ID 以 [runner 的 `CASES`](../../scripts/run_simulator_e2e.py) 为准；ID 保留原编号，不代表场景数量。下表描述剩余源码中的覆盖，不是本次执行通过记录。
+当前默认全量注册 47 场：P0 26 场、P1 21 场。`--suite core` 仅运行 P0。场景名称与分组 ID 以 [runner 的 `CASES`](../../scripts/run_simulator_e2e.py) 为准；ID 保留原编号，不代表场景数量。下表描述剩余源码中的覆盖，不是本次执行通过记录。
 
 | ID／起点 | 场景 | 核心断言 |
 | --- | --- | --- |
@@ -16,6 +16,7 @@
 | P0-17／N、F | language、language-retry-before/after/readback | 引导第二页触摸切英文、英文选伙伴及首页文字可读；返回恢复来源，切中／英文后新进程保留选择。三类保存失败继续显示原语言并锁定候选，重试发布原选择且账户不变；独立核对真实槽 CRC 与语言 |
 | P0-18／N、X | startup-new、startup-corrupt | 开机画面保持最短展示时段后自动退出；跨页持有双键／触摸及释放不穿透，新输入可操作。新档选伙伴、实际走路并保存，新进程冷启动恢复账户；损坏档进入错误页后仍可开图鉴，存档与时钟文件哈希不变 |
 | P0-19／F | encounter-history-evolution、encounter-history-branches、encounter-history-pending | 赠送种子经进化失败／重试后永久排除来源，保留来源 500 步；全池耗尽不扣探索步且继续培养，中英文提示与新进程一致。稀疏雷丘／战舞郎历史排除未登记祖先，关都未获得的格斗旁支仍能实际遭遇；合法旧在途来源仍可捕获一次，重启不重奖，下一场排除来源 |
+| P0-20／N、旧F | encounter-queue、encounter-queue-schema8 | SDL 走路连续排队；首页、菜单和资源页显示 0／1／3／两位数与英文；菜单数字紧跟文案。开始对战减少待战数、投球失败重试不改后续场、结果确认按 FIFO 领取；真实文件与新进程保留数量及场次快照。schema8 单场字节升级后保留对手、seed 和余额，继续排队并重启恢复 |
 | P1-09／F | isolation | 单目标与伊布分支预览返回原图鉴条目；练习的暂停、对战、投球、短按取消与退出不改正式拥有、培养、探索、捕获及日期账户 |
 | P1-10／N | clock、capture-clock | 未知日期步数与捕获不回填；UI 校时后新步可信，新进程恢复 UTC、时区、日期桶和各账户，并计入离线时间 |
 | P1-11／F | midnight | 走路跨日归档，UI 回拨一天后新日桶为空且旧账目保留；离线一小时后新进程恢复日期与账户 |
@@ -28,6 +29,6 @@
 
 N 为新档，F 为合法 fixture，X 为预制坏文件；fixture 不证明其已有培养步来自真实走路。公共场景入口等待启动页完成后再执行旅程；`startup-*` 直接在启动期间注入 SDL 输入。
 
-本轮删除 `journey`、`startup-existing`、`evolution-retry` 三个重复场景：相应普通路径分别由 `capture`、`startup-new` 的新进程恢复和 `progression` 承担。原生 OS 键鼠路径尚未接入默认 runner，不计入 45 场。
+先前测试整理已删除 `journey`、`startup-existing`、`evolution-retry` 三个重复场景：相应普通路径分别由 `capture`、`startup-new` 的新进程恢复和 `progression` 承担。原生 OS 键鼠路径尚未接入默认 runner，不计入 47 场。
 
 预览与练习检查正式业务账户不变，不约束后台 checkpoint 的写入次数。时钟重启另比较 UTC（1 秒容差）、时区、日桶、历史与总账。截图供问题定位和人工读图，不要求整屏哈希或私有 revision 精确相同；历史验收目录继续保留，不能替代本轮执行结果。

@@ -2,7 +2,7 @@
 
 本文维护已实现的测试结构与证据格式，场景覆盖见[覆盖矩阵](simulator-e2e-coverage.md)。运行 `rtk proxy mise run test-simulator-e2e` 后，以本轮输出判断结果；已知失败与设备边界见[验证说明](../verification.md)。
 
-测试从桌面输入进入真实 Runtime、玩法和 M5GFX，将结果写入真实双槽文件，再启动新进程验证恢复。当前源码使用 schema8、ruleVersion 3，新档从关都出发。SDL 事件队列证明应用层输入接入；操作系统键鼠和实体设备另行验收。
+测试从桌面输入进入真实 Runtime、玩法和 M5GFX，将结果写入真实双槽文件，再启动新进程验证恢复。当前源码使用 schema9、ruleVersion 3，新档从关都出发。SDL 事件队列证明应用层输入接入；操作系统键鼠和实体设备另行验收。
 
 ## 结构与归属
 
@@ -22,7 +22,7 @@ C++ Driver 复用 SDL 输入与固件类型；Python 管理独立进程和文件
 - [test/simulator](../../test/simulator)：输入、场景、断言、业务快照、fixture 生成器。场景只能取得 const Runtime/Save，不通过可变 Engine 制造结果。
 - [simulator](../../simulator)：固定种子和墙钟、错误展示、窗口事件观察、存储故障接缝。正常桌面模式仍保留阻塞错误框和关闭失败保护。
 - [run_simulator_e2e.py](../../scripts/run_simulator_e2e.py)：构建、独立目录、启动、重载、FIFO/SIGKILL、超时和结果汇总。
-- [test/fixtures/simulator](../../test/fixtures/simulator)：历史 schema3/rule2、schema6 海边在途场和 schema7 培养账户字节，清单按文件记录来源提交、源文件、生成器和字节哈希。重建命令为 `rtk proxy mise exec -- python3 scripts/build_simulator_legacy_fixture.py`。
+- [test/fixtures/simulator](../../test/fixtures/simulator)：历史 schema3/rule2、schema6 海边在途场、schema7 培养账户与 schema8 单场遭遇字节，清单按文件记录来源提交、源文件、生成器和字节哈希。重建命令为 `rtk proxy mise exec -- python3 scripts/build_simulator_legacy_fixture.py`。
 
 调用示例与实际 [Driver](../../test/simulator/driver.hpp) 一致：
 
@@ -55,7 +55,7 @@ GUI 串行运行，实际窗口事件写入日志。E2E 开启 `isolateHostFocus
 
 N 表示新档旅程，F 表示合法 fixture 起步，X 表示预制坏文件。F 证明起点之后的操作链，不宣称此前培养步来自用户走路。
 
-当前 fixture 经生产 codec 编解码、语义校验及 FileStore 加载。旧格式使用冻结旧字节：v1 引用已有 progression fixture；schema3/rule2 由历史提交 `53ebf948c998af69b1da06f125c224ccb4f44ccc` 的编码器生成；schema6 由五地区改动前的提交 `05432f6138310b5e9507cad4d25a525ecadd32b2` 的编码器生成，含选定海边、海边在途 #072（ThrowReady）和一条森林 #016 捕捉记录。schema3/rule2 升级为 rule3；v1 在途场仍保留 rule1，检查库存并扣球；schema6 升级为关都，在途场改到关都，森林记录保留。schema7 培养样本由提交 `95df92f1f89d9b087107ab5829db1721b3f6883f` 的编码器生成，包含总步 7800、妙蛙种子培养 7600、妙蛙草历史培养 200 和已拥有的小火龙；升级默认中文且保留账户。`sinnoh-done` 是当前格式的 F 起点：神奥 38 种普通种均已在神奥捕获，探索余额 400 步。
+当前 fixture 经生产 codec 编解码、语义校验及 FileStore 加载。旧格式使用冻结旧字节：v1 引用已有 progression fixture；schema3/rule2 由历史提交 `53ebf948c998af69b1da06f125c224ccb4f44ccc` 的编码器生成；schema6 由五地区改动前的提交 `05432f6138310b5e9507cad4d25a525ecadd32b2` 的编码器生成，含选定海边、海边在途 #072（ThrowReady）和一条森林 #016 捕捉记录。schema3/rule2 升级为 rule3；v1 在途场仍保留 rule1，检查库存并扣球；schema6 升级为关都，在途场改到关都，森林记录保留。schema7 培养样本由提交 `95df92f1f89d9b087107ab5829db1721b3f6883f` 的编码器生成，包含总步 7800、妙蛙种子培养 7600、妙蛙草历史培养 200 和已拥有的小火龙；升级默认中文且保留账户。schema8 单场样本由提交 `c5a99dd` 的编码器生成，包含 300 步、零余额与关都 #072 EncounterReady，升级后经真实走路继续建场并重启核对 FIFO 快照。`sinnoh-done` 是当前格式的 F 起点：神奥 38 种普通种均已在神奥捕获，探索余额 400 步。
 
 `history-evolution` 用当前格式登记所有普通种、但不制造捕获记录，真实进化赠送种子并验证全地区耗尽；`history-branches` 在两条相关进化链中只登记雷丘和战舞郎，省略皮丘、皮卡丘、无畏小子与两只格斗旁支，另登记关都／城都其余普通种，验证跨世代、缺中间历史的祖先闭包与未获得旁支；`history-pending` 构造旧规则下合法的种子在途场（来源已进化、未曾捕获），验证新抽样规则不会阻止完成该场。三者都是 F 起点，不冒充历史版本冻结字节或用户真实存档；均通过真实文件与新进程验证结果。
 
@@ -91,13 +91,13 @@ rtk proxy mise run test-simulator-e2e -- --build-only
 - 根目录 `result.json`：每个场景的ID、起点、状态和错误。
 - 场景 `fixture.json`、`before/`、`after.json`、`save/`：初始字节及哈希、终态哈希与真实存档。中间文件哈希不能替代最终业务断言。
 - 各启动目录：`events.jsonl`、`stdout.log`、`stderr.log`、`result.json`、命名业务快照、BMP/PNG截图；进程结果含退出码、墙钟耗时与是否强杀。
-- `restart-check.json`：跨进程时钟与账户比较；`language-disk-check.json`：显示语言与 CRC 有效磁盘槽的核对。
+- `restart-check.json`：跨进程时钟与账户比较；`language-disk-check.json`：显示语言与 CRC 有效磁盘槽的核对；`queue-restart-check.json`：跨进程核对活动场、FIFO 顺序与完整生成快照、计数及探索账目。
 
 首次断言失败保留快照与截图并退出，runner 继续其他独立场景。超时也保留进程结果；最近截图和日志仍可查看。构建依赖或SDL不可用时命令非零退出，不记为通过。
 
 ## 验证边界
 
-当前默认 E2E 注册 45 场（P0 24、P1 21），渲染入口保留 12 套。`test-adventure`、`test-storage`、`test-render` 及素材检查分别承担规则边界、故障恢复、页面信息和发布来源验证。独立 smoke／`test-simulator` 入口已删除，普通集成路径由 E2E 承担；只构建桌面程序可用 `rtk proxy mise run simulate -- --build-only`。没有独立 typecheck 任务，C++ 类型检查由实际主机与固件编译承担。
+当前默认 E2E 注册 47 场（P0 26、P1 21），渲染入口保留 12 套。`test-adventure`、`test-storage`、`test-render` 及素材检查分别承担规则边界、故障恢复、页面信息和发布来源验证。独立 smoke／`test-simulator` 入口已删除，普通集成路径由 E2E 承担；只构建桌面程序可用 `rtk proxy mise run simulate -- --build-only`。没有独立 typecheck 任务，C++ 类型检查由实际主机与固件编译承担。
 
 实际文字、圆屏输出和输入检查与人工视觉审阅各有边界；截图不是固定整屏像素基准。画布468×468，物理圆屏466×466；主机图无法证明设备边缘可见性、真实计步、时延或断电恢复。注册数量只描述当前源码，验收状态须看本轮结果。
 

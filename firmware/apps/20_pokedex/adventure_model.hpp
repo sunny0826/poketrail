@@ -12,11 +12,12 @@ struct SpeciesCapacity { size_t count, bytes; };
 constexpr SpeciesCapacity speciesCapacity(uint16_t schema) {
   return schema >= 1 && schema <= 2 ? SpeciesCapacity{151, 19} :
          schema >= 3 && schema <= 5 ? SpeciesCapacity{251, 32} :
-         schema >= 6 && schema <= 8 ? SpeciesCapacity{649, 82} : SpeciesCapacity{0, 0};
+         schema >= 6 && schema <= 9 ? SpeciesCapacity{649, 82} : SpeciesCapacity{0, 0};
 }
 constexpr size_t kRecentCount = 32;
 constexpr size_t kHistoryCount = 14;
-constexpr uint16_t kSchemaVersion = 8;
+constexpr size_t kMaxInFlightEncounters = 32;
+constexpr uint16_t kSchemaVersion = 9;
 constexpr uint16_t kRuleVersion = 3;
 constexpr uint16_t kEncounterMinSteps = 200;
 constexpr uint16_t kEncounterMaxSteps = 500;
@@ -160,6 +161,8 @@ struct Save {
   Phase phase = Phase::Walking;
   Result result = Result::None;
   Encounter encounter;
+  std::array<Encounter, kMaxInFlightEncounters - 1> encounterQueue;
+  uint8_t encounterQueueSize = 0;
 };
 struct StepEvent {
   uint16_t partner = 0;
@@ -170,6 +173,7 @@ bool registered(const Save&, uint16_t);
 void setRegistered(Save&, uint16_t);
 uint64_t availableBalls(const Save&);
 unsigned capturedSpeciesCount(const Save&);
+unsigned pendingEncounterCount(const Save&);
 bool owns(const Save&, uint16_t species);
 void setOwned(Save&, uint16_t species);
 bool validDayKey(uint32_t);

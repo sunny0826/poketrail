@@ -121,9 +121,9 @@ CommandResult Engine::flushSteps() {
   stage(); bool mandatory = overflow_;
   if (overflow_) { candidate_.stepsIncomplete = true; candidate_.today.complete = false; }
   for (size_t i = 0; i < queueSize_; ++i) mandatory = applyStep(candidate_, queue_[i]) || mandatory;
-  const Phase oldPhase = candidate_.phase;
+  const uint64_t oldNextId = candidate_.nextEncounterId;
   createEncounter(candidate_, queueSeed_);
-  mandatory = mandatory || oldPhase != candidate_.phase;
+  mandatory = mandatory || oldNextId != candidate_.nextEncounterId;
   queueSize_ = 0; overflow_ = false;
   if (mandatory) return submit();
   state_ = candidate_; dirty_ = true;

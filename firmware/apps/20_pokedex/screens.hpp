@@ -123,6 +123,7 @@ class Screens {
   void pager(const ScreenState&, unsigned count);
   void thumbnail(uint16_t species, int x, int y, unsigned scale = 1);
   void captureBadge(const adventure::Save&, int x, int y);
+  void encounterBadge(const adventure::Save&, int x, int y);
   void line(const char*, int y, uint16_t color = theme::kText, bool large = false);
   void fitLine(const char*, int y, int width, uint16_t color, bool large = true);
   void title(const char*, const char* subtitle, uint16_t accent);

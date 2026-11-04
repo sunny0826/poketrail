@@ -15,6 +15,9 @@ void Driver::state(const std::string& name) {
     << ",\"totalSteps\":" << s.totalSteps << ",\"explorationCredit\":" << s.explorationCredit
     << ",\"explorationSpent\":" << s.explorationSpent << ",\"encounterId\":" << s.encounter.id
     << ",\"species\":" << s.encounter.species << ",\"seed\":" << s.encounter.seed
+    << ",\"encounterPartner\":" << s.encounter.partner << ",\"encounterRoute\":" << int(s.encounter.route)
+    << ",\"pendingEncounters\":" << pendingEncounterCount(s)
+    << ",\"nextEncounterId\":" << s.nextEncounterId
     << ",\"usedBalls\":" << unsigned(s.encounter.usedBalls) << ",\"ballsSpent\":" << s.ballsSpent
     << ",\"rosterRevision\":" << s.rosterRevision << ",\"recentSize\":" << unsigned(s.recentSize)
     << ",\"undatedSteps\":" << s.undatedSteps << ",\"today\":{\"day\":" << s.today.dayKey << ",\"steps\":" << s.today.steps << ",\"epoch\":" << s.today.epoch << "}"
@@ -27,6 +30,12 @@ void Driver::state(const std::string& name) {
     const auto& a=s.encounter.attempts[i]; if(i) o << ',';
     o << "{\"used\":" << a.used << ",\"timing\":" << int(a.timing) << ",\"roll\":" << unsigned(a.roll)
       << ",\"probability\":" << unsigned(a.probability) << ",\"captured\":" << a.captured << "}";
+  }
+  o << "],\"encounterQueue\":[";
+  for (unsigned i=0; i<s.encounterQueueSize; ++i) {
+    const auto& e=s.encounterQueue[i]; if(i) o << ',';
+    o << "{\"id\":" << e.id << ",\"species\":" << e.species << ",\"partner\":" << e.partner
+      << ",\"route\":" << int(e.route) << ",\"seed\":" << e.seed << "}";
   }
   o << "],\"history\":[";
   for (unsigned i=0; i<s.historySize; ++i) {

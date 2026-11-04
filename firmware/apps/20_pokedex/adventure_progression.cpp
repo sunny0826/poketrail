@@ -47,7 +47,6 @@ CommandResult Engine::evolve(EvolveRequest request, const ClockReading& clock) {
   candidate_.owned[(request.from - 1) / 8] &= uint8_t(~(1u << ((request.from - 1) % 8)));
   setOwned(candidate_, request.to); setRegistered(candidate_, request.to);
   candidate_.partner = request.to; ++candidate_.rosterRevision;
-  if (candidate_.phase == Phase::EncounterReady) candidate_.encounter.partner = request.to;
   candidate_.lastEvolution.request = request; candidate_.lastEvolution.cost = selected->cost;
   candidate_.lastEvolution.at = makeStamp(candidate_, clock);
   return submit();

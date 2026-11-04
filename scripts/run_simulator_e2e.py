@@ -41,6 +41,8 @@ CASES = {
     **{f"encounter-history-{kind}": ("P0-19", f"history-{kind}",
        [("encounter-history", kind), ("encounter-history", f"{kind}-reload")])
        for kind in ("evolution", "branches", "pending")},
+    "encounter-queue": ("P0-20", "blank", [("encounter-queue", "run"), ("encounter-queue", "reload"), ("encounter-queue", "consumed-reload")]),
+    "encounter-queue-schema8": ("P0-20", "schema8-encounter.bin", [("encounter-queue", "schema8"), ("encounter-queue", "schema8-reload")]),
     "target-owned": ("P0-06", "target-owned", [("conflict", "owned")]),
     "storage": ("P0-07", "starter", []),
     "crash-pause": ("P0-08", "battle", [("crash", "paused"), ("crash", "reload-paused")]),
@@ -175,17 +177,19 @@ def verify_language_save(save, snapshot_path):
     import zlib
     snapshot = json.loads(snapshot_path.read_text())
     valid = []
+    # Schema9 appends its queue after the frozen schema8 language byte.
+    language_offset = (ROOT / "test/fixtures/simulator/schema8-encounter.bin").stat().st_size - 1
     for path in save.glob("save-*.bin"):
         data = path.read_bytes()
         if len(data) < 23 or data[:4] != b"AVD1":
             continue
         schema, sequence, length, crc = struct.unpack_from("<HQII", data, 4)
-        if schema != 8 or length != len(data) - 22 or zlib.crc32(data[:18] + data[22:]) != crc:
+        if schema not in (8, 9) or length != len(data) - 22 or zlib.crc32(data[:18] + data[22:]) != crc:
             continue
-        if data[-1] in (0, 1):
-            valid.append((sequence, data[-1]))
+        if len(data) > language_offset and data[language_offset] in (0, 1):
+            valid.append((sequence, data[language_offset]))
     if not valid or max(valid)[1] != snapshot["savedLanguage"] or snapshot["language"] != snapshot["savedLanguage"]:
-        raise RuntimeError("language snapshot does not match CRC-valid schema8 disk slot")
+        raise RuntimeError("language snapshot does not match CRC-valid disk slot")
     write_json(snapshot_path.parent / "language-disk-check.json", {"validSlots": valid,
                "displayedLanguage": snapshot["language"], "savedLanguage": snapshot["savedLanguage"]})
 
@@ -269,6 +273,16 @@ def main():
                     keys = ("starter", "partner", "totalSteps", "explorationCredit", "explorationSpent", "accounts")
                     if any(before[key] != after[key] for key in keys):
                         raise RuntimeError("startup changed persisted walking or partner progress across processes")
+                if scenario == "encounter-queue" and "reload" in phase:
+                    before = json.loads((previous / "queue-end.json").read_text())
+                    after = json.loads((stage / "queue-restored.json").read_text())
+                    keys = ("pendingEncounters", "encounterId", "species", "seed", "encounterPartner",
+                            "encounterRoute", "nextEncounterId", "encounterQueue", "totalSteps",
+                            "explorationCredit", "explorationSpent", "accounts")
+                    checks = {key: before[key] == after[key] for key in keys}
+                    write_json(stage / "queue-restart-check.json", checks)
+                    if not all(checks.values()):
+                        raise RuntimeError("saved encounter queue or step balances changed across restart")
                 if scenario == "clock" and phase == "reload":
                     check_clock_restart(previous / "closed.json", stage / "reloaded.json", offline)
                 if protected is not None:

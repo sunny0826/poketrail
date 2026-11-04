@@ -42,7 +42,7 @@ static void stepThresholds() {
   threshold.before=true;CHECK(steps(t,1,1)==CommandResult::StorageError);
   CHECK(t.view().progress[0].walked==7499);threshold.before=false;CHECK(t.retrySave()==CommandResult::Applied);
   const auto frozen=t.view().encounter;CHECK(t.evolve(request(t,1,2),clockFor(t))==CommandResult::Applied);
-  CHECK(t.view().encounter.partner==2&&t.view().encounter.id==frozen.id&&t.view().encounter.seed==frozen.seed);
+  CHECK(t.view().encounter.partner==frozen.partner&&t.view().encounter.id==frozen.id&&t.view().encounter.seed==frozen.seed);
 }
 static void evolutionGuards() {
   auto pending=fixture(1,8000);pending->progress[0].walked=8000;

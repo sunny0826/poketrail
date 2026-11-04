@@ -21,6 +21,10 @@ FIXTURES = {
     "schema7-progress.bin": ("95df92f1", "scripts/fixtures/schema7_progress.cpp",
                              CODEC + ("adventure_migration.hpp", "adventure_migration.cpp",
                                       "large_object.hpp", "route_masks_v4_generated.hpp")),
+    "schema8-encounter.bin": ("c5a99dd", "scripts/fixtures/schema8_encounter.cpp",
+                              CODEC + ("adventure_migration.hpp", "adventure_migration.cpp",
+                                       "large_object.hpp", "route_masks_v4_generated.hpp",
+                                       "save_validation.hpp", "locale.hpp")),
 }
 
 

@@ -51,7 +51,7 @@ static void tailAndSemanticValidation() {
   truncated[14] = uint8_t(truncated.size() - 22);
   truncated[15] = uint8_t((truncated.size() - 22) >> 8); checksum(truncated);
   CHECK(codec::decode(truncated.data(), truncated.size(), decoded) == codec::DecodeStatus::Corrupt);
-  auto future = bytes; future[4] = 9; checksum(future);
+  auto future = bytes; future[4] = kSchemaVersion + 1; checksum(future);
   CHECK(codec::decode(future.data(), future.size(), decoded) == codec::DecodeStatus::UnsupportedVersion);
 }
 static void frozenSchema7() {
@@ -63,7 +63,7 @@ static void frozenSchema7() {
   CHECK(old.progress[0].walked == 7600 && old.progress[1].walked == 200);
   Save expected;
   for (Route region : {Route::Kanto, Route::Johto, Route::Hoenn, Route::Sinnoh, Route::Unova}) {
-    Save regional = old; regional.route = region; expected = regional; expected.schema = 8;
+    Save regional = old; regional.route = region; expected = regional; expected.schema = kSchemaVersion;
     CHECK(migrateLegacy(regional) && encoded(regional) == encoded(expected));
   }
 }

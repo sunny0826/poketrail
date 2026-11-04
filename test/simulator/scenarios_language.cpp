@@ -99,7 +99,7 @@ void unavailable(Driver& d, const std::string& phase) {
   d.state("language-final"); d.close();
 }
 void migration(Driver& d, const std::string& phase) {
-  d.check(d.save().schema == 8 && d.save().route == Route::Kanto && d.save().totalSteps == 7800 &&
+  d.check(d.save().schema == kSchemaVersion && d.save().route == Route::Kanto && d.save().totalSteps == 7800 &&
           d.save().explorationCredit == 7800 && d.save().explorationSpent == 0 &&
           d.save().progress[0].walked == 7600 && d.save().progress[1].walked == 200 &&
           d.save().partner == 1 && owns(d.save(), 4) && !owns(d.save(), 2),

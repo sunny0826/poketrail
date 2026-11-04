@@ -94,6 +94,17 @@ template<class A, class T> void payload(A& a, T& s) {
   // Schema 4 adds the random encounter cadence account.
   if (s.schema >= 4) { a.field(s.encounterTarget); a.field(s.explorationSpent); }
   if (s.schema >= 8) a.field(s.language);
+  if (s.schema >= 9) {
+    a.field(s.encounterQueueSize);
+    for (auto& e : s.encounterQueue) {
+      a.field(e.id); a.field(e.species); a.field(e.partner); a.field(e.route);
+      a.field(e.seed); a.field(e.ruleVersion); a.field(e.usedBalls); a.field(e.legacyFreeAttempts);
+      for (auto& attempt : e.attempts) {
+        a.field(attempt.used); a.field(attempt.timing); a.field(attempt.probability);
+        a.field(attempt.roll); a.field(attempt.captured); a.field(attempt.ruleVersion);
+      }
+    }
+  }
 }
 uint32_t updateCrc(uint32_t crc, const uint8_t* p, size_t n) {
   for (size_t i = 0; i < n; ++i) {
