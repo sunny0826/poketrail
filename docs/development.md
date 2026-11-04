@@ -66,7 +66,7 @@ rtk proxy mise run icons-download
 | `test-icons` | 649 个 PNG 来源哈希、透明规则、生成像素及缺来源时拒绝发布 |
 | `test-scenes` | 生成器 `--check` 核对五地区普通／暗色／分层数据和清单 |
 | `test-render` | 12 套 M5GFX 入口：文字、圆屏输出、残影、首页日期与极大计数、步峰归属、输入释放、慢保存、睡眠／唤醒、校时事务、测试控制台及图形失败错误 |
-| `test-simulator-e2e` | 45 场（P0 24、P1 21）：启动、语言、捕获、培养进化、失败重试、强杀恢复、旧档迁移、地区与遭遇历史、时钟和练习隔离；真实文件及新进程重载 |
+| `test-simulator-e2e` | 47 场（P0 26、P1 21）：启动、语言、捕获、培养进化、失败重试、强杀恢复、旧档迁移、地区与遭遇历史、时钟和练习隔离；真实文件及新进程重载 |
 | `build` | ESP32-S3 固件 |
 | `check-startup-stack` | 构建后目标 ELF 的 Engine 启动局部栈帧 |
 | `check-ci` | GitHub Actions 工作流语法与表达式 |

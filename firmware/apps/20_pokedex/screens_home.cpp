@@ -36,15 +36,16 @@ void Screens::language(const ScreenState& s, const Engine& e) {
 void Screens::menu(const ScreenState& s, const Engine& e) {
   const int top = menuTop(s, e);
   const auto phase = e.view().phase;
-  char dexLabel[32], captureLabel[48];
+  char dexLabel[32], captureLabel[48], encounterLabel[48];
   snprintf(dexLabel, sizeof(dexLabel), tr(Text::PokedexCount), unsigned(kSpeciesCount));
   snprintf(captureLabel, sizeof(captureLabel), tr(Text::FirstCapturesCount), unsigned(kSpeciesCount));
-  const char* const home[] = {phase == Phase::Walking ? tr(Text::NoEncounter) : phase == Phase::ThrowReady ? tr(Text::ResumeCatch) : tr(Text::ResumeEncounter), tr(Text::ChooseRegion), tr(Text::MyPartners), tr(Text::CarriedPartner), dexLabel, tr(Text::Resources), tr(Text::CapturePractice), tr(Text::SleepNow), tr(Text::LanguageMenu), tr(Text::ReturnExploration)};
+  snprintf(encounterLabel, sizeof(encounterLabel), tr(Text::ResumeEncounterCount), pendingEncounterCount(e.view()));
+  const char* const home[] = {phase == Phase::Walking ? tr(Text::NoEncounter) : phase == Phase::ThrowReady ? tr(Text::ResumeCatch) : phase == Phase::EncounterReady ? encounterLabel : tr(Text::ResumeEncounter), tr(Text::ChooseRegion), tr(Text::MyPartners), tr(Text::CarriedPartner), dexLabel, tr(Text::Resources), tr(Text::CapturePractice), tr(Text::SleepNow), tr(Text::LanguageMenu), tr(Text::ReturnExploration)};
   const char* const resources[] = {tr(Text::CaptureWalkRecords), tr(Text::DateTime), tr(Text::Back)};
   const char* const date[] = {tr(Text::SetDateTime), tr(Text::SkipDateTime), tr(Text::BrowsePokedex), tr(Text::LanguageMenu)};
   const char* const starters[] = {speciesName(1), speciesName(4), speciesName(7), tr(Text::Back)};
   const char* const routes[] = {tr(Text::RouteKanto), tr(Text::RouteJohto), tr(Text::RouteHoenn), tr(Text::RouteSinnoh), tr(Text::RouteUnova), tr(Text::Back)};
-  const char* const encounter[] = {tr(Text::StartBattle), tr(Text::CapturePractice), tr(Text::ChoosePartner), tr(Text::BattleLater)};
+  const char* const encounter[] = {tr(Text::StartBattle), tr(Text::CapturePractice), tr(Text::SwitchPartner), tr(Text::BattleLater)};
   const char* const pause[] = {tr(Text::Continue), tr(Text::ConfirmRetreat)};
   const char* const records[] = {captureLabel, tr(Text::RecentThirtyTwo), tr(Text::TodayAndHistory), tr(Text::DailyLifetime), tr(Text::Back)};
   const char* const error[] = {tr(Text::RetrySaveLoad), tr(Text::BrowsePokedex), tr(Text::LanguageMenu)};
@@ -93,6 +94,7 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
         line(text, 80, theme::kMint);
         line(routeName(v.route), 110, theme::kMint);
       } else line(text, 80, theme::kMint);
+      encounterBadge(v, 190, 110);
       captureBadge(v, 312, 110);
       const EvolutionView progress = e.evolutionView(v.partner);
       snprintf(text, sizeof(text), "%s · %s", speciesName(v.partner), progress.count ? tr(Text::Training) : tr(Text::FinalForm));

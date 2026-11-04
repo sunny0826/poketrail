@@ -44,7 +44,7 @@ bool Runtime::begin(bool persistBoot) {
   lastActivity_ = lastSamplePoll_ = lastInput_ = lastCheckpoint_ = now;
   pollBattery(now, true);
   batchId_ = engine_.view().lastStepBatch;
-  notifiedEncounter_ = engine_.view().encounter.id;
+  notifiedEncounter_ = engine_.view().nextEncounterId - 1;
   syncPage();
   if (engine_.ready()) pollClock(now);
   return graphicsReady_;
@@ -128,8 +128,8 @@ void Runtime::syncPage() {
     screen_.testDiagnostics = testHost_->diagnostics();
   }
   const auto& v = engine_.view();
-  if (engine_.ready() && !engine_.savePending() && v.phase == Phase::EncounterReady && v.encounter.id != notifiedEncounter_) {
-    notifiedEncounter_ = v.encounter.id; feedback(35);
+  if (engine_.ready() && !engine_.savePending() && v.phase == Phase::EncounterReady && v.nextEncounterId - 1 != notifiedEncounter_) {
+    notifiedEncounter_ = v.nextEncounterId - 1; feedback(35);
   }
   if (isTestPage(screen_.page)) return;
   if (screen_.page == Page::Language) {

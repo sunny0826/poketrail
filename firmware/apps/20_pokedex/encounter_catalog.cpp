@@ -56,7 +56,12 @@ static SpeciesMask retiredSpecies(const Save& s) {
   return retired;
 }
 static bool eligible(const Save& s, const SpeciesMask& retired, Route region, uint16_t id) {
-  return ordinaryEncounter(id) && !s.captureCounts[id - 1] && !marked(retired, id) && regionOf(id) == region;
+  if (!ordinaryEncounter(id) || s.captureCounts[id - 1] || marked(retired, id) || regionOf(id) != region)
+    return false;
+  if (s.phase != Phase::Walking && s.encounter.species == id) return false;
+  for (size_t i = 0; i < s.encounterQueueSize; ++i)
+    if (s.encounterQueue[i].species == id) return false;
+  return true;
 }
 unsigned remainingEncounters(const Save& s, Route region) {
   if (!isRegion(region)) return 0;

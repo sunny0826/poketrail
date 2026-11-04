@@ -69,6 +69,7 @@ bool Screens::exploration(const Engine& engine, uint32_t now) {
   glyph(theme::Icon::Route, 91, 81, theme::routeColor(save.route));
   smallLabel(routeName(save.route), 107, 81, theme::routeColor(save.route), middle_left);
   captureBadge(save, 318, 81);
+  encounterBadge(save, 366, 110);
   progress(save.explorationCredit, save.encounterTarget, 361, theme::routeColor(save.route));
   const auto& clock = save.clock;
   const bool todayKnown = clock.trusted && clock.anchor.trusted && !clock.pending.active && !clock.anomaly &&

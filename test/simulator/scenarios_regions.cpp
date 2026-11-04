@@ -101,7 +101,7 @@ void scenarioRegions(Driver& d, const std::string& phase) {
 // P1-12：冻结 schema6 海边在途场与森林历史，升级到当前格式后继续投球。
 void scenarioSchema6Upgrade(Driver& d, const std::string& phase) {
   d.frames();
-  d.check(d.save().schema == 8 && d.save().route == Route::Kanto, "schema6 bytes upgrade to Kanto schema8");
+  d.check(d.save().schema == kSchemaVersion && d.save().route == Route::Kanto, "schema6 bytes upgrade to Kanto in current schema");
   d.check(d.save().firstCapture[15].route == Route::Forest && d.save().recent[0].species == 16 &&
           d.save().recent[0].route == Route::Forest, "old Forest record stays as history");
   if (phase == "schema6") {

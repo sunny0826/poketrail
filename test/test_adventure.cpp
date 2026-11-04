@@ -11,9 +11,11 @@ static void basicSteps() {
   const uint16_t nextTarget = w.e.view().encounterTarget;
   CHECK(nextTarget >= kEncounterMinSteps && nextTarget <= kEncounterMaxSteps);
   const Encounter target = w.e.view().encounter;
-  w.steps(11000); CHECK(w.e.view().totalSteps == unsigned(firstTarget) + 11000 && w.e.view().explorationCredit == 11000);
+  w.steps(11000); CHECK(w.e.view().totalSteps == unsigned(firstTarget) + 11000);
+  CHECK(w.e.view().explorationCredit + w.e.view().explorationSpent == w.e.view().totalSteps);
   CHECK(w.e.view().undatedSteps == unsigned(firstTarget) + 11000 && w.e.view().today.steps == 0);
-  CHECK(w.e.view().encounterTarget == nextTarget);
+  CHECK(pendingEncounterCount(w.e.view()) > 1);
+  const Encounter queued = w.e.view().encounterQueue[0];
   CHECK(w.e.selectRoute(Route::Johto) == CommandResult::Applied);
   CHECK(w.e.view().encounter.species == target.species && w.e.view().encounter.route == target.route);
   StepEvent replay; replay.batchId = w.e.view().totalSteps; replay.clock = w.clock();
@@ -21,8 +23,9 @@ static void basicSteps() {
   CHECK(w.e.retreat() == CommandResult::Applied);
   const uint64_t spentBefore = w.e.view().explorationSpent;
   CHECK(w.e.acknowledgeResult(target.id, 123) == CommandResult::Applied);
-  CHECK(w.e.view().explorationSpent == spentBefore + nextTarget);
-  CHECK(w.e.view().explorationCredit == 11000 - nextTarget && w.e.view().encounter.id == 2 && w.e.view().encounter.route == Route::Johto);
+  CHECK(w.e.view().explorationSpent >= spentBefore);
+  CHECK(w.e.view().encounter.id == queued.id && w.e.view().encounter.species == queued.species &&
+        w.e.view().encounter.route == queued.route && w.e.view().encounter.seed == queued.seed);
   Engine reboot(w.store); CHECK(reboot.begin() == CommandResult::Applied);
   StepEvent fresh; fresh.batchId = 1; fresh.clock = reading(reboot, 0, 10, false);
   const uint64_t total = w.e.view().totalSteps;

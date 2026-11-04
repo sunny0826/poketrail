@@ -31,12 +31,12 @@ static void historicalBytes() {
     CHECK(s.schema==schema&&encoded(s)==b);
     CHECK(s.partner==(schema>=3?251:1));
     CHECK(s.route==Route::Forest);
-    CHECK(migrateLegacy(s)&&s.schema==8&&s.sequence==19&&s.route==Route::Kanto);
+    CHECK(migrateLegacy(s)&&s.schema==kSchemaVersion&&s.sequence==19&&s.route==Route::Kanto);
     for(uint16_t id=252;id<=649;++id)CHECK(!owns(s,id)&&!registered(s,id)&&!s.captureCounts[id-1]&&!s.progress[id-1].walked);
   }
 }
 static void capacityBoundaries() {
-  for(uint16_t schema=1;schema<=8;++schema){
+  for(uint16_t schema=1;schema<=kSchemaVersion;++schema){
     Save good;const auto bytes=baseline(schema>=6?5:schema);
     CHECK(codec::decode(bytes.data(),bytes.size(),good)==codec::DecodeStatus::Ok);
     good.schema=schema;if(schema>=7)good.route=Route::Kanto;CHECK(validate(good));
@@ -73,7 +73,7 @@ static void upgradePhases() {
     CHECK(e.begin()==(mode?CommandResult::StorageError:CommandResult::Applied));
     if(mode){CHECK(!e.ready());const auto frozen=store.attempt;
       store.before=store.after=false;CHECK(e.retrySave()==CommandResult::Applied&&store.disk==frozen);}
-    CHECK(e.ready()&&e.view().schema==8&&e.view().route==Route::Kanto);
+    CHECK(e.ready()&&e.view().schema==kSchemaVersion&&e.view().route==Route::Kanto);
     CHECK(e.view().phase==(phase==Phase::Battle?Phase::EncounterReady:phase));
     CHECK(e.view().encounter.species==1&&e.view().encounter.partner==1&&e.view().encounter.id==1&&e.view().encounter.seed==12345);
     CHECK(old->encounter.route==Route::Forest&&e.view().encounter.route==Route::Kanto&&e.view().encounter.usedBalls==old->encounter.usedBalls&&e.view().encounter.ruleVersion==3);

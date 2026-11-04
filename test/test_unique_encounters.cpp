@@ -37,7 +37,9 @@ static void failedEncountersRemain() {
   CHECK(steps(e, 5000, 1) == CommandResult::Applied);
   CHECK(e.acknowledgeResult(e.view().encounter.id, 7) == CommandResult::Applied); win(e);
   CHECK(e.giveUpCapture(e.view().encounter.id) == CommandResult::Applied);
-  CHECK(e.view().captureCounts[3] == 0 && remainingEncounters(e.view(), Route::Kanto) == 1);
+  CHECK(e.view().captureCounts[3] == 0 && remainingEncounters(e.view(), Route::Kanto) == 0);
+  CHECK(e.acknowledgeResult(e.view().encounter.id, 7) == CommandResult::Applied);
+  CHECK(e.view().encounter.species == 4); // The uncaught species becomes eligible when its old slot is consumed.
 }
 static void captureRetry() {
   auto s = collection(4); MemoryStore store; store.disk = encoded(*s);

@@ -58,11 +58,35 @@
       },
       "generator": "scripts/fixtures/schema7_progress.cpp",
       "generatorSha256": "0c127c8ae42dfb84dbebe20b9fae5510d61a97c34722c089645742f51b0c6583"
+    },
+    "schema8-encounter.bin": {
+      "sourceCommit": "c5a99dd088e9398f481bdaf8a36a0839493dcfe0",
+      "sources": {
+        "adventure_model.hpp": "5ef5f9fdefe3b419ef1a34d156eee12fa173f9f9372335dbcc358eb870963d44",
+        "adventure_model.cpp": "59b5d204cd26abfe0786e5e0ad8073fb402a2facd8bf96bdcb10b80bb0e63f6d",
+        "save_codec.hpp": "f6ae76c4746cdbb9594fff0face9447873e74730b16779167900a030d6356db5",
+        "save_codec.cpp": "507b3de6dc3bf1d6fff5a394f13f73ccd1132f69f10d64f907aed5a66d6ffd4d",
+        "calendar.hpp": "21a768acd9af252d40e4f637c4373768c1c5c594487bbf09a485c1c7f56b95dc",
+        "calendar.cpp": "0f24dbebddcf73918a2cfbdfeb62c29736825043e90259612d5b7f5dccf5d834",
+        "encounter_catalog.hpp": "81603d757020a47c498cf6fa7e62fdcd548b6462f86a8ead0ea2267e8e8f330f",
+        "encounter_catalog.cpp": "1521eb75bc0ba402886849642275e8aecf7c3c994aea8a92846c369bf2bac56f",
+        "adventure_catalog_generated.hpp": "4a58bcf050beaa72bfb94d46a5fd4ecbba33e4a77501601d34eb05d78bb2a601",
+        "progression_catalog_generated.hpp": "ce8531a82c2045e7dc69b93216f7f1ecb7785576bc006ae3a9cf5159694d41c8",
+        "adventure_migration.hpp": "13e9c0f63ff6c39bb26053753655ad9f1bd85607e1857e728efbf514fd8c6da9",
+        "adventure_migration.cpp": "55715103484e45fd1a89884a27e6a2f91c19bbf79aee2f5dd23c2a023823ed45",
+        "large_object.hpp": "b6cc9291844fd190f1fa1468f7cbfa875557ec8f4c4a53613d68c9a5ebb3cfda",
+        "route_masks_v4_generated.hpp": "c478d6d4de4b6bf472185ee8f8a62cd54e2a6ade5a81854d6f1243a85c5fbcf0",
+        "save_validation.hpp": "2ecc53435a99dfce8f62f4e4268dd7b69371810dd963ed2c8363f60dc8a49d1b",
+        "locale.hpp": "821a68ba8c3ee61522de8fd03e31ccbb063ede442f64408eb71b29650ef996cc"
+      },
+      "generator": "scripts/fixtures/schema8_encounter.cpp",
+      "generatorSha256": "b504c07555c229d7626b1870456fd5e8d527d4cd9e3196ece64843a247674686"
     }
   },
   "fixtures": {
     "schema3-rule2.bin": "9a24d7a3efd5d0e9656a03e5169b38037c7a4fc9e7e9d569a7f5f45819e1101d",
     "schema6-coast.bin": "67857f668eb6bbcde88752f8e44a8cc0c3c33635de80eb0da6a2589a081d5033",
-    "schema7-progress.bin": "b6d0836e7eb1ac5a1d3637ce02899ae8c4b28cd7cd4a8d4f12a98a682d7d7e0f"
+    "schema7-progress.bin": "b6d0836e7eb1ac5a1d3637ce02899ae8c4b28cd7cd4a8d4f12a98a682d7d7e0f",
+    "schema8-encounter.bin": "91afa6320e8e70a1d5ecea4c80f40103344c8eb4fc61da3769f1371af6522571"
   }
 }

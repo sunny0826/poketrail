@@ -175,6 +175,18 @@ void Screens::captureBadge(const Save& save, int x, int y) {
   M5.Display.setTextColor(theme::kText);
   M5.Display.drawString(text, x + icon.width / 2 + 8, y);
 }
+void Screens::encounterBadge(const Save& save, int x, int y) {
+  const unsigned count = pendingEncounterCount(save);
+  if (!count) return;
+  char text[32];
+  snprintf(text, sizeof(text), tr(Text::EncounterCount), count);
+  M5.Display.setTextDatum(middle_right);
+  M5.Display.setFont(&fonts::efontCN_16);
+  const int width = M5.Display.textWidth(text) + 16;
+  M5.Display.fillRoundRect(x + 8 - width, y - 12, width, 24, 7, theme::kPanel);
+  M5.Display.setTextColor(theme::kGold);
+  M5.Display.drawString(text, x, y);
+}
 void Screens::item(const ScreenState& s, unsigned index, const char* label, int top,
                    uint16_t species, bool carried, const char* note, bool disabled) {
   const unsigned first = menu_layout::first(s.selected);
