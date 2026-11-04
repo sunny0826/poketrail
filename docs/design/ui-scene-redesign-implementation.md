@@ -4,7 +4,7 @@
 
 ## 当前实现
 
-`screen_theme.hpp` 定义主题，`screens_components.cpp` 提供公共组件，`screens*.cpp` 和 `viewer_screen.cpp` 绘制页面。`Page` 包含 29 个玩法页面、7 个测试模式页面和1个语言页面，共 37 页。普通列表由 `menu_layout.hpp` 统一为每页 3 项，输入和选择由 Runtime 管理，绘制不修改 Engine 或存档。
+`screen_theme.hpp` 定义主题，`screens_components.cpp` 提供公共组件，`screens*.cpp` 和 `viewer_screen.cpp` 绘制页面。`Page` 包含 29 个玩法页面、7 个测试模式页面和1个语言页面，共 37 页。普通列表由 `menu_layout.hpp` 统一为每页 3 项，主菜单与记录由同一文件的 `Hub` 布局定义宫格并在 `screens_menu.cpp` 绘制，输入和选择由 Runtime 管理，绘制不修改 Engine 或存档。
 
 `tools/design_preview_scenes.py` 汇总关都、城都、丰缘、神奥、合众五个地区的场景来源（共用绘制工具在 `tools/scene_paint.py`，各地区分别在 `tools/scene_kanto.py`、`scene_johto.py`、`scene_hoenn.py`、`scene_sinnoh.py`、`scene_unova.py`）；`tools/build_scene_backgrounds.py` 按固件地区顺序生成普通、暗色与分层 RGB565 数据。`Screens::advanceScene()` 持有展示层进度：首页且屏幕唤醒时每 100ms 推进一次，走路不加速；地区切换归零，其他页面和熄屏期间暂停。绘制使用 456 像素行缓冲，远景和 UI 不动。遭遇、对战和投球使用已保存遭遇地区的静态暗色图，捕获练习使用对手所属地区。“选择地区”菜单两页列出五个地区，选中项的强调色取 `theme::routeColor`，标题下方显示选中地区（选到“返回”时为当前地区）的场景缩略图。
 

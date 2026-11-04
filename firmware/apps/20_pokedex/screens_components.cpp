@@ -82,41 +82,6 @@ void Screens::glyph(theme::Icon icon, int x, int y, uint16_t color) {
       M5.Display.drawLine(x + 7, y - 4, x + 10, y + 7, color);
       M5.Display.drawLine(x - 9, y + 7, x + 10, y + 7, color);
       break;
-    case theme::Icon::Partner:
-      M5.Display.drawCircle(x, y + 1, 7, color);
-      M5.Display.fillRect(x - 8, y - 9, 5, 5, color);
-      M5.Display.fillRect(x + 3, y - 9, 5, 5, color);
-      M5.Display.drawPixel(x - 3, y, color); M5.Display.drawPixel(x + 3, y, color);
-      break;
-    case theme::Icon::Book:
-      M5.Display.drawRect(x - 8, y - 8, 16, 17, color);
-      M5.Display.drawLine(x - 3, y - 8, x - 3, y + 8, color);
-      break;
-    case theme::Icon::Records:
-      for (int dy : {-6, 0, 6}) {
-        M5.Display.fillRect(x - 7, y + dy, 3, 2, color);
-        M5.Display.drawLine(x, y + dy + 1, x + 8, y + dy + 1, color);
-      }
-      break;
-    case theme::Icon::Clock:
-      M5.Display.drawCircle(x, y, 8, color);
-      M5.Display.drawLine(x, y, x, y - 5, color);
-      M5.Display.drawLine(x, y, x + 4, y + 3, color);
-      break;
-    case theme::Icon::Practice:
-      M5.Display.drawCircle(x, y, 8, color);
-      M5.Display.drawCircle(x, y, 3, color);
-      break;
-    case theme::Icon::Sleep:
-      M5.Display.drawLine(x - 6, y - 7, x + 6, y - 7, color);
-      M5.Display.drawLine(x + 6, y - 7, x - 6, y + 7, color);
-      M5.Display.drawLine(x - 6, y + 7, x + 6, y + 7, color);
-      break;
-    case theme::Icon::Home:
-      M5.Display.drawLine(x - 9, y, x, y - 8, color);
-      M5.Display.drawLine(x, y - 8, x + 9, y, color);
-      M5.Display.drawRect(x - 6, y, 13, 9, color);
-      break;
     case theme::Icon::Back:
     case theme::Icon::Next: {
       const int direction = icon == theme::Icon::Back ? -1 : 1;

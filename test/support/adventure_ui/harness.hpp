@@ -97,13 +97,14 @@ void tap(Runtime& r, TestPlatform& p, int x, int y) {
 void openMenu(Runtime& r, TestPlatform& p) {
   check(r.screen().page == Page::Home, "open menu starts from exploration");
   frame(r); edge(r, p, false, true); frame(r);
-  check(r.screen().page == Page::Menu && r.screen().selected == 0, "opening key only displays menu");
+  const unsigned focus = encounterWaiting(r.engine().view()) ? 0 : unsigned(MenuItem::Region);
+  check(r.screen().page == Page::Menu && r.screen().selected == focus, "opening key only displays menu");
 }
 void select(Runtime& r, TestPlatform& p, unsigned item) {
   const auto page = r.screen().page;
   const unsigned count = menuCount(r.screen(), r.engine());
   check(item < count, "requested menu item exists");
-  const bool paged = r.screen().page == Page::Menu || r.screen().page == Page::Clock ||
+  const bool paged = r.screen().page == Page::Clock ||
                       r.screen().page == Page::PartnerDetail || r.screen().page == Page::TestHub;
   const bool record = r.screen().page == Page::FirstCaptures || r.screen().page == Page::Recent ||
                       r.screen().page == Page::Days || r.screen().page == Page::Achievements;
@@ -132,6 +133,10 @@ void select(Runtime& r, TestPlatform& p, unsigned item) {
   frame(r);
   p.next = Input();
   frame(r);
+}
+void select(Runtime& r, TestPlatform& p, MenuItem item) {
+  check(r.screen().page == Page::Menu, "named menu entry is chosen from the main menu");
+  select(r, p, unsigned(item));
 }
 void screenshot(const char* name) {
   const std::string path = verificationOutput((std::string(name) + ".ppm").c_str());

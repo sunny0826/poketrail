@@ -60,11 +60,7 @@ void maximumToday() {
   check(rendered_text::contains("18,446,744,073,709,551,615", theme::kText, &fonts::Font0),
         "maximum daily counter is displayed without truncation");
   screenshot(runtime, "home-today-uint64-max");
-  openMenu(runtime); select(runtime, 5);
-  check(rendered_text::contains("18446744073709551615 / 7500 步", theme::kText),
-        "maximum cultivation balance remains readable in resources");
-  screenshot(runtime, "resources-uint64-max");
-  tap(runtime, 233, 52); select(runtime, 2); select(runtime, 0);
+  openMenu(runtime); select(runtime, MenuItem::Partner); select(runtime, 0); select(runtime, 0);
   check(rendered_text::contains("陪伴 18446744073709551615 步", theme::kMint) &&
         rendered_text::contains("可用 18446744073709551615 步", theme::kMint),
         "maximum partner counters remain fully readable");

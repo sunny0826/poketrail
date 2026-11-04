@@ -17,9 +17,9 @@ An offline walking adventure for the round screen of the M5Stack StopWatch (C152
 
 ## Gameplay
 
-- **Walking adventures**: Switch freely between five regions—Kanto, Johto, Hoenn, Sinnoh, and Unova. Each region only has Pokémon from its own generation. An encounter occurs every 200–500 steps (random). Up to 32 encounters queue in order; the menu shows the waiting count, such as "Resume encounter 3".
+- **Walking adventures**: Switch freely between five regions—Kanto, Johto, Hoenn, Sinnoh, and Unova. Each region only has Pokémon from its own generation. An encounter occurs every 200–500 steps (random). Up to 32 encounters queue in order; the banner at the top of the menu shows the waiting count, such as "Resume encounter 3".
 - **Rhythm battles and catching**: When the cue circles the opponent, press the right button to attack; when it circles your partner, press the left button to dodge. Time your press by the closing ring. A neutral dot on the bottom track previews the next beat without indicating a button. After winning, throw up to two balls; Poké Balls are unlimited. Forms you have caught, received as a gift, or obtained through evolution no longer appear in new encounters, together with all of their ancestors.
-- **Partner training**: Carry one partner at a time. Only the carried partner earns training steps. Open "Carried partner" from the menu to view training and evolution requirements, switch partners, or confirm an evolution.
+- **Partner training**: Carry one partner at a time. Only the carried partner earns training steps. Open "Partner" from the menu to view training and evolution requirements, switch partners, or confirm an evolution.
 - **Pokédex**: Freely browse National Pokédex entries 1–649 across Kanto, Johto, Hoenn, Sinnoh, and Unova, with animated pixel art from Pokémon Black and White.
 
 <p align="center">
@@ -70,7 +70,7 @@ rtk proxy mise run test-simulator-e2e -- \
 
 On boot, a Bulbasaur animation and the PokeTrail title appear for at least 1.2 seconds, followed by setup or the page restored from your save. Storage failures lead to the error screen.
 
-Choose **语言 / Language → English** from the main menu. The choice is saved and restored after restart, including Pokémon names, types, and instructions. On first launch, the same entry is on the second page of the date setup screen. New and upgraded saves default to Chinese. See [language settings](docs/usage.en.md#language-settings) for save errors and temporary use.
+Choose **设置 (Settings) → 语言 / Language → English** from the main menu. The choice is saved and restored after restart, including Pokémon names, types, and instructions. On first launch, the same entry is on the second page of the date setup screen. New and upgraded saves default to Chinese. See [language settings](docs/usage.en.md#language-settings) for save errors and temporary use.
 
 After flashing with the project's script, the device synchronizes its clock to the flashing computer's current time. Once storage is available, choose Bulbasaur, Charmander, or Squirtle as your starter partner. You can also set the clock manually on the device or leave it unset for now. Total steps and exploration continue to increase; steps recorded while the date is unknown are not added to today's count later.
 

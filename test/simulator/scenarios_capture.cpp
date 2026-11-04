@@ -52,7 +52,7 @@ void bootNewSave(Driver& d) {
 // EncounterReady 遭遇从菜单推进到战斗并真实获胜
 void enterAndWinBattle(Driver& d, bool fixed) {
   d.homeMenu();
-  d.select(0);
+  d.select(MenuItem::Encounter);
   d.until([&] { return d.screen().page == Page::Encounter; }, 4000, "menu opens the encounter");
   d.select(0);
   d.until([&] { return d.screen().page == Page::Battle; }, 4000, "battle starts");
@@ -129,7 +129,7 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     acknowledge(d);
     checkCaptureBadge(d, 1, "first-capture");
     d.homeMenu();
-    d.select(4);
+    d.select(MenuItem::Pokedex);
     d.until([&] { return d.screen().page == Page::Viewer; }, 4000, "viewer opens after capture");
     d.frames();
     // The frozen target is #116: walk forward from #1, avoiding a full-catalog detour.
@@ -140,9 +140,11 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     if (english) d.check(rendered_text::contains("Horsea", theme::kText) &&
                          rendered_text::contains("Water", theme::kBlue), "captured viewer renders English name and type");
     d.back();
-    d.until([&] { return d.screen().page == Page::Home; }, 4000, "back home from viewer");
-    d.homeMenu();
-    d.select(2);
+    d.until([&] { return d.screen().page == Page::Menu; }, 4000, "back to menu from viewer");
+    d.check(d.screen().selected == unsigned(MenuItem::Pokedex), "viewer back keeps the Pokédex tile focused");
+    d.select(MenuItem::Partner);
+    d.until([&] { return d.screen().page == Page::CarriedPartner; }, 4000, "carried partner opens");
+    d.select(0);
     d.until([&] { return d.screen().page == Page::Partners; }, 4000, "partners list opens");
     d.select(1);
     d.until([&] { return d.screen().page == Page::PartnerDetail; }, 4000, "partner detail opens");
@@ -151,10 +153,10 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.back();
     d.until([&] { return d.screen().page == Page::Partners; }, 4000, "back to partners");
     d.back();
+    d.until([&] { return d.screen().page == Page::CarriedPartner; }, 4000, "back to carried partner");
+    d.back();
     d.until([&] { return d.screen().page == Page::Menu; }, 4000, "back to menu");
-    d.select(5);
-    d.until([&] { return d.screen().page == Page::Resources; }, 4000, "resources opens");
-    d.select(0);
+    d.select(MenuItem::Records);
     d.until([&] { return d.screen().page == Page::Records; }, 4000, "records opens");
     d.select(0);
     d.until([&] { return d.screen().page == Page::FirstCaptures; }, 4000, "first captures opens");
@@ -167,10 +169,10 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     if (english) d.check(rendered_text::contains("#116 Horsea", theme::kGold), "first-capture card renders the English record");
     d.back();
     d.until([&] { return d.screen().page == Page::Records; }, 4000, "back to records");
-    d.back();
-    d.until([&] { return d.screen().page == Page::Resources; }, 4000, "back to resources");
+    d.check(d.screen().selected == 0, "first captures back restores its records tile");
     d.back();
     d.until([&] { return d.screen().page == Page::Menu; }, 4000, "back to menu");
+    d.check(d.screen().selected == unsigned(MenuItem::Records), "records back focuses the records tile");
     d.back();
     d.until([&] { return d.screen().page == Page::Home; }, 4000, "back home from menu");
     d.event("capture-run-done", "species=" + std::to_string(species));

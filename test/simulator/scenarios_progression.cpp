@@ -38,7 +38,7 @@ bool progressionRun(Driver& d) {
   REQUIRE(d, page(d, Page::Home, "home evolution cancellation returns home") &&
                 d.save().progress[0].spent == 0, "home evolution cancellation leaves steps intact");
   if (!toHome(d, "carried partner")) return false;
-  d.homeMenu(); d.select(3);
+  d.homeMenu(); d.select(MenuItem::Partner);
   REQUIRE(d, page(d, Page::CarriedPartner, "menu opens carried partner"), "menu opens carried partner");
   REQUIRE(d, d.screen().species == 1, "carried page reads the current partner");
   d.frames();
@@ -67,7 +67,7 @@ bool progressionRun(Driver& d) {
           "list returns to carried page with new carrier");
   d.shot("carried-switched");
   d.back();
-  REQUIRE(d, d.screen().page == Page::Menu && d.screen().selected == 3, "carried top back restores menu selection");
+  REQUIRE(d, d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Partner), "carried top back restores menu selection");
   if (!toHome(d, "switch to partner 4")) return false;
   const Save afterSwitch = d.save();
   const uint64_t baseTotal4 = afterSwitch.totalSteps;
@@ -84,7 +84,7 @@ bool progressionRun(Driver& d) {
 
   if (!carry(d, 0, 1, "switch back to partner 1")) return false;
   if (!toHome(d, "carried evolution")) return false;
-  d.homeMenu(); d.select(3); d.select(1);
+  d.homeMenu(); d.select(MenuItem::Partner); d.select(1);
   REQUIRE(d, page(d, Page::EvolutionConfirm, "carried evolution opens confirmation"),
           "carried evolution opens confirmation");
   const Save confirm = d.save();
@@ -142,7 +142,7 @@ bool progressionRun(Driver& d) {
     REQUIRE(d, s.progress[0].spent == afterEvolution.progress[0].spent,
             "post-evolution walk leaves the source debit untouched");
   }
-  d.homeMenu(); d.select(3);
+  d.homeMenu(); d.select(MenuItem::Partner);
   REQUIRE(d, page(d, Page::CarriedPartner, "evolved carrier can be reopened") && d.screen().species == 2,
           "evolved carrier can be reopened");
   d.shot("carried-before-reload");
@@ -163,7 +163,7 @@ bool progressionReload(Driver& d) {
   REQUIRE(d, s.totalSteps >= 7830, "reload keeps all three ten-step walks");
   REQUIRE(d, s.totalSteps == s.explorationSpent + s.explorationCredit, "reload keeps the exploration ledger balanced");
   checkCaptureBadge(d, 0, "evolution-reloaded-no-capture");
-  d.homeMenu(); d.select(3);
+  d.homeMenu(); d.select(MenuItem::Partner);
   REQUIRE(d, page(d, Page::CarriedPartner, "reload reopens carried page") && d.screen().species == 2,
           "reload reopens the same carried species");
   d.shot("carried-after-reload");
@@ -225,7 +225,28 @@ bool edgesRun(Driver& d) {
   d.frames();
   d.shot("edges-partners-last");
   d.select(5);
-  REQUIRE(d, page(d, Page::Menu, "last partner page returns to menu"), "last partner page returns to menu");
+  REQUIRE(d, page(d, Page::CarriedPartner, "last partner page returns to carried partner"),
+          "last partner page returns to carried partner");
+  d.back();
+  REQUIRE(d, page(d, Page::Menu, "carried partner returns to menu") &&
+                d.screen().selected == unsigned(MenuItem::Partner), "menu focus returns to the partner tile");
+  d.frames(); d.shot("edges-menu-hub");
+  // Gaps between tiles and the walking status banner are inert; tile edges open their page.
+  d.tap(170, 192); d.tap(233, 104);
+  REQUIRE(d, d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Partner),
+          "touch between tiles or on the walking banner is inert");
+  d.tap(52, 192);
+  REQUIRE(d, page(d, Page::Routes, "left edge of the region tile opens regions"), "region tile edge opens regions");
+  d.back();
+  REQUIRE(d, d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Region),
+          "region back restores its tile focus");
+  d.tap(414, 296);
+  REQUIRE(d, page(d, Page::Settings, "right edge of the settings tile opens settings"), "settings tile edge opens settings");
+  d.back();
+  REQUIRE(d, d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Settings),
+          "settings back restores its tile focus");
+  d.tap(233, 408);
+  REQUIRE(d, page(d, Page::Home, "exit pill returns to exploration"), "exit pill returns to exploration");
 
   if (!openViewer(d, "edges viewer")) return false;
   REQUIRE(d, pokedex::viewer_screen::species() == 1, "viewer touch navigation starts on species 1");

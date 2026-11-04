@@ -74,6 +74,11 @@ void Driver::select(unsigned index) {
   for (unsigned i = 0; screen().selected != index && i < count; ++i) press(SDL_SCANCODE_RIGHT);
   check(screen().selected == index, "menu selected " + std::to_string(index)); press(SDL_SCANCODE_RETURN);
 }
+void Driver::select(MenuItem item) {
+  frames();
+  check(screen().page == Page::Menu, "named menu entry is chosen from the main menu");
+  select(unsigned(item));
+}
 void Driver::back() { tap(233, 35); }
 void Driver::wake() { if (dimmed()) press(SDL_SCANCODE_P); }
 void Driver::homeMenu() {

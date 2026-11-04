@@ -165,19 +165,19 @@ void testModeFlow() {
   f.boot();
   skipDateAndStarter(f.r(), f.p());
   openMenu(f.r(), f.p());
-  select(f.r(), f.p(), 5);
-  check(f.r().screen().page == Page::Resources, "resources page opens for hidden entry");
-  published(f.r(), "resources-hidden-entry");
+  select(f.r(), f.p(), MenuItem::Settings);
+  check(f.r().screen().page == Page::Settings, "settings page opens for hidden entry");
+  published(f.r(), "settings-hidden-entry");
 
   holdTop(f, 1000);
-  check(f.r().screen().page == Page::Resources, "short top hold keeps the resources page");
+  check(f.r().screen().page == Page::Settings, "short top hold keeps the settings page");
   holdTop(f, 2100);
   check(f.r().screen().page == Page::TestEntry, "two-second top hold opens entry confirmation");
   published(f.r(), "test-entry");
   check(!testBadgeVisible(), "entry confirmation remains outside test mode");
 
   backWithTouch(f);
-  check(f.r().screen().page == Page::Resources, "entry confirmation returns to its origin");
+  check(f.r().screen().page == Page::Settings, "entry confirmation returns to its origin");
   idle(f.r(), 40);
   holdTop(f, 2100);
   check(f.r().screen().page == Page::TestEntry, "entry confirmation opens again");
@@ -265,7 +265,7 @@ void testModeFlow() {
         f.r().engine().view().phase == pokedex::adventure::Phase::EncounterReady,
         "returning to test gameplay shows the triggered encounter");
   openMenu(f.r(), f.p());
-  select(f.r(), f.p(), 0);
+  select(f.r(), f.p(), MenuItem::Encounter);
   idle(f.r(), 60);
   check(f.r().screen().page == Page::Encounter, "triggered encounter opens the encounter page");
   published(f.r(), "test-step-triggered-encounter");
@@ -288,9 +288,9 @@ void testModeFlow() {
   badge("home page keeps the test badge after clock edit");
 
   openMenu(f.r(), f.p());
-  select(f.r(), f.p(), 5);
-  published(f.r(), "test-resources");
-  badge("test-mode resources keeps the test badge");
+  select(f.r(), f.p(), MenuItem::Settings);
+  published(f.r(), "test-settings");
+  badge("test-mode settings keeps the test badge");
   idle(f.r(), 40);
   holdTop(f, 2100);
   check(f.r().screen().page == Page::TestHub, "hidden entry reopens the console during test mode");
@@ -361,7 +361,7 @@ void viewerBadge() {
   f.boot();
   f.r().openTestPage(Page::Home);
   openMenu(f.r(), f.p());
-  select(f.r(), f.p(), 4);
+  select(f.r(), f.p(), MenuItem::Pokedex);
   idle(f.r(), 80);
   check(f.r().screen().page == Page::Viewer, "pokedex viewer opens in test mode");
   snapCurrent(f.r(), "test-viewer");

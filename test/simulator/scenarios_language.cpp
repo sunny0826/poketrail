@@ -10,8 +10,9 @@ void english(Driver& d, const char* text, uint16_t color = theme::kText) {
   d.check(rendered_text::contains(text, color), std::string("rendered English: ") + text);
 }
 void openLanguage(Driver& d) {
+  if (d.screen().page == Page::Menu) d.select(MenuItem::Settings);
   const Page source = d.screen().page;
-  const unsigned item = source == Page::DateWelcome ? 3 : source == Page::Error ? 2 : 8;
+  const unsigned item = source == Page::DateWelcome ? 3 : source == Page::Error ? 2 : 1;
   d.select(item);
   d.check(d.screen().page == Page::Language && menuCount(d.screen(), d.runtime().engine()) == 3,
           "real keys open three language choices");
@@ -46,11 +47,16 @@ void normalJourney(Driver& d, const std::string& phase) {
   } else if (phase == "english") {
     d.check(d.save().starter == 1 && d.runtime().language() == Language::English, "new process restores English and partner");
     english(d, "Bulbasaur");
-    d.homeMenu(); d.shot("english-menu"); english(d, "My partners");
+    d.homeMenu(); d.shot("english-menu"); english(d, "Partner");
     openLanguage(d); d.back();
-    d.check(d.screen().page == Page::Menu && d.screen().selected == 8, "back restores menu language selection");
-    openLanguage(d); choose(d, Language::Chinese); d.select(2); d.select(9);
-    d.check(d.screen().page == Page::Home, "tenth main menu item returns home");
+    d.check(d.screen().page == Page::Settings && d.screen().selected == 1, "back restores settings language selection");
+    openLanguage(d); choose(d, Language::Chinese); d.select(2);
+    d.check(d.screen().page == Page::Settings && d.screen().selected == 1, "language Back returns to settings");
+    d.select(2);
+    d.check(d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Settings),
+            "settings Back focuses the settings tile");
+    d.select(MenuItem::Explore);
+    d.check(d.screen().page == Page::Home, "exit pill returns home");
     d.shot("chinese-restored");
   } else {
     d.check(d.runtime().language() == Language::Chinese && d.save().starter == 1,

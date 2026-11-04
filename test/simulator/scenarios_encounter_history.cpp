@@ -7,11 +7,12 @@
 namespace simulator { namespace e2e {
 namespace {
 void exhaustionPage(Driver& d, const char* text, const char* shot) {
-  d.homeMenu(); d.select(5); d.frames();
-  d.check(d.screen().page==Page::Resources && rendered_text::contains(text, theme::kGold),
-          "resources explain exhaustion without claiming every species was caught");
+  d.homeMenu(); d.frames();
+  d.check(d.screen().page==Page::Menu && d.screen().selected==unsigned(MenuItem::Region) &&
+          rendered_text::contains(text, theme::kGold, 78, 130),
+          "menu banner explains exhaustion without claiming every species was caught");
   d.shot(shot);
-  progression_support::toHome(d,"exhausted resources");
+  progression_support::toHome(d,"exhausted menu");
 }
 void checkNoNewEncounter(Driver& d, bool all=false) {
   const uint64_t credit=d.save().explorationCredit, spent=d.save().explorationSpent;
@@ -27,7 +28,7 @@ void checkNoNewEncounter(Driver& d, bool all=false) {
   exhaustionPage(d,all ? "暂无新的普通宝可梦" : "本地区暂无新遭遇 · 可换地区","history-exhausted");
 }
 void englishExhaustion(Driver& d, bool all) {
-  d.homeMenu(); d.select(8); d.select(1); d.select(2);
+  d.homeMenu(); d.select(MenuItem::Settings); d.select(1); d.select(1); d.select(2);
   progression_support::toHome(d,"English language selected");
   exhaustionPage(d,all ? "No new regular Pokémon" : "No new encounters · Try another","history-exhausted-english");
 }
@@ -62,12 +63,12 @@ void scenarioEncounterHistory(Driver& d, const std::string& phase) {
     d.check(registered(d.save(),26) && !registered(d.save(),25) && !registered(d.save(),172),
             "sparse Raichu history omits both ancestral forms");
     checkNoNewEncounter(d); englishExhaustion(d,false);
-    d.homeMenu(); d.select(1); d.select(regionIndex(Route::Kanto));
+    d.homeMenu(); d.select(MenuItem::Region); d.select(regionIndex(Route::Kanto));
     d.until([&]{return d.screen().page==Page::Home;},4000,"switch to Kanto");
     d.check(d.save().phase==Phase::EncounterReady &&
             (d.save().encounter.species==106 || d.save().encounter.species==107),
             "banked steps encounter an unacquired sibling, never a retired species");
-    d.homeMenu(); d.select(0);
+    d.homeMenu(); d.select(MenuItem::Encounter);
     d.check(d.screen().page==Page::Encounter,"actual sibling encounter opens");
     d.shot("history-sibling-encounter");
   } else if (phase=="branches-reload") {

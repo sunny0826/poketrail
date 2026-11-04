@@ -5,7 +5,8 @@
 namespace simulator {
 namespace e2e {
 namespace {
-void openPage(Driver& d, unsigned item, Page page, const char* what) {
+template <typename Item>
+void openPage(Driver& d, Item item, Page page, const char* what) {
   d.select(item);
   d.until([&] { return d.screen().page == page; }, 4000, what);
   d.frames();
@@ -13,7 +14,7 @@ void openPage(Driver& d, unsigned item, Page page, const char* what) {
 
 void chooseRegion(Driver& d, Route region) {
   d.homeMenu();
-  openPage(d, 1, Page::Routes, "region menu opens");
+  openPage(d, MenuItem::Region, Page::Routes, "region menu opens");
   d.select(regionIndex(region));
   d.until([&] { return d.screen().page == Page::Home; }, 4000, "region choice returns home");
   d.check(d.save().route == region, "selected region saved");
@@ -73,12 +74,12 @@ void scenarioRegions(Driver& d, const std::string& phase) {
             d.save().explorationCredit - credit == d.save().totalSteps - steps,
             "an exhausted region keeps every exploration step");
     d.homeMenu();
-    openPage(d, 5, Page::Resources, "resources open");
-    d.check(rendered_text::contains("本地区暂无新遭遇 · 可换地区", theme::kGold), "exhausted region suggests switching");
+    d.frames();
+    d.check(d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Region) &&
+            rendered_text::contains("本地区暂无新遭遇 · 可换地区", theme::kGold),
+            "exhausted region suggests switching in the menu banner");
     d.shot("sinnoh-exhausted");
-    d.back();
-    d.until([&] { return d.screen().page == Page::Menu; }, 4000, "back to menu");
-    openPage(d, 1, Page::Routes, "region menu opens");
+    openPage(d, MenuItem::Region, Page::Routes, "region menu opens");
     d.select(regionIndex(Route::Unova));
     d.until([&] { return d.screen().page == Page::Home; }, 4000, "Unova choice returns home");
     const Encounter& e = d.save().encounter;
@@ -120,8 +121,7 @@ void scenarioSchema6Upgrade(Driver& d, const std::string& phase) {
     d.shot("schema6-captured");
     acknowledge(d);
     d.homeMenu();
-    openPage(d, 5, Page::Resources, "resources open");
-    openPage(d, 0, Page::Records, "records open");
+    openPage(d, MenuItem::Records, Page::Records, "records open");
     openPage(d, 1, Page::Recent, "recent captures open");
     recentRecord(d, "关都 · 累计捕捉 1 次", "schema6-recent-kanto");
     d.press(SDL_SCANCODE_RIGHT);

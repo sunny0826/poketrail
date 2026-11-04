@@ -188,7 +188,7 @@ void testModeAndBusy() {
   ScheduledStore busyStore; busyStore.commit(fixture(kNowUtc, 480, 20261022, 500));
   TestPlatform busyPlatform; setRtc(busyPlatform, kNowUtc);
   Runtime busyRuntime(busyStore, busyPlatform); start(busyRuntime);
-  openMenu(busyRuntime, busyPlatform); select(busyRuntime, busyPlatform, 6);
+  openMenu(busyRuntime, busyPlatform); select(busyRuntime, busyPlatform, MenuItem::Practice);
   check(busyRuntime.screen().page == Page::Practice, "practice battle is reachable");
   const unsigned writes = busyPlatform.clockWrites;
   check(resultIs(busyRuntime.syncClockFromHost(70, kNowUtc + 3600, 480), "busy"),
@@ -288,7 +288,7 @@ void manualAfterHostFailure() {
   FailWritePlatform p; setRtc(p, kOldUtc); Runtime r(store, p); start(r);
   check(resultIs(r.syncClockFromHost(400, kNowUtc, 480), "rtc"), "inject host RTC failure before manual recovery");
   frame(r, 6000);
-  openMenu(r, p); select(r, p, 5); select(r, p, 1);
+  openMenu(r, p); select(r, p, MenuItem::Settings); select(r, p, 0);
   check(r.screen().page == Page::Clock, "manual recovery uses the real clock page");
   p.failWrites = false;
   select(r, p, 7); frame(r, 1500);
@@ -302,7 +302,7 @@ void manualAfterHostFailure() {
 void simultaneousHostAndManualSave() {
   ScheduledStore store; store.commit(fixture(kOldUtc, 480, 20260101, 500));
   TestPlatform p; setRtc(p, kOldUtc); Runtime r(store, p); start(r);
-  openMenu(r, p); select(r, p, 5); select(r, p, 1);
+  openMenu(r, p); select(r, p, MenuItem::Settings); select(r, p, 0);
   for (unsigned n = 0; n < 20 && r.screen().selected != 7; ++n) edge(r, p, false, true);
   check(r.screen().page == Page::Clock && r.screen().selected == 7, "manual save selected before incoming host request");
   frame(r);

@@ -13,7 +13,7 @@ namespace {
 uint16_t accentFor(Page page) {
   switch (page) {
     case Page::DateWelcome: case Page::Starter: case Page::Encounter: case Page::Pause:
-    case Page::Throw: case Page::Result: case Page::Resources: case Page::Records: case Page::FirstCaptures:
+    case Page::Throw: case Page::Result: case Page::Records: case Page::FirstCaptures:
     case Page::Recent: case Page::Days: case Page::Achievements: case Page::EvolutionConfirm:
     case Page::EvolutionPreviewTargets:
       return theme::kGold;
@@ -32,9 +32,9 @@ const char* routeName(i18n::Language language, Route r) {
 }
 unsigned menuCount(const ScreenState& s, const Engine& e) {
   switch (s.page) {
-    case Page::Menu: return 10;
+    case Page::Menu: return kMenuItemCount;
     case Page::CarriedPartner: return e.view().partner ? 2 + e.evolutionView(e.view().partner).count : 1;
-    case Page::Resources: return 3;
+    case Page::Settings: return 3;
     case Page::DateWelcome: return 4;
     case Page::Starter: return 4;
     case Page::Routes: return kRegionCount + 1;
@@ -73,10 +73,17 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
   }
 }
 int menuTop(const ScreenState& s, const Engine& e) {
-  if (s.page == Page::Menu) return menu_layout::kMainTop;
   if (s.page == Page::Result)
     return e.view().result == Result::Captured ? menu_layout::kCaptureResultTop : menu_layout::kResultTop;
   return menu_layout::kTop;
+}
+const menu_layout::Hub* hubFor(Page page) {
+  if (page == Page::Menu) return &menu_layout::kMainHub;
+  if (page == Page::Records) return &menu_layout::kRecordsHub;
+  return nullptr;
+}
+bool menuSelectable(const ScreenState& s, const Engine& e, unsigned index) {
+  return s.page != Page::Menu || index != unsigned(MenuItem::Encounter) || encounterWaiting(e.view());
 }
 bool homeEvolutionReady(const Engine& e) {
   if (!e.ready()) return false;
@@ -87,7 +94,7 @@ bool homeEvolutionReady(const Engine& e) {
 }
 bool touchBackEnabled(Page page) {
   switch (page) {
-    case Page::Menu: case Page::Resources: case Page::Routes: case Page::Partners:
+    case Page::Menu: case Page::Settings: case Page::Routes: case Page::Partners:
     case Page::CarriedPartner: case Page::PartnerDetail: case Page::EvolutionConfirm:
     case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
     case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets:
@@ -331,22 +338,17 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     case Page::TestExit: testExit(s); break;
     case Page::CarriedPartner: case Page::PartnerDetail: case Page::EvolutionConfirm:
       progression(s, e); break;
+    case Page::Menu: mainMenu(s, e); break;
+    case Page::Records: recordsHub(s, e); break;
     default: home(s, e, now); break;
   }
-  const bool listPage = s.page == Page::DateWelcome || s.page == Page::Menu || s.page == Page::Resources || s.page == Page::Clock ||
-                        s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::CarriedPartner || s.page == Page::Records ||
+  const bool listPage = s.page == Page::DateWelcome || s.page == Page::Settings || s.page == Page::Clock ||
+                        s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::CarriedPartner ||
                         s.page == Page::EvolutionPreviewTargets || s.page == Page::TestHub ||
                         s.page == Page::TestSteps || s.page == Page::TestScenarios ||
                         s.page == Page::TestFaults;
   if (listPage && menuCount(s, e) > menu_layout::kPageSize) pager(s, menuCount(s, e));
-  if (touchBackEnabled(s.page)) {
-    glyph(theme::Icon::Back, 112, 52, theme::kMuted);
-    if (s.page == Page::Menu) {
-      M5.Display.setTextDatum(middle_left); M5.Display.setFont(&fonts::efontCN_16);
-      M5.Display.setTextColor(theme::kMuted);
-      M5.Display.drawString(tr(Text::Home), 128, 52);
-    }
-  }
+  if (touchBackEnabled(s.page)) glyph(theme::Icon::Back, 112, 52, theme::kMuted);
   drawBattery(s.battery);
   if (s.testMode) {
     M5.Display.setTextDatum(middle_center);

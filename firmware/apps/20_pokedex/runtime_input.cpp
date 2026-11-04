@@ -3,8 +3,17 @@
 #include "viewer_screen.hpp"
 namespace pokedex { namespace ui {
 using namespace adventure;
+namespace {
+bool recordPage(Page page) {
+  return page == Page::FirstCaptures || page == Page::Recent || page == Page::Days || page == Page::Achievements;
+}
+// Record pages return to the records hub tile that opened them.
+unsigned recordTile(Page page) {
+  return page == Page::FirstCaptures ? 0 : page == Page::Recent ? 1 : page == Page::Days ? 2 : 3;
+}
+}
 bool Runtime::handleTestHold(const Input& input) {
-  const bool entryPage = screen_.page == Page::Resources || screen_.page == Page::Error;
+  const bool entryPage = screen_.page == Page::Settings || screen_.page == Page::Error;
   if (!entryPage) { testHoldActive_ = false; return false; }
   const bool inTitle = input.x >= 40 && input.x <= 426 && input.y < 80 &&
                        !input.leftDown && !input.rightDown;
@@ -26,27 +35,29 @@ bool Runtime::handleTestHold(const Input& input) {
 void Runtime::goBack() {
   if (screen_.page == Page::Language) leaveLanguage();
   else if (screen_.page == Page::TestEntry) navigate(testEntryReturn_);
-  else if (screen_.page == Page::TestHub) navigate(screen_.testMode ? Page::Home : Page::Resources);
+  else if (screen_.page == Page::TestHub) navigate(screen_.testMode ? Page::Home : Page::Settings);
   else if (screen_.page == Page::TestSteps || screen_.page == Page::TestScenarios ||
            screen_.page == Page::TestFaults || screen_.page == Page::TestDiagnostics ||
            screen_.page == Page::TestExit) navigate(Page::TestHub);
   else if (screen_.page == Page::PracticeThrow || screen_.page == Page::PracticeResult) endPractice();
   else if (screen_.page == Page::Viewer) {
-    navigate(Page::Home); syncPage();
-  } else if (screen_.page == Page::Resources) navigate(Page::Menu);
-  else if (screen_.page == Page::Records) navigate(Page::Resources);
-  else if (screen_.page == Page::FirstCaptures || screen_.page == Page::Recent ||
-           screen_.page == Page::Days || screen_.page == Page::Achievements) navigate(Page::Records);
-  else if (screen_.page == Page::Clock)
-    navigate(engine_.view().starter ? Page::Resources : Page::DateWelcome);
+    openMenu(MenuItem::Pokedex); syncPage();
+  } else if (screen_.page == Page::Settings) openMenu(MenuItem::Settings);
+  else if (screen_.page == Page::Records) openMenu(MenuItem::Records);
+  else if (recordPage(screen_.page)) {
+    const unsigned tile = recordTile(screen_.page);
+    navigate(Page::Records); screen_.selected = tile;
+  } else if (screen_.page == Page::Clock)
+    navigate(engine_.view().starter ? Page::Settings : Page::DateWelcome);
   else if (screen_.page == Page::EvolutionPreviewTargets) navigate(Page::Viewer);
   else if (screen_.page == Page::EvolutionConfirm) leaveEvolutionConfirm();
   else if (screen_.page == Page::PartnerDetail) navigate(Page::Partners);
   else if (screen_.page == Page::CarriedPartner) {
     partnersFromCarried_ = false;
-    navigate(Page::Menu); screen_.selected = 3;
+    openMenu(MenuItem::Partner);
   } else if (screen_.page == Page::Partners && partnersFromCarried_) openCarriedPartner();
-  else if (screen_.page == Page::Partners || screen_.page == Page::Routes) navigate(Page::Menu);
+  else if (screen_.page == Page::Partners) openMenu(MenuItem::Partner);
+  else if (screen_.page == Page::Routes) openMenu(MenuItem::Region);
   else navigate(Page::Home);
 }
 void Runtime::handle(const Input& raw) {
@@ -63,9 +74,9 @@ void Runtime::handle(const Input& raw) {
     const bool onEvolve = homeEvolutionReady(engine_) && kHomeEvolveButton.contains(raw.x, raw.y);
     if (onEvolve && raw.click) { openHomeEvolution(); return; }
     if (onEvolve && raw.touch) return;
-    if (raw.touch) { navigate(Page::Menu); return; }
+    if (raw.touch) { openMenu(MenuItem::Encounter); return; }
     if (raw.back) { waitForRelease(); return; }
-    if (raw.leftDown || raw.rightDown || raw.left || raw.right) navigate(Page::Menu);
+    if (raw.leftDown || raw.rightDown || raw.left || raw.right) openMenu(MenuItem::Encounter);
     return;
   }
   Input input = raw;
@@ -170,39 +181,43 @@ void Runtime::handle(const Input& raw) {
   const unsigned count = menuCount(screen_, engine_);
   if (!count) return;
   if (screen_.selected >= count) screen_.selected = 0;
-  const bool record = screen_.page == Page::FirstCaptures || screen_.page == Page::Recent ||
-                      screen_.page == Page::Days || screen_.page == Page::Achievements;
+  const bool record = recordPage(screen_.page);
   if (record && input.swipe) {
     screen_.selected = (screen_.selected + count + input.swipe) % count;
     return;
   }
   if (record && input.click) {
-    if (input.y >= 340) { navigate(Page::Records); return; }
+    if (input.y >= 340) { goBack(); return; }
     if (input.y >= 80)
       screen_.selected = (screen_.selected + (input.x < 233 ? count - 1 : 1)) % count;
     return;
   }
+  const menu_layout::Hub* hub = hubFor(screen_.page);
   if (input.swipe) {
-    if (count > menu_layout::kPageSize)
+    if (!hub && count > menu_layout::kPageSize)
       screen_.selected = input.swipe > 0 ? menu_layout::nextPage(screen_.selected, count)
                                          : menu_layout::previousPage(screen_.selected, count);
     return;
   }
   if (input.click) {
-    const int row = menu_layout::rowAt(input.x, input.y, menuTop(screen_, engine_));
+    const int row = hub ? menu_layout::hubAt(*hub, input.x, input.y)
+                        : menu_layout::rowAt(input.x, input.y, menuTop(screen_, engine_));
     if (row >= 0) {
-      const unsigned selected = menu_layout::first(screen_.selected) + unsigned(row);
-      if (selected < count) { screen_.selected = selected; confirm = true; }
-    } else if (count > menu_layout::kPageSize) {
+      const unsigned selected = hub ? unsigned(row) : menu_layout::first(screen_.selected) + unsigned(row);
+      if (selected < count && menuSelectable(screen_, engine_, selected)) { screen_.selected = selected; confirm = true; }
+    } else if (!hub && count > menu_layout::kPageSize) {
       if (menu_layout::kPreviousPage.contains(input.x, input.y))
         screen_.selected = menu_layout::previousPage(screen_.selected, count);
       else if (menu_layout::kNextPage.contains(input.x, input.y))
         screen_.selected = menu_layout::nextPage(screen_.selected, count);
     }
   } else if (!confirm) {
-    screen_.selected = (screen_.selected + (input.left ? count - 1 : 1)) % count;
+    for (unsigned i = 0; i < count; ++i) {
+      screen_.selected = (screen_.selected + (input.left ? count - 1 : 1)) % count;
+      if (menuSelectable(screen_, engine_, screen_.selected)) break;
+    }
   }
-  if (confirm) activate(screen_.selected, input.at);
+  if (confirm && menuSelectable(screen_, engine_, screen_.selected)) activate(screen_.selected, input.at);
 }
 void Runtime::activateTest(unsigned item) {
   switch (screen_.page) {
@@ -282,23 +297,23 @@ void Runtime::activate(unsigned item, uint32_t at) {
       else { const uint16_t ids[] = {1,4,7}; engine_.chooseStarter(ids[item]); navigate(Page::Home); }
       break;
     case Page::Menu:
-      if (item == 0) {
-        if (v.phase == Phase::EncounterReady) navigate(Page::Encounter);
-        else if (v.phase == Phase::ThrowReady) navigate(Page::Throw);
+      switch (MenuItem(item)) {
+        case MenuItem::Encounter:
+          if (v.phase == Phase::EncounterReady) navigate(Page::Encounter);
+          else if (v.phase == Phase::ThrowReady) navigate(Page::Throw);
+          break;
+        case MenuItem::Region: navigate(Page::Routes); break;
+        case MenuItem::Partner: openCarriedPartner(); break;
+        case MenuItem::Pokedex: navigate(Page::Viewer); break;
+        case MenuItem::Records: navigate(Page::Records); break;
+        case MenuItem::Practice: beginPractice(at); break;
+        case MenuItem::Settings: navigate(Page::Settings); break;
+        case MenuItem::Explore: navigate(Page::Home); break;
       }
-      else if (item == 1) navigate(Page::Routes);
-      else if (item == 2) { partnersFromCarried_ = false; navigate(Page::Partners); }
-      else if (item == 3) openCarriedPartner();
-      else if (item == 4) navigate(Page::Viewer);
-      else if (item == 5) navigate(Page::Resources);
-      else if (item == 6) beginPractice(at);
-      else if (item == 7) sleepDisplay();
-      else if (item == 8) openLanguage();
-      else navigate(Page::Home);
       break;
-    case Page::Resources:
-      if (item == 0) navigate(Page::Records);
-      else if (item == 1) openClock();
+    case Page::Settings:
+      if (item == 0) openClock();
+      else if (item == 1) openLanguage();
       else goBack();
       break;
     case Page::Routes:
@@ -339,7 +354,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       navigate(pages[item]); break;
     }
     case Page::FirstCaptures: case Page::Recent: case Page::Days: case Page::Achievements:
-      if (item + 1 == menuCount(screen_, engine_)) navigate(Page::Records);
+      if (item + 1 == menuCount(screen_, engine_)) goBack();
       break;
     case Page::Clock:
       if (item < 7) screen_.editing = true;

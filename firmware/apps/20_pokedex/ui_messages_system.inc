@@ -35,5 +35,4 @@ UI_MESSAGE(ScenarioLegacy, "旧规则 · rule1 在途", "Legacy · Rule 1 encoun
 UI_MESSAGE(SimulatorKeys, "A / 左键   D / 右键   Enter = 双键", "A / Left     D / Right     Enter = A+B")
 UI_MESSAGE(SimulatorMouse, "鼠标：触摸 / 滑动   P：电源   F12：截图", "Mouse: touch / swipe    P: power    F12: screenshot")
 UI_MESSAGE(ViewerBack, "顶部返回", "Top: back")
-UI_MESSAGE(StepsContext, "%s %llu 步", "%s %llu steps")
 UI_MESSAGE(FinishClockFirst, "请先完成日期设置", "Finish setting the clock first")

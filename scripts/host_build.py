@@ -14,7 +14,7 @@ from host_dependencies import ROOT, library_source
 APP = ROOT / "firmware/apps/20_pokedex"
 RUNTIME_SOURCES = [APP / name for name in (
     "runtime.cpp runtime_clock.cpp runtime_input.cpp runtime_progression.cpp runtime_power.cpp runtime_language.cpp "
-    "clock_sync.cpp screens.cpp screens_home.cpp screens_exploration.cpp screens_battle.cpp "
+    "clock_sync.cpp screens.cpp screens_home.cpp screens_menu.cpp screens_exploration.cpp screens_battle.cpp "
     "screens_capture.cpp screens_practice.cpp screens_records.cpp screens_clock.cpp "
     "screens_progression.cpp screens_evolution.cpp screens_components.cpp screens_test.cpp "
     "scene_backgrounds_generated.cpp test_mode.cpp test_mode_platform.cpp test_console.cpp "
