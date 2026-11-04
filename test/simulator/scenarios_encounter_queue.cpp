@@ -13,18 +13,19 @@ void counts(Driver& d, unsigned count, bool english = false) {
   snprintf(menu, sizeof(menu), english ? "Resume encounter %u" : "继续遭遇%u", count);
   if (count) d.check(rendered_text::contains(badge, theme::kGold, 98, 125), "home shows committed encounter count");
   d.shot("queue-home-" + std::to_string(count) + (english ? "-en" : ""));
-  d.homeMenu();
-  for (unsigned i = 0; d.screen().selected && i < 10; ++i) d.press(SDL_SCANCODE_LEFT);
-  d.frames();
-  const char* label = count ? menu : english ? "No encounter yet" : "暂无遭遇";
-  d.check(rendered_text::contains(label, theme::kMint), "menu label directly appends the count without separators");
+  d.homeMenu(); d.frames();
+  char walking[48];
+  snprintf(walking, sizeof(walking), english ? "Next encounter in %llu steps" : "下次遭遇还差 %llu 步",
+           static_cast<unsigned long long>(d.save().encounterTarget - d.save().explorationCredit));
+  d.check(d.screen().selected == (count ? 0u : unsigned(MenuItem::Region)),
+          "menu focuses the waiting encounter, otherwise the first tile");
+  d.check(count ? rendered_text::contains(menu, theme::kGold, 78, 130)
+                : rendered_text::contains(walking, theme::kMuted, 78, 130),
+          "menu banner appends the count directly, or shows the remaining walk");
   d.shot("queue-menu-" + std::to_string(count) + (english ? "-en" : ""));
-  d.select(5); d.frames();
-  if (count) d.check(rendered_text::contains(badge, theme::kGold, 98, 125), "resources show the same encounter count");
-  d.shot("queue-resources-" + std::to_string(count) + (english ? "-en" : ""));
-  progression_support::toHome(d, "queue resources");
+  progression_support::toHome(d, "queue menu");
   if (count == 3 || english) {
-    d.homeMenu(); d.select(1); d.frames();
+    d.homeMenu(); d.select(MenuItem::Region); d.frames();
     d.shot(english ? "queue-region-hint-en" : "queue-region-hint-zh");
     progression_support::toHome(d, "queue region hint");
   }
@@ -46,15 +47,15 @@ void scenarioEncounterQueue(Driver& d, const std::string& phase) {
     walkToCount(d, 1); counts(d, 1);
     walkToCount(d, 3); counts(d, 3);
     walkToCount(d, 12); counts(d, 12);
-    d.homeMenu(); d.select(8); d.select(1); d.select(2);
+    d.homeMenu(); d.select(MenuItem::Settings); d.select(1); d.select(1); d.select(2);
     counts(d, 12, true);
-    d.homeMenu(); d.select(8); d.select(0); d.select(2);
+    d.homeMenu(); d.select(MenuItem::Settings); d.select(1); d.select(0); d.select(2);
     progression_support::toHome(d, "Chinese queue");
     d.state("queue-end"); d.close();
   } else if (phase == "reload") {
     d.state("queue-restored"); counts(d, 12);
     d.check(d.save().encounter.id == 1, "new process restores the first queued encounter");
-    d.homeMenu(); d.select(0); d.select(0);
+    d.homeMenu(); d.select(MenuItem::Encounter); d.select(0);
     d.check(d.screen().page == Page::Battle && pendingEncounterCount(d.save()) == 11,
             "starting the battle removes the active encounter from waiting count");
     d.winBattle();

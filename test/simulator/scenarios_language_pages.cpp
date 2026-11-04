@@ -21,14 +21,20 @@ void viewerSpecies(Driver& d, uint16_t id, const char* name, const char* types) 
 void pages(Driver& d) {
   d.check(d.runtime().language() == Language::English, "English fixture is restored before first frame");
   text(d, "Bulbasaur");
-  d.homeMenu(); text(d, "My partners"); d.shot("english-menu");
-  d.select(4);
+  d.homeMenu();
+  for (const char* label : {"Region", "Partner", "Pokédex", "Records", "Practice", "Settings", "Back to exploring"})
+    text(d, label, label == std::string("Region") ? theme::kMint : theme::kText);
+  d.shot("english-menu");
+  d.select(MenuItem::Pokedex);
   viewerSpecies(d, 1, "Bulbasaur", "Grass / Poison");
   viewerSpecies(d, 29, "Nidoran♀", "Poison");
   viewerSpecies(d, 32, "Nidoran♂", "Poison");
   viewerSpecies(d, 83, "Farfetch’d", "Normal / Flying");
   viewerSpecies(d, 122, "Mr. Mime", "Psychic / Fairy");
-  d.back(); d.homeMenu(); d.select(2);
+  d.back();
+  d.check(d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Pokedex),
+          "viewer back returns to the Pokédex tile");
+  d.select(MenuItem::Partner); d.select(0);
   d.select(2); text(d, "Kangaskhan"); d.shot("english-long-partner"); d.back();
   d.select(6); d.check(d.screen().species == 649, "last owned partner remains reachable");
   text(d, "Genesect"); d.shot("english-last-partner"); d.back();
@@ -36,11 +42,14 @@ void pages(Driver& d) {
   d.check(d.screen().selected == 6, "partner list reaches final page by touch");
   d.shot("english-partners-last-page");
   text(d, "Back"); d.select(7);
-  d.check(d.screen().page == Page::Menu, "partner last-page Back returns to menu");
-  d.select(5); text(d, "Stats and records"); d.select(1);
-  d.check(d.screen().page == Page::Clock, "English menu opens clock");
+  d.check(d.screen().page == Page::CarriedPartner, "partner last-page Back returns to the carried partner");
+  d.back();
+  d.select(MenuItem::Records); text(d, "First captures", theme::kGold); text(d, "Milestones");
+  d.shot("english-records"); d.back();
+  d.select(MenuItem::Settings); text(d, "Settings"); text(d, "Date and time", theme::kMint); d.select(0);
+  d.check(d.screen().page == Page::Clock, "English settings open clock");
   d.shot("english-clock"); text(d, "Date and time");
-  d.homeMenu(); d.select(2); d.select(0); d.select(1);
+  d.homeMenu(); d.select(MenuItem::Partner); d.select(1);
   d.check(d.screen().page == Page::EvolutionConfirm, "English partner opens evolution confirmation");
   text(d, "Confirm evolution"); text(d, "Use 7500 training steps");
   d.shot("english-evolution-confirm"); d.select(0);

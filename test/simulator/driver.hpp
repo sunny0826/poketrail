@@ -30,6 +30,7 @@ class Driver {
   void tap(int x, int y);
   void swipe(int fromX, int toX, int y = 300);
   void select(unsigned index);
+  void select(MenuItem item);
   void back();
   void homeMenu();
   void wake();

@@ -37,7 +37,7 @@ bool openViewer(Driver& d, const std::string& tag) {
   if (!toHome(d, tag)) return false;
   d.homeMenu();
   REQUIRE(d, page(d, Page::Menu, tag + " opens menu"), tag + " opens menu");
-  d.select(4);
+  d.select(MenuItem::Pokedex);
   return page(d, Page::Viewer, tag + " opens viewer");
 }
 
@@ -45,7 +45,9 @@ bool openPartners(Driver& d, const std::string& tag) {
   if (!toHome(d, tag)) return false;
   d.homeMenu();
   REQUIRE(d, page(d, Page::Menu, tag + " opens menu"), tag + " opens menu");
-  d.select(2);
+  d.select(MenuItem::Partner);
+  REQUIRE(d, page(d, Page::CarriedPartner, tag + " opens carried partner"), tag + " opens carried partner");
+  d.select(0);
   return page(d, Page::Partners, tag + " opens partner list");
 }
 
@@ -164,7 +166,7 @@ bool practiceRound(Driver& d, const std::string& tag) {
   if (!toHome(d, tag)) return false;
   d.homeMenu();
   REQUIRE(d, page(d, Page::Menu, tag + " opens menu"), tag + " opens menu");
-  d.select(6);
+  d.select(MenuItem::Practice);
   REQUIRE(d, page(d, Page::Practice, tag + " starts practice battle"), tag + " starts practice battle");
   d.tap(233, 35);
   REQUIRE(d, page(d, Page::Pause, tag + " practice pauses"), tag + " practice pauses");

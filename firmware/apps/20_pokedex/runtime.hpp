@@ -109,6 +109,8 @@ class Runtime {
   bool hostClockVerified(int64_t targetUtc, int16_t offset);
   void clearHostClock();
   void navigate(Page);
+  // Opens the main menu on `focus`, or the first selectable entry after it.
+  void openMenu(MenuItem focus);
   void syncTestMode();
   void waitForRelease();
   void syncPage();
@@ -181,7 +183,7 @@ class Runtime {
   HostClockStage hostClockStage_ = HostClockStage::None;
   bool hostClockWriteAttempted_ = false;
   TestRequest testRequest_ = TestRequest::None;
-  Page testEntryReturn_ = Page::Resources;
+  Page testEntryReturn_ = Page::Settings;
   Page languageReturn_ = Page::Menu;
   uint16_t languageReturnSelection_ = 0;
   uint32_t testHoldStarted_ = 0;

@@ -9,16 +9,6 @@
 namespace pokedex { namespace ui {
 using namespace adventure;
 using i18n::Text;
-namespace {
-void bookIcon() {
-  M5.Display.drawRect(207, 124, 52, 44, theme::kGold);
-  M5.Display.drawLine(233, 124, 233, 168, theme::kGold);
-  for (int y : {135, 145, 155}) {
-    M5.Display.drawLine(214, y, 226, y, theme::kGold);
-    M5.Display.drawLine(240, y, 252, y, theme::kGold);
-  }
-}
-}
 void Screens::language(const ScreenState& s, const Engine& e) {
   title(tr(Text::LanguageTitle), "", theme::kMint);
   if (e.savePending()) alert(tr(Text::RetrySaveFirst), 180, theme::kGold);
@@ -35,24 +25,16 @@ void Screens::language(const ScreenState& s, const Engine& e) {
 }
 void Screens::menu(const ScreenState& s, const Engine& e) {
   const int top = menuTop(s, e);
-  const auto phase = e.view().phase;
-  char dexLabel[32], captureLabel[48], encounterLabel[48];
-  snprintf(dexLabel, sizeof(dexLabel), tr(Text::PokedexCount), unsigned(kSpeciesCount));
-  snprintf(captureLabel, sizeof(captureLabel), tr(Text::FirstCapturesCount), unsigned(kSpeciesCount));
-  snprintf(encounterLabel, sizeof(encounterLabel), tr(Text::ResumeEncounterCount), pendingEncounterCount(e.view()));
-  const char* const home[] = {phase == Phase::Walking ? tr(Text::NoEncounter) : phase == Phase::ThrowReady ? tr(Text::ResumeCatch) : phase == Phase::EncounterReady ? encounterLabel : tr(Text::ResumeEncounter), tr(Text::ChooseRegion), tr(Text::MyPartners), tr(Text::CarriedPartner), dexLabel, tr(Text::Resources), tr(Text::CapturePractice), tr(Text::SleepNow), tr(Text::LanguageMenu), tr(Text::ReturnExploration)};
-  const char* const resources[] = {tr(Text::CaptureWalkRecords), tr(Text::DateTime), tr(Text::Back)};
+  const char* const settings[] = {tr(Text::DateTime), tr(Text::LanguageMenu), tr(Text::Back)};
   const char* const date[] = {tr(Text::SetDateTime), tr(Text::SkipDateTime), tr(Text::BrowsePokedex), tr(Text::LanguageMenu)};
   const char* const starters[] = {speciesName(1), speciesName(4), speciesName(7), tr(Text::Back)};
   const char* const routes[] = {tr(Text::RouteKanto), tr(Text::RouteJohto), tr(Text::RouteHoenn), tr(Text::RouteSinnoh), tr(Text::RouteUnova), tr(Text::Back)};
   const char* const encounter[] = {tr(Text::StartBattle), tr(Text::CapturePractice), tr(Text::SwitchPartner), tr(Text::BattleLater)};
   const char* const pause[] = {tr(Text::Continue), tr(Text::ConfirmRetreat)};
-  const char* const records[] = {captureLabel, tr(Text::RecentThirtyTwo), tr(Text::TodayAndHistory), tr(Text::DailyLifetime), tr(Text::Back)};
   const char* const error[] = {tr(Text::RetrySaveLoad), tr(Text::BrowsePokedex), tr(Text::LanguageMenu)};
   const char* const* labels = nullptr;
   switch (s.page) {
-    case Page::Menu: labels = home; break;
-    case Page::Resources: labels = resources; break;
+    case Page::Settings: labels = settings; break;
     case Page::DateWelcome: labels = date; break;
     case Page::Starter: {
       const uint16_t ids[] = {1, 4, 7, 0};
@@ -62,7 +44,6 @@ void Screens::menu(const ScreenState& s, const Engine& e) {
     case Page::Routes: labels = routes; break;
     case Page::Encounter: labels = encounter; break;
     case Page::Pause: labels = pause; break;
-    case Page::Records: labels = records; break;
     case Page::Error: labels = error; break;
     case Page::Partners: {
       unsigned row = 0;
@@ -80,44 +61,11 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
   const auto& v = e.view();
   char text[100];
   switch (s.page) {
-    case Page::Menu:
-      fitLine(tr(Text::WalkingAdventure), 52, 140, theme::kText);
+    case Page::Settings:
+      title(tr(Text::Settings), "", theme::kMint);
+      hubIcon(theme::HubIcon::Settings, 233, 126, theme::kMint, theme::kBackground, v);
+      if (!v.clock.trusted) alert(tr(Text::TimeNotSet), 178, theme::kGold);
       break;
-    case Page::Resources: {
-      title(tr(Text::Resources), "", theme::kGold);
-      snprintf(text, sizeof(text), tr(Text::StepsRoute), v.clock.trusted ? tr(Text::Today) : tr(Text::LastRecord),
-               static_cast<unsigned long long>(v.today.steps), routeName(v.route));
-      M5.Display.setFont(&fonts::efontCN_16);
-      if (s.language == i18n::Language::English && M5.Display.textWidth(text) > 300) {
-        snprintf(text, sizeof(text), tr(Text::StepsContext), v.clock.trusted ? tr(Text::Today) : tr(Text::LastRecord),
-                 static_cast<unsigned long long>(v.today.steps));
-        line(text, 80, theme::kMint);
-        line(routeName(v.route), 110, theme::kMint);
-      } else line(text, 80, theme::kMint);
-      encounterBadge(v, 190, 110);
-      captureBadge(v, 312, 110);
-      const EvolutionView progress = e.evolutionView(v.partner);
-      snprintf(text, sizeof(text), "%s · %s", speciesName(v.partner), progress.count ? tr(Text::Training) : tr(Text::FinalForm));
-      line(text, 132, theme::kMuted);
-      if (!progress.count) snprintf(text, sizeof(text), tr(Text::WalkedSteps), static_cast<unsigned long long>(progress.walked));
-      else snprintf(text, sizeof(text), tr(Text::TrainingRatio), static_cast<unsigned long long>(progress.available),
-                    static_cast<unsigned long>(progress.options[0].cost));
-      line(text, 156, theme::kText);
-      if (e.stepsIncomplete()) alert(tr(Text::StepsIncomplete), 183, theme::kRed);
-      else if (e.loadResult().degraded) alert(tr(Text::BackupRestored), 183, theme::kGold);
-      else if (v.phase == Phase::Walking) {
-        if (!remainingEncounters(v, v.route)) {
-          bool all = true;
-          for (uint8_t i = 0; i < kRegionCount; ++i) all = all && !remainingEncounters(v, regionAt(i));
-          alert(all ? tr(Text::AllCaught) : tr(Text::RegionCaught), 183, theme::kGold);
-        } else {
-          snprintf(text, sizeof(text), tr(Text::NextEncounterSteps), static_cast<unsigned long long>(
-            v.explorationCredit < v.encounterTarget ? v.encounterTarget - v.explorationCredit : 0));
-          alert(text, 183, theme::kGold);
-        }
-      } else alert(tr(Text::EncounterWaiting), 183, theme::kGold);
-      break;
-    }
     case Page::DateWelcome:
       title(tr(Text::ConfirmDate), v.clock.pending.active ? tr(Text::ClockPending) : tr(Text::OfflineClock), theme::kGold);
       M5.Display.drawCircle(233, 133, 29, theme::kGold);
@@ -208,11 +156,6 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
         } else line(tr(Text::KeepExploring), 249, theme::kMuted);
       }
       menu(s, e); return;
-    case Page::Records:
-      title(tr(Text::CaptureWalkRecords), "", theme::kGold);
-      snprintf(text, sizeof(text), tr(Text::BestDaySteps), static_cast<unsigned long long>(v.bestDaySteps));
-      line(text, 80, theme::kGold); bookIcon();
-      break;
     case Page::Error:
       title(e.savePending() ? tr(Text::SaveUnavailable) : tr(Text::StorageUnavailable), e.savePending() ? tr(Text::ResultUnconfirmed) : tr(Text::GameplayPaused), theme::kRed);
       warning(233, 133, theme::kRed);

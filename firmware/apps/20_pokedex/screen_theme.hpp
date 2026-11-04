@@ -39,8 +39,10 @@ inline uint16_t routeColor(adventure::Route route) {
   }
 }
 
-enum class Icon : uint8_t {
-  Dot, Route, Partner, Book, Records, Clock, Practice, Sleep, Home, Back, Next,
+enum class Icon : uint8_t { Dot, Route, Back, Next };
+enum class HubIcon : uint8_t {
+  Region, Partner, Pokedex, Records, Practice, Settings, Explore, Back,
+  FirstCaptures, Recent, Days, Milestones,
 };
 
 } } }

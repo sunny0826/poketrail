@@ -5,8 +5,8 @@
 | Page | 设计帧与状态 |
 | --- | --- |
 | `Home` | 历史三路线：[森林](ui-scene-redesign/frames/home-forest.png) · [海边](ui-scene-redesign/frames/home-coast.png) · [洞窟](ui-scene-redesign/frames/home-cave.png)（当前五地区见[视觉设计](ui-scene-redesign.md#地区场景)） · [遭遇](ui-scene-redesign/frames/home-encounter.png) · [待捕捉](ui-scene-redesign/frames/home-throw-ready.png) · [日期未知](ui-scene-redesign/frames/home-unknown-date.png) · [部分日](ui-scene-redesign/frames/home-partial-day.png) · [步数缺失](ui-scene-redesign/frames/home-step-warning.png) · [恢复警告](ui-scene-redesign/frames/home-recovery.png) · 可进化按钮无设计帧，见[伙伴与进化 E2E](../../test/simulator/scenarios_progression.cpp) |
-| `Menu` | [第一页](ui-scene-redesign/frames/menu-main.png) · [第二页](ui-scene-redesign/frames/menu-second.png) · [末页](ui-scene-redesign/frames/menu-last.png) · [恢复警告](ui-scene-redesign/frames/menu-recovery.png) |
-| `Resources` | [资源与数据](ui-scene-redesign/frames/resources.png) |
+| `Menu` | 当前一屏宫格无设计帧，见[菜单宫格渲染检查](../../test/test_touch_menu_render.cpp)；历史分页列表：[第一页](ui-scene-redesign/frames/menu-main.png) · [第二页](ui-scene-redesign/frames/menu-second.png) · [末页](ui-scene-redesign/frames/menu-last.png) · [恢复警告](ui-scene-redesign/frames/menu-recovery.png) |
+| `Settings` | 无设计帧，见[菜单宫格渲染检查](../../test/test_touch_menu_render.cpp)；历史[资源与数据](ui-scene-redesign/frames/resources.png)页已拆分到菜单横幅、伙伴、记录与设置 |
 | `DateWelcome` | [首次日期确认](ui-scene-redesign/frames/date-welcome.png) · [未完成校时恢复](ui-scene-redesign/frames/date-pending.png) |
 | `Starter` | [初始伙伴](ui-scene-redesign/frames/starter.png) |
 | `Routes` | [路线选择](ui-scene-redesign/frames/routes.png)（历史三路线设计稿；当前为两页“选择地区”，见[地区选择 E2E](../../test/simulator/scenarios_regions.cpp)） |
@@ -19,7 +19,7 @@
 | `Pause` | [实战](ui-scene-redesign/frames/pause.png) · [练习](ui-scene-redesign/frames/pause-practice.png) |
 | `Throw` | [投球菜单旧稿](ui-scene-redesign/frames/throw-menu.png)（现已改为无菜单瞄准态） · [零球旧稿](ui-scene-redesign/frames/throw-zero.png)（旧库存规则示例；规则 3 不限球） · [蓄力](ui-scene-redesign/frames/throw-active.png) · [捕获规格](ui-scene-redesign-motion.md) |
 | `Result` | [首捕](ui-scene-redesign/frames/result-captured.png) · [失败](ui-scene-redesign/frames/result-lost.png) · [撤退](ui-scene-redesign/frames/result-retreated.png) · [已捕获后放弃](ui-scene-redesign/frames/result-released-owned.png) · [放弃新捕捉](ui-scene-redesign/frames/result-released-new.png) · [迁移结清](ui-scene-redesign/frames/result-migration.png) · [离开](ui-scene-redesign/frames/result-left.png) |
-| `Records` | [目录](ui-scene-redesign/frames/records.png) · [末页](ui-scene-redesign/frames/records-last.png) |
+| `Records` | 当前 2×2 宫格无设计帧，见[菜单宫格渲染检查](../../test/test_touch_menu_render.cpp)；历史列表：[目录](ui-scene-redesign/frames/records.png) · [末页](ui-scene-redesign/frames/records-last.png) |
 | `FirstCaptures` | [首捕卡](ui-scene-redesign/frames/first-capture.png) · [初始赠送空态](ui-scene-redesign/frames/first-capture-empty.png) |
 | `Recent` | [最近捕捉](ui-scene-redesign/frames/recent.png) |
 | `Days` | [每日步数与未达成项](ui-scene-redesign/frames/days.png) |

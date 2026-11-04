@@ -108,15 +108,17 @@ void swipe(Runtime& runtime, int startX, int startY, int endX, int endY) {
 void openMenu(Runtime& runtime, bool left = false) {
   check(runtime.screen().page == Page::Home, "menu entry starts on exploration display");
   edge(runtime, left, !left);
-  check(runtime.screen().page == Page::Menu && runtime.screen().selected == 0,
-        "fresh side key opens menu without selecting or confirming");
+  const unsigned focus = encounterWaiting(runtime.engine().view()) ? 0 : unsigned(MenuItem::Region);
+  check(runtime.screen().page == Page::Menu && runtime.screen().selected == focus,
+        "fresh side key opens menu on its first selectable entry without confirming");
 }
+void select(Runtime& runtime, MenuItem item);
 void select(Runtime& runtime, unsigned index) {
   Page page = runtime.screen().page;
   unsigned count = menuCount(runtime.screen(), runtime.engine());
   const bool record = page == Page::FirstCaptures || page == Page::Recent ||
                       page == Page::Days || page == Page::Achievements;
-  if (!record && count > menu_layout::kPageSize && index >= menu_layout::kPageSize) {
+  if (!record && !hubFor(page) && count > menu_layout::kPageSize && index >= menu_layout::kPageSize) {
     while (runtime.screen().selected / menu_layout::kPageSize != index / menu_layout::kPageSize)
       swipe(runtime, 300, 300, 160, 300);
     frame(runtime);
@@ -124,6 +126,10 @@ void select(Runtime& runtime, unsigned index) {
   for (unsigned i = 0; runtime.screen().selected != index && i < count + 1; ++i) edge(runtime, false, true);
   check(runtime.screen().selected == index, "menu reachable with real Button_Class edges");
   edge(runtime, true, true);
+}
+void select(Runtime& runtime, MenuItem item) {
+  check(runtime.screen().page == Page::Menu, "named menu entry is chosen from the main menu");
+  select(runtime, unsigned(item));
 }
 void start(Runtime& runtime) {
   M5.BtnA = m5::Button_Class(); M5.BtnB = m5::Button_Class(); buttons(false, false);

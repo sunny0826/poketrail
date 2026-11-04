@@ -112,6 +112,13 @@ void Runtime::navigate(Page page) {
     viewer_screen::invalidate(); viewer_screen::begin();
   }
 }
+void Runtime::openMenu(MenuItem focus) {
+  navigate(Page::Menu);
+  unsigned index = unsigned(focus);
+  for (unsigned i = 0; i < kMenuItemCount && !menuSelectable(screen_, engine_, index); ++i)
+    index = (index + 1) % kMenuItemCount;
+  screen_.selected = index;
+}
 bool Runtime::safe() const {
   const PracticeStage stage = practiceCapture_.stage();
   const bool practiceBusy = (stage == PracticeStage::Battle && !practiceCapture_.battleView().paused) ||

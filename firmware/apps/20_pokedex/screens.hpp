@@ -13,7 +13,7 @@
 #include "test_mode.hpp"
 namespace pokedex { namespace ui {
 enum class Page : uint8_t {
-  Home, Menu, Resources, DateWelcome, Starter, Routes, Partners, Encounter, Battle, Practice,
+  Home, Menu, Settings, DateWelcome, Starter, Routes, Partners, Encounter, Battle, Practice,
   PracticeThrow, PracticeResult,
   Pause, Throw, Result, Records, FirstCaptures, Recent, Days, Achievements,
   Clock, Error, Viewer, PartnerDetail, EvolutionConfirm, Evolution,
@@ -55,8 +55,17 @@ struct ScreenState {
 const char* routeName(i18n::Language, adventure::Route);
 using i18n::speciesName;
 const char* progressionMessage(i18n::Language, adventure::CommandResult);
+// Main menu entries in hub order; the value is ScreenState::selected on Page::Menu.
+enum class MenuItem : uint8_t { Encounter, Region, Partner, Pokedex, Records, Practice, Settings, Explore };
+constexpr unsigned kMenuItemCount = 8;
 unsigned menuCount(const ScreenState&, const adventure::Engine&);
 int menuTop(const ScreenState&, const adventure::Engine&);
+const menu_layout::Hub* hubFor(Page);
+inline bool encounterWaiting(const adventure::Save& v) {
+  return v.phase == adventure::Phase::EncounterReady || v.phase == adventure::Phase::ThrowReady;
+}
+// The encounter banner only takes focus while an encounter is waiting.
+bool menuSelectable(const ScreenState&, const adventure::Engine&, unsigned index);
 // Home shows the evolve button only while the carried partner can evolve now.
 constexpr menu_layout::Rect kHomeEvolveButton = {173, 67, 120, 30};
 bool homeEvolutionReady(const adventure::Engine&);
@@ -118,6 +127,16 @@ class Screens {
   void testMenu(const ScreenState&, const char* const* labels,
                 unsigned count, int top = menu_layout::kTop);
   void menu(const ScreenState&, const adventure::Engine&);
+  void mainMenu(const ScreenState&, const adventure::Engine&);
+  void recordsHub(const ScreenState&, const adventure::Engine&);
+  void encounterBanner(const ScreenState&, const adventure::Save&);
+  void hubTiles(const ScreenState&, const menu_layout::Hub&, const i18n::Text* labels,
+                const theme::HubIcon* icons, const adventure::Save&);
+  void hubTile(const ScreenState&, const menu_layout::Hub&, unsigned index, const char* label,
+               int labelWidth, theme::HubIcon, const adventure::Save&);
+  void hubExit(const ScreenState&, const menu_layout::Hub&, const char* label, theme::HubIcon,
+               const adventure::Save&);
+  void hubIcon(theme::HubIcon, int x, int y, uint16_t color, uint16_t background, const adventure::Save&);
   void item(const ScreenState&, unsigned index, const char*, int top = menu_layout::kTop,
             uint16_t species = 0, bool carried = false, const char* note = nullptr, bool disabled = false);
   void pager(const ScreenState&, unsigned count);

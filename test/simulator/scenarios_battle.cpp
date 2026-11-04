@@ -88,7 +88,7 @@ void scenarioBattle(Driver& d, const std::string& phase) {
     d.frames();
     d.check(d.save().phase == Phase::EncounterReady, "battle fixture starts encounter ready");
     d.homeMenu();
-    d.select(0);
+    d.select(MenuItem::Encounter);
     d.until([&] { return d.screen().page == Page::Encounter; }, 4000, "menu opens the encounter");
     d.select(0);
     d.until([&] { return d.screen().page == Page::Battle; }, 4000, "battle starts");

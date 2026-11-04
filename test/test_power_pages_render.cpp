@@ -19,6 +19,7 @@ void wake(Runtime& runtime) {
   M5.powerClick(); frame(runtime); idle(runtime, 160); frame(runtime);
   check(!runtime.dimmed(), "power wakes the display");
 }
+void sleep(Runtime& runtime) { M5.powerClick(); frame(runtime); idle(runtime, 160); }
 void autoSleepAndWalk() {
   MemoryStore store; ready(store); WakeContentPlatform platform; Runtime runtime(store, platform); start(runtime);
   idle(runtime, 30020); check(runtime.dimmed(), "inactive home sleeps");
@@ -38,7 +39,7 @@ void autoSleepAndWalk() {
 }
 void clockDraft() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 5); select(runtime, 1); select(runtime, 0); edge(runtime, false, true);
+  openMenu(runtime); select(runtime, MenuItem::Settings); select(runtime, 0); select(runtime, 0); edge(runtime, false, true);
   const auto draft = runtime.screen(); const unsigned writes = platform.clockWrites;
   idle(runtime, 30020); check(runtime.dimmed() && draft.editing, "clock editor sleeps with an unsaved draft");
   tap(runtime, 233, 390); check(runtime.dimmed(), "touch cannot wake or commit a sleeping clock draft");
@@ -54,7 +55,7 @@ void clockDraft() {
 }
 void pausedAndActive() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 6);
+  openMenu(runtime); select(runtime, MenuItem::Practice);
   idle(runtime, 6500);
   check(!runtime.dimmed() && runtime.screen().page == Page::Practice, "active practice stays visible");
   M5.powerClick(); frame(runtime);
@@ -71,16 +72,17 @@ void pausedAndActive() {
 }
 void failedCommandsAndSave() {
   MemoryStore store; ready(store); PowerPlatform platform; platform.failSleep = true;
-  Runtime runtime(store, platform); start(runtime); openMenu(runtime); select(runtime, 7);
+  Runtime runtime(store, platform); start(runtime); sleep(runtime);
   check(!runtime.dimmed() && M5.Display.brightness > 0, "rejected sleep leaves a visible UI");
-  platform.failSleep = false; select(runtime, 7); wake(runtime);
+  platform.failSleep = false; sleep(runtime); check(runtime.dimmed(), "power sleeps once the display accepts");
+  wake(runtime);
 }
 void wakeFailureAndSaveRetry() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 7); platform.failWake = true; M5.powerClick(); frame(runtime); idle(runtime, 180);
+  sleep(runtime); platform.failWake = true; M5.powerClick(); frame(runtime); idle(runtime, 180);
   check(runtime.dimmed(), "failed wake stays dark");
   platform.failWake = false; wake(runtime);
-  select(runtime, 7); store.fail = true; walk(runtime, platform, 4); idle(runtime, 30020);
+  sleep(runtime); store.fail = true; walk(runtime, platform, 4); idle(runtime, 30020);
   check(runtime.dimmed() && runtime.engine().savePending(), "sleep retains a failed checkpoint for retry");
   const auto total = runtime.engine().view().totalSteps;
   wake(runtime);
@@ -92,7 +94,7 @@ void wakeFailureAndSaveRetry() {
 }
 void viewerErrorWake() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
-  openMenu(runtime); select(runtime, 4); frame(runtime); idle(runtime, 30020);
+  openMenu(runtime); select(runtime, MenuItem::Pokedex); frame(runtime); idle(runtime, 30020);
   viewer_screen::g_ready = false; wake(runtime);
   check(rendered_text::contains("画面不可用，请重启", theme::kRed),
         "viewer failure remains readable after waking");
