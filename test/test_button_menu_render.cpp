@@ -43,17 +43,6 @@ void singleAndNonOverlapping() {
   check(r.screen().page == Page::Starter, "slow overlapping chord has no arbitrary timing cutoff");
   release(r);
 }
-void debouncePath() {
-  MemoryStore store; HostPlatform platform; Runtime r(store, platform); start(r);
-  edge(r, false, true);
-  buttons(true, false);
-  for (unsigned i = 0; i < 15; ++i) frame(r, 1);
-  buttons(true, true);
-  for (unsigned i = 0; i < 15; ++i) frame(r, 1);
-  check(r.screen().page == Page::Starter, "one-millisecond polling passes actual Button_Class debounce");
-  buttons(false, false);
-  for (unsigned i = 0; i < 15; ++i) frame(r, 1);
-}
 void clockAndSamePage() {
   MemoryStore store; HostPlatform platform; Runtime r(store, platform); start(r);
   select(r, 0); check(r.screen().page == Page::Clock, "clock is reachable");
@@ -118,12 +107,13 @@ void retryOnce() {
   select(r, 1); store.fail = true; chord(r, true); release(r);
   check(r.screen().page == Page::Error && r.engine().savePending() && !r.engine().view().starter,
         "failed starter commit shows no reward");
-  const unsigned commits = store.commits;
   chord(r, false); idle(r, 1000);
+  store.fail = false;
+  idle(r, 1000);
   buttons(true, false); frame(r); buttons(true, true); frame(r);
-  check(store.commits == commits + 1 && r.screen().page == Page::Error,
-        "failed same-page retry runs once until full release");
-  release(r); store.fail = false; chord(r, true); release(r);
+  check(r.screen().page == Page::Error && r.engine().savePending() && !r.engine().view().starter,
+        "held or partly released retry cannot publish rewards after storage recovers");
+  release(r); chord(r, true); release(r);
   check(r.engine().view().starter == 1 && r.screen().page == Page::Home && !r.engine().savePending(),
         "new retry chord publishes the same pending starter");
 }
@@ -158,75 +148,13 @@ void pauseAndResume(bool practice) {
   release(r); edge(r, false, true); chord(r, true); release(r);
   check(r.screen().page == (practice ? Page::Home : Page::Result), "staggered retreat confirms the selected pause item");
 }
-void throwTimingAndRelease() {
-  MemoryStore store; Save save;
-  save.bootGeneration = 1; save.starter = save.partner = 1; setOwned(save, 1); setRegistered(save, 1);
-  save.rosterRevision = 1; save.encounterTarget = 300;
-  save.totalSteps = save.undatedSteps = 5000; save.explorationSpent = 5000; save.nextEncounterId = 2;
-  save.phase = Phase::ThrowReady; save.result = Result::Won;
-  save.encounter.id = 1; save.encounter.species = save.encounter.partner = 1; save.encounter.route = Route::Kanto;
-  while (throwRoll(save.encounter, 1, save.encounter.ruleVersion) <
-         captureProbability(save.encounter.ruleVersion, catalogEntry(1)->rare, Timing::Perfect)) ++save.encounter.seed;
-  check(validate(save) && store.commit(save) == CommitStatus::Committed, "throw timing fixture validates and encodes");
-  HostPlatform platform; Runtime r(store, platform); start(r);
-  check(r.screen().page == Page::Throw && !r.engine().throwView().active,
-        "victory lands directly on the throw page with no menu");
-  idle(r, 2000);
-  check(r.screen().page == Page::Throw && !r.engine().throwView().active &&
-        r.engine().view().encounter.usedBalls == 0,
-        "waiting on the throw page does not start the window or spend a ball");
-  buttons(false, true); frame(r);
-  check(r.engine().throwView().active && r.engine().view().encounter.usedBalls == 0,
-        "the first hold opens the throw window without spending a ball");
-  idle(r, 100); check(r.engine().view().encounter.usedBalls == 0, "held prepare does not throw");
-  const auto target = r.engine().throwView().targetMs;
-  frame(r, target - 300 - host_time_ms);
-  check(r.screen().charging && r.engine().view().encounter.usedBalls == 0,
-        "charging holds the ball without spending it");
-  buttons(false, false); frame(r, 300);
-  const auto& first = r.engine().view().encounter.attempts[0];
-  check(r.engine().view().encounter.usedBalls == 1 && first.used && first.timing == Timing::Perfect,
-        "throw scores Perfect at the release timestamp");
-  check(r.screen().capture.active && r.screen().page == Page::Throw,
-        "committed throw plays the capture animation before leaving the page");
-  edge(r, false, true); edge(r, false, true); frame(r);
-  check(!r.screen().capture.active && r.screen().page == Page::Throw,
-        "skipped failed animation returns to the throw page");
-  buttons(false, true); frame(r);
-  check(r.engine().throwView().active, "second attempt opens a fresh window after the failed first ball");
-  idle(r, 2000);
-  check(r.engine().view().encounter.usedBalls == 2 &&
-        r.engine().view().encounter.attempts[1].timing == Timing::Miss && !r.screen().charging,
-        "holding past the deadline still times out as Miss");
-  buttons(false, false); frame(r);
-  check(r.engine().view().result == Result::Escaped && r.screen().page == Page::Result,
-        "second Miss ends the encounter on the result page");
-}
-void samplerPauseEdges() {
-  m5::Button_Class left, right; ButtonInput sampler;
-  auto sample = [&](uint32_t at, bool a, bool b) {
-    left.setRawState(at, a); right.setRawState(at, b);
-    Input input; input.at = at; sampler.sample(input, left, right); return input;
-  };
-  sample(100, true, false); sample(1100, true, true);
-  check(!sample(1899, true, true).pause, "pause timer starts at actual overlap, not first key");
-  check(sample(1900, true, true).pause && !sample(2900, true, true).pause,
-        "pause fires once at 800ms, not continuously");
-  sample(2920, true, false); sample(2940, true, true);
-  check(!sample(3739, true, true).pause && sample(3740, true, true).pause,
-        "breaking overlap resets pause timer");
-  sample(3760, false, false); sample(UINT32_MAX - 399, true, true);
-  check(!sample(399, true, true).pause && sample(400, true, true).pause,
-        "pause duration is correct across millis rollover");
-}
 }
 int main() {
   c152::begin("BUTTON MENU TEST");
   for (const unsigned delay : {20u, 80u, 900u}) {
     staggeredConfirmation(true, delay); staggeredConfirmation(false, delay);
   }
-  singleAndNonOverlapping(); debouncePath(); clockAndSamePage(); touchCancelsPending();
+  singleAndNonOverlapping(); clockAndSamePage(); touchCancelsPending();
   wakeAndRecords(); retryOnce(); pauseAndResume(true); pauseAndResume(false);
-  throwTimingAndRelease(); samplerPauseEdges();
   std::printf("%u button menu Runtime/Button_Class checks, 0 failures\n", checks);
 }

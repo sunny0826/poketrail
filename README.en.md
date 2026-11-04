@@ -47,7 +47,9 @@ See the [usage guide](docs/usage.en.md) for probabilities, evolution costs, cont
 
 All images are screenshots rendered offscreen with the host Runtime/M5GFX from the 649-species version. The battle and throw images were updated on 2026-11-03; the other images are from 2026-11-02. They are not C152 device photos and cannot establish on-device frame rate, visual quality, or acceptance results. Click an image to open the original 468×468 file. The physical round screen is 466×466; the current M5GFX driver reports 468×468. The PNGs retain only pixels inside the round screen, with transparency outside it.
 
-| Screen | Render suite | Screenshot |
+The table records the original screenshot sources. Some of these tests and screenshot exports were removed during the test audit; they are not current reproduction commands.
+
+| Screen | Original render suite | Screenshot |
 | --- | --- | --- |
 | Initial home screen | `test_home_render` | `home-today-complete-live`: the 4 steps today come from simulated walking in the test; nothing caught yet |
 | Five regions | `test_home_render` | `home-scene-0`–`home-scene-4`: today's count shows -- because the clock is not set; the test save has caught 2 species |
@@ -55,11 +57,11 @@ All images are screenshots rendered offscreen with the host Runtime/M5GFX from t
 | Charged throw | `test_capture_render` | `throw-aim-key-800`: Kanto, facing Bulbasaur after an 800ms hold, upper timing ring closing, two attempts left |
 | Pokédex | `test_adventure_render` | `viewer-entry`: the starter partner in the test save |
 
-The battery display shows -- because no battery reading was available during rendering. This command generates the corresponding test screenshots for the current version in a new verification directory. It does not replace the historical images on this page:
+The battery display shows -- because no battery reading was available during rendering. For current behavior and screenshots, run the relevant cases below in a new verification directory. They produce their own scenario evidence and do not recreate or replace the historical images on this page:
 
 ```bash
-rtk proxy mise exec -- python3 scripts/run_render_tests.py \
-  test_home_render test_adventure_render test_battle_render test_capture_render
+rtk proxy mise run test-simulator-e2e -- \
+  --case capture --case battle-cues --case regions
 ```
 
 </details>

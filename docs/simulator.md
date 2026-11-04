@@ -54,23 +54,20 @@ rtk proxy mise run simulate -- --save-dir .simulator/another-save
 
 ## 验证与边界
 
-`test-simulator` 检查基础集成；`test-simulator-e2e` 检查捕获、培养进化、保存失败重试、强杀恢复、旧档迁移和时钟。结构与覆盖边界见[模拟器 E2E](design/simulator-e2e.md)。
+`test-simulator-e2e` 当前注册 45 场（P0 24、P1 21），检查启动、语言、走路捕获、培养进化、保存失败重试、强杀恢复、旧档迁移、地区与遭遇历史、窗口生命周期和时钟。独立 smoke／`test-simulator` 入口已删除，普通集成路径由这些用户流程覆盖；原生窗口焦点与 OS 输入仍需单独验收。数量表示源码覆盖，是否通过以本轮输出为准，结构与边界见[模拟器 E2E](design/simulator-e2e.md)。
 
 新功能必须新增对应 E2E 覆盖；默认按影响范围运行专项检查和定向 E2E，命中全量触发条件或用户明确要求时才运行全量 `test-simulator-e2e`。未触发全量时，相关 `--case` 可作为交付验收；触发全量时，`--suite core` 或 `--case` 不能替代全量。`--build-only` 只证明编译，纯文档改动只核对内容、链接及格式。完整规则见[验证指南](verification.md#每次任务的-e2e-验收要求)。
 
 ```bash
-rtk proxy mise run test-simulator
 rtk proxy mise run test-simulator-e2e
 rtk proxy mise run test-simulator-e2e -- --suite core
 rtk proxy mise run test-simulator-e2e -- --case capture --case progression
 rtk proxy mise run simulate -- --build-only
 ```
 
-`test-simulator` 创建独立验收目录，通过 SDL 事件队列驱动真实窗口，检查初始伙伴、菜单、滑动、图鉴、熄屏唤醒、模拟走路、遭遇、对战暂停、失焦和关闭保存，再启动第二个进程读取同一份存档。它还将首页截图的圆屏像素与 Runtime 画布逐个比对，检查目录互斥和损坏存档保护。结果位于 `.pio/verification/simulator-时间戳/`；也可用 `MYM5_VERIFICATION_DIR` 指定一个尚不存在的目录。截图同时保留 BMP 和 PNG。
-
 E2E 每个场景使用独立目录，每次 reload 都启动新进程；失败不会自动重试。`--suite core` 只选 P0，`--case` 可重复指定；`--build-only` 只编译。结果在 `.pio/verification/simulator-e2e-时间戳/`，也可用 `MYM5_VERIFICATION_DIR` 指定尚不存在的目录。`manifest.json` 记录源码和可执行文件哈希、固定种子与时间、编译器及 SDL 版本；根目录的 `result.json` 汇总场景通过或失败，各启动目录的 `result.json` 记录退出码和墙钟耗时。每次启动保留事件、业务快照、截图、进程日志和真实双槽文件。
 
-SDL 队列输入不证明操作系统键鼠注入；原生输入和人工视觉验收须分别记录。固定截图比较只覆盖指定画面，不能代替对本轮 UI 改动的读图核对。存储故障接缝只由测试驱动使用；桌面正常运行仍显示原有错误提示并在关闭保存失败时保持窗口。
+SDL 队列输入不证明操作系统键鼠注入；原生输入和人工视觉验收须分别记录。截图作为证据保留，不再维护整屏固定像素基准；UI 改动仍需读图核对。存储故障接缝只由测试驱动使用；桌面正常运行仍显示原有错误提示并在关闭保存失败时保持窗口。
 
 本地主机验证使用 macOS；Ubuntu 24.04 的 X11/Xvfb 全量 E2E 由 [GitHub Actions](../.github/workflows/simulator-e2e.yml) 执行，通过状态以对应提交的 CI 结果为准。Linux 真实桌面人工操作尚未验收。存储适配使用 POSIX 文件锁，暂不支持原生 Windows。模拟器复用 [test/support](../test/support) 的主机 M5 接口；构建清单位于 [host_build.py](../scripts/host_build.py)，渲染测试和模拟器共用同一份固件源文件列表。
 

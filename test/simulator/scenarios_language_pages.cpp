@@ -1,4 +1,4 @@
-#include "driver.hpp"
+#include "progression_support.hpp"
 #include "viewer_screen.hpp"
 #include "../support/rendered_text.hpp"
 
@@ -46,8 +46,7 @@ void pages(Driver& d) {
   d.shot("english-evolution-confirm"); d.select(0);
   d.check(d.save().partner == 2 && d.save().progress[0].spent == 7500 &&
           d.save().progress[1].walked == 200, "English evolution preserves training-account rules");
-  d.press(SDL_SCANCODE_RETURN);
-  d.until([&] { return d.screen().page == Page::PartnerDetail; }, 10000, "English evolution finishes on target");
+  progression_support::finishEvolution(d, "English evolution");
   text(d, "Ivysaur"); d.shot("english-evolution-saved");
 }
 }

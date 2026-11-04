@@ -12,30 +12,31 @@
 
 ## 重建设计稿
 
-先按[开发指南](../development.md)安装依赖。以下是 Pillow 设计预览的生成与检查入口，输出到 `docs/design/ui-scene-redesign/`。当前入口受下述素材解析问题阻塞；修复工具后运行会改写生成图、HTML 与清单，须检查差异，不手工编辑生成物：
+先按[开发指南](../development.md)安装依赖。Pillow 设计预览输出到 `docs/design/ui-scene-redesign/`，只作为历史视觉参考；当前生成入口仍受下述素材解析问题阻塞，不能作为发布或 Runtime 验收入口：
 
 ```bash
 rtk proxy mise exec -- python3 tools/build_ui_design_previews.py
-rtk proxy mise exec -- python3 -m unittest test.test_ui_design_previews
 ```
 
-画廊仍是原 26 页、77 帧和 6 条动画的历史视觉参考。`tools/design_preview.py` 的 `GeneratedAssets` 仍按 1～251 和旧 Sprite／帧字段布局解析数据，无法读取当前 649 种的 zlib 格式。2026-10-31 执行两个设计文档检查时均在 `setUpClass` 报 `generated sprite table must contain IDs 1-251`，尚未执行测试断言。五地区改版后 `design_preview_scenes.py` 只提供 `kanto`～`unova`，而 `design_preview_screens.py`、`design_preview_walk.py`、`design_preview_battle.py` 仍请求 `forest`、`coast`、`cave`；修复画廊时须同时改用地区名，画廊中的三路线图仅作历史参考。
+画廊仍是原 26 页、77 帧和 6 条动画的历史视觉参考。`tools/design_preview.py` 的 `GeneratedAssets` 按 1～251 和旧 Sprite／帧字段布局解析数据，无法读取当前 649 种的 zlib 格式。五地区改版后 `design_preview_scenes.py` 只提供 `kanto`～`unova`，而 `design_preview_screens.py`、`design_preview_walk.py`、`design_preview_battle.py` 仍请求 `forest`、`coast`、`cave`。清单也缺少后续新增页面，并保留已删除的 `ReleaseConfirm`。
 
-另一个静态可确认的缺口是页面覆盖：`test_every_firmware_page_is_covered` 比较全部 37 个 `Page`，但清单缺少三张进化／预览页、七张测试模式页、语言页和携带伙伴页，还保留已删除的 `ReleaseConfirm`；测试仍硬编码了 26 页。修复需要同步素材解析、生成器、页面清单和测试；只更新文档不能使该检查通过。
-
-`test_design_document_links_and_frame_count` 直接读取 UI 主文档及 `pages`、`motion`、`implementation` 三个文件。这些入口与 HTML 画廊仍被维护流程使用。设计测试还检查路线、六个捕获关键帧、圆外像素、sprite 像素、联系表、50ms 战斗 GIF 和 100ms 步行动画时间槽；这些是设计产物检查，不能替代 Runtime 验收。
+2026-11-04 按[测试保留标准](../verification/test-policy.md)删除设计稿测试：页面数、文档内容、固定坐标及示例动画不能证明实际产品行为。历史图片、画廊和原始验收证据继续保留；删除测试不表示旧生成器的问题已修复。维护画廊时需同步素材解析、地区名和页面清单，再检查生成差异，不手工修改生成物。
 
 ## 验证真实页面
 
-运行 `rtk proxy mise run test-render` 生成真实 Runtime/M5GFX 主机截图。开发时可选单套定位：
+`test-render` 当前保留 12 套真实 M5GFX 检查入口，其中使用 Runtime 的套件按实际场景输出主机截图。开发时选择受影响的渲染或 SDL 场景：
 
 ```bash
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_home_render
-rtk proxy mise exec -- python3 scripts/run_render_tests.py test_battle_render
-rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_render
+rtk proxy mise exec -- python3 scripts/run_render_tests.py test_capture_render
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
+rtk proxy mise run test-simulator-e2e -- --case battle-cues --case battle-fixed
+rtk proxy mise run test-simulator-e2e -- --case progression --case isolation --case edges
+rtk proxy mise run test-simulator-e2e -- --case regions --case region-exhausted
 ```
 
-首页回归检查默认移动、走路不加速、完整循环、菜单返回、五个地区的切换与熄屏唤醒；交互回归从真实 Button_Class 或 SDL 输入进入 Runtime。修改 UI 后还须读取生成截图，核对圆形边缘、长名称、列表末页和返回入口。主机截图不证明实体屏幕观感、帧率、双角色解码耗时或计步精度。
+首页渲染检查日期可信状态和极大计数的可读性；地区切换、捕获记录与耗尽提示由 SDL 场景检查。睡眠期间计步与失败恢复由 `test_power_pages_render` 保留。独立战斗／进化／预览渲染套件和场景视差像素公式检查已删除；历史截图继续保留，不能当作当前入口输出。
+
+交互检查从真实 Button_Class 或 SDL 输入进入 Runtime。修改 UI 后还须读取对应截图，核对圆形边缘、长名称、列表末页和返回入口；每个套件只对自己的行为断言负责，不能以截图存在代表视觉通过。主机截图不证明实体屏幕观感、帧率、双角色解码耗时或计步精度。
 
 按影响范围运行定向 E2E；只有命中全量触发条件才运行 `rtk proxy mise run test-simulator-e2e`。触发边界、各类检查的职责、已知失败与设备待验事项统一见[验证说明](../verification.md)。

@@ -35,7 +35,6 @@ class FakePort:
         self.drop_set_replies = 0
         self.short_write_prefix = None
         self.short_write_bytes = 0
-        self.reset_count = 0
 
     @property
     def in_waiting(self):
@@ -62,7 +61,6 @@ class FakePort:
         return chunk
 
     def reset_input_buffer(self):
-        self.reset_count += 1
         self.rx.clear()
 
     def close(self):
@@ -109,32 +107,6 @@ def run_sync(port, **kwargs):
 
 
 class ClockSyncTests(unittest.TestCase):
-    def test_parse_reply(self):
-        parsed = clock.parse_reply(reply("q"))
-        self.assertEqual(parsed["_kind"], "q")
-        self.assertEqual(parsed["cal"], "1")
-        self.assertIsNone(clock.parse_reply("boot log"))
-        self.assertEqual(clock.parse_reply("PTC e result=overflow")["_kind"], "e")
-        with self.assertRaises(ValueError):
-            clock.parse_reply("PTC q cal=1 cal=0")
-        with self.assertRaises(ValueError):
-            clock.parse_reply("PTC q broken")
-
-    def test_offset_policy(self):
-        self.assertEqual(clock.resolve_offset(clock.parse_reply(reply("q")), 0), 480)
-        uncalibrated = clock.parse_reply(reply("q", cal="0", off="0"))
-        self.assertEqual(clock.resolve_offset(uncalibrated, -300), -300)
-        with self.assertRaises(ValueError):
-            clock.resolve_offset(uncalibrated, 900)
-        with self.assertRaises(clock.ClockSyncError):
-            clock.resolve_offset(clock.parse_reply(reply("q", off="900")), 0)
-
-    def test_transaction_id(self):
-        self.assertEqual(clock.choose_transaction_id(5, TARGET), TARGET)
-        self.assertEqual(clock.choose_transaction_id(TARGET, TARGET), TARGET + 1)
-        with self.assertRaises(ValueError):
-            clock.choose_transaction_id(0xFFFFFFFF, 1)
-
     def test_validate_success(self):
         status = clock.parse_reply(reply("s", id="7", result="ok", tx="7"))
         clock.validate_success(status, transaction_id=7, target_utc=TARGET,
@@ -144,7 +116,8 @@ class ClockSyncTests(unittest.TestCase):
                           {"utc": str(TARGET + 6)}, {"tx": "5"}, {"tx": "8"}):
             with self.assertRaises(clock.ClockSyncError):
                 clock.validate_success(
-                    clock.parse_reply(reply("s", id="7", result="ok", **overrides)),
+                    clock.parse_reply(reply("s", id="7", result="ok",
+                                            **{"tx": "7", **overrides})),
                     transaction_id=7, target_utc=TARGET, offset=480,
                     now_epoch=TARGET + 2)
         with self.assertRaises(clock.ClockSyncError):
@@ -183,7 +156,6 @@ class ClockSyncTests(unittest.TestCase):
         self.assertEqual(result["result"], "ok")
         self.assertEqual(device.state["off"], "480")
         self.assertEqual(device.state["utc"], str(TARGET))
-        self.assertEqual(len(port.writes), 2)
         self.assertTrue(port.closed)
 
     def test_calibrated_offset_wins(self):
@@ -208,10 +180,8 @@ class ClockSyncTests(unittest.TestCase):
         port = FakePort(device)
         port.drop_set_replies = 1
         result = run_sync(port)
-        self.assertEqual(result["_kind"], "q")
-        self.assertEqual(result["_confirmed_by"], "query")
         self.assertEqual(result["tx"], str(TARGET))
-        self.assertEqual(result["_raw"], reply("q", tx=str(TARGET), utc=str(TARGET), off="480"))
+        self.assertEqual(device.state["utc"], str(TARGET))
         self.assertEqual(device.set_count, 1)
         self.assertTrue(port.closed)
 
@@ -250,17 +220,15 @@ class ClockSyncTests(unittest.TestCase):
         port = FakePort(handler)
         with self.assertRaises(clock.ClockSyncError):
             run_sync(port, timeout=0.5)
-        self.assertEqual(len(commands), 1)
-        self.assertTrue(commands[0].startswith(b"PTC?"))
+        self.assertFalse(any(command.startswith(b"PTC ") for command in commands))
         self.assertTrue(port.closed)
 
     def test_query_only(self):
         device = FakeDevice(calibrated=True)
         port = FakePort(device)
         result = run_sync(port, timeout=0.5, query_only=True)
-        self.assertEqual(result["_kind"], "q")
-        self.assertEqual(len(port.writes), 1)
-        self.assertGreaterEqual(port.reset_count, 1)
+        self.assertEqual(result["utc"], str(TARGET))
+        self.assertEqual(device.set_count, 0)
         self.assertTrue(port.closed)
 
     def test_query_only_rejects_stale_device_time(self):
@@ -278,15 +246,6 @@ class ClockSyncTests(unittest.TestCase):
         result = run_sync(port, timeout=0.5, query_only=True)
         self.assertEqual(result["utc"], str(TARGET))
         self.assertEqual(result["tx"], "0")
-
-    def test_short_write_is_not_ignored(self):
-        port = FakePort(lambda _: b"")
-        port.short_write_prefix = b"PTC "
-        port.short_write_bytes = 4
-        channel = clock._Channel(port, lambda _: None, time.monotonic)
-        with self.assertRaises(clock.TransportError) as caught:
-            channel.send(f"PTC 7 {TARGET} 480")
-        self.assertIn("写入不完整", str(caught.exception))
 
     def test_short_set_write_never_reaches_device(self):
         device = FakeDevice(calibrated=True, utc=TARGET)

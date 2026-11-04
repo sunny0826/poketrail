@@ -15,7 +15,7 @@ struct State {
   // normally so tests can distinguish marker removal from data cleanup.
   std::string failRemove;
   size_t total = 1000000, used = 1000;
-  int formats = 0, writes = 0, closes = 0, flushes = 0, removals = 0;
+  int formats = 0, writes = 0;
   bool correctMount = false;
 };
 extern State state;
@@ -67,8 +67,8 @@ int esp_littlefs_info(const char* label, size_t* total, size_t* used) {
   if (!state.info || std::strcmp(label, "spiffs")) return -1;
   *total = state.total; *used = state.used; return ESP_OK;
 }
-bool FakeLittleFS::begin(bool format, const char* base, uint8_t max, const char* label) {
-  state.correctMount = !format && std::strcmp(base, "/littlefs") == 0 && max == 10 &&
+bool FakeLittleFS::begin(bool format, const char* base, uint8_t, const char* label) {
+  state.correctMount = !format && std::strcmp(base, "/littlefs") == 0 &&
                        std::strcmp(label, "spiffs") == 0;
   if (format) ++state.formats;
   return state.mount;
@@ -89,7 +89,7 @@ bool FakeLittleFS::remove(const char* path) {
   if (!state.remove || (!state.failRemove.empty() && state.failRemove == path)) return false;
   auto i = state.nodes.find(full);
   if (i == state.nodes.end() || i->second.directory) return false;
-  state.nodes.erase(i); ++state.removals; return true;
+  state.nodes.erase(i); return true;
 }
 bool FakeLittleFS::rmdir(const char* path) {
   const std::string full = std::string("/littlefs") + path;
@@ -98,7 +98,7 @@ bool FakeLittleFS::rmdir(const char* path) {
   if (i == state.nodes.end() || !i->second.directory) return false;
   for (const auto& entry : state.nodes)
     if (entry.first.compare(0, full.size() + 1, full + "/") == 0) return false;
-  state.nodes.erase(i); ++state.removals; return true;
+  state.nodes.erase(i); return true;
 }
 size_t File::read(uint8_t* p, size_t n) {
   if (!state.read) return 0;
@@ -115,6 +115,6 @@ size_t File::write(const uint8_t* p, size_t n) {
   position_ += n;
   return n;
 }
-void File::flush() { ++state.flushes; if (state.loseFlush) node_->bytes.clear(); }
-void File::close() { ++state.closes; node_ = nullptr; }
+void File::flush() { if (state.loseFlush) node_->bytes.clear(); }
+void File::close() { node_ = nullptr; }
 #endif

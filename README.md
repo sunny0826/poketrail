@@ -48,19 +48,19 @@
 
 全部画面是 649 种版本用主机 Runtime/M5GFX 离屏渲染的截图；对战和投球画面更新于 2026-11-03，其余画面为 2026-11-02。不是 C152 实机拍摄，也不能当作实机帧率、观感或验收结果。点图片打开 468×468 原文件。物理圆屏为 466×466，当前 M5GFX 驱动报告 468×468；PNG 只保留圆屏内像素，圆外透明。
 
-| 画面 | 渲染套件 | 截图 |
+| 画面 | 当时的来源 | 截图 |
 | --- | --- | --- |
 | 首屏首页 | `test_home_render` | `home-today-complete-live`：今日 4 步来自测试中的模拟走路，尚未捕获 |
-| 五个地区 | `test_home_render` | `home-scene-0`～`home-scene-4`：未校时，所以今日显示 --；测试档已捕获 2 种 |
-| 节奏对战 | `test_battle_render` | `battle-idle`：关都，小火龙对皮卡丘，攻击提示 |
-| 蓄力投球 | `test_capture_render` | `throw-aim-key-800`：关都，对手为妙蛙种子，按住 800ms，上方判定圈收拢，剩余两次 |
-| 图鉴 | `test_adventure_render` | `viewer-entry`：测试档中的初始伙伴 |
+| 五个地区 | `test_home_render` 的旧地区场景 | `home-scene-0`～`home-scene-4`：未校时，所以今日显示 --；测试档已捕获 2 种 |
+| 节奏对战 | 已删除的 `test_battle_render` | `battle-idle`：关都，小火龙对皮卡丘，攻击提示 |
+| 蓄力投球 | `test_capture_render` 的旧瞄准场景 | `throw-aim-key-800`：关都，对手为妙蛙种子，按住 800ms，上方判定圈收拢，剩余两次 |
+| 图鉴 | `test_adventure_render` 的旧旅程 | `viewer-entry`：测试档中的初始伙伴 |
 
-电量处的 -- 是因为渲染时没有电池读数。以下命令生成当前版本的对应测试截图，输出到新的验收目录；不会自动替换本页保留的历史图片：
+电量处的 -- 是因为渲染时没有电池读数。2026-11-04 测试审计后，部分来源场景已删除，本页图片保留为历史展示。以下是现行首页渲染与对战／捕获 E2E 入口，会在新的验收目录输出实际场景证据，不会重建全部旧画面或自动替换本页图片：
 
 ```bash
-rtk proxy mise exec -- python3 scripts/run_render_tests.py \
-  test_home_render test_adventure_render test_battle_render test_capture_render
+rtk proxy mise exec -- python3 scripts/run_render_tests.py test_home_render
+rtk proxy mise run test-simulator-e2e -- --case battle-cues --case capture
 ```
 
 </details>

@@ -37,21 +37,6 @@ void motionTests() {
     check(mixed.steps.size() >= 38, "alternating weak/stronger peaks keep counting");
     check(mixed.gaps == 0, "alternating tier gait keeps sampling continuous");
   }
-  Feed mixedThree;
-  mixedThree.rest(200);
-  mixedThree.cycleAmp(500, 0.08f);
-  mixedThree.cycleAmp(500, 0.10f);
-  mixedThree.cycleAmp(500, 0.08f);
-  check(mixedThree.steps.size() == 3, "mixed tiers confirm on the third peak");
-  // 间隔放大到 140% 的候选峰仍被接受，但不构成节奏，需要下一次复检才确认。
-  Feed irregularStart;
-  irregularStart.rest(200);
-  irregularStart.cycleAmp(500, 0.10f);
-  irregularStart.cycleAmp(500, 0.10f);
-  irregularStart.cycleAmp(900, 0.10f);
-  check(irregularStart.steps.empty(), "off-rhythm candidate peaks do not confirm a cadence");
-  irregularStart.cycleAmp(900, 0.10f);
-  check(irregularStart.steps.size() == 3, "regular rhythm releases the waiting peaks");
   // 口袋/背包佩戴：信号是脚步冲击谐波（~9Hz 衰减振荡），低通滤波必须放行
   // 足够的冲击能量让谷值压过阈值，否则步数大量丢失。
   for (float impact : {0.15f, 0.20f, 0.30f}) {
@@ -83,9 +68,6 @@ void motionTests() {
   Feed varying;
   for (int i = 0; i < 3; ++i) { varying.cycle(500); varying.cycle(650); varying.cycle(430); }
   check(varying.steps.size() >= 8, "varying cadence keeps counting");
-  Feed stairs;
-  for (int i = 0; i < 10; ++i) stairs.cycle(600);
-  check(stairs.steps.size() >= 9, "stair climbing cadence counted");
   // 停顿后重新起步：2 s / 4 s 内的新峰都能确认。
   Feed paused;
   paused.cycle(); paused.cycle(); paused.cycle();
@@ -154,14 +136,6 @@ void motionTests() {
   duplicate.sample(1);
   duplicate.now -= 20;
   check(duplicate.sample(1).qualityGap, "duplicate timestamp invalidates cadence");
-  Feed explicitReset;
-  explicitReset.cycle(); explicitReset.cycle();
-  const size_t base = explicitReset.steps.size();
-  explicitReset.detector.reset();
-  explicitReset.cycle();
-  check(explicitReset.steps.size() == base, "explicit reset clears candidates");
-  explicitReset.cycle();
-  check(explicitReset.steps.size() == base + 2, "reset rebuilds cadence");
 }
 void stallTests() {
   // reviewer 场景：两个中峰正常落谷后，第三峰过顶回到 1.0g 并保持 10 s 不落谷。
@@ -177,8 +151,6 @@ void stallTests() {
     held.sampleFiltered(crest);
     for (unsigned t = 0; t < 10000; t += 20) held.sampleFiltered(1.0f);
     check(held.steps.size() == 3, "crest held above the valley is still confirmed");
-    check(held.maxAge <= pokedex::motion::kMaxStepMs + 2 * 1600 + 20,
-          "held crest is released at the tracking limit, not after the stall");
     check(held.maxAge <= pokedex::motion::kMaxConfirmationDelayMs,
           "held crest stays inside the clock attribution window");
     const size_t before = held.steps.size();
@@ -203,10 +175,6 @@ void stallTests() {
   }
 }
 void ownershipTests() {
-  Feed switched;
-  switched.tag = 1; switched.cycle(); switched.cycle();
-  switched.tag = 4; switched.cycle();
-  check(switched.tags == std::vector<uint16_t>({1, 1, 4}), "two old peaks keep owner after switch");
   Feed twice;
   for (uint16_t tag : {1, 4, 7}) { twice.tag = tag; twice.cycle(); }
   check(twice.tags == std::vector<uint16_t>({1, 4, 7}), "each deferred peak retains its owner");

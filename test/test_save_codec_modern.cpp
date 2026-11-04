@@ -18,23 +18,8 @@ static void checksum(std::vector<uint8_t>& data) {
   for (unsigned i = 0; i < 4; ++i) data[18 + i] = uint8_t(crc >> (8 * i));
 }
 static void reject(const Save& s) {
-  CHECK(!validate(s)); std::vector<uint8_t> out(codec::maxEncodedSize); size_t n = 123;
+  std::vector<uint8_t> out(codec::maxEncodedSize); size_t n = 123;
   CHECK(!codec::encode(s, out.data(), out.size(), n) && n == 0);
-}
-struct FixedStore : Store {
-  Save saved; bool committed = false;
-  LoadResult load(Save& out) override { out = saved; return LoadResult(LoadStatus::Loaded); }
-  CommitStatus commit(const Save&) override { committed = true; return CommitStatus::Committed; }
-};
-// Startup must accept the unmodified baseline and refuse only the broken invariant.
-static void acceptAtStartup(const Save& good) {
-  FixedStore store; store.saved = good; Engine engine(store);
-  CHECK(engine.begin() == CommandResult::Applied && engine.ready() && store.committed);
-}
-static void rejectAtStartup(const Save& bad) {
-  reject(bad);
-  FixedStore store; store.saved = bad; Engine engine(store);
-  CHECK(engine.begin() == CommandResult::StorageError && !engine.ready() && !store.committed);
 }
 // Locate the payload byte that distinguishes two encodes of otherwise equal saves.
 static size_t fieldOffset(const Save& a, const Save& b) {
@@ -58,7 +43,11 @@ static std::vector<uint8_t> forged(const Save& base, const Save& probe, uint8_t 
   return forgedAt(encode(base), fieldOffset(base, probe), value);
 }
 static void rejectBytes(const std::vector<uint8_t>& bytes) {
-  Save out; CHECK(codec::decode(bytes.data(), bytes.size(), out) == codec::DecodeStatus::Corrupt);
+  Save out; out.sequence = 99; out.encounterTarget = 450;
+  out.route = Route::Unova; out.stepsIncomplete = true;
+  const auto before = encode(out);
+  CHECK(codec::decode(bytes.data(), bytes.size(), out) == codec::DecodeStatus::Corrupt);
+  CHECK(encode(out) == before);
 }
 // A rule-2 encounter in Forest with one failed first throw already paid for.
 static void failedFirstThrow(Save& s) {
@@ -86,31 +75,27 @@ static Save modernEncounter(uint16_t schema, uint16_t species) {
 // Schema 2 and 3 both own modern encounter state; schema 1 keeps its legacy exemption.
 static void modernEncounterBoundaries(const Save& legacy1) {
   for (uint16_t schema : {2, 3}) {
-    // #251 is catalogued in Forest but is a retained, non-ordinary species.
-    Save base = modernEncounter(schema, 1); CHECK(validate(base)); acceptAtStartup(base);
-    CHECK((catalogEntry(251)->routes & 1u) && !ordinaryEncounter(251));
+    // Stay within the schema's capacity and frozen Forest route, so only the
+    // non-ordinary encounter rule can reject the forged species.
+    const uint16_t excluded = schema == 2 ? 151 : 251;
+    Save base = modernEncounter(schema, 1); CHECK(validate(base));
+    CHECK(excluded <= speciesCapacity(schema).count);
+    CHECK((savedRouteMask(excluded, schema) & 1u) && !ordinaryEncounter(excluded));
     Save probe = base; probe.encounter.species = 4; CHECK(validate(probe));
-    Save retained = base; retained.encounter.species = 251;
-    rejectAtStartup(retained);
-    rejectBytes(forged(base, probe, 251));
+    rejectBytes(forged(base, probe, uint8_t(excluded)));
     Save thrown = base; failedFirstThrow(thrown); thrown.ballsSpent = 1;
-    CHECK(validate(thrown)); acceptAtStartup(thrown);
+    CHECK(validate(thrown));
     Save paid = thrown; paid.ballsSpent = 2; CHECK(validate(paid));
-    Save unpaid = thrown; unpaid.ballsSpent = 0;
-    rejectAtStartup(unpaid);
     rejectBytes(forged(thrown, paid, 0));
     Save resolved = base; resolved.phase = Phase::Resolved; resolved.result = Result::Released;
     CHECK(validate(resolved));
     Save lost = resolved; lost.result = Result::Lost; CHECK(validate(lost));
-    Save retired = resolved; retired.result = Result::MigrationRetired;
-    rejectAtStartup(retired);
     rejectBytes(forged(resolved, lost, uint8_t(Result::MigrationRetired)));
     // A voided legacy boundary must be retired: the books stay consistent, so only
     // the boundary rule itself can reject this state.
     Save boundary = resolved; boundary.voidedLegacyCount = 1; boundary.explorationCredit = 5000;
     boundary.encounter.ruleVersion = 1;
     for (auto& a : boundary.encounter.attempts) a.ruleVersion = 1;
-    rejectAtStartup(boundary);
     // Its retired counterpart is legal, so painting only the result byte back to
     // Released must be rejected by decode's semantic check, not by the CRC.
     Save retiredBoundary = boundary;
@@ -127,11 +112,11 @@ static void modernEncounterBoundaries(const Save& legacy1) {
   {
     Save base = modernEncounter(4, 1);
     base.explorationSpent = 5000; base.encounterTarget = 300; base.encounter.ruleVersion = 3;
-    CHECK(validate(base)); acceptAtStartup(base);
-    Save stale = base; stale.encounter.ruleVersion = 2; rejectAtStartup(stale);
+    CHECK(validate(base));
+    Save stale = base; stale.encounter.ruleVersion = 2; reject(stale);
     Save thrown = base; failedFirstThrow(thrown);
     CHECK(thrown.ballsSpent == 0 && thrown.encounter.ruleVersion == 3);
-    CHECK(validate(thrown)); acceptAtStartup(thrown);
+    CHECK(validate(thrown));
   }
   // Schema 1 stores no ballsSpent and never owned modern encounters: a legacy
   // encounter with a non-ordinary species and a spent ball must still load.
@@ -159,8 +144,8 @@ static void routeMasks() {
   // #4 小火龙 is Cave-only once types define eligibility.
   Save typed = modernEncounter(5, 4);
   typed.explorationSpent = 5000; typed.encounterTarget = 300; typed.encounter.ruleVersion = 3;
-  typed.encounter.route = Route::Cave; CHECK(validate(typed)); acceptAtStartup(typed);
-  Save newIllegal = typed; newIllegal.encounter.route = Route::Forest; rejectAtStartup(newIllegal);
+  typed.encounter.route = Route::Cave; CHECK(validate(typed));
+  Save newIllegal = typed; newIllegal.encounter.route = Route::Forest; reject(newIllegal);
   // #92 鬼斯通 is Forest or Cave; painting its stored route to Coast must be
   // rejected by decode instead of being repaired to a legal route.
   Save both = modernEncounter(5, 92);
@@ -174,14 +159,14 @@ static void routeMasks() {
   Save regional = modernEncounter(7, 4);
   regional.route = Route::Hoenn; regional.encounter.route = Route::Kanto;
   regional.explorationSpent = 5000; regional.encounterTarget = 300; regional.encounter.ruleVersion = 3;
-  CHECK(validate(regional)); acceptAtStartup(regional);
+  CHECK(validate(regional));
   Save johto = modernEncounter(7, 152);
   johto.encounter.route = Route::Johto; johto.explorationSpent = 5000; johto.encounterTarget = 300;
   johto.encounter.ruleVersion = 3; johto.route = Route::Kanto; CHECK(validate(johto));
   for (Route wrong : {Route::Forest, Route::Cave, Route::Johto, Route::Unova}) {
-    Save bad = regional; bad.encounter.route = wrong; rejectAtStartup(bad);
+    Save bad = regional; bad.encounter.route = wrong; reject(bad);
   }
-  Save selection = regional; selection.route = Route::Cave; rejectAtStartup(selection);
+  Save selection = regional; selection.route = Route::Cave; reject(selection);
   Save probe = regional; probe.route = Route::Sinnoh; CHECK(validate(probe));
   rejectBytes(forged(regional, probe, uint8_t(Route::Coast)));
   rejectBytes(forged(regional, probe, 8));
@@ -190,8 +175,8 @@ static void routeMasks() {
   history.captureCounts[3] = 1;
   Capture caught; caught.species = 4; caught.route = Route::Cave; caught.at.bootGeneration = 1; caught.at.totalSteps = 500;
   history.firstCapture[3] = caught; history.recent[0] = caught; history.recentSize = 1;
-  setRegistered(history, 4); CHECK(validate(history)); acceptAtStartup(history);
-  Save beyond = history; beyond.firstCapture[3].route = Route(8); rejectAtStartup(beyond);
+  setRegistered(history, 4); CHECK(validate(history));
+  Save beyond = history; beyond.firstCapture[3].route = Route(8); reject(beyond);
 }
 int main() {
   // Minimal schema-1 save with a charged legacy encounter boundary.

@@ -21,7 +21,6 @@ void scenarioCrash(Driver& d, const std::string& phase) {
     d.shot("crash-paused");
     const uint64_t before = d.save().sequence;
     d.until([&] { return d.save().sequence > before; }, 90000, "pause checkpoint commits");
-    d.check(d.save().sequence > before, "checkpoint committed while paused");
     d.state("crash-paused");
     d.event("kill-ready", "stage=paused sequence=" + std::to_string(d.save().sequence));
     d.freeze();

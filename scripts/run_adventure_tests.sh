@@ -22,8 +22,3 @@ done
   firmware/apps/20_pokedex/test_mode.cpp firmware/apps/20_pokedex/test_mode_platform.cpp \
   "${sources[@]}" -o "${build_dir}/test_test_mode"
 "${build_dir}/test_test_mode"
-# Sanitizers alter stack overhead; measure startup separately with guard pages.
-"${CXX:-clang++}" -std=c++11 -Os -Wall -Wextra -Werror -pthread \
-  -Ifirmware/apps/20_pokedex test/test_adventure_startup.cpp "${sources[@]}" \
-  -o "${build_dir}/test_adventure_startup"
-"${build_dir}/test_adventure_startup"

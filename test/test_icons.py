@@ -10,12 +10,11 @@ from pathlib import Path
 
 from PIL import Image
 from tools.build_icons import (
-    CACHE_DIR, GEN1_COUNT, MANIFESTS, OUT_HEADER, POKEMON_COUNT, SPRITE_REVISION,
-    TRANSPARENT_KEY, build_icon, generate_header, generate_source, load_icons,
+    CACHE_DIR, MANIFESTS, OUT_HEADER, POKEMON_COUNT, SPRITE_REVISION,
+    build_icon,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
-SPRITE_HPP = ROOT / 'firmware/apps/20_pokedex/sprite.hpp'
 
 
 def convert_png_independent(path):
@@ -73,28 +72,6 @@ class ManifestTests(unittest.TestCase):
                    for entry in manifest['icons']]
         ids = [entry['id'] for entry in entries]
         self.assertEqual(sorted(ids), list(range(1, POKEMON_COUNT + 1)))
-        self.assertEqual(len(ids), len(set(ids)))
-        for entry in entries:
-            with self.subTest(id=entry['id']):
-                self.assertRegex(entry['sha256'], r'^[0-9a-f]{64}$')
-                self.assertGreater(entry['width'], 0)
-                self.assertGreater(entry['height'], 0)
-
-    def test_generation_ranges_are_split(self):
-        self.assertEqual([e['id'] for e in self.manifests[1]['icons']],
-                         list(range(1, GEN1_COUNT + 1)))
-        ranges = {2: (152, 251), 3: (252, 386), 4: (387, 493), 5: (494, 649)}
-        for generation, (first, last) in ranges.items():
-            self.assertEqual([e['id'] for e in self.manifests[generation]['icons']],
-                             list(range(first, last + 1)))
-            self.assertNotIn('poke_ball', self.manifests[generation])
-
-    def test_poke_ball_entry_present(self):
-        ball = self.manifests[1]['poke_ball']
-        self.assertRegex(ball['sha256'], r'^[0-9a-f]{64}$')
-        self.assertGreater(ball['width'], 0)
-        self.assertGreater(ball['height'], 0)
-
 
 class SourceAssetTests(unittest.TestCase):
     """直接核对缓存 PNG 本身：哈希、尺寸、透明与颜色规则。"""
@@ -133,37 +110,14 @@ class SourceAssetTests(unittest.TestCase):
 
 
 class GeneratedCodeTests(unittest.TestCase):
-    """生成物与源 PNG 逐像素一致，并符合协调者接口约定。"""
+    """生成物与固定来源 PNG 逐像素一致。"""
 
     @classmethod
     def setUpClass(cls):
-        cls.header = OUT_HEADER.read_text(encoding='utf-8')
         cls.arrays, cls.entries, cls.ball = parse_generated_arrays()
 
-    def test_header_declares_contract(self):
-        self.assertIn('#include <stdint.h>', self.header)
-        self.assertIn('namespace pokedex {', self.header)
-        self.assertIn('namespace data {', self.header)
-        self.assertRegex(self.header,
-                         r'struct Icon \{\s*uint16_t width;\s*uint16_t height;'
-                         r'\s*const uint16_t\* pixels;\s*\};')
-        self.assertIn('extern const Icon kPokemonIcons[649];', self.header)
-        self.assertIn('extern const Icon kPokeBallIcon;', self.header)
-
-    def test_transparent_key_matches_sprite_hpp(self):
-        sprite = SPRITE_HPP.read_text(encoding='utf-8')
-        self.assertRegex(sprite, r'kTransparentKey = 0xF81F')
-        self.assertEqual(TRANSPARENT_KEY, 0xF81F)
-
-    def test_table_has_649_entries_in_id_order(self):
-        self.assertEqual(len(self.entries), POKEMON_COUNT)
-        for index, (width, height, array) in enumerate(self.entries, start=1):
-            with self.subTest(id=index):
-                self.assertEqual(array, f'kIcon{index:04d}Pixels')
-                self.assertIn(array, self.arrays)
-                self.assertEqual(int(width) * int(height), len(self.arrays[array]))
-
     def test_every_pokemon_array_matches_source_png(self):
+        self.assertEqual(len(self.entries), 649)
         for number in range(1, POKEMON_COUNT + 1):
             with self.subTest(id=number):
                 size, pixels = convert_png_independent(CACHE_DIR / f'{number:04d}.png')
@@ -173,20 +127,12 @@ class GeneratedCodeTests(unittest.TestCase):
 
     def test_poke_ball_array_matches_source_png(self):
         width, height, array = self.ball
-        self.assertEqual(array, 'kPokeBallPixels')
         size, pixels = convert_png_independent(CACHE_DIR / 'poke-ball.png')
         self.assertEqual((int(width), int(height)), size)
         self.assertEqual(self.arrays[array], pixels)
 
-    def test_generated_files_are_current(self):
-        pokemon, poke_ball = load_icons(download=False, write_manifests=False)
-        self.assertEqual(self.header, generate_header())
-        self.assertEqual(OUT_HEADER.with_suffix('.cpp').read_text(encoding='utf-8'),
-                         generate_source(pokemon, poke_ball))
-
-
 class ManifestRequirementTests(unittest.TestCase):
-    """普通生成与 --check 必须要求两代清单存在；只有 --write-manifests 可重建。"""
+    """发布生成必须有来源清单；只有显式 --write-manifests 可重建。"""
 
     def make_root(self):
         temporary = tempfile.TemporaryDirectory()

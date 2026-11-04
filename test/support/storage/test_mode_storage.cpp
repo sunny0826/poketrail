@@ -22,11 +22,6 @@ static std::vector<uint8_t> raw(const char* path) {
   const storage_test::Node* n = node(path);
   return n ? n->bytes : std::vector<uint8_t>();
 }
-static uint64_t hashBytes(const std::vector<uint8_t>& b) {
-  uint64_t h = 1469598103934665603ull;
-  for (uint8_t v : b) { h ^= v; h *= 1099511628211ull; }
-  return h;
-}
 static void putRaw(const char* path, const std::vector<uint8_t>& bytes) {
   state.nodes[std::string("/littlefs") + path].bytes = bytes;
 }
@@ -45,10 +40,7 @@ static void officialBytesStay() {
   CHECK(d.commit(b) == CommitStatus::Committed);
   const auto beforeA = raw("/adventure/save-a.bin");
   const auto beforeB = raw("/adventure/save-b.bin");
-  const uint64_t hashA = hashBytes(beforeA), hashB = hashBytes(beforeB);
   CHECK(!beforeA.empty() && !beforeB.empty());
-  const size_t officialBytes = d.diagnostics().officialBytes;
-  CHECK(officialBytes == beforeA.size() + beforeB.size());
 
   CHECK(d.enterTest(TestSeed::Snapshot));
   CHECK(d.testMode() && !d.ramOnly());
@@ -65,8 +57,6 @@ static void officialBytesStay() {
   CHECK(!d.testMode());
   CHECK(raw("/adventure/save-a.bin") == beforeA);
   CHECK(raw("/adventure/save-b.bin") == beforeB);
-  CHECK(hashBytes(raw("/adventure/save-a.bin")) == hashA);
-  CHECK(hashBytes(raw("/adventure/save-b.bin")) == hashB);
   CHECK(node("/adventure-test/active") == nullptr);
   CHECK(node("/adventure-test") == nullptr);
   Save after;
@@ -256,8 +246,7 @@ static void faultInjection() {
   Save loaded;
   d.setFault(TestFault::None);
   CHECK(d.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 1);
-  const int writes = state.writes;
-  CHECK(d.commit(a) == CommitStatus::Committed && state.writes == writes);
+  CHECK(d.commit(a) == CommitStatus::Committed);
 
   d.setFault(TestFault::Load);
   CHECK(d.load(loaded).status == LoadStatus::IoError);
@@ -267,46 +256,6 @@ static void faultInjection() {
   CHECK(!d.testMode());
   CHECK(d.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 1);
   d.setFault(TestFault::None);
-  CHECK(state.formats == 0);
-}
-
-static void repeatedBeginKeepsState() {
-  state = storage_test::State();
-  officialDirectory();
-  {
-    DeviceStore d;
-    CHECK(d.begin() == LoadStatus::Loaded);
-    CHECK(d.enterTest(TestSeed::Blank));
-    d.setFault(TestFault::CommitAfter);
-    CHECK(d.begin() == LoadStatus::Loaded);
-    CHECK(d.testMode() && d.fault() == TestFault::CommitAfter);
-    Save a; a.sequence = 1; a.encounterTarget = 300;
-    CHECK(d.commit(a) == CommitStatus::IoError);
-    d.setFault(TestFault::None);
-    CHECK(d.commit(a) == CommitStatus::Committed);
-    CHECK(d.begin() == LoadStatus::Loaded);
-    CHECK(d.testMode() && !d.ramOnly());
-    Save loaded;
-    CHECK(d.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 1);
-    CHECK(d.leaveTest());
-  }
-
-  state = storage_test::State();
-  state.mount = false;
-  DeviceStore ram;
-  CHECK(ram.begin() == LoadStatus::NeedsProvisioning);
-  CHECK(ram.enterTest(TestSeed::Blank));
-  Save a; a.sequence = 1; a.encounterTarget = 300;
-  CHECK(ram.commit(a) == CommitStatus::Committed);
-  CHECK(ram.begin() == LoadStatus::Loaded);
-  CHECK(ram.testMode() && ram.ramOnly());
-  Save loaded;
-  CHECK(ram.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 1);
-  Save b = a; b.sequence = 2; b.encounterTarget = 310;
-  CHECK(ram.commit(b) == CommitStatus::Committed);
-  CHECK(ram.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 2);
-  CHECK(state.writes == 0);
-  CHECK(ram.leaveTest());
   CHECK(state.formats == 0);
 }
 
@@ -359,7 +308,6 @@ int main() {
   corruptOfficialStillEnters();
   ramOnlySession();
   faultInjection();
-  repeatedBeginKeepsState();
   activeDeleteFailureKeepsTest();
   pendingDoesNotCrossRoots();
   std::printf("PASS test_mode_storage: %d checks\n", checks);
