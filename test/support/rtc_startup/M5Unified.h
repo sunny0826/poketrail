@@ -5,7 +5,6 @@ void rtcTestDelay(unsigned ms);
 namespace fonts { static const int Font2 = 0; }
 static const int bottom_center = 0, TFT_CYAN = 0, TFT_BLACK = 0;
 namespace m5 {
-extern unsigned uncheckedReads;
 class RTC_Class {
  public:
   RTC_Class() = default;
@@ -16,7 +15,6 @@ class RTC_Class {
     return isEnabled();
   }
   void setSystemTimeFromRtc() {
-    ++uncheckedReads;
     rtc_date_t date; rtc_time_t time;
     if (base_) base_->getDateTime(&date, &time);
   }
@@ -64,10 +62,8 @@ class M5Unified {
   I2C_Class& In_I2C = m5::In_I2C;
   I2C_Class& Ex_I2C = m5::Ex_I2C;
   RTC_Class Rtc;
-  config_t lastConfig;
   config_t config() const { return {}; }
   void begin(const config_t& cfg) {
-    lastConfig=cfg;
     In_I2C.setPort(0,1,2);
     _begin_rtc_imu(cfg);
   }

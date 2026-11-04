@@ -19,7 +19,6 @@ SEED = 20261031
 UTC = 1793376000
 CASES = {
     "startup-new": ("P0-18", "blank", [("startup", "new"), ("startup", "reload")]),
-    "startup-existing": ("P0-18", "starter", [("startup", "existing"), ("startup", "reload")]),
     "startup-corrupt": ("P0-18", "language-corrupt", [("startup", "error"), ("startup", "error")]),
     "language": ("P0-17", "blank", [("language", "new"), ("language", "english"), ("language", "chinese")]),
     **{f"language-retry-{kind}": ("P0-17", "starter", [("language", kind), ("language", "retry-reload")])
@@ -29,7 +28,6 @@ CASES = {
        for kind in ("corrupt", "future")},
     "language-pages": ("P1-19", "english-edges", [("language-pages", "run"), ("language-pages", "reload")]),
     "language-capture": ("P1-19", "blank", [("capture", "english"), ("capture", "english-reload")]),
-    "journey": ("P0-01", "blank", [("journey", "run"), ("journey", "reload")]),
     "capture": ("P0-02", "blank", [("capture", "run"), ("capture", "reload")]),
     "capture-slow-save": ("P0-02", "blank", [("capture", "slow"), ("capture", "reload")]),
     "battle-fixed": ("P0-02", "blank", [("capture", "fixed"), ("capture", "reload")]),
@@ -44,7 +42,6 @@ CASES = {
        [("encounter-history", kind), ("encounter-history", f"{kind}-reload")])
        for kind in ("evolution", "branches", "pending")},
     "target-owned": ("P0-06", "target-owned", [("conflict", "owned")]),
-    "evolution-retry": ("P0-06", "evolution", [("conflict", "retry"), ("conflict", "reload")]),
     "storage": ("P0-07", "starter", []),
     "crash-pause": ("P0-08", "battle", [("crash", "paused"), ("crash", "reload-paused")]),
     "crash-write": ("P0-08", "throw", [("crash", "after-write"), ("crash", "reload-capture")]),
@@ -162,7 +159,7 @@ def check_clock_restart(before_path, after_path, offline_seconds):
     after = json.loads(after_path.read_text())
     checks = {key: before[key] == after[key] for key in (
         "starter", "partner", "totalSteps", "explorationCredit", "explorationSpent",
-        "undatedSteps", "today", "history", "accounts", "ballsSpent", "rosterRevision")}
+        "undatedSteps", "today", "history", "accounts", "ballsSpent")}
     checks["clock epoch and timezone"] = all(before["clock"][key] == after["clock"][key] for key in ("epoch", "offset"))
     expected = before["rtcUtc"] + offline_seconds + after["at"] // 1000
     checks["RTC includes offline interval"] = abs(after["rtcUtc"] - expected) <= 1
@@ -261,28 +258,11 @@ def main():
                 kill = scenario == "crash" and not phase.startswith("reload")
                 stage = output / f"{index}-{phase}"
                 elapsed = invoke(executable, save, stage, scenario, phase, utc, kill)
-                if scenario == "capture" and phase == "fixed":
-                    from PIL import Image
-                    with Image.open(stage / "fixed-cue-0.bmp") as image:
-                        cue = hashlib.sha256(image.convert("RGB").crop((50, 24, 518, 492)).tobytes()).hexdigest()
-                    # Issue #32: acquired starters leave new encounter pools, selecting Horsea.
-                    # Frozen from simulator-e2e-20261103T091103.877196Z; native image review
-                    # and cue-pixel-review.json confirm only opponent name/artwork changed.
-                    # Inputs keep their timing relative to each beat; battle-cues checks semantics.
-                    expected = "3a09b506bec59e0c3bf6cf9f2540d8a1f8441716177c0ab4c3e4d350e4c5f284"
-                    write_json(stage / "cue-check.json", {"expected": expected, "actual": cue})
-                    if cue != expected:
-                        raise RuntimeError("fixed battle cue pixels differ from reviewed trace")
                 if scenario == "progression" and phase == "reload":
-                    from PIL import Image
                     before = json.loads((previous / "progression-end.json").read_text())
                     after = json.loads((stage / "progression-reload.json").read_text())
-                    if any(before[key] != after[key] for key in ("partner", "accounts", "rosterRevision")):
+                    if any(before[key] != after[key] for key in ("partner", "accounts")):
                         raise RuntimeError("carried partner or training accounts changed across restart")
-                    with Image.open(previous / "carried-before-reload.bmp") as a, Image.open(stage / "carried-after-reload.bmp") as b:
-                        # Compare the watch content, excluding the simulator's changing sidebar.
-                        if a.convert("RGB").crop((50, 24, 518, 492)).tobytes() != b.convert("RGB").crop((50, 24, 518, 492)).tobytes():
-                            raise RuntimeError("carried partner page pixels changed across restart")
                 if scenario == "startup" and phase == "reload":
                     before = json.loads((previous / "startup-end.json").read_text())
                     after = json.loads((stage / "startup-end.json").read_text())

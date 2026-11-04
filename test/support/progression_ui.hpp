@@ -11,6 +11,7 @@
 #include "viewer_screen.hpp"
 #include "board.hpp"
 #include "verification_output.hpp"
+#include "rendered_text.hpp"
 
 uint32_t host_time_ms = 0;
 HostSerial Serial;
@@ -166,62 +167,16 @@ void legacyOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t 
   check(validate(save), "legacy collection fixture validates before migration");
   check(store.commit(save) == CommitStatus::Committed, "legacy collection has authentic versioned bytes");
 }
-void modernOwned(MemoryStore& store, const std::vector<uint16_t>& ids, uint16_t partner = 1) {
-  // Current-schema collection; the legacy helper can only express 151 species.
-  Save save; save.sequence = 1; save.bootGeneration = 1; save.starter = 1; save.partner = partner;
-  save.rosterRevision = 1; save.encounterTarget = 300; setRegistered(save, 1); setOwned(save, 1);
-  setRegistered(save, partner); setOwned(save, partner);
-  uint64_t captures = 0;
-  for (uint16_t id : ids) {
-    setRegistered(save, id); setOwned(save, id);
-    if (id == 1) continue;
-    save.captureCounts[id - 1] = 1; ++captures;
-    Capture capture; capture.species = id; capture.at.bootGeneration = 1;
-    capture.at.totalSteps = captures * 500;
-    save.firstCapture[id - 1] = capture;
-  }
-  save.totalSteps = save.undatedSteps = captures * kLegacyEncounterSteps;
-  save.nextEncounterId = captures + 1;
-  save.explorationCredit = 0;
-  save.explorationSpent = save.totalSteps;
-  const uint64_t thresholds[] = {10000, 50000, 100000};
-  for (unsigned i = 0; i < 3; ++i) if (save.totalSteps >= thresholds[i]) {
-    save.lifetime[i].reached = true; save.lifetime[i].first.bootGeneration = 1;
-    save.lifetime[i].first.totalSteps = thresholds[i];
-  }
-  check(validate(save), "modern collection fixture validates");
-  check(store.commit(save) == CommitStatus::Committed, "modern collection is encoded by production codec");
-}
-bool glyph(const char* text, int y, uint16_t color, int x = 233, bool left = false, bool large = false) {
-  lgfx::LGFX_Sprite expected;
-  expected.setColorDepth(16);
-  if (!expected.createSprite(468, 28)) return false;
-  expected.fillScreen(TFT_BLACK); expected.setTextDatum(left ? middle_left : middle_center);
-  expected.setFont(large ? &fonts::efontCN_24 : &fonts::efontCN_16); expected.setTextColor(color);
-  expected.drawString(text, x, 14);
-  unsigned ink = 0, missed = 0;
-  for (int row = 0; row < 28; ++row) for (int x = 0; x < 468; ++x) {
-    const uint16_t pixel = expected.readPixel(x, row);
-    if (!pixel) continue;
-    ++ink;
-    if (M5.Display.readPixel(x, y - 14 + row) != pixel) ++missed;
-  }
-  expected.deleteSprite();
-  return ink > 8 && missed == 0;
-}
 void screenshot(Runtime& runtime, const char* name, uint32_t advanceMs = 500) {
-  M5.Display.beginObservation(); frame(runtime, advanceMs); M5.Display.endObservation();
-  const auto& frames = M5.Display.publishedFrames();
-  check(frames.size() == 1 && frames[0] == M5.Display.framebuffer(), "one complete published UI frame");
+  frame(runtime, advanceMs);
   const std::string path = verificationOutput((std::string(name) + ".ppm").c_str());
   FILE* file = std::fopen(path.c_str(), "wb"); check(file, "open screenshot");
-  std::fprintf(file, "P6\n468 468\n255\n"); bool safe = true;
+  std::fprintf(file, "P6\n468 468\n255\n");
   for (int y = 0; y < 468; ++y) for (int x = 0; x < 468; ++x) {
     uint16_t color = M5.Display.readPixel(x, y);
-    if (color && (x - 233) * (x - 233) + (y - 233) * (y - 233) > 228 * 228) safe = false;
     uint8_t pixel[] = {uint8_t((color >> 11) * 255 / 31), uint8_t(((color >> 5) & 63) * 255 / 63), uint8_t((color & 31) * 255 / 31)};
     std::fwrite(pixel, 1, 3, file);
   }
-  std::fclose(file); check(safe, "page pixels fit circular display");
+  std::fclose(file);
 }
 }

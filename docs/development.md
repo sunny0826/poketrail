@@ -31,6 +31,8 @@ E2E 入口为 `rtk proxy mise run test-simulator-e2e`，可加 `-- --case captur
 
 ## 新功能与任务交付
 
+测试先说明独立的产品／逻辑假设，再选择验证层级；只保留这些假设与构建发布保障，详见[测试保留标准](verification/test-policy.md)。已有真实用户路径覆盖的普通成功流程不重复添加低层测试，不检查内部实现形状或固定整屏像素。
+
 新功能必须随实现新增对应 E2E 测试：在 [test/simulator](../test/simulator) 新增场景或扩展已有场景的操作链和断言，接入 [runner](../scripts/run_simulator_e2e.py) 的默认全量运行，并更新[覆盖矩阵](design/simulator-e2e-coverage.md)。测试复用真实 SDL → Runtime 路径；涉及持久状态时验证新进程恢复。
 
 默认按影响范围运行专项检查和相关 `--case`，包括新增功能、局部 UI、单流程修复和单场景测试调整。纯文档、注释、说明截图只核对内容、链接与格式，不触发 E2E，也不中断运行中的验收。
@@ -41,7 +43,7 @@ E2E 入口为 `rtk proxy mise run test-simulator-e2e`，可加 `-- --case captur
 
 ## 检查入口
 
-先运行 `build` 安装锁定依赖，RTC、计步适配和渲染测试会直接编译这些库中的实现。素材测试还需要原图缓存：
+先运行 `build` 安装锁定依赖，RTC、渲染与模拟器检查会直接编译这些库中的实现。素材测试还需要原图缓存：
 
 ```bash
 rtk proxy mise run sprites
@@ -52,36 +54,39 @@ rtk proxy mise run icons-download
 
 | 任务（`rtk proxy mise run …`） | 覆盖范围 |
 | --- | --- |
-| `test` | 图鉴时序、手势、解码和整数缩放 |
-| `test-adventure` | 玩法、培养、迁移、日期、codec 与重试；测试时钟、IMU／RTC 隔离、手动步数事件触发遭遇与退出加载不写正式档 |
-| `test-motion` | 合成步态、日期和设备时钟适配 |
+| `test` | 图鉴时序、手势边界、解码与整数缩放；交替／替换／损坏来源后的像素正确性 |
+| `test-adventure` | 玩法、培养、迁移、日期、codec 与重试；TestModePlatform 的模拟时间和 IMU／RTC 隔离 |
+| `test-motion` | 合成步态、待确认峰归属、日期转换与跨日边界 |
 | `test-clock-sync` | USB 校时协议、主机重试、Runtime 校时事务与存档保护 |
-| `test-rtc` | 真实 RX8130 驱动、初始化与校时故障 |
-| `test-storage` | 双槽、I/O、文件系统与分配失败；测试目录隔离、模式标记、重启恢复、清理失败、RAM-only 与存储故障开关 |
-| `check-adventure-catalog` | 649 目录、五个地区编号范围与普通池、旧档属性路线掩码、普通资格与 320 条进化边；旧 124 种资格、122 条费用和历史路线不变 |
-| `test-pokedex` | 649 资料、Gen2–5 中文来源哈希与 Gen1／Gen2 快照一致性、649 英文名称属性和生成表 |
-| `test-sprites` | 649 个 GIF 哈希、完整帧和固件逐像素解码 |
-| `test-icons` | 649 个 PNG 哈希、透明规则与生成像素 |
-| `test-scenes` | 五地区场景来源、图层透明规则、RGB565 像素、生成物与固件地区顺序 |
-| `test-render` | 17 套真实 Runtime／M5GFX 页面、战斗与进化动画、图鉴预览、输入回归；启动页覆盖原素材像素、时长、圆屏、按键／触摸释放、时钟回绕、慢加载与存储失败；含中英文设置、文字与图鉴、测试模式入口、控制台、场景、标识与退出 |
-| `test-simulator` | SDL 桌面输入、图鉴、走路遭遇、窗口退出、双槽存档重启与目录隔离 |
-| `test-simulator-e2e` | 捕获、培养进化、失败重试、强杀恢复、旧档迁移、地区切换与捕完、时钟和练习隔离；真实文件及新进程重载 |
+| `test-rtc` | 真实 RX8130 驱动、板级启动、初始化与校时故障恢复 |
+| `test-storage` | 双槽、I/O、文件系统与分配失败；测试目录隔离、模式标记、重建恢复、清理失败、RAM-only 与存储故障开关 |
+| `check-adventure-catalog` | 649 目录、五地区普通池与实际 C++ 抽样、320 条进化边与费用；固定来源及当前／历史生成物 |
+| `test-pokedex` | 固定 CSV 来源哈希、篡改拒绝、649 英文名称及属性集合、中文资料与英文表生成物 |
+| `test-sprites` | 649 个 GIF 来源、原始帧像素／时长与固件解码；子集独立输出及发布文件保护 |
+| `test-icons` | 649 个 PNG 来源哈希、透明规则、生成像素及缺来源时拒绝发布 |
+| `test-scenes` | 生成器 `--check` 核对五地区普通／暗色／分层数据和清单 |
+| `test-render` | 12 套 M5GFX 入口：文字、圆屏输出、残影、首页日期与极大计数、步峰归属、输入释放、慢保存、睡眠／唤醒、校时事务、测试控制台及图形失败错误 |
+| `test-simulator-e2e` | 45 场（P0 24、P1 21）：启动、语言、捕获、培养进化、失败重试、强杀恢复、旧档迁移、地区与遭遇历史、时钟和练习隔离；真实文件及新进程重载 |
 | `build` | ESP32-S3 固件 |
-| `check-startup-stack` | 构建后 Engine 启动局部栈帧 |
+| `check-startup-stack` | 构建后目标 ELF 的 Engine 启动局部栈帧 |
+| `check-ci` | GitHub Actions 工作流语法与表达式 |
 
-渲染、玩法、计步、RTC、校时和存储任务支持 `MYM5_VERIFICATION_DIR` 指定本轮结果目录；未指定时使用 `.pio/verification` 下的时间戳目录。不要覆盖已有验收产物。可选单个渲染套件，例如：
+当前没有独立 typecheck 任务，C++ 类型检查由实际主机与固件编译承担；只构建模拟器使用 `rtk proxy mise run simulate -- --build-only`。独立 smoke／`test-simulator` 入口已删除，集成行为由 E2E 检查。
+
+渲染、玩法、计步、RTC、校时和存储任务支持 `MYM5_VERIFICATION_DIR` 指定本轮结果目录；未指定时使用 `.pio/verification` 下的时间戳目录。不要覆盖已有验收产物。可选单个渲染套件或定向 E2E，例如：
 
 ```bash
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_home_render
-rtk proxy mise exec -- python3 scripts/run_render_tests.py test_battle_render
-rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_render
-rtk proxy mise exec -- python3 scripts/run_render_tests.py test_evolution_preview_render
+rtk proxy mise exec -- python3 scripts/run_render_tests.py test_capture_render
+rtk proxy mise exec -- python3 scripts/run_render_tests.py test_progression_render
 rtk proxy mise exec -- python3 scripts/run_render_tests.py test_test_mode_render
+rtk proxy mise run test-simulator-e2e -- --case battle-cues --case battle-fixed
+rtk proxy mise run test-simulator-e2e -- --case progression --case isolation --case edges
 ```
 
-`test_battle_render` 通过真实按键、Runtime 和 M5GFX 核对开场与恢复的 3、2、1 倒计时（期间按键无效）、提示圈只圈住对应按键一侧的角色并向内收拢、假动作跳到另一侧、轨道仅保留中性下一拍圆点且无箭头／判定框／窗口刻度，中英文正式战斗与练习均无重复动作文案、最后一拍不再预告、每拍判定振动时长、双角色原帧时长、攻击与躲避位移、即时 HP、最终动作窗口、暂停恢复和保存失败。`test_evolution_render` 覆盖保存后播放、形态交替、跳过与释放门、重试与重启、播放中计步及圆屏边界。`test_evolution_preview_render` 遍历全部 320 条进化边，核对新档、坏档、未拥有和零培养步下的预览、伊布七分支与无畏小子三分支、连续刷新、原条目返回、账户不变及真实进化重试隔离。输出是主机截图，不表示设备已达到目标帧率。
+战斗、进化、预览、缩略图和基础电源的五套独立渲染入口已删除。相关用户操作由 E2E 覆盖；`test_progression_render` 保留尚未确认的步峰跨伙伴切换／进化时的账目归属，`test_power_pages_render` 保留睡眠继续计步、草稿恢复与失败重试等边界。目录与玩法测试仍检查全部 320 条进化规则，但不再逐条进入 UI 预览。具体场景以[覆盖矩阵](design/simulator-e2e-coverage.md)为准，主机截图不证明设备帧率或完整视觉验收。
 
-`test_test_mode_render` 覆盖资源页和错误页顶部长按、来源确认、控制台翻页与返回、四种固定场景、手动 +1 步触发遭遇、模拟校时、故障选择、重置和退出。测试使用主机输入与存储替身，不执行 `main.cpp` 的完整设备切换链。操作入口见[设备内测试模式](usage-test-mode.md)，未覆盖边界见[测试模式验证说明](verification.md#测试模式的验证边界)。
+设备内测试模式的操作入口见[使用指南](usage-test-mode.md)；控制台操作覆盖、平台隔离及未验边界见[测试模式验证说明](verification/test-mode.md)。
 
 详细覆盖与限制见[验证说明](verification.md)。固件变更还须运行 `build`；UI 与交互变更须核对真实渲染截图及输入路径。
 

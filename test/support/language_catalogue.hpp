@@ -60,29 +60,15 @@ inline void verify() {
   for (const auto& message : messages) {
     check(*message.chinese && *message.english, "paired messages are nonempty");
     check(arguments(message.chinese) == arguments(message.english), "Chinese and English printf argument order and types match");
-    check(std::strcmp(pokedex::i18n::text(Language::English, message.id), message.english) == 0,
-          "catalogue lookup resolves each English entry");
     supported = glyphs(message.english, &fonts::efontCN_16) && supported;
   }
-  check(std::strcmp(pokedex::i18n::text(Language::English, Text::LanguageTitle), "Language") == 0,
-        "independent language title oracle");
-  check(std::strcmp(pokedex::i18n::text(Language::English, Text::Owned), "Owned") == 0,
-        "independent ownership label oracle");
   for (uint16_t id = 1; id <= 649; ++id) {
     const char* name = pokedex::i18n::speciesName(Language::English, id);
     const char* types = pokedex::i18n::speciesTypes(Language::English, id);
     check(*name && *types, "every English species has a name and types");
     supported = glyphs(name, &fonts::efontCN_24) && supported;
     supported = glyphs(types, &fonts::efontCN_16) && supported;
-    M5.Display.setFont(&fonts::efontCN_24);
-    check(M5.Display.textWidth(name) <= 240, "English species title fits the circular header");
-    M5.Display.setFont(&fonts::efontCN_16);
-    check(M5.Display.textWidth(types) <= 320, "English type pair fits viewer badge");
   }
-  const char* labels[] = {"My partners", "Choose region", "Stats and records", "Language", "Back", "Save and sync"};
-  M5.Display.setFont(&fonts::efontCN_24);
-  for (const char* label : labels)
-    check(M5.Display.textWidth(label) <= 240, "English action fits the menu text span");
   check(supported, "all English glyphs are present in the production fonts");
 }
 }

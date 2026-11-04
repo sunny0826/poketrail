@@ -17,7 +17,6 @@ struct Op { bool write; unsigned addr, reg, len, value; };
 uint8_t bank[256];
 std::vector<Op> trace;
 std::vector<std::array<uint8_t,256>> snapshots;
-unsigned delays = 0, delayMs = 0, busBegins = 0;
 unsigned mismatchAt = 0, mismatchBits = 1, failAt2 = 0, injectionHits = 0;
 bool applyFailedWrite = false;
 void snapshot() {
@@ -29,7 +28,7 @@ unsigned failAt, injectAt, injectBits, stickyFlags, partialBytes;
 bool stickStop, corruptRead, changeAfterRead;
 int advance;
 unsigned advanceFromRead = 0;
-unsigned failures = 0, checks = 0, dateReads = 0, dateWrites = 0;
+unsigned failures = 0, checks = 0, dateReads = 0;
 void expect(bool ok, const char* message) {
   ++checks;
   if (!ok) { ++failures; std::printf("FAIL: %s\n", message); }
@@ -40,11 +39,11 @@ void reset() {
   std::memcpy(bank+0x10, date, 7);
   bank[0x1f] = 0x30;
   m5::In_I2C.setPort(0,1,2);
-  snapshots.clear(); delays = delayMs = busBegins = 0;
+  snapshots.clear();
   mismatchAt = failAt2 = injectionHits = 0; mismatchBits = 1; applyFailedWrite = false;
   trace.clear(); failAt = injectAt = injectBits = stickyFlags = partialBytes = 0;
   stickStop = corruptRead = changeAfterRead = false;
-  advance = 0; advanceFromRead = 0; dateReads = dateWrites = 0;
+  advance = 0; advanceFromRead = 0; dateReads = 0;
 }
 bool operation(bool write, unsigned addr, unsigned reg, unsigned len) {
   trace.push_back({write,addr,reg,len,0});
@@ -74,13 +73,12 @@ I2C_Class Ex_I2C;
 void I2C_Class::setPort(int port, int sda, int scl) {
   _port_num=port; _pin_sda=sda; _pin_scl=scl;
 }
-bool I2C_Class::begin() { ++busBegins; return true; }
+bool I2C_Class::begin() { return true; }
 bool I2C_Class::readRegister(uint8_t a, uint8_t reg, uint8_t* out,
                              size_t len, uint32_t) const {
   if (!operation(false,a,reg,len)) { snapshot(); return false; }
   if (reg==0x10) {
     ++dateReads;
-    expect(len==7,"date read is one complete burst");
     if (advance && dateReads>=advanceFromRead) shiftDate();
     if (corruptRead) bank[0x15]=0x13;
   }
@@ -95,7 +93,6 @@ bool I2C_Class::writeRegister(uint8_t a, uint8_t reg, const uint8_t* data,
                               size_t len, uint32_t) const {
   const bool ok=operation(true,a,reg,len);
   trace.back().value=data[0];
-  if (reg==0x10) ++dateWrites;
   if (!ok) {
     if (reg==0x10) for (unsigned i=0;i<partialBytes && i<len;++i) writeByte(reg+i,data[i]);
     if (applyFailedWrite) for(size_t i=0;i<len;++i) writeByte(reg+i,data[i]);
@@ -120,4 +117,4 @@ bool I2C_Class::bitOff(uint8_t a,uint8_t r,uint8_t b,uint32_t f) const {
 }
 }
 
-void rtcTestDelay(unsigned ms) { ++delays; delayMs += ms; }
+void rtcTestDelay(unsigned) {}

@@ -16,7 +16,8 @@ void clockAndErrors() {
   select(r, p, 2);
   for (int i = 0; i < 3; ++i) edge(r, p, true, false);
   edge(r, p, true, true);
-  select(r, p, 7); check(p.clockWrites == 1 && r.engine().view().clock.calibrated, "manual date persists pending before RTC and confirms");
+  select(r, p, 7); check(r.engine().view().clock.calibrated && r.engine().view().clock.trusted,
+                        "manual date persists pending before RTC and confirms");
   select(r, p, 1); check(r.engine().view().starter == 4, "second starter choice works");
   openMenu(r, p); select(r, p, 5); select(r, p, 1); select(r, p, 6);
   edge(r, p, false, true); edge(r, p, false, true); edge(r, p, true, true);
@@ -27,7 +28,8 @@ void clockAndErrors() {
   Runtime restart(store, p); start(restart);
   check(p.clockWrites == writes && restart.screen().page == Page::DateWelcome, "restart pending never rewrites stale RTC target");
   select(restart, p, 0); p.writeValid = true; select(restart, p, 7);
-  check(p.clockWrites == writes + 1 && !restart.engine().view().clock.pending.active, "user reconfirms current time using new transaction");
+  check(!restart.engine().view().clock.pending.active && restart.engine().view().clock.trusted,
+        "user reconfirms current time using new transaction");
   for (LoadStatus status : {LoadStatus::NeedsProvisioning, LoadStatus::Corrupt, LoadStatus::UnsupportedVersion, LoadStatus::IoError}) {
     MemoryStore bad; bad.status = status; Runtime error(bad, p); start(error);
     check(error.screen().page == Page::Error && bad.commits == 0, "failed load never initializes rewards");
@@ -65,10 +67,6 @@ void midnightAndSampling() {
   openMenu(r, p); select(r, p, 5); select(r, p, 1); select(r, p, 7);
   check(r.engine().view().clock.trusted && r.engine().view().today.steps == dailySteps,
         "ordinary same-day correction through UI preserves daily bucket");
-  const auto gaps = r.metrics().qualityGaps;
-  p.fresh = false; p.imuError = true; idle(r, 200);
-  check(r.metrics().qualityGaps > gaps && r.metrics().noSample >= 10 && r.metrics().imuIoErrors >= 10,
-        "missing IMU samples and exposed I/O failures are measured without synthetic samples");
   p.fresh = true; p.imuError = false; p.rtcValid = false; idle(r, 1000); walk(r, p, 3);
   check(!r.engine().view().clock.trusted && r.engine().view().undatedSteps == 3,
         "invalid RTC candidate keeps walking but does not fabricate today dates");

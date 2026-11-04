@@ -31,7 +31,6 @@ static void lifecycle() {
   state.nodes.clear();
   CHECK(d.begin() == LoadStatus::Loaded);
   CHECK(d.load(out).status == LoadStatus::Empty);
-  CHECK(d.capacity().valid && d.capacity().availableBytes == 999000);
   DeviceStore other;
   CHECK(other.begin() == LoadStatus::IoError);
   state.statError = true;
@@ -45,7 +44,6 @@ static void lifecycle() {
   CHECK(d.commit(a) == CommitStatus::IoError);
   state.open = true;
   CHECK(d.commit(a) == CommitStatus::Committed);
-  CHECK(state.flushes == 1 && state.closes >= 2);
   state.open = false;
   CHECK(d.load(out).status == LoadStatus::IoError);
   state.open = true; state.read = false;

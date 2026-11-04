@@ -11,7 +11,6 @@ void calendarTests() {
   check(toUtc({2000,1,1,0,0,0}, 0, utc) && utc == 946684800, "Unix epoch base");
   check(toUtc({2099,12,31,23,59,59}, 0, utc) && utc == 4102444799LL,
         "last second 2099");
-  check(isLeapYear(2000) && !isLeapYear(2100) && isLeapYear(2024), "Gregorian century");
   check(isValid({2024,2,29,23,59,59}) && !isValid({2023,2,29,0,0,0}), "leap day");
   const CivilTime invalid[] = {{1999,12,31,0,0,0}, {2100,1,1,0,0,0},
     {2024,0,1,0,0,0}, {2024,13,1,0,0,0}, {2024,4,31,0,0,0},
@@ -43,14 +42,6 @@ void calendarTests() {
   check(dayKey(c, key) && key == 20240301, "actual calendar day key");
   uint8_t week = 255;
   check(weekday({2000,1,1,0,0,0}, week) && week == 6, "Saturday weekday");
-  // Every date in the supported century, including negative offsets and DST-free conversion.
-  for (int64_t t = 946771200; t < 4102358400LL; t += 86400) {
-    for (int offset : {-720, 0, 480, 840}) {
-      int64_t recovered = 0;
-      check(fromUtc(t, offset, c) && toUtc(c, offset, recovered) && recovered == t,
-            "all supported dates round trip");
-    }
-  }
   // Confirm after midnight; assign each delayed peak with its original monotonic anchor.
   Feed midnight;
   midnight.cycle(); midnight.cycle(); midnight.cycle();

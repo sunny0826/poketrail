@@ -4,12 +4,12 @@
 
 | Page | 设计帧与状态 |
 | --- | --- |
-| `Home` | 历史三路线：[森林](ui-scene-redesign/frames/home-forest.png) · [海边](ui-scene-redesign/frames/home-coast.png) · [洞窟](ui-scene-redesign/frames/home-cave.png)（当前五地区见[视觉设计](ui-scene-redesign.md#地区场景)） · [遭遇](ui-scene-redesign/frames/home-encounter.png) · [待捕捉](ui-scene-redesign/frames/home-throw-ready.png) · [日期未知](ui-scene-redesign/frames/home-unknown-date.png) · [部分日](ui-scene-redesign/frames/home-partial-day.png) · [步数缺失](ui-scene-redesign/frames/home-step-warning.png) · [恢复警告](ui-scene-redesign/frames/home-recovery.png) · 可进化按钮无设计帧，见[伙伴渲染测试](../../test/test_progression_render.cpp)的 `home-evolve-ready`、`home-evolve-branches` 截图 |
+| `Home` | 历史三路线：[森林](ui-scene-redesign/frames/home-forest.png) · [海边](ui-scene-redesign/frames/home-coast.png) · [洞窟](ui-scene-redesign/frames/home-cave.png)（当前五地区见[视觉设计](ui-scene-redesign.md#地区场景)） · [遭遇](ui-scene-redesign/frames/home-encounter.png) · [待捕捉](ui-scene-redesign/frames/home-throw-ready.png) · [日期未知](ui-scene-redesign/frames/home-unknown-date.png) · [部分日](ui-scene-redesign/frames/home-partial-day.png) · [步数缺失](ui-scene-redesign/frames/home-step-warning.png) · [恢复警告](ui-scene-redesign/frames/home-recovery.png) · 可进化按钮无设计帧，见[伙伴与进化 E2E](../../test/simulator/scenarios_progression.cpp) |
 | `Menu` | [第一页](ui-scene-redesign/frames/menu-main.png) · [第二页](ui-scene-redesign/frames/menu-second.png) · [末页](ui-scene-redesign/frames/menu-last.png) · [恢复警告](ui-scene-redesign/frames/menu-recovery.png) |
 | `Resources` | [资源与数据](ui-scene-redesign/frames/resources.png) |
 | `DateWelcome` | [首次日期确认](ui-scene-redesign/frames/date-welcome.png) · [未完成校时恢复](ui-scene-redesign/frames/date-pending.png) |
 | `Starter` | [初始伙伴](ui-scene-redesign/frames/starter.png) |
-| `Routes` | [路线选择](ui-scene-redesign/frames/routes.png)（历史三路线设计稿；当前为两页“选择地区”，见[首页渲染测试](../../test/test_home_render.cpp)的 `routes-menu-second-page` 截图） |
+| `Routes` | [路线选择](ui-scene-redesign/frames/routes.png)（历史三路线设计稿；当前为两页“选择地区”，见[地区选择 E2E](../../test/simulator/scenarios_regions.cpp)） |
 | `Partners` | [列表](ui-scene-redesign/frames/partners.png) · [长名称](ui-scene-redesign/frames/partners-long.png) · [末页返回](ui-scene-redesign/frames/partners-last.png) |
 | `Encounter` | [遭遇预告](ui-scene-redesign/frames/encounter.png) |
 | `Battle` | [攻击](ui-scene-redesign/frames/battle-attack.png) · [躲避](ui-scene-redesign/frames/battle-dodge.png) · [完美判定](ui-scene-redesign/frames/battle-perfect.png) · [播放动画](ui-scene-redesign/animations/battle-attack.gif) |
@@ -28,11 +28,11 @@
 | `Error` | [保存重试](ui-scene-redesign/frames/error-save.png) · [未初始化](ui-scene-redesign/frames/error-storage.png) · [坏档](ui-scene-redesign/frames/error-corrupt.png) · [较新版本](ui-scene-redesign/frames/error-unsupported.png) · [画面不可用](ui-scene-redesign/frames/error-graphics.png) |
 | `Viewer` | [拥有](ui-scene-redesign/frames/viewer-owned.png) · [曾经获得](ui-scene-redesign/frames/viewer-history.png) · [未获得](ui-scene-redesign/frames/viewer-unowned.png) · [互动](ui-scene-redesign/frames/viewer-reacting.png) · [内存不足](ui-scene-redesign/frames/viewer-memory-error.png) |
 | `PartnerDetail` | [进化就绪](ui-scene-redesign/frames/partner-ready.png) · [进化已保存](ui-scene-redesign/frames/partner-saved.png) · [最终形态](ui-scene-redesign/frames/partner-final.png) · [目标已拥有](ui-scene-redesign/frames/partner-owned.png) · [步数不足](ui-scene-redesign/frames/partner-unready.png) |
-| `CarriedPartner` | 无设计帧；当前携带者、培养账户、切换入口、进化费用与不可用原因，见[玩法契约](walking-progression.md)与[伙伴渲染测试](../../test/test_progression_render.cpp) |
+| `CarriedPartner` | 无设计帧；当前携带者、培养账户、切换入口、进化费用与不可用原因，见[玩法契约](walking-progression.md)与[伙伴 E2E](../../test/simulator/scenarios_progression.cpp) |
 | `EvolutionConfirm` | [进化确认](ui-scene-redesign/frames/evolution-confirm.png) |
-| `Evolution` | 无独立设计帧；保存成功后的真实进化动画，见[动画契约](evolution-animation.md)与[渲染测试](../../test/test_evolution_render.cpp) |
-| `EvolutionPreviewTargets` | 无独立设计帧；伊布七分支、无畏小子三分支的预览选择，见[预览契约](evolution-animation.md)与[预览测试](../../test/test_evolution_preview_render.cpp) |
-| `EvolutionPreview` | 无独立设计帧；不改变账户、结束返回原图鉴条目的预览动画，见[预览契约](evolution-animation.md)与[预览测试](../../test/test_evolution_preview_render.cpp) |
+| `Evolution` | 无独立设计帧；保存成功后的真实进化动画，见[动画契约](evolution-animation.md)与[进化 E2E](../../test/simulator/scenarios_progression.cpp) |
+| `EvolutionPreviewTargets` | 无独立设计帧；伊布七分支、无畏小子三分支的预览选择，见[预览契约](evolution-animation.md)与[预览隔离与伊布分支 E2E](../../test/simulator/scenarios_progression.cpp) |
+| `EvolutionPreview` | 无独立设计帧；不改变账户、结束返回原图鉴条目的预览动画，见[预览契约](evolution-animation.md)与[预览隔离与伊布分支 E2E](../../test/simulator/scenarios_progression.cpp) |
 | `TestEntry` | 无设计帧；进入、重置时选择正式快照或空档，见[测试模式指南](../usage-test-mode.md)与[测试模式渲染](../../test/test_test_mode_render.cpp) |
 | `TestHub` | 无设计帧；测试控制台，见[页面实现](../../firmware/apps/20_pokedex/screens_test.cpp) |
 | `TestSteps` | 无设计帧；手动步数注入，见[测试模式指南](../usage-test-mode.md) |

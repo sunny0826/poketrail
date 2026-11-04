@@ -1,6 +1,7 @@
 #include "support/adventure_ui/harness.hpp"
 #include "test_mode_platform.hpp"
 #include "test_console.hpp"
+#include "support/rendered_text.hpp"
 #include <memory>
 
 namespace {
@@ -100,13 +101,8 @@ struct Fixture {
   TestPlatform& p() { return real; }
 };
 
-#include "support/adventure_ui/test_mode_scenarios.hpp"
-
 bool testBadgeVisible() {
-  for (int y = 444; y <= 460; ++y)
-    for (int x = 210; x <= 256; ++x)
-      if (M5.Display.readPixel(x, y) == pokedex::ui::theme::kGold) return true;
-  return false;
+  return rendered_text::contains("测试", pokedex::ui::theme::kGold, 430, 468);
 }
 
 void badge(const char* page) {
@@ -404,7 +400,6 @@ void corruptOfficialEntry() {
 
 int main() {
   c152::begin("ADVENTURE TEST");
-  scenarioSeeds();
   testModeFlow();
   viewerBadge();
   corruptOfficialEntry();

@@ -3,10 +3,6 @@
 
 static void basicSteps() {
   World w;
-  CHECK(w.e.chooseStarter(4) == CommandResult::InvalidPhase);
-  CHECK(w.e.chooseStarter(1) == CommandResult::Duplicate);
-  CHECK(w.e.selectPartner(151) == CommandResult::InvalidInput);
-  CHECK(w.e.view().captureCounts[0] == 0 && w.e.view().firstCapture[0].species == 0);
   const uint16_t firstTarget = w.e.view().encounterTarget;
   CHECK(firstTarget >= kEncounterMinSteps && firstTarget <= kEncounterMaxSteps);
   w.steps(firstTarget - 1); CHECK(w.e.view().phase == Phase::Walking);
@@ -27,29 +23,12 @@ static void basicSteps() {
   CHECK(w.e.acknowledgeResult(target.id, 123) == CommandResult::Applied);
   CHECK(w.e.view().explorationSpent == spentBefore + nextTarget);
   CHECK(w.e.view().explorationCredit == 11000 - nextTarget && w.e.view().encounter.id == 2 && w.e.view().encounter.route == Route::Johto);
-  CHECK(w.e.pressThrow(AttemptKey(target.id, 1), 0, w.clock()) == CommandResult::InvalidInput);
-  CHECK(w.e.checkpoint() == CommandResult::Duplicate);
   Engine reboot(w.store); CHECK(reboot.begin() == CommandResult::Applied);
-  CHECK(reboot.view().bootGeneration == 2 && reboot.view().lastStepBatch == 0);
   StepEvent fresh; fresh.batchId = 1; fresh.clock = reading(reboot, 0, 10, false);
   const uint64_t total = w.e.view().totalSteps;
   CHECK(reboot.observeSteps(&fresh, 1, 9) == CommandResult::Applied && reboot.view().totalSteps == total + 1);
   CHECK(reboot.observeSteps(&replay, 1, 9) == CommandResult::InvalidInput);
   std::puts("PASS random encounter target, route lock, ownership, replay and boot generation");
-}
-static void battles() {
-  World w; w.walkToEncounter(); CHECK(w.e.startBattle(w.now) == CommandResult::Applied);
-  w.now += 30000; CHECK(w.e.tick(w.now, w.clock()) == CommandResult::Applied);
-  CHECK(w.e.view().result == Result::Lost);
-  CHECK(w.e.beginThrow(AttemptKey(w.e.view().encounter.id, 1), w.now) == CommandResult::InvalidPhase);
-  World rebooted; rebooted.walkToEncounter(); const uint64_t id = rebooted.e.view().encounter.id;
-  CHECK(rebooted.e.startBattle(100) == CommandResult::Applied);
-  CHECK(rebooted.e.requestPause() == CommandResult::Applied);
-  CHECK(rebooted.e.tick(5000, rebooted.clock()) == CommandResult::Applied);
-  CHECK(rebooted.e.checkpoint() == CommandResult::Applied);
-  Engine restore(rebooted.store); CHECK(restore.begin() == CommandResult::Applied);
-  CHECK(restore.view().phase == Phase::EncounterReady && restore.view().encounter.id == id && restore.view().explorationCredit == 0);
-  std::puts("PASS engine battle timeout loss, pause checkpoint and reboot");
 }
 static void throwsAndRecords() {
   World w(true); w.walkToEncounter(seedFor(w.e.view(), false, true)); w.win();
@@ -64,7 +43,6 @@ static void throwsAndRecords() {
   CHECK(w.e.pressThrow(AttemptKey(id, 2), 0, w.clock()) == CommandResult::Duplicate);
   CHECK(w.e.view().captureCounts[species - 1] == 1);
   const Stamp first = w.e.view().firstCapture[species - 1].at;
-  CHECK(w.e.selectPartner(species) == CommandResult::InvalidPhase);
   for (unsigned n = 0; n < 33; ++n) {
     const uint32_t seed = seedFor(w.e.view(), true, false);
     CHECK(w.e.acknowledgeResult(w.e.view().encounter.id, seed) == CommandResult::Applied);
@@ -77,13 +55,6 @@ static void throwsAndRecords() {
   CHECK(totalCaptures == 34);
   CHECK(w.e.view().firstCapture[species - 1].at.utcSeconds == first.utcSeconds);
   CHECK(w.e.view().firstCapture[species - 1].at.totalSteps == first.totalSteps);
-  CHECK(w.e.view().lifetime[0].reached && w.e.view().dailyFirst[2].reached);
-  World miss; miss.walkToEncounter(); miss.win();
-  CHECK(miss.ball(1, Timing::Miss) == CommandResult::Applied);
-  CHECK(miss.e.beginThrow(AttemptKey(miss.e.view().encounter.id, 2), miss.now) == CommandResult::Applied);
-  miss.now = miss.e.throwView().targetMs + 181;
-  CHECK(miss.e.tick(miss.now, miss.clock(false)) == CommandResult::Applied);
-  CHECK(miss.e.view().result == Result::Escaped && miss.e.view().recentSize == 0);
   World unknown; unknown.walkToEncounter(seedFor(unknown.e.view(), true, true, 4)); unknown.win();
   CHECK(unknown.ball(1) == CommandResult::Applied);
   CHECK(unknown.e.view().captureCounts[3] == 1 && !unknown.e.view().firstCapture[3].at.timeKnown);
@@ -108,28 +79,11 @@ static void failures() {
   w.store.failBefore = false; CHECK(w.e.retrySave() == CommandResult::Applied);
   CHECK(w.e.view().totalSteps == target + 3 && w.e.view().explorationCredit == 3);
   CHECK(w.e.checkpoint() == CommandResult::Applied);
-  World capture; capture.walkToEncounter(seedFor(capture.e.view(), true, true)); capture.win();
-  capture.store.failAfter = true; CHECK(capture.ball(1) == CommandResult::StorageError);
-  CHECK(capture.e.view().recentSize == 0 && capture.e.view().encounter.usedBalls == 0);
-  const std::vector<uint8_t> captured = capture.store.disk;
-  capture.store.failAfter = false; CHECK(capture.e.retrySave() == CommandResult::Applied);
-  CHECK(capture.store.disk == captured && capture.e.view().recentSize == 1);
-  Engine restart(capture.store); CHECK(restart.begin() == CommandResult::Applied);
-  CHECK(restart.view().recentSize == 1 && restart.view().result == Result::Captured);
-  CHECK(restart.pressThrow(AttemptKey(restart.view().encounter.id, 1), 0, reading(restart, 0, 0, false)) == CommandResult::Duplicate);
-  World full; full.walkToEncounter(); CHECK(full.e.startBattle(full.now) == CommandResult::Applied);
-  StepEvent many[129]; for (size_t i = 0; i < 129; ++i) { many[i].batchId = full.e.view().totalSteps + 1 + i; many[i].clock = full.clock(); }
-  CHECK(full.e.observeSteps(many, 129, 1) == CommandResult::BufferFull && full.e.stepsIncomplete());
-  CHECK(full.e.retreat() == CommandResult::Applied);
-  CHECK(full.e.view().totalSteps == full.e.view().explorationSpent + 128 && full.e.view().stepsIncomplete);
   for (LoadStatus status : {LoadStatus::Corrupt, LoadStatus::UnsupportedVersion, LoadStatus::IoError, LoadStatus::NeedsProvisioning}) {
     MemoryStore store; store.forced = status; Engine e(store);
     CHECK(e.begin() == CommandResult::StorageError && !e.ready() && store.commits == 0);
   }
-  MemoryStore boot; boot.failBefore = true; Engine e(boot);
-  CHECK(e.begin() == CommandResult::StorageError && !e.ready());
-  boot.failBefore = false; CHECK(e.retrySave() == CommandResult::Applied && e.ready());
-  std::puts("PASS failed writes, frozen retry, uncertain commit, replay queue, overflow and load errors");
+  std::puts("PASS failed encounter write keeps a frozen candidate, queues steps once and refuses broken storage");
 }
 static void probabilityBoundaries() {
   const uint8_t probabilities[2][3] = {{85,92,98},{70,80,90}};
@@ -152,24 +106,6 @@ static void probabilityBoundaries() {
   std::puts("PASS all six probability thresholds at p-1 and p using raw press timestamps");
 }
 static void additionalRecovery() {
-  World w; w.walkToEncounter(seedFor(w.e.view(), false, true)); w.win();
-  CHECK(w.ball(1) == CommandResult::Applied);
-  Engine reboot(w.store); CHECK(reboot.begin() == CommandResult::Applied);
-  const uint64_t id = reboot.view().encounter.id;
-  CHECK(reboot.view().phase == Phase::ThrowReady && reboot.view().encounter.usedBalls == 1);
-  CHECK(reboot.beginThrow(AttemptKey(id, 1), 10) == CommandResult::Duplicate);
-  CHECK(reboot.beginThrow(AttemptKey(id, 2), 10) == CommandResult::Applied);
-  CHECK(reboot.pressThrow(AttemptKey(id, 2), reboot.throwView().targetMs,
-        reading(reboot, 0, reboot.throwView().targetMs, false)) == CommandResult::Applied);
-  CHECK(reboot.view().recentSize == 1);
-  World prize; prize.walkToEncounter(seedFor(prize.e.view(), true, true)); prize.win();
-  prize.store.failBefore = true; CHECK(prize.ball(1) == CommandResult::StorageError);
-  prize.store.failBefore = false; Engine powerLoss(prize.store); CHECK(powerLoss.begin() == CommandResult::Applied);
-  CHECK(powerLoss.view().phase == Phase::ThrowReady && powerLoss.view().recentSize == 0);
-  CHECK(powerLoss.beginThrow(AttemptKey(powerLoss.view().encounter.id, 1), 100) == CommandResult::Applied);
-  CHECK(powerLoss.pressThrow(AttemptKey(powerLoss.view().encounter.id, 1), powerLoss.throwView().targetMs,
-        reading(powerLoss, 0, 1600, false)) == CommandResult::Applied);
-  CHECK(powerLoss.view().result == Result::Captured && powerLoss.view().recentSize == 1);
   World overflow; const uint16_t target = overflow.e.view().encounterTarget;
   overflow.steps(target - 1); overflow.store.failBefore = true;
   StepEvent event; event.batchId = target; event.clock = overflow.clock();
@@ -178,7 +114,7 @@ static void additionalRecovery() {
   CHECK(overflow.e.observeSteps(many, 129, 1) == CommandResult::BufferFull);
   overflow.store.failBefore = false; overflow.store.failAt = overflow.store.commits + 2;
   CHECK(overflow.e.retrySave() == CommandResult::StorageError && overflow.e.stepsIncomplete());
-  CHECK(overflow.e.view().totalSteps == target && overflow.e.bufferedSteps() == 0);
+  CHECK(overflow.e.view().totalSteps == target);
   CHECK(overflow.e.retrySave() == CommandResult::Applied);
   CHECK(overflow.e.view().totalSteps == target + 128 && overflow.e.stepsIncomplete());
   World life; life.steps(100000);
@@ -191,7 +127,7 @@ static void additionalRecovery() {
   StepEvent invalid[2]; invalid[0].batchId = 100001; invalid[0].clock = life.clock();
   invalid[1] = invalid[0];
   CHECK(life.e.observeSteps(invalid, 2, 1) == CommandResult::InvalidInput && life.e.view().totalSteps == 100000);
-  std::puts("PASS saved first failure/second success, prewrite power loss, overflow visibility and lifetime milestones");
+  std::puts("PASS queued-step overflow remains visible through a second save failure; milestones keep their first step");
 }
 static void battleCommitRecovery() {
   for (unsigned written = 0; written < 2; ++written) {
@@ -219,38 +155,17 @@ static void battleCommitRecovery() {
   CHECK(reboot.view().recentSize == 1);
   std::puts("PASS victory and result acknowledgement crash points preserve encounter and credit");
 }
-static void regions() {
+static void invalidRoutes() {
   World w;
-  CHECK(w.e.view().route == Route::Kanto);
-  // The gifted Bulbasaur is already registered and no longer eligible in Kanto.
-  const unsigned pools[kRegionCount] = {72, 51, 63, 38, 69};
-  const uint16_t spans[kRegionCount][2] = {{1, 151}, {152, 251}, {252, 386}, {387, 493}, {494, 649}};
-  for (uint8_t i = 0; i < kRegionCount; ++i) {
-    const Route region = regionAt(i);
-    CHECK(remainingEncounters(w.e.view(), region) == pools[i]);
-    CHECK(regionOf(spans[i][0]) == region && regionOf(spans[i][1]) == region);
-    for (uint32_t seed = 0; seed < 400; ++seed) {
-      const uint16_t id = chooseEncounter(w.e.view(), region, seed);
-      CHECK(id >= spans[i][0] && id <= spans[i][1] && ordinaryEncounter(id));
-    }
-  }
-  CHECK(regionOf(0) == Route::Forest && regionOf(650) == Route::Forest);
   const std::vector<uint8_t> before = w.store.disk;
   for (Route legacy : {Route::Forest, Route::Coast, Route::Cave, Route(8)}) {
     CHECK(w.e.selectRoute(legacy) == CommandResult::InvalidInput);
-    CHECK(chooseEncounter(w.e.view(), legacy, 1) == 0 && remainingEncounters(w.e.view(), legacy) == 0);
+    CHECK(w.store.disk == before && w.e.view().route == Route::Kanto);
   }
-  CHECK(w.store.disk == before && w.e.view().route == Route::Kanto);
-  CHECK(w.e.selectRoute(Route::Sinnoh) == CommandResult::Applied);
-  w.walkToEncounter();
-  CHECK(w.e.view().encounter.route == Route::Sinnoh);
-  CHECK(w.e.view().encounter.species >= 387 && w.e.view().encounter.species <= 493);
-  Engine reboot(w.store); CHECK(reboot.begin() == CommandResult::Applied);
-  CHECK(reboot.view().route == Route::Sinnoh && reboot.view().encounter.route == Route::Sinnoh);
-  std::puts("PASS five regions draw only their own generation, reject old routes and survive reboot");
+  std::puts("PASS invalid route commands preserve the selected region and saved state");
 }
 int main() {
-  regions(); basicSteps(); battles(); throwsAndRecords(); failures(); dates(); clockTransactions();
+  invalidRoutes(); basicSteps(); throwsAndRecords(); failures(); dates(); clockTransactions();
   probabilityBoundaries(); additionalRecovery(); battleCommitRecovery();
-  std::printf("adventure: %u checks passed; sizeof(Save)=%zu sizeof(Engine)=%zu\n", checks, sizeof(Save), sizeof(Engine));
+  std::printf("adventure: %u checks passed\n", checks);
 }

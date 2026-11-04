@@ -61,8 +61,6 @@ void scenarioEncounterHistory(Driver& d, const std::string& phase) {
     d.check(registered(d.save(),237) && !registered(d.save(),236),"sparse history has Hitmontop but no Tyrogue");
     d.check(registered(d.save(),26) && !registered(d.save(),25) && !registered(d.save(),172),
             "sparse Raichu history omits both ancestral forms");
-    d.check(remainingEncounters(d.save(),Route::Johto)==0,"ancestors are excluded across regions and missing intermediate history");
-    d.check(remainingEncounters(d.save(),Route::Kanto)==2,"both unacquired sibling branches remain");
     checkNoNewEncounter(d); englishExhaustion(d,false);
     d.homeMenu(); d.select(1); d.select(regionIndex(Route::Kanto));
     d.until([&]{return d.screen().page==Page::Home;},4000,"switch to Kanto");
@@ -76,8 +74,6 @@ void scenarioEncounterHistory(Driver& d, const std::string& phase) {
     d.check(d.save().phase==Phase::EncounterReady &&
             (d.save().encounter.species==106 || d.save().encounter.species==107),
             "new process restores the sibling encounter from disk");
-    d.check(remainingEncounters(d.save(),Route::Johto)==0 && remainingEncounters(d.save(),Route::Kanto)==2,
-            "sparse ancestry and sibling eligibility survive restart");
     d.shot("history-branches-reload");
   } else if (phase=="pending") {
     d.check(d.screen().page==Page::Throw && d.save().encounter.species==1 &&

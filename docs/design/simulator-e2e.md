@@ -43,11 +43,13 @@ d.close();
 
 每次 Runtime loop 为20 ms；W 使用真实 detector 处理合成步态。16倍模式仅用于走路，战斗使用1倍。等待有逻辑上限，Python 每次进程等待有120秒 watchdog；强杀握手另有120秒期限。失败不自动重试。
 
-通常的战斗驱动只读取当前可见的 `shownAction`，不读 `BattleView.expected`。`battle-fixed` 额外重放冻结轨迹：战斗页开始后的2012、3512、4612、5712、6812 ms，依次按右、右、左、左、右，每次约在节拍前 100 ms；不观察提示来选择输入。首拍在开战后 2200 ms（3、2、1 倒计时 1500 ms 加 700 ms 提示），轨迹随首拍时间平移，相对节拍的时机不变。第一帧提示圆屏 RGB 与留存轨迹的 SHA256 比较，其余提示也截图留证。战斗页视觉改版或遭遇池变化可能改变该哈希：先逐像素对比并读图核对新旧首帧，确认变化符合本次改动、未受影响的提示与布局保持不变，再更新 `run_simulator_e2e.py` 中的期望值与来源目录。
+普通战斗驱动读取当前可见的 `shownAction` 来选择按键，不读 `BattleView.expected`。`battle-cues` 另检查真实画面中的提示圈与按键判定一致。`battle-fixed` 保留独立输入：战斗页开始后 2012、3512、4612、5712、6812ms 依次按右、右、左、左、右，不根据当前提示决定方向，断言能获胜并进入投球页。固定输入有独立行为价值，不依赖整屏哈希。
 
-捕获预期来自固定运行记录，不用生产概率函数生成断言，也不搜索种子直到成功：新档首场在关都为 #116 墨海马、seed `1745833800`，Perfect 为 roll33／概率98；投球 fixture 为关都 #072、seed `0x2468ace0`，两次 Miss 为 roll16、roll5／概率0，Perfect 重试为 roll16；schema6 升级场为同一 seed 的遭遇 ID 2，Perfect 为 roll91／概率98。历史上五地区前同一 seed 为森林 #590／概率90，加入五地区后为 #108／概率98；已获得形态退出新遭遇池后，赠送种子不再参与抽样，改为 #116。`battle-fixed` 仍按原时刻获胜；首帧基准更新前经逐像素对比与原生读图，变化仅在对手名称和角色区域，提示与布局保留，证据为 `.pio/verification/simulator-e2e-20261103T091103.877196Z/battle-fixed/cue-pixel-review.json`，基准截图在该目录的 `0-fixed/`。
+捕获场景用固定种子复现成功、失败和重试，断言投球结果、次数、账户、记录及新进程恢复；不再把完整 seed／roll／probability 数值组合冻结为 E2E 契约。英文捕获场景仍检查 #116 Horsea 的名称与属性可读。捕获概率阈值由 `test-adventure` 的独立边界检查承担。
 
-GUI 串行运行，实际窗口事件写入日志。E2E 开启 `isolateHostFocus`：宿主窗口的失焦事件仍记录，但不改变脚本输入；Driver 主动注入的 `windowID=0` 失焦事件照常进入 Platform，验证释放按键、停止走路和结算蓄力。正常桌面模式不开启隔离，宿主失焦照常处理，`test-simulator` 用真实窗口 ID 验证释放。相同新档输入在独立目录运行，比较逻辑输入事件、业务结果和截图；受桌面影响的 OS 事件不参与重复性比较，原始日志完整保留。
+2026-11-03 的首帧像素比较属于当时的历史证据，保留于 [cue-pixel-review.json](../../.pio/verification/simulator-e2e-20261103T091103.877196Z/battle-fixed/cue-pixel-review.json)。当前 runner 已删除整屏哈希分支，也不再生成逐拍 `fixed-cue-*` 截图；历史比较结果不能代表本轮测试通过。
+
+GUI 串行运行，实际窗口事件写入日志。E2E 开启 `isolateHostFocus`：宿主窗口的失焦事件仍记录，但不改变脚本输入；Driver 主动注入的 `windowID=0` 失焦事件照常进入 Platform，验证释放按键、停止走路和结算蓄力。正常桌面模式不开启隔离，宿主失焦照常处理。旧 smoke 的真实窗口 ID 路径不再单独自动测试，原生 OS 输入与焦点仍需人工验证。原始事件、截图和业务结果保留作诊断证据，不要求整屏像素完全一致。
 
 ## fixture 与故障
 
@@ -89,14 +91,14 @@ rtk proxy mise run test-simulator-e2e -- --build-only
 - 根目录 `result.json`：每个场景的ID、起点、状态和错误。
 - 场景 `fixture.json`、`before/`、`after.json`、`save/`：初始字节及哈希、终态哈希与真实存档。中间文件哈希不能替代最终业务断言。
 - 各启动目录：`events.jsonl`、`stdout.log`、`stderr.log`、`result.json`、命名业务快照、BMP/PNG截图；进程结果含退出码、墙钟耗时与是否强杀。
-- `restart-check.json` 和 `cue-check.json`：跨进程时钟账户比较与固定战斗提示像素比较。
+- `restart-check.json`：跨进程时钟与账户比较；`language-disk-check.json`：显示语言与 CRC 有效磁盘槽的核对。
 
 首次断言失败保留快照与截图并退出，runner 继续其他独立场景。超时也保留进程结果；最近截图和日志仍可查看。构建依赖或SDL不可用时命令非零退出，不记为通过。
 
 ## 验证边界
 
-已有 `test-adventure`、`test-storage`、`test-render`、`test-simulator` 继续承担各自职责。E2E 不替代649物种素材校验、全部进化边或概率统计。
+当前默认 E2E 注册 45 场（P0 24、P1 21），渲染入口保留 12 套。`test-adventure`、`test-storage`、`test-render` 及素材检查分别承担规则边界、故障恢复、页面信息和发布来源验证。独立 smoke／`test-simulator` 入口已删除，普通集成路径由 E2E 承担；只构建桌面程序可用 `rtk proxy mise run simulate -- --build-only`。没有独立 typecheck 任务，C++ 类型检查由实际主机与固件编译承担。
 
-SDL/M5GFX像素一致、固定截图回归、人工视觉审阅分别证明不同内容。画布468×468，物理圆屏466×466；主机图无法证明设备边缘可见性、真实计步、时延或断电恢复。
+实际文字、圆屏输出和输入检查与人工视觉审阅各有边界；截图不是固定整屏像素基准。画布468×468，物理圆屏466×466；主机图无法证明设备边缘可见性、真实计步、时延或断电恢复。注册数量只描述当前源码，验收状态须看本轮结果。
 
 本地验证使用 macOS Cocoa；Ubuntu 的 X11/Xvfb 路径由 [GitHub Actions](../../.github/workflows/simulator-e2e.yml) 逐提交执行，以对应 CI 结果为准。Linux 真实桌面人工操作与原生 OS 输入尚未验收；实体设备仅有[有限历史观察](../verification.md#设备观察与待验事项)。渲染的已知失败统一见[验证说明](../verification.md#已知失败与限制)，不能把 E2E 通过写成全部渲染通过。

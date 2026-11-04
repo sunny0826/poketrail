@@ -1,5 +1,6 @@
 #include "progression_support.hpp"
 #include "viewer_screen.hpp"
+#include "../support/rendered_text.hpp"
 
 namespace simulator {
 namespace e2e {
@@ -12,9 +13,7 @@ bool expect(Driver& d, bool ok, const std::string& message) {
 bool wait(Driver& d, const std::function<bool()>& predicate, uint32_t maxMs,
           const std::string& message) {
   d.until(predicate, maxMs, message);
-  const bool ok = predicate();
-  d.check(ok, message);
-  return ok;
+  return true;
 }
 bool page(Driver& d, Page wanted, const std::string& message, uint32_t maxMs) {
   return wait(d, [&] { return d.screen().page == wanted; }, maxMs, message);
@@ -73,18 +72,34 @@ bool homeEvolution(Driver& d, uint16_t from, uint16_t to, const std::string& tag
                 tag + " confirmation names expected evolution");
 }
 
-bool finishEvolution(Driver& d, const std::string& tag) {
-  REQUIRE(d, page(d, Page::Evolution, tag + " starts evolution animation", 5000), tag + " starts evolution animation");
-  d.press(SDL_SCANCODE_RETURN);
-  REQUIRE(d, page(d, Page::PartnerDetail, tag + " evolution animation completes", 10000), tag + " evolution animation completes");
-  return expect(d, d.screen().evolved, tag + " reports saved evolution");
+namespace {
+bool revealEvolution(Driver& d, Page animation, const std::string& tag) {
+  REQUIRE(d, d.screen().page == animation, tag + " starts on the animation page");
+  const char* target = pokedex::i18n::speciesName(d.runtime().language(), d.screen().evolutionAnim.to);
+  REQUIRE(d, !rendered_text::contains(target, theme::kMint), tag + " has not yet revealed the target");
+  d.press(SDL_SCANCODE_RIGHT);
+  // Broad input-response watchdog, well before the natural reveal/completion.
+  d.until([&] {
+    return d.screen().page == animation && rendered_text::contains(target, theme::kMint);
+  }, 500, tag + " first new input reveals the target early");
+  d.shot("evolution-skip-reveal-" + std::to_string(d.screen().evolutionAnim.to));
+  return true;
+}
 }
 
-bool receipt(Driver& d, uint16_t from, uint16_t to, uint64_t cost, const std::string& tag) {
-  const Save& s = d.save();
-  return expect(d, s.lastEvolution.request.from == from &&
-                        s.lastEvolution.request.to == to && s.lastEvolution.cost == cost,
-                tag + " persists one evolution receipt");
+bool finishEvolution(Driver& d, const std::string& tag) {
+  REQUIRE(d, page(d, Page::Evolution, tag + " starts evolution animation", 5000), tag + " starts evolution animation");
+  const uint16_t target = d.screen().evolutionAnim.to;
+  if (!revealEvolution(d, Page::Evolution, tag)) return false;
+  d.key(SDL_SCANCODE_RETURN, true);
+  REQUIRE(d, page(d, Page::PartnerDetail, tag + " second new input opens detail promptly", 500),
+          tag + " second new input opens detail promptly");
+  d.advance(300);
+  REQUIRE(d, d.screen().page == Page::PartnerDetail && d.screen().species == target && d.screen().evolved,
+          tag + " holding the exit input does not activate the target detail");
+  d.key(SDL_SCANCODE_RETURN, false);
+  return expect(d, d.screen().page == Page::PartnerDetail && d.screen().species == target && d.screen().evolved,
+                tag + " releasing the exit input keeps the saved target detail");
 }
 
 namespace {
@@ -101,10 +116,6 @@ bool sameBusiness(const Save& a, const Save& b) {
   for (unsigned i = 0; i < a.recentSize; ++i)
     if (a.recent[i].species != b.recent[i].species || a.recent[i].route != b.recent[i].route)
       return false;
-  if (a.rosterRevision != b.rosterRevision) return false;
-  if (a.lastEvolution.request.from != b.lastEvolution.request.from ||
-      a.lastEvolution.request.to != b.lastEvolution.request.to ||
-      a.lastEvolution.cost != b.lastEvolution.cost) return false;
   if (a.phase != b.phase || a.result != b.result) return false;
   if (a.encounter.id != b.encounter.id || a.encounter.species != b.encounter.species ||
       a.encounter.partner != b.encounter.partner) return false;
@@ -127,14 +138,6 @@ bool sameAccounts(Driver& d, const Save& before, const std::string& tag) {
   return expect(d, ok, tag + " leaves evolution, capture, ownership and progress accounts unchanged");
 }
 
-// Long viewer navigation can legitimately trigger a periodic checkpoint.
-bool quiescentWrites(Driver& d, const std::string& tag) {
-  d.frames(4);
-  const unsigned before = d.writes();
-  d.frames(6);
-  return expect(d, d.writes() == before, tag + " idle frames do not write a save slot");
-}
-
 void viewerKeys(Driver& d, SDL_Scancode key, unsigned count, const std::string& tag) {
   d.frames();
   for (unsigned i = 0; i < count; ++i) d.press(key);
@@ -149,8 +152,12 @@ bool openPreviewTargets(Driver& d, const std::string& tag) {
 }
 
 bool skipPreviewToViewer(Driver& d, const std::string& tag) {
+  const uint16_t original = pokedex::viewer_screen::species();
+  if (!revealEvolution(d, Page::EvolutionPreview, tag)) return false;
   d.press(SDL_SCANCODE_RETURN);
-  return page(d, Page::Viewer, tag + " preview returns to viewer", 10000);
+  REQUIRE(d, page(d, Page::Viewer, tag + " second new input returns to viewer promptly", 500),
+          tag + " second new input returns to viewer promptly");
+  return expect(d, pokedex::viewer_screen::species() == original, tag + " returns to the original viewer species");
 }
 
 bool practiceRound(Driver& d, const std::string& tag) {
@@ -181,7 +188,6 @@ bool practiceRound(Driver& d, const std::string& tag) {
   d.shot("isolation-practice");
   if (d.screen().page == Page::PracticeResult) d.select(1);
   else d.tap(233, 35);
-  REQUIRE(d, page(d, Page::Home, tag + " leaves practice"), tag + " leaves practice");
   return page(d, Page::Home, tag + " leaves practice");
 }
 

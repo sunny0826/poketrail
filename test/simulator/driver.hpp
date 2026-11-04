@@ -45,10 +45,7 @@ class Driver {
   void close(Close expected = Close::Closed);
   void fault(Fault);
   unsigned faultHits() const;
-  unsigned writes() const;
   unsigned feedbacks() const;
-  uint16_t lastFeedback() const;
-  unsigned closeErrors() const { return closeErrors_; }
   void focusLost(bool hostWindow = false);
   void freeze();
   void event(const std::string& kind, const std::string& detail);
@@ -62,7 +59,6 @@ class Driver {
 void scenarioStartup(Driver&, const std::string& phase);
 void scenarioLanguage(Driver&, const std::string& phase);
 void scenarioLanguagePages(Driver&, const std::string& phase);
-void scenarioJourney(Driver&, const std::string& phase);
 void scenarioCapture(Driver&, const std::string& phase);
 void scenarioThrows(Driver&, const std::string& phase);
 void aimBeforeThrow(Driver&);

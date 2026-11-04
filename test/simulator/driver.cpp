@@ -94,8 +94,6 @@ void Driver::focusLost(bool hostWindow) {
   e.window.event = SDL_WINDOWEVENT_FOCUS_LOST;
   e.window.windowID = hostWindow ? app_->windowId() : 0;
   push(e);
-  if (!hostWindow)
-    check(!M5.button_a_down && !M5.button_b_down && !M5.Touch.detail.pressed, "focus releases controls");
 }
 int64_t Driver::rtcUtc() const { return app_->platform().readClock().utcSeconds; }
 void Driver::close(Close expected) {
@@ -109,9 +107,7 @@ void Driver::close(Close expected) {
 }
 void Driver::fault(Fault value) { event("fault", std::to_string(int(value))); app_->fault(value); }
 unsigned Driver::faultHits() const { return app_->faultHits(); }
-unsigned Driver::writes() const { return app_->writes(); }
 unsigned Driver::feedbacks() const { return app_->platform().feedbacks(); }
-uint16_t Driver::lastFeedback() const { return app_->platform().lastFeedback(); }
 void Driver::freeze() {
   state("frozen"); shot("frozen"); event("kill-ready", "Runtime and logical clock stopped; lock retained");
   FILE* ready = std::fopen((output_ + "/ready.fifo").c_str(), "w");

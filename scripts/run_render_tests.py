@@ -16,9 +16,8 @@ def main():
     output = Path(os.environ.get("MYM5_VERIFICATION_DIR", str(
         ROOT / ".pio/verification" / datetime.now(timezone.utc).strftime("render-%Y%m%dT%H%M%SZ"))))
     names = ["test_render", "test_button_menu_render", "test_touch_menu_render",
-             "test_adventure_render", "test_capture_render", "test_battle_render",
-             "test_progression_render", "test_evolution_render", "test_evolution_preview_render",
-             "test_thumbnail_render", "test_power_render", "test_power_pages_render",
+             "test_adventure_render", "test_capture_render", "test_progression_render",
+             "test_power_pages_render",
              "test_home_render", "test_test_mode_render", "test_clock_sync_render", "test_language_render",
              "test_startup_render"]
     if len(sys.argv) > 1:

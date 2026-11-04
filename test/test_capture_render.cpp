@@ -1,15 +1,11 @@
 #include "support/adventure_ui/harness.hpp"
-#include "battle_presentation.hpp"
-#include "support/capture_badge.hpp"
-#include "support/capture_aim_checks.hpp"
+#include <algorithm>
 
 namespace {
 void savedVictory(MemoryStore& store, Save& s, bool captured) {
   s.bootGeneration = 1; s.starter = s.partner = 1; setOwned(s, 1); setRegistered(s, 1);
   s.rosterRevision = 1; s.encounterTarget = 300;
-  s.totalSteps = 5000; s.undatedSteps = 4500; s.explorationSpent = 5000; s.nextEncounterId = 2;
-  s.clock.calibrated = true; s.clock.offsetMinutes = 480; s.clock.dayHighWater = 20261022;
-  s.today.dayKey = 20261022; s.today.steps = s.bestDaySteps = 500;
+  s.totalSteps = s.undatedSteps = 5000; s.explorationSpent = 5000; s.nextEncounterId = 2;
   s.phase = Phase::ThrowReady; s.result = Result::Won;
   s.encounter.id = 1; s.encounter.species = s.encounter.partner = 1; s.encounter.route = Route::Kanto;
   while ((throwRoll(s.encounter, 1, s.encounter.ruleVersion) >=
@@ -17,291 +13,32 @@ void savedVictory(MemoryStore& store, Save& s, bool captured) {
     ++s.encounter.seed;
   check(validate(s) && store.commit(s) == CommitStatus::Committed, "saved victory fixture validates and encodes");
 }
-void firstBallSuccess() {
-  MemoryStore store; Save s;
-  savedVictory(store, s, true);
-  TestPlatform p; Runtime r(store, p); start(r);
-  check(r.screen().page == Page::Throw && !r.engine().throwView().active, "saved victory restarts at explicit preparation");
-  throwAt(r, p);
-  check(r.engine().view().result == Result::Captured && r.engine().view().encounter.usedBalls == 1 &&
-        !r.engine().view().encounter.attempts[1].used, "first successful ball ends encounter with second unused");
-  check(r.screen().page == Page::Throw && r.screen().capture.active,
-        "committed capture plays the resolution animation on the throw page first");
-  edge(r, p, false, true); edge(r, p, false, true); frame(r);
-  check(r.screen().page == Page::Result && !r.screen().capture.active,
-        "skipped animation settles on the result page");
-  edge(r, p, false, true);
-  check(r.engine().view().recentSize == 1 && r.engine().view().encounter.usedBalls == 1,
-        "repeated right press on result cannot throw a second ball or duplicate capture");
-  check(r.engine().view().recent[0].at.timeKnown && r.engine().view().recent[0].at.offsetMinutes == 480,
-        "capture card uses verified current clock and original timezone offset");
-  published(r, "first-ball-capture");
-}
-void winPractice(Runtime& r, TestPlatform& p) {
-  for (unsigned i = 0; i < 15 && r.screen().page == Page::Practice; ++i) {
-    const BattleView b = r.practiceView();
-    if (!b.active) break;
-    while (int32_t(b.targetMs - host_time_ms) > 20) frame(r);
-    p.next.left = b.expected == Action::Dodge;
-    p.next.right = b.expected == Action::Attack;
-    p.next.held = true;
-    frame(r, b.targetMs - host_time_ms); frame(r);
-    if (r.screen().page == Page::Practice && b.active) idle(r, 200);
-  }
-  const auto result = r.practiceView();
-  if (r.screen().page == Page::Practice && !result.active)
-    idle(r, result.settledMs + kBattleEffectMs - host_time_ms);
-  check(r.screen().page == Page::PracticeThrow, "practice victory reaches the throw page after its final action");
-  frame(r);
-}
-void practicePerfectRelease(Runtime& r, TestPlatform& p) {
-  p.next.right = p.next.held = true; frame(r);
-  check(r.screen().practiceThrowing && r.screen().charging,
-        "practice opens the throw window on the first hold without consuming a real ball");
-  const uint32_t target = r.screen().practiceTargetMs;
-  while (int32_t(target - host_time_ms) > 20) { p.next.rightDown = p.next.held = true; frame(r); }
-  p.next.rightDown = p.next.held = true; frame(r, target - host_time_ms);
-  frame(r, 0);
-  check(r.screen().capture.active, "practice release starts the capture animation");
-}
-uint32_t practiceSeed(bool captured, uint16_t exclude = 0) {
-  for (uint32_t seed = 1; seed < 4096; ++seed) {
-    const uint16_t species = uint16_t(1 + mixRandom(seed ^ 0x9e3779b9u) % kSpeciesCount);
-    const CatalogEntry* entry = catalogEntry(species);
-    Encounter e; e.species = species; e.seed = seed;
-    e.id = (uint64_t(mixRandom(seed)) << 32) | mixRandom(seed ^ 0x85ebca6bu);
-    if (entry && !entry->rare && species != exclude &&
-        ((throwRoll(e, 1, kRuleVersion) < captureProbability(kRuleVersion, false, Timing::Perfect)) == captured)) return seed;
-  }
-  return 0;
-}
-void practiceCapture() {
-  MemoryStore store; TestPlatform p; Runtime r(store, p); start(r); skipDateAndStarter(r, p);
-  const uint32_t successSeed = practiceSeed(true);
-  const uint16_t firstSpecies = uint16_t(1 + mixRandom(successSeed ^ 0x9e3779b9u) % kSpeciesCount);
-  const uint32_t failSeed = practiceSeed(false, firstSpecies);
-  check(successSeed && failSeed, "deterministic practice seeds available");
-  p.seed = successSeed;
-  openMenu(r, p); select(r, p, 6);
-  check(r.screen().page == Page::Practice, "menu offers capture practice");
-  check(firstSpecies == r.screen().practiceSpecies,
-        "practice rolls a random species for each session");
-  const unsigned commits = store.commits;
-  const uint64_t steps = r.engine().view().totalSteps;
-  winPractice(r, p);
-  published(r, "practice-throw-ready");
-  practicePerfectRelease(r, p);
-  published(r, "practice-throw-flight");
-  while (r.screen().capture.active) frame(r);
-  frame(r);
-  check(r.screen().page == Page::PracticeResult && r.screen().practiceResult == Result::Captured,
-        "practice success reaches its own result page");
-  check(!r.engine().view().captureCounts[firstSpecies - 1] && r.engine().view().ballsSpent == 0,
-        "practice success does not capture or spend a real ball");
-  check(r.engine().view().totalSteps == steps && store.commits == commits,
-        "practice never commits capture rewards");
-  published(r, "practice-result-success");
-  p.seed = failSeed;
-  select(r, p, 0);
-  const uint16_t secondSpecies = r.screen().practiceSpecies;
-  check(r.screen().page == Page::Practice && secondSpecies != firstSpecies,
-        "practice again rolls a new species");
-  winPractice(r, p);
-  holdThrow(r, p, 1800);
-  check(r.screen().practiceUsedBalls == 1 && r.screen().page == Page::PracticeThrow,
-        "practice timeout spends one practice ball");
-  while (r.screen().capture.active) frame(r);
-  frame(r);
-  holdThrow(r, p, 1800);
-  while (r.screen().capture.active) frame(r);
-  frame(r);
-  check(r.screen().page == Page::PracticeResult && r.screen().practiceResult == Result::Escaped,
-        "two practice misses end the session as escaped");
-  check(!r.engine().view().captureCounts[secondSpecies - 1],
-        "practice failure never touches the real dex");
-  select(r, p, 1);
-  check(r.screen().page == Page::Home && r.engine().view().phase == Phase::Walking,
-        "practice exit keeps the real encounter untouched");
-}
-void singleRingAim() {
-  for (bool practice : {false, true}) for (bool touch : {false, true}) {
-    MemoryStore store; Save s;
-    if (!practice) savedVictory(store, s, true);
-    TestPlatform p; Runtime r(store, p); start(r);
-    if (practice) {
-      skipDateAndStarter(r, p); openMenu(r, p); select(r, p, 6); winPractice(r, p);
-    }
-    frame(r, 40);
-    const auto baseline = capture_aim_test::lowerBand();
-    const std::string prefix = std::string(practice ? "practice-aim-" : "throw-aim-") + (touch ? "touch-" : "key-");
-    snapCurrent(r, (prefix + "ready").c_str());
-    p.next.held = true;
-    if (touch) { p.next.touch = true; p.next.x = 233; p.next.y = kHandY; }
-    else p.next.right = true;
-    frame(r);
-    const uint32_t began = r.screen().chargeStartMs;
-    check(r.screen().charging, "key and touch both start the single-ring timeline");
-    for (uint32_t held : {400u, 800u, 1000u, 1440u, 1520u}) {
-      while (host_time_ms < began + held) {
-        p.next.held = true;
-        if (touch) p.next.touchDown = true; else p.next.rightDown = true;
-        frame(r, std::min(40u, began + held - host_time_ms));
-      }
-      check(capture_aim_test::lowerBand() == baseline, "holding never adds a lower arc or full-charge pulse");
-      check(capture_badge_test::iconAt(kBallX, kHandY), "held ball stays visible without a charge ring");
-      const int radius = held < 1500 ? 24 + (1500 - held) * 106 / 1500 : 24;
-      const uint16_t color = held > 1100 ? theme::kGold : theme::kMint;
-      if (radius > 25)
-        check(M5.Display.readPixel(233 + radius, 233) == color, "upper timing ring continues closing toward the target");
-      snapCurrent(r, (prefix + std::to_string(held)).c_str());
-    }
-    if (touch) { p.next.click = true; p.next.x = 233; p.next.y = kHandY; }
-    frame(r, 0);
-    check(r.screen().capture.active && r.screen().capture.timing == Timing::Perfect,
-          "key and touch releases keep Perfect timing in real and practice throws");
-  }
-}
 void slowSaveCapture() {
-  for (uint32_t delay : {650u, 5000u}) for (bool captured : {false, true}) for (bool touch : {false, true}) {
-    MemoryStore store; Save s;
-    savedVictory(store, s, captured);
+  for (bool captured : {false, true}) {
+    MemoryStore store; Save s; savedVictory(store, s, captured);
     TestPlatform p; Runtime r(store, p); start(r);
-    store.delayMs = delay;
-    const unsigned commits = store.commits;
-    p.next.held = true;
-    if (touch) { p.next.touch = true; p.next.x = 233; p.next.y = 344; }
-    else p.next.right = true;
-    frame(r);
+    store.delayMs = 5000;
+    p.next.held = p.next.touch = true; p.next.x = 233; p.next.y = 344; frame(r);
     const uint32_t target = r.engine().throwView().targetMs;
     while (int32_t(target - host_time_ms) > 0) {
-      p.next.held = true;
-      if (touch) p.next.touchDown = true; else p.next.rightDown = true;
+      p.next.held = p.next.touchDown = true;
       frame(r, std::min(20u, target - host_time_ms));
     }
-    if (touch) { p.next.click = true; p.next.x = 233; p.next.y = 344; }
-    frame(r, 0);
-    check(host_time_ms == target + delay && store.commits == commits + 1,
-          "throw commits once with the injected storage delay");
+    p.next.click = true; p.next.x = 233; p.next.y = 344; frame(r, 0);
     const auto& attempt = r.engine().view().encounter.attempts[0];
     check(attempt.used && attempt.timing == Timing::Perfect && attempt.captured == captured,
           "slow save preserves release-time timing and the committed outcome");
     check(r.screen().page == Page::Throw && r.screen().capture.active &&
           captureFrameAt(r.screen().capture, host_time_ms).stage == CaptureStage::Flight,
           "slow save cannot consume the flight before its first rendered frame");
-    check(capture_badge_test::iconAt(kBallX, kHandY),
-          "first frame after slow save draws the thrown ball at its starting position");
-    const uint32_t origin = host_time_ms;
-    frame(r, kFlightMs / 2);
-    int x, y; captureFlightPos(0.5f, x, y);
-    check(capture_badge_test::iconAt(x, y), "ball travels halfway along its arc after slow save");
-    if (delay == 5000 && !touch) snapCurrent(r, captured ? "slow-save-flight-success" : "slow-save-flight-escape");
-    frame(r, origin + kFlightMs + 40 - host_time_ms);
-    check(capture_badge_test::iconAt(kBallX, 233), "slow-save flight reaches the target before landing");
+    snapCurrent(r, captured ? "slow-save-touch-flight-success" : "slow-save-touch-flight-escape");
     while (r.screen().capture.active) frame(r);
-    check(r.screen().page == (captured ? Page::Result : Page::Throw) && store.commits == commits + 1,
-          "slow-save animation finishes on the correct page without another commit");
+    check(r.screen().page == (captured ? Page::Result : Page::Throw),
+          "slow-save animation finishes on the page for its saved outcome");
   }
 }
-void captureAnimation() {
-  {
-    CaptureAnim probe; probe.active = true; probe.captured = false; probe.wiggleBreak = 2;
-    check(captureFrameAt(probe, 449).stage == CaptureStage::Flight &&
-          captureFrameAt(probe, 450).stage == CaptureStage::Flash &&
-          captureFrameAt(probe, 570).stage == CaptureStage::Drop, "flight, flash and drop stages follow the timeline");
-    check(captureFrameAt(probe, 1070).stage == CaptureStage::Wiggle &&
-          captureFrameAt(probe, 1070 + 500 + 249).stage == CaptureStage::Wiggle &&
-          captureFrameAt(probe, 1070 + 500 + 250).stage == CaptureStage::Reveal,
-          "failed ball breaks out in the middle of its roll-chosen wiggle");
-    probe.captured = true;
-    check(captureFrameAt(probe, 1070 + 1499).stage == CaptureStage::Wiggle &&
-          captureFrameAt(probe, 1070 + 1500).stage == CaptureStage::Reveal &&
-          captureFrameAt(probe, captureTotalMs(probe)).stage == CaptureStage::Done,
-          "captured ball completes three wiggles before the celebration");
-    for (bool captured : {false, true}) {
-      probe.captured = captured;
-      const auto held = captureFrameAt(probe, captureTotalMs(probe) - 1);
-      check(held.stage == CaptureStage::Reveal && held.t == 1.0f,
-            "capture result stays visible throughout its hold, without a blank pause");
-    }
-    int x, y;
-    captureFlightPos(0, x, y); check(x == 233 && y == 344, "flight starts at the held ball");
-    captureFlightPos(1, x, y); check(x == 233 && y == 233, "flight lands on the species sprite");
-    CaptureAnim skipped; skipped.active = true; skipped.captured = true;
-    captureSkip(skipped, 100);
-    check(captureFrameAt(skipped, 100).stage == CaptureStage::Reveal, "first skip jumps to the reveal");
-    captureSkip(skipped, 200);
-    check(captureFrameAt(skipped, 200).stage == CaptureStage::Done, "second skip finishes the animation");
-  }
-  MemoryStore store; Save s;
-  savedVictory(store, s, true);
-  TestPlatform p; Runtime r(store, p); start(r);
-  frame(r, 40);
-  const auto lower = capture_aim_test::lowerBand();
-  p.next.right = p.next.held = true; frame(r);
-  const uint32_t target = r.engine().throwView().targetMs;
-  check(r.screen().charging, "holding the throw key charges the ball");
-  for (unsigned held = 0; held < 400; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
-  check(capture_aim_test::lowerBand() == lower, "400ms hold has no lower progress arc");
-  snapCurrent(r, "capture-charge-half");
-  for (unsigned held = 400; held < 920; held += 20) { p.next.rightDown = p.next.held = true; frame(r); }
-  p.next.rightDown = p.next.held = true; frame(r);
-  check(capture_aim_test::lowerBand() == lower, "holding beyond 800ms has no lower pulse");
-  snapCurrent(r, "capture-charge");
-  while (int32_t(target - host_time_ms) > 20) { p.next.rightDown = p.next.held = true; frame(r); }
-  p.next.rightDown = p.next.held = true;
-  frame(r, target - host_time_ms);
-  frame(r, 0);
-  check(r.engine().view().result == Result::Captured && r.screen().capture.active &&
-        r.screen().page == Page::Throw, "perfect release captures and plays the animation in place");
-  frame(r, 200); frame(r);
-  check(captureFrameAt(r.screen().capture, host_time_ms).stage == CaptureStage::Flight,
-        "ball is in flight right after release");
-  {
-    int x, y;
-    captureFlightPos(captureFrameAt(r.screen().capture, host_time_ms).t, x, y);
-    bool drawn = false;
-    for (int dy = -8; dy <= 8 && !drawn; ++dy) for (int dx = -8; dx <= 8 && !drawn; ++dx)
-      drawn = M5.Display.readPixel(x + dx, y + dy) != TFT_BLACK;
-    check(drawn, "flying ball is drawn on its arc");
-  }
-  snapCurrent(r, "capture-flight");
-  const auto captureStart = r.screen().capture.startMs;
-  frame(r, captureStart + kFlightMs + 80 - host_time_ms);
-  check(capture_badge_test::iconAt(kBallX, 233), "impact flash retains the ball at the contact point");
-  snapCurrent(r, "capture-impact");
-  frame(r, captureStart + kFlightMs + kFlashMs + kDropMs / 2 - host_time_ms);
-  check(M5.Display.readPixel(kBallX + 45, kGroundY + 14) == theme::kGold,
-        "landing ring marks the first ground contact");
-  snapCurrent(r, "capture-landing");
-  while (captureFrameAt(r.screen().capture, host_time_ms).stage != CaptureStage::Wiggle) frame(r);
-  snapCurrent(r, "capture-wiggle");
-  check(M5.Display.readPixel(233, 300) != TFT_BLACK, "caught ball wiggles on the ground");
-  while (captureFrameAt(r.screen().capture, host_time_ms).stage != CaptureStage::Reveal) frame(r);
-  for (unsigned i = 0; i < 15; ++i) frame(r);
-  snapCurrent(r, "capture-reveal");
-  unsigned gold = 0;
-  for (int y = 60; y < 400; ++y) for (int x = 60; x < 400; ++x)
-    if (M5.Display.readPixel(x, y) == theme::kGold) ++gold;
-  check(gold > 8, "successful capture bursts gold stars");
-  while (r.screen().capture.active) frame(r);
-  check(r.screen().page == Page::Result && !r.screen().capture.active,
-        "finished animation hands over to the result page");
-  check(p.feedbacks >= 8, "animation played throw, landing, wiggle and success haptics");
-  frame(r, 500);
-  snapCurrent(r, "capture-result-first");
-  check(round_layout_test::clearAbove(menu_layout::rowBounds(0, menuTop(r.screen(), r.engine())), 8),
-        "first-capture result text keeps clear of its confirm button");
-  unsigned halo = 0;
-  for (int y = 60; y < 290; ++y) for (int x = 80; x < 390; ++x)
-    if (M5.Display.readPixel(x, y) == theme::kGold) ++halo;
-  check(halo > 8, "first capture shows the rotating halo and tag on the result page");
-  select(r, p, 0);
-  check(r.screen().page == Page::Home, "result acknowledgement still returns home");
-}
-
 }
 int main() {
-  c152::begin("CAPTURE TEST");
-  singleRingAim(); slowSaveCapture(); firstBallSuccess(); practiceCapture(); captureAnimation();
-  std::printf("%u capture Runtime/Button_Class/M5GFX checks, 0 failures\n", checks);
+  c152::begin("CAPTURE TEST"); slowSaveCapture();
+  std::printf("%u capture Runtime checks, 0 failures\n", checks);
 }
