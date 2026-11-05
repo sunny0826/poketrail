@@ -68,7 +68,7 @@ void acknowledge(Driver& d) {
   d.press(SDL_SCANCODE_RETURN);
   d.until([&] { return d.screen().page == Page::Home; }, 4000, "result acknowledged to home");
   d.check(d.save().encounter.id != completed && d.save().result == Result::None,
-          "acknowledge closes old encounter; saved credit may start the next");
+          "acknowledge closes old encounter and advances any queued encounter");
 }
 
 namespace {
@@ -299,7 +299,11 @@ void scenarioRetry(Driver& d, const std::string& phase) {
   } else if (phase == "reload") {
     d.frames();
     d.check(d.screen().page == Page::Home, "reload lands on home");
-    d.check(d.save().phase == Phase::EncounterReady && d.save().encounter.id == 2, "next encounter persists after acknowledge");
+    d.check(d.save().phase == Phase::Walking && pendingEncounterCount(d.save()) == 0 &&
+            d.save().explorationCredit == 500, "confirmation and restart retain unspent credit without refilling");
+    d.walk(1);
+    d.check(d.save().phase == Phase::EncounterReady && d.save().encounter.id == 2,
+            "new walking spends retained credit on the next encounter");
     d.check(d.save().captureCounts[kThrowSpecies - 1] == 1, "capture persists once");
     d.check(owns(d.save(), kThrowSpecies), "ownership persists");
     d.check(d.save().recentSize >= 1 && d.save().recent[d.save().recentSize - 1].species == kThrowSpecies,

@@ -38,15 +38,68 @@ static void capacityAndFifo() {
   CHECK(e.retreat() == CommandResult::Applied && pendingEncounterCount(e.view()) == 31);
   CHECK(e.acknowledgeResult(frozen.encounter.id, 456) == CommandResult::Applied);
   sameEncounter(e.view().encounter, frozen.encounterQueue[0]);
-  CHECK(pendingEncounterCount(e.view()) == 32);
-  CHECK(e.view().encounterQueue[30].partner == 2);
-  CHECK(e.view().explorationSpent == spent + frozen.encounterTarget);
+  CHECK(pendingEncounterCount(e.view()) == 31);
+  CHECK(e.view().explorationSpent == spent && e.view().explorationCredit == frozen.explorationCredit);
   CHECK(e.checkpoint() == CommandResult::Duplicate);
   Engine reboot(store); CHECK(reboot.begin() == CommandResult::Applied);
   sameEncounter(reboot.view().encounter, frozen.encounterQueue[0]);
+  CHECK(pendingEncounterCount(reboot.view()) == 31);
+  // Resuming walking can spend the retained balance, using the current partner.
+  CHECK(steps(reboot, 1, 2) == CommandResult::Applied);
+  CHECK(pendingEncounterCount(reboot.view()) == 32);
+  CHECK(reboot.view().encounterQueue[30].partner == 2);
+  CHECK(reboot.view().explorationSpent == spent + frozen.encounterTarget);
+  CHECK(reboot.view().explorationSpent + reboot.view().explorationCredit == reboot.view().totalSteps);
   CHECK(reboot.startBattle(0) == CommandResult::Applied);
   CHECK(reboot.checkpoint() == CommandResult::Deferred);
   CHECK(reboot.retreat() == CommandResult::Applied);
+}
+// Even with enough credit for more encounters, stationary play drains the queue
+// to zero. Failed confirmation, duplicate input and restart cannot refill it.
+static void drainBankedQueue() {
+  auto save = fixture(1, 20000);
+  MemoryStore store; store.disk = encoded(*save); Engine e(store);
+  CHECK(e.begin() == CommandResult::Applied && steps(e, 1, 1) == CommandResult::Applied);
+  const uint64_t credit = e.view().explorationCredit, spent = e.view().explorationSpent;
+  CHECK(pendingEncounterCount(e.view()) == 32 && credit > e.view().encounterTarget);
+  for (unsigned remaining = 32; remaining; --remaining) {
+    const uint64_t id = e.view().encounter.id;
+    if (remaining % 3 == 0) {
+      CHECK(e.startBattle(0) == CommandResult::Applied);
+      CHECK(e.retreat() == CommandResult::Applied);
+    } else {
+      win(e);
+      CHECK(e.beginThrow(AttemptKey(id, 1), 0) == CommandResult::Applied);
+      const uint32_t press = e.throwView().targetMs + (remaining % 3 == 1 ? 0 : 181);
+      CHECK(e.pressThrow(AttemptKey(id, 1), press, clockFor(e)) == CommandResult::Applied);
+      if (e.view().phase == Phase::ThrowReady) {
+        CHECK(e.beginThrow(AttemptKey(id, 2), 0) == CommandResult::Applied);
+        CHECK(e.tick(e.throwView().targetMs + 181, clockFor(e)) == CommandResult::Applied);
+      }
+      CHECK(e.view().phase == Phase::Resolved);
+    }
+    CHECK(pendingEncounterCount(e.view()) == remaining - 1);
+    if (remaining == 32 || remaining == 1) {
+      const auto visible = encoded(e.view()); store.before = true;
+      CHECK(e.acknowledgeResult(id, 456) == CommandResult::StorageError);
+      const auto frozen = store.attempt;
+      CHECK(encoded(e.view()) == visible);
+      CHECK(e.retrySave() == CommandResult::StorageError && store.attempt == frozen);
+      store.before = false;
+      CHECK(e.retrySave() == CommandResult::Applied && store.disk == frozen);
+    } else CHECK(e.acknowledgeResult(id, 456) == CommandResult::Applied);
+    const auto confirmed = encoded(e.view());
+    CHECK(e.acknowledgeResult(id, 456) == CommandResult::InvalidPhase);
+    CHECK(encoded(e.view()) == confirmed);
+    CHECK(pendingEncounterCount(e.view()) == remaining - 1);
+    CHECK(e.view().explorationCredit == credit && e.view().explorationSpent == spent);
+  }
+  CHECK(e.view().phase == Phase::Walking && !e.view().encounter.id);
+  Engine reboot(store); CHECK(reboot.begin() == CommandResult::Applied);
+  CHECK(pendingEncounterCount(reboot.view()) == 0 && reboot.view().explorationCredit == credit);
+  CHECK(steps(reboot, 1, 1) == CommandResult::Applied);
+  CHECK(pendingEncounterCount(reboot.view()) > 0);
+  CHECK(reboot.view().explorationCredit + reboot.view().explorationSpent == reboot.view().totalSteps);
 }
 // A failed append or FIFO pop must retry byte-for-byte, without revealing it.
 static void retryAndRecovery() {
@@ -174,6 +227,6 @@ static void throwBufferedThreshold() {
 }
 int main() {
   capacityAndFifo(); retryAndRecovery(); semanticCorruption(); schema8Migration(); exhaustedPool();
-  throwBufferedThreshold();
+  throwBufferedThreshold(); drainBankedQueue();
   std::printf("encounter queue: %u checks passed\n", checks);
 }
