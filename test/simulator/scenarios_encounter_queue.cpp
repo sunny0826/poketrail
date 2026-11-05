@@ -16,7 +16,8 @@ void counts(Driver& d, unsigned count, bool english = false) {
   d.homeMenu(); d.frames();
   char walking[48];
   snprintf(walking, sizeof(walking), english ? "Next encounter in %llu steps" : "下次遭遇还差 %llu 步",
-           static_cast<unsigned long long>(d.save().encounterTarget - d.save().explorationCredit));
+           static_cast<unsigned long long>(d.save().explorationCredit < d.save().encounterTarget
+             ? d.save().encounterTarget - d.save().explorationCredit : 0));
   d.check(d.screen().selected == (count ? 0u : unsigned(MenuItem::Region)),
           "menu focuses the waiting encounter, otherwise the first tile");
   d.check(count ? rendered_text::contains(menu, theme::kGold, 78, 130)
@@ -74,6 +75,36 @@ void scenarioEncounterQueue(Driver& d, const std::string& phase) {
   } else if (phase == "consumed-reload") {
     d.state("queue-restored"); counts(d, 11);
     d.check(d.save().encounter.id == 2, "restart does not replay a consumed encounter");
+    walkToCount(d, 22); counts(d, 22); d.state("queue-end"); d.close();
+  } else if (phase == "filled-reload") {
+    d.state("queue-restored"); counts(d, 22);
+    walkToCount(d, 32); d.walk(1000); counts(d, 32);
+    const auto credit = d.save().explorationCredit, spent = d.save().explorationSpent;
+    d.check(credit > d.save().encounterTarget, "full queue retains enough steps to reproduce immediate refill");
+    d.homeMenu(); d.select(MenuItem::Encounter); d.select(0);
+    d.winBattle(); d.throwBall(false); d.finishCapture(); d.throwBall(false); d.finishCapture();
+    d.check(d.screen().page == Page::Result, "full-queue battle reaches its result");
+    d.fault(Fault::BeforeWrite); d.press(SDL_SCANCODE_RETURN);
+    d.check(d.screen().page == Page::Error && d.save().phase == Phase::Resolved,
+            "failed result confirmation keeps the finished encounter available for retry");
+    d.fault(Fault::None); d.select(0);
+    d.check(d.save().explorationCredit == credit && d.save().explorationSpent == spent,
+            "retry advances FIFO without consuming banked exploration steps");
+    counts(d, 31); d.state("queue-end"); d.close();
+  } else if (phase == "banked-reload") {
+    d.state("queue-restored"); counts(d, 31);
+    const auto credit = d.save().explorationCredit;
+    d.homeMenu(); d.select(MenuItem::Encounter); d.select(0);
+    d.winBattle(); d.throwBall(false); d.finishCapture(); d.throwBall(false); d.finishCapture(); acknowledge(d);
+    counts(d, 30);
+    d.check(d.save().explorationCredit == credit, "stationary battles continue draining the queue after restart");
+    d.walk(1); counts(d, 32);
+    d.check(d.save().explorationCredit < credit &&
+            d.save().explorationCredit + d.save().explorationSpent == d.save().totalSteps,
+            "new walking refills from retained credit without losing steps");
+    d.state("queue-end"); d.close();
+  } else if (phase == "refilled-reload") {
+    d.state("queue-restored"); counts(d, 32);
     d.state("queue-end"); d.close();
   } else if (phase == "schema8") {
     d.check(d.save().schema == kSchemaVersion && d.save().encounter.id == 1 &&

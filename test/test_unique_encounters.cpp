@@ -23,11 +23,15 @@ static void failedEncountersRemain() {
   CHECK(e.retreat() == CommandResult::Applied);
   CHECK(steps(e, 5000, 1) == CommandResult::Applied);
   CHECK(e.acknowledgeResult(e.view().encounter.id, 7) == CommandResult::Applied);
+  CHECK(e.view().phase == Phase::Walking);
+  CHECK(steps(e, 1, 1) == CommandResult::Applied);
   CHECK(e.view().encounter.species == 4 && e.view().captureCounts[3] == 0);
   CHECK(e.startBattle(0) == CommandResult::Applied);
   CHECK(e.tick(30000, clockFor(e)) == CommandResult::Applied && e.view().result == Result::Lost);
   CHECK(steps(e, 5000, 1) == CommandResult::Applied);
   CHECK(e.acknowledgeResult(e.view().encounter.id, 7) == CommandResult::Applied);
+  CHECK(e.view().phase == Phase::Walking);
+  CHECK(steps(e, 1, 1) == CommandResult::Applied);
   CHECK(e.view().encounter.species == 4); win(e);
   for (uint8_t attempt = 1; attempt <= 2; ++attempt) {
     CHECK(e.beginThrow(AttemptKey(e.view().encounter.id, attempt), 0) == CommandResult::Applied);
@@ -35,10 +39,14 @@ static void failedEncountersRemain() {
   }
   CHECK(e.view().result == Result::Escaped && e.view().captureCounts[3] == 0);
   CHECK(steps(e, 5000, 1) == CommandResult::Applied);
-  CHECK(e.acknowledgeResult(e.view().encounter.id, 7) == CommandResult::Applied); win(e);
+  CHECK(e.acknowledgeResult(e.view().encounter.id, 7) == CommandResult::Applied);
+  CHECK(e.view().phase == Phase::Walking);
+  CHECK(steps(e, 1, 1) == CommandResult::Applied); win(e);
   CHECK(e.giveUpCapture(e.view().encounter.id) == CommandResult::Applied);
   CHECK(e.view().captureCounts[3] == 0 && remainingEncounters(e.view(), Route::Kanto) == 0);
   CHECK(e.acknowledgeResult(e.view().encounter.id, 7) == CommandResult::Applied);
+  CHECK(e.view().phase == Phase::Walking);
+  CHECK(steps(e, 1, 1) == CommandResult::Applied);
   CHECK(e.view().encounter.species == 4); // The uncaught species becomes eligible when its old slot is consumed.
 }
 static void captureRetry() {

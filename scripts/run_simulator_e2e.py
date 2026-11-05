@@ -41,7 +41,10 @@ CASES = {
     **{f"encounter-history-{kind}": ("P0-19", f"history-{kind}",
        [("encounter-history", kind), ("encounter-history", f"{kind}-reload")])
        for kind in ("evolution", "branches", "pending")},
-    "encounter-queue": ("P0-20", "blank", [("encounter-queue", "run"), ("encounter-queue", "reload"), ("encounter-queue", "consumed-reload")]),
+    "encounter-queue": ("P0-20", "blank", [("encounter-queue", "run"), ("encounter-queue", "reload"),
+                                         ("encounter-queue", "consumed-reload"), ("encounter-queue", "filled-reload"),
+                                         ("encounter-queue", "banked-reload"),
+                                         ("encounter-queue", "refilled-reload")]),
     "encounter-queue-schema8": ("P0-20", "schema8-encounter.bin", [("encounter-queue", "schema8"), ("encounter-queue", "schema8-reload")]),
     "target-owned": ("P0-06", "target-owned", [("conflict", "owned")]),
     "storage": ("P0-07", "starter", []),

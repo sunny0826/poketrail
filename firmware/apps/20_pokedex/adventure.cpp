@@ -185,7 +185,7 @@ CommandResult Engine::retreat() {
   stage(); candidate_.phase = Phase::Resolved; candidate_.result = Result::Retreated;
   return submit();
 }
-CommandResult Engine::acknowledgeResult(uint64_t id, uint32_t seed) {
+CommandResult Engine::acknowledgeResult(uint64_t id, uint32_t /* seed */) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
   if (state_.phase != Phase::Resolved) return CommandResult::InvalidPhase;
   if (id != state_.encounter.id) return CommandResult::InvalidInput;
@@ -198,7 +198,9 @@ CommandResult Engine::acknowledgeResult(uint64_t id, uint32_t seed) {
     candidate_.encounterQueue[--candidate_.encounterQueueSize] = Encounter();
     candidate_.phase = Phase::EncounterReady;
   }
-  createEncounter(candidate_, seed);
+  // Confirming a result only consumes the finished encounter and advances FIFO.
+  // Keep banked steps for the next walk or region change, so a stationary player
+  // can work through the queue without immediately refilling each freed slot.
   return submit();
 }
 } }

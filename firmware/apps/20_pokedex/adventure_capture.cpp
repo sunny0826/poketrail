@@ -68,7 +68,9 @@ CommandResult Engine::resolveThrow(AttemptKey key, Timing timing, const ClockRea
   } else if (key.attemptIndex == 2) {
     candidate_.phase = Phase::Resolved; candidate_.result = Result::Escaped;
   }
-  createEncounter(candidate_, queueSeed_);
+  // Only newly counted steps may fill slots during throw settlement. Banked
+  // credit alone must not undo the waiting-count decrease from this battle.
+  if (candidate_.totalSteps != state_.totalSteps) createEncounter(candidate_, queueSeed_);
   return submit();
 }
 CommandResult Engine::pressThrow(AttemptKey key, uint32_t now, const ClockReading& r) {

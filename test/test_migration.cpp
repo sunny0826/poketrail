@@ -64,8 +64,10 @@ static void creditAndBoundary() {
     CHECK(e.acknowledgeResult(count,17)==CommandResult::Applied);
     if(count==20)CHECK(e.view().phase==Phase::Walking&&e.view().explorationCredit==0);
     else {
+      CHECK(e.view().phase==Phase::Walking&&e.view().explorationCredit==10000-(count-(retire?1:0))*500);
+      CHECK(steps(e,1,1)==CommandResult::Applied);
       CHECK(e.view().encounter.id==2&&e.view().encounter.ruleVersion==3&&e.view().encounter.legacyFreeAttempts==0);
-      // The upgraded save consumed a random encounter target from the banked credit.
+      // New walking spends the upgraded save's banked credit on a random target.
       CHECK(e.view().explorationSpent+e.view().explorationCredit==e.view().totalSteps);
       CHECK(e.view().encounterTarget>=kEncounterMinSteps&&e.view().encounterTarget<=kEncounterMaxSteps);
       CHECK(e.view().voidedLegacyCount==(retire?1:0));

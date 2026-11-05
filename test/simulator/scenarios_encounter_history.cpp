@@ -89,7 +89,11 @@ void scenarioEncounterHistory(Driver& d, const std::string& phase) {
   } else if (phase=="pending-reload") {
     d.check(d.save().result==Result::Captured && d.save().captureCounts[0]==1 && owns(d.save(),1),
             "grandfathered result persists without duplicate capture");
+    const auto credit=d.save().explorationCredit;
     acknowledge(d);
+    d.check(d.save().phase==Phase::Walking && d.save().explorationCredit==credit,
+            "confirming the grandfathered result retains credit without refilling");
+    d.walk(1);
     d.check(d.save().phase==Phase::EncounterReady && d.save().encounter.species!=1,
             "next real encounter excludes the grandfathered source");
     d.shot("history-next-encounter");
