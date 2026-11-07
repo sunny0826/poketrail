@@ -17,7 +17,7 @@ class App {
   pokedex::ui::Runtime& runtime() { return *runtime_; }
   Platform& platform() { return platform_; }
   uint32_t windowId() const { return SDL_GetWindowID(window_); }
-  void fault(Fault value) { io_.fault(value); }
+  void fault(Fault value) { io_.fault(value); platform_.clockInvalid(value == Fault::ClockInvalid); }
   unsigned faultHits() const { return io_.hits(); }
   unsigned writes() const { return io_.writes(); }
  private:

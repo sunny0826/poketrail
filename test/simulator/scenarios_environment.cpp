@@ -53,6 +53,28 @@ void scenarioClock(Driver& d,const std::string& phase) {
   }
   if(phase=="captured") d.check(d.save().captureCounts[115]==1 && !d.save().firstCapture[115].at.timeKnown,
                                  "calibration preserves unknown capture timestamp");
+  if(phase=="run") {
+    const auto anchor=d.save().clock.anchor;
+    const auto dated=d.save().today.steps;
+    const auto epoch=d.save().clock.calibrationEpoch;
+    d.fault(Fault::ClockInvalid); d.advance(1200); d.walk(10);
+    d.check(!d.save().clock.trusted && d.save().today.steps==dated && d.save().undatedSteps>unknown,
+            "RTC failure keeps walking undated without changing the recorded day");
+    pokedex::calendar::CivilTime reference;
+    d.check(pokedex::calendar::fromUtc(anchor.utcSeconds,anchor.offsetMinutes,reference),"last trusted date available");
+    clockPage(d);
+    const auto& draft=d.screen();
+    d.check(draft.clockNeedsSync && draft.civil.year==reference.year && draft.civil.month==reference.month &&
+            draft.civil.day==reference.day && draft.civil.hour==reference.hour && draft.civil.minute==reference.minute,
+            "invalid RTC shows a marked draft from the last trusted date");
+    d.check(!d.save().clock.pending.active && d.save().clock.calibrationEpoch==epoch,
+            "opening the clock draft does not silently recalibrate");
+    d.shot("clock-invalid-draft");
+    const auto undated=d.save().undatedSteps;
+    d.fault(Fault::None); d.select(7);
+    d.until([&]{return d.screen().page==Page::Home && d.save().clock.trusted;},2000,"manual resync recovers RTC");
+    d.check(d.save().undatedSteps==undated,"recovery does not backfill unknown-date walking");
+  }
   d.state("clock-final"); d.shot("clock-final"); d.close(); d.state("closed");
 }
 void scenarioLifecycle(Driver& d,const std::string& phase) {
@@ -61,6 +83,12 @@ void scenarioLifecycle(Driver& d,const std::string& phase) {
     d.advance(31000); d.check(d.dimmed(),"idle display sleeps");
     d.tap(233,238); d.check(d.dimmed(),"touch cannot wake"); d.wake();
     d.check(!d.dimmed(),"power wakes");
+    const auto page=d.screen().page;
+    const auto boot=d.save().bootGeneration;
+    d.press(SDL_SCANCODE_P); d.check(d.dimmed(),"short power press sleeps the display");
+    d.press(SDL_SCANCODE_P);
+    d.check(!d.dimmed() && d.screen().page==page && d.save().bootGeneration==boot,
+            "next short power press resumes the same page without a new boot");
     const auto beforeWalk = d.save().totalSteps;
     d.press(SDL_SCANCODE_W); d.press(SDL_SCANCODE_TAB);
     d.focusLost(true);

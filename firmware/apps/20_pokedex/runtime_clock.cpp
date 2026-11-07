@@ -61,7 +61,17 @@ void Runtime::openClock() {
   screen_.offset = engine_.view().clock.calibrated ? engine_.view().clock.offsetMinutes : 480;
   const auto candidate = platform_.readClock();
   calendar::CivilTime local;
-  if (candidate.valid && calendar::fromUtc(candidate.utcSeconds, screen_.offset, local)) screen_.civil = local;
+  screen_.clockNeedsSync = !candidate.valid;
+  if (candidate.valid && calendar::fromUtc(candidate.utcSeconds, screen_.offset, local)) {
+    screen_.civil = local;
+  } else {
+    // A saved anchor is an editing reference, never a replacement RTC reading.
+    // Keep a known date instead of presenting the new-device default as a reset.
+    const auto& clock = engine_.view().clock;
+    if (clock.calibrated && clock.anchor.trusted &&
+        calendar::fromUtc(clock.anchor.utcSeconds, screen_.offset, local))
+      screen_.civil = local;
+  }
   screen_.civil.second = 0;
 }
 void Runtime::editClock(int delta) {
@@ -135,6 +145,9 @@ clock_sync::Status Runtime::clockStatus(const device_clock::Reading& reading) co
   status.rtcValid = reading.valid;
   status.rtcLowVoltage = reading.lowVoltage;
   status.rtcIoError = reading.ioError;
+  status.rtcUnavailable = reading.unavailable;
+  status.rtcInvalidDate = reading.invalidDate;
+  status.rtcVerificationFailed = reading.verificationFailed;
   status.utcSeconds = reading.valid ? reading.utcSeconds : 0;
   status.offsetMinutes = s.clock.offsetMinutes;
   status.calibrated = s.clock.calibrated;

@@ -9,6 +9,7 @@ void Screens::clock(const ScreenState& s) {
   snprintf(text, sizeof(text), "%04d-%02d-%02d  %02d:%02d", s.civil.year, s.civil.month, s.civil.day, s.civil.hour, s.civil.minute);
   line(text, 80, theme::kBlue);
   if (s.clockError) alert(tr(Text::ClockError), 169, theme::kRed);
+  else if (s.clockNeedsSync && !s.editing) line(tr(Text::ClockDraft), 157, theme::kGold);
   else line(s.editing ? tr(Text::ClockKeys) : tr(Text::EnterCurrentTime), 157, theme::kMuted);
   const char* names[] = {tr(Text::Year), tr(Text::Month), tr(Text::Day), tr(Text::Hour), tr(Text::Minute), tr(Text::TimezoneMinutes)};
   int values[] = {s.civil.year, s.civil.month, s.civil.day, s.civil.hour, s.civil.minute, s.offset};

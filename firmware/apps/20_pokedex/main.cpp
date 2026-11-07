@@ -19,7 +19,10 @@
 namespace {
 class DevicePlatform : public pokedex::ui::Platform {
  public:
-  void beginClock() { clock_.begin(M5.In_I2C); }
+  void beginClock() {
+    logClockRegisters("boot");
+    clock_.begin(M5.In_I2C);
+  }
   uint32_t now() override { return millis(); }
   uint32_t randomSeed() override { return esp_random(); }
   pokedex::ui::Sample sample() override {
@@ -72,6 +75,19 @@ class DevicePlatform : public pokedex::ui::Platform {
   c152::DisplayTransition displaySleep(bool sleeping) override { return c152::setDisplaySleep(sleeping); }
   c152::BatteryStatus readBattery() override { return c152::readBattery(); }
  private:
+  void logClockRegisters(const char* stage) {
+    // Read before initialization changes STOP/TEST flags; never clear a fault here.
+    const uint8_t registers[] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
+                                 0x1d, 0x1e, 0x1f, 0x20, 0x31};
+    Serial.printf("[rtc] %s", stage);
+    for (uint8_t reg : registers) {
+      uint8_t value = 0;
+      if (M5.In_I2C.readRegister(0x32, reg, &value, 1, 100000))
+        Serial.printf(" %02x=%02x", unsigned(reg), unsigned(value));
+      else Serial.printf(" %02x=io", unsigned(reg));
+    }
+    Serial.println();
+  }
   pokedex::device_clock::Clock clock_;
   pokedex::ui::Input lastInput_;
   pokedex::ui::ButtonInput buttons_;
@@ -127,7 +143,7 @@ void pumpClockSerial() {
     if (value < 0) break;
     const auto request = clockParser.feed(uint8_t(value));
     if (request.kind == pokedex::clock_sync::CommandKind::None) continue;
-    char line[224];
+    char line[256];
     size_t length = 0;
     if (request.kind == pokedex::clock_sync::CommandKind::Query && runtime) {
       length = pokedex::clock_sync::formatQuery(line, sizeof line, runtime->clockSyncStatus());

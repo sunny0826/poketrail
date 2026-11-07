@@ -22,6 +22,7 @@ class Platform : public pokedex::ui::Platform {
   pokedex::ui::Sample sample() override;
   pokedex::ui::Input pollInput() override;
   pokedex::device_clock::Reading readClock() override;
+  void clockInvalid(bool value) { clockInvalid_ = value; }
   pokedex::device_clock::Reading writeClock(int64_t utc) override;
   bool saveClock() { return storage_.saveClock(readClock().utcSeconds); }
   void feedback(uint16_t ms) override { vibrationEnd_ = now() + ms; ++feedbacks_; lastFeedback_ = ms; }
@@ -41,6 +42,7 @@ class Platform : public pokedex::ui::Platform {
   uint32_t clockAt_ = 0, vibrationEnd_ = 0, walkAt_ = 0;
   unsigned feedbacks_ = 0;
   uint16_t lastFeedback_ = 0;
+  bool clockInvalid_ = false;
   bool walking_ = false, fast_ = false, power_ = false, screenshot_ = false;
 };
 }

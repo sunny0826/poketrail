@@ -45,6 +45,9 @@ struct Status {
   bool rtcValid = false;
   bool rtcLowVoltage = false;
   bool rtcIoError = false;
+  bool rtcUnavailable = false;
+  bool rtcInvalidDate = false;
+  bool rtcVerificationFailed = false;
   int64_t utcSeconds = 0;
   int16_t offsetMinutes = 0;
   uint32_t dayKey = 0;

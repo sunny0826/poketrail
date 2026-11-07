@@ -142,6 +142,18 @@ int main() {
     check(std::strstr(line, " id=42 ") && std::strstr(line, " result=ok ") &&
           std::strstr(line, " tr=1 ") && std::strstr(line, " utc=1792627200 "),
           "set reply carries the request id, result and readback");
+    Status invalid = status;
+    invalid.rtcValid = false; invalid.trusted = false;
+    invalid.rtcUnavailable = true; invalid.rtcInvalidDate = true; invalid.rtcVerificationFailed = true;
+    check(formatQuery(line, sizeof line, invalid) > 0 &&
+          std::strstr(line, " unavail=1 dateerr=1 verifyerr=1 "),
+          "invalid RTC reply preserves unavailable, date and verification diagnostics");
+    invalid.transactionId = invalid.sequence = UINT64_MAX;
+    invalid.utcSeconds = 4102444799LL; invalid.dayKey = 20991231; invalid.offsetMinutes = -720;
+    check(formatSet(line, sizeof line, UINT32_MAX, "notready", invalid) > 0 &&
+          std::strlen(line) + 2 <= sizeof line &&
+          std::strstr(line, "seq=18446744073709551615"),
+          "diagnostic reply fits serial transport even at maximum counter widths");
     size = formatError(line, sizeof line, errorName(ParseError::Overflow));
     check(size > 0 && std::strcmp(line, "PTC e result=overflow") == 0, "parse error reply is explicit");
   }

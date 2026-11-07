@@ -30,6 +30,7 @@ struct ScreenState {
   uint16_t selected = 0;
   bool editing = false;
   bool clockError = false;
+  bool clockNeedsSync = false;
   bool practice = false;
   bool testMode = false;
   bool testFailure = false;

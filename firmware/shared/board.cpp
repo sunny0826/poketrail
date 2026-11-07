@@ -15,6 +15,9 @@ bool previous_touch_down = false;
 // L1 同时供电 RTC 与 IMU；hold 使双击关机后 RTC 继续走时。
 constexpr uint8_t kPm1HoldCfg = 0x07;
 constexpr uint8_t kPm1LdoHold = 0x20;
+// PM1 单击复位使能时会直接复位主机，须禁用后由应用处理熄屏／唤醒。
+constexpr uint8_t kPm1ButtonCfg1 = 0x49;
+constexpr uint8_t kPm1SingleResetDisable = 0x01;
 
 }  // namespace
 
@@ -55,6 +58,20 @@ void begin(const char* title) {
     Serial.printf("pm1 ldo hold failed: verify %02x\n", hold);
   } else {
     Serial.printf("pm1 ldo hold=%02x\n", hold);
+  }
+
+  uint8_t before = 0, button = 0;
+  if (!M5.Power.M5pm1.readRegister(kPm1ButtonCfg1, &before, 1)) {
+    Serial.printf("pm1 single reset disable failed: read\n");
+  } else if (!M5.Power.M5pm1.writeRegister8(kPm1ButtonCfg1,
+                                          before | kPm1SingleResetDisable)) {
+    Serial.printf("pm1 single reset disable failed: write\n");
+  } else if (!M5.Power.M5pm1.readRegister(kPm1ButtonCfg1, &button, 1)) {
+    Serial.printf("pm1 single reset disable failed: verify\n");
+  } else if (!(button & kPm1SingleResetDisable)) {
+    Serial.printf("pm1 single reset disable failed: verify %02x\n", button);
+  } else {
+    Serial.printf("pm1 single reset disabled: btn_cfg1=%02x->%02x\n", before, button);
   }
 }
 

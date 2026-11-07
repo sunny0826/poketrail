@@ -174,13 +174,14 @@ const char* errorName(ParseError error) {
 }
 
 size_t formatQuery(char* out, size_t capacity, const Status& status) {
-  char line[224];
+  char line[256];
   const int length = std::snprintf(
       line, sizeof line,
-      "PTC q mode=%s rtc=%u low=%u io=%u utc=%lld off=%d day=%lu cal=%u tr=%u "
+      "PTC q mode=%s rtc=%u low=%u io=%u unavail=%u dateerr=%u verifyerr=%u utc=%lld off=%d day=%lu cal=%u tr=%u "
       "pend=%u anom=%u ready=%u busy=%u save=%u tx=%llu seq=%llu",
       modeName(status.testMode), unsigned(status.rtcValid), unsigned(status.rtcLowVoltage),
-      unsigned(status.rtcIoError), static_cast<long long>(status.utcSeconds),
+      unsigned(status.rtcIoError), unsigned(status.rtcUnavailable), unsigned(status.rtcInvalidDate),
+      unsigned(status.rtcVerificationFailed), static_cast<long long>(status.utcSeconds),
       int(status.offsetMinutes), static_cast<unsigned long>(status.dayKey),
       unsigned(status.calibrated), unsigned(status.trusted), unsigned(status.pending),
       unsigned(status.anomaly), unsigned(status.ready), unsigned(status.busy),
@@ -191,13 +192,14 @@ size_t formatQuery(char* out, size_t capacity, const Status& status) {
 
 size_t formatSet(char* out, size_t capacity, uint32_t id, const char* result,
                  const Status& status) {
-  char line[224];
+  char line[256];
   const int length = std::snprintf(
       line, sizeof line,
-      "PTC s id=%u result=%s mode=%s rtc=%u low=%u io=%u utc=%lld off=%d day=%lu "
+      "PTC s id=%u result=%s mode=%s rtc=%u low=%u io=%u unavail=%u dateerr=%u verifyerr=%u utc=%lld off=%d day=%lu "
       "cal=%u tr=%u pend=%u anom=%u ready=%u busy=%u save=%u tx=%llu seq=%llu",
       unsigned(id), result ? result : "error", modeName(status.testMode),
       unsigned(status.rtcValid), unsigned(status.rtcLowVoltage), unsigned(status.rtcIoError),
+      unsigned(status.rtcUnavailable), unsigned(status.rtcInvalidDate), unsigned(status.rtcVerificationFailed),
       static_cast<long long>(status.utcSeconds), int(status.offsetMinutes),
       static_cast<unsigned long>(status.dayKey), unsigned(status.calibrated),
       unsigned(status.trusted), unsigned(status.pending), unsigned(status.anomaly),

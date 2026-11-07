@@ -74,7 +74,8 @@ pokedex::ui::Input Platform::pollInput() {
 }
 pokedex::device_clock::Reading Platform::readClock() {
   pokedex::device_clock::Reading reading = {};
-  reading.valid = true; reading.utcSeconds = clockUtc_ + uint32_t(now() - clockAt_) / 1000;
+  reading.valid = !clockInvalid_; reading.verificationFailed = clockInvalid_;
+  reading.utcSeconds = clockUtc_ + uint32_t(now() - clockAt_) / 1000;
   return reading;
 }
 pokedex::device_clock::Reading Platform::writeClock(int64_t utc) {

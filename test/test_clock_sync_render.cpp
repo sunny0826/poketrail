@@ -356,6 +356,8 @@ void rtcFailures() {
 }
 }
 
+#include "support/adventure_ui/clock_sync_recovery_cases.hpp"
+
 int main() {
   initialSyncAndQuery();
   firstSyncUsesHostOffset();
@@ -367,6 +369,7 @@ int main() {
   manualAfterHostFailure();
   simultaneousHostAndManualSave();
   rtcFailures();
+  lostClockDraft();
   std::printf("clock sync runtime: %u checks\n", checks);
   return 0;
 }
