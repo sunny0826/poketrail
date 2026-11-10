@@ -137,7 +137,8 @@ CommandResult Engine::selectLanguage(i18n::Language language) {
 }
 CommandResult Engine::startBattle(uint32_t now) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
-  if (state_.phase != Phase::EncounterReady || !registered(state_, state_.encounter.partner)) return CommandResult::InvalidPhase;
+  if (state_.phase != Phase::EncounterReady || !owns(state_, state_.partner)) return CommandResult::InvalidPhase;
+  state_.encounter.partner = state_.partner;
   state_.phase = Phase::Battle; dirty_ = true;
   const CatalogEntry* entry = catalogEntry(state_.encounter.species);
   battle_.begin(now, state_.encounter.seed, entry && entry->rare);

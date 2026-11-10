@@ -17,7 +17,7 @@ uint64_t availableBalls(const Save&);
 
 详情读 `evolutionView(partner)`，得到最多七条目标、费用、阻塞原因及 revision；确认时只提交 `{view.from, target, view.revision}`。Engine复核阶段、边、拥有、额度和合法 ClockReading；`trusted=false` 合法，不强迫校时。TargetOwned、InsufficientProgress、Stale 表示目标冲突、培养不足和过期请求；NoBalls 仅用于规则版本小于 3 的旧在途场。
 
-`rosterRevision` 在首次获得当前资格、切换、进化时递增；纯步数及经已保存在途场捕获当前已拥有、但从未捕获过的赠送伙伴时不变。最后进化回执保存完整请求、费用和 Stamp；相同请求先返回 Duplicate，再检查其他旧 revision 为 Stale。有效进化同一 candidate 扣来源 spent、替换拥有、登记目标、切换携带伙伴并更新回执；已排队场保留原伙伴快照。更早请求可以返回 Stale，不会再扣费。Released 未确认结果时重复放弃返回 Duplicate，旧场 ID 在下一场返回过期错误且不改变状态。
+`rosterRevision` 在首次获得当前资格、切换、进化时递增；纯步数及经已保存在途场捕获当前已拥有、但从未捕获过的赠送伙伴时不变。最后进化回执保存完整请求、费用和 Stamp；相同请求先返回 Duplicate，再检查其他旧 revision 为 Stale。有效进化同一 candidate 扣来源 spent、替换拥有、登记目标、切换携带伙伴并更新回执；已排队场的伙伴字段在该场开战时更新为当前携带者，战斗到结果阶段使用同一绑定。更早请求可以返回 Stale，不会再扣费。Released 未确认结果时重复放弃返回 Duplicate，旧场 ID 在下一场返回过期错误且不改变状态。
 
 | 模块 | 责任 |
 | --- | --- |
