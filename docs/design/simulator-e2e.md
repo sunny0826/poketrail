@@ -97,7 +97,7 @@ rtk proxy mise run test-simulator-e2e -- --build-only
 
 ## 验证边界
 
-当前默认 E2E 注册 47 场（P0 26、P1 21），渲染入口保留 12 套。`test-adventure`、`test-storage`、`test-render` 及素材检查分别承担规则边界、故障恢复、页面信息和发布来源验证。独立 smoke／`test-simulator` 入口已删除，普通集成路径由 E2E 承担；只构建桌面程序可用 `rtk proxy mise run simulate -- --build-only`。没有独立 typecheck 任务，C++ 类型检查由实际主机与固件编译承担。
+当前默认 E2E 注册 48 场（P0 27、P1 21），渲染入口保留 12 套。`test-adventure`、`test-storage`、`test-render` 及素材检查分别承担规则边界、故障恢复、页面信息和发布来源验证。独立 smoke／`test-simulator` 入口已删除，普通集成路径由 E2E 承担；只构建桌面程序可用 `rtk proxy mise run simulate -- --build-only`。没有独立 typecheck 任务，C++ 类型检查由实际主机与固件编译承担。
 
 实际文字、圆屏输出和输入检查与人工视觉审阅各有边界；截图不是固定整屏像素基准。画布468×468，物理圆屏466×466；主机图无法证明设备边缘可见性、真实计步、时延或断电恢复。注册数量只描述当前源码，验收状态须看本轮结果。
 

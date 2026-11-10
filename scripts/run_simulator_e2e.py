@@ -46,6 +46,8 @@ CASES = {
                                          ("encounter-queue", "banked-reload"),
                                          ("encounter-queue", "refilled-reload")]),
     "encounter-queue-schema8": ("P0-20", "schema8-encounter.bin", [("encounter-queue", "schema8"), ("encounter-queue", "schema8-reload")]),
+    "encounter-partner": ("P0-21", "evolution", [("encounter-partner", "run"), ("encounter-partner", "reload"),
+                                               ("encounter-partner", "paused-reload"), ("encounter-partner", "settled-reload")]),
     "target-owned": ("P0-06", "target-owned", [("conflict", "owned")]),
     "storage": ("P0-07", "starter", []),
     "crash-pause": ("P0-08", "battle", [("crash", "paused"), ("crash", "reload-paused")]),

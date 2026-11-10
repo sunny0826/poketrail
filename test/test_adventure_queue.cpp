@@ -51,6 +51,8 @@ static void capacityAndFifo() {
   CHECK(reboot.view().explorationSpent == spent + frozen.encounterTarget);
   CHECK(reboot.view().explorationSpent + reboot.view().explorationCredit == reboot.view().totalSteps);
   CHECK(reboot.startBattle(0) == CommandResult::Applied);
+  // A loaded schema9 encounter can name a departed form until battle starts.
+  CHECK(reboot.view().encounter.partner == 2 && reboot.view().partner == 2);
   CHECK(reboot.checkpoint() == CommandResult::Deferred);
   CHECK(reboot.retreat() == CommandResult::Applied);
 }
