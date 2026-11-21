@@ -90,8 +90,8 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     if (s.capture.active) {
       capture(s, v.encounter.species, now);
     } else if (e.throwView().active) {
-      aim(v.encounter.species, now, true, int32_t(e.throwView().targetMs - now));
-      line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
+      aim(v.encounter.species, now, true, int32_t(e.throwView().targetMs - now), s.throwCommitting);
+      if (!s.throwCommitting) line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
     } else if (legacyNoBalls) {
       actorShadow(233, 147);
       sprite(v.encounter.species, now, battlePlayback_, 147, 233, 0, 2, 110);
@@ -106,8 +106,10 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   const auto& b = s.page == Page::Practice ? practice : e.battleView();
   uint16_t partner = s.page == Page::Practice ? (v.partner ? v.partner : 1) : v.encounter.partner;
   uint16_t enemy = s.page == Page::Practice ? (s.practiceSpecies ? s.practiceSpecies : 25) : v.encounter.species;
-  const bool effect = battleEffectActive(b, now);
-  const uint32_t age = effect ? now - b.settledMs : kBattleEffectMs;
+  const bool overrideEffect = s.page == Page::Battle && s.battleEffectOverride &&
+                              now - s.battleEffectStartMs < kBattleEffectMs;
+  const bool effect = overrideEffect || battleEffectActive(b, now);
+  const uint32_t age = effect ? now - (overrideEffect ? s.battleEffectStartMs : b.settledMs) : kBattleEffectMs;
   const Action action = effect ? battleEffectAction(b) : b.expected;
   const bool attack = action == Action::Attack;
   const bool hit = b.lastTiming != Timing::Miss;

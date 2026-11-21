@@ -47,6 +47,9 @@ struct ScreenState {
   CaptureAnim capture;
   uint32_t chargeStartMs = 0;
   bool charging = false;
+  bool throwCommitting = false;
+  uint32_t battleEffectStartMs = 0;
+  bool battleEffectOverride = false;
   uint16_t practiceSpecies = 0;
   uint32_t practiceTargetMs = 0;
   uint8_t practiceUsedBalls = 0;
@@ -149,7 +152,7 @@ class Screens {
   void alert(const char*, int y, uint16_t color);
   void progress(uint64_t value, uint32_t total, int y, uint16_t color);
   void hp(const char*, uint8_t value, uint8_t total, bool enemy, uint16_t color);
-  void aim(uint16_t species, uint32_t now, bool timing, int32_t remaining);
+  void aim(uint16_t species, uint32_t now, bool timing, int32_t remaining, bool committing = false);
   void cueRing(const adventure::BattleView&, uint32_t now);
   void actorShadow(int cx, int cy);
   void warning(int cx, int cy, uint16_t color);

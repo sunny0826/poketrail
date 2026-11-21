@@ -141,6 +141,7 @@ class Runtime {
   static const char* collectionLabel(uint16_t species, void* context);
   void goBack();
   void sample(uint32_t now);
+  bool battleFinishing() const;
   bool safe() const;
   void fillTestSteps();
   void pollClock(uint32_t now);
@@ -190,7 +191,7 @@ class Runtime {
   PendingRoster pendingRoster_ = PendingRoster::None;
   Page evolutionReturn_ = Page::PartnerDetail;
   bool partnersFromCarried_ = false;
-  bool hasSample_ = false, gapReported_ = false, wasVibrating_ = false;
+  bool hasSample_ = false, gapReported_ = false, wasVibrating_ = false, battleEffectChecked_ = false;
   enum class DisplayState : uint8_t { Awake, Asleep, Waking };
   DisplayState display_ = DisplayState::Awake;
   uint32_t wakeStarted_ = 0, wakeDelay_ = 0, lastBattery_ = 0;

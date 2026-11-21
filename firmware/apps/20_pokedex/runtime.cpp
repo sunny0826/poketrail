@@ -99,6 +99,10 @@ void Runtime::waitForRelease() {
 void Runtime::navigate(Page page) {
   screen_.page = page; screen_.selected = 0; screen_.editing = false;
   screen_.testFailure = false;
+  screen_.battleEffectOverride = false;
+  screen_.battleEffectStartMs = 0;
+  screen_.throwCommitting = false;
+  battleEffectChecked_ = false;
   screens_.invalidate(); dirty_ = true; waitForRelease();
   screen_.command = CommandResult::Applied;
   if (page == Page::Viewer) {
@@ -114,12 +118,21 @@ void Runtime::openMenu(MenuItem focus) {
     index = (index + 1) % kMenuItemCount;
   screen_.selected = index;
 }
+bool Runtime::battleFinishing() const {
+  if (screen_.page != Page::Battle || engine_.battleView().active || engine_.savePending())
+    return false;
+  const uint32_t now = platform_.now();
+  return battleEffectActive(engine_.battleView(), now) ||
+         (screen_.battleEffectOverride &&
+          now - screen_.battleEffectStartMs < kBattleEffectMs);
+}
 bool Runtime::safe() const {
   const PracticeStage stage = practiceCapture_.stage();
   const bool practiceBusy = (stage == PracticeStage::Battle && !practiceCapture_.battleView().paused) ||
                             stage == PracticeStage::Throwing;
-  return !(engine_.battleView().active && !engine_.battleView().paused) && !engine_.throwView().active &&
-         !practiceBusy && screen_.page != Page::Evolution && screen_.page != Page::EvolutionPreview;
+  return !(engine_.battleView().active && !engine_.battleView().paused) && !battleFinishing() &&
+         !engine_.throwView().active && !practiceBusy &&
+         screen_.page != Page::Evolution && screen_.page != Page::EvolutionPreview;
 }
 void Runtime::syncPage() {
   syncLanguage();
@@ -151,8 +164,7 @@ void Runtime::syncPage() {
   }
   if (screen_.page == Page::Practice || screen_.page == Page::PracticeThrow ||
       screen_.page == Page::PracticeResult || (screen_.page == Page::Pause && screen_.practice)) return;
-  if (screen_.page == Page::Battle && !engine_.battleView().active &&
-      battleEffectActive(engine_.battleView(), platform_.now())) return;
+  if (battleFinishing()) return;
   if (v.phase == Phase::ThrowReady) {
     if (screen_.page != Page::Throw) navigate(Page::Throw);
   } else if (v.phase == Phase::Resolved) {
@@ -267,6 +279,18 @@ void Runtime::loop() {
   syncPracticeView();
   syncPracticePage();
   if (engine_.ready() && !engine_.savePending()) engine_.tick(platform_.now(), readingAt(platform_.now()));
+  if (screen_.page != Page::Battle || engine_.battleView().active ||
+      engine_.battleView().result == Result::None) {
+    battleEffectChecked_ = false;
+  } else if (!engine_.savePending() && !battleEffectChecked_) {
+    battleEffectChecked_ = true;
+    const uint32_t finishNow = platform_.now();
+    if (finishNow - engine_.battleView().settledMs >= 80u) {
+      screen_.battleEffectStartMs = finishNow;
+      screen_.battleEffectOverride = true;
+      dirty_ = true;
+    }
+  }
   battleFeedback();
   tickCapture(platform_.now());
   tickEvolution(platform_.now(), input.held);

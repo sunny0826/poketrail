@@ -21,7 +21,7 @@ void star(int x, int y, int r, uint16_t color) {
   M5.Display.drawFastVLine(x, y - r, 2 * r + 1, color);
 }
 }
-void Screens::aim(uint16_t species, uint32_t now, bool timing, int32_t remaining) {
+void Screens::aim(uint16_t species, uint32_t now, bool timing, int32_t remaining, bool committing) {
   actorShadow(233, 233);
   sprite(species, now, battlePlayback_, 233, 233, 0, 2, 190);
   if (timing) {
@@ -34,7 +34,12 @@ void Screens::aim(uint16_t species, uint32_t now, bool timing, int32_t remaining
     M5.Display.drawCircle(233, 233, 24, target);
     M5.Display.drawCircle(233, 233, 25, target);
   }
-  ballAt(233, kHandY);
+  const int ballY = committing ? kHandY - 10 : kHandY;
+  if (committing) {
+    M5.Display.drawCircle(kBallX, ballY, 18, theme::kGold);
+    M5.Display.drawCircle(kBallX, ballY, 17, theme::kGold);
+  }
+  ballAt(kBallX, ballY);
 }
 void Screens::capture(const ScreenState& s, uint16_t species, uint32_t now) {
   const auto& anim = s.capture;
