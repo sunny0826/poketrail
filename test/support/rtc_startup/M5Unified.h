@@ -28,7 +28,7 @@ class M5Unified {
   struct config_t {
     unsigned serial_baudrate = 0;
     bool clear_display = true, internal_imu = true, internal_rtc = true;
-    bool internal_spk = true, output_power = true;
+    bool internal_spk = true, internal_mic = true, pmic_button = true, output_power = true;
     bool external_rtc = false, external_imu = false, disable_rtc_irq = true;
   };
   struct DisplayShell {
@@ -62,8 +62,10 @@ class M5Unified {
   I2C_Class& In_I2C = m5::In_I2C;
   I2C_Class& Ex_I2C = m5::Ex_I2C;
   RTC_Class Rtc;
+  config_t lastConfig;
   config_t config() const { return {}; }
   void begin(const config_t& cfg) {
+    lastConfig = cfg;
     In_I2C.setPort(0,1,2);
     _begin_rtc_imu(cfg);
   }

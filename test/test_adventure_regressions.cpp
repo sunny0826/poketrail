@@ -23,6 +23,7 @@ std::vector<uint8_t> encode(const Save& save) {
 }
 struct Slots : SlotIO {
   std::vector<uint8_t> bytes[2];
+  unsigned writes = 0;
   LoadStatus prepare() override { return LoadStatus::Loaded; }
   ReadStatus read(unsigned slot, uint8_t* out, size_t capacity, size_t& size) override {
     size = bytes[slot].size();
@@ -31,7 +32,7 @@ struct Slots : SlotIO {
     return size > capacity ? ReadStatus::TooLarge : ReadStatus::Ok;
   }
   bool write(unsigned slot, const uint8_t* input, size_t size) override {
-    bytes[slot].assign(input, input + size); return true;
+    ++writes; bytes[slot].assign(input, input + size); return true;
   }
 };
 struct World {
@@ -267,10 +268,66 @@ void bootRetry() {
   expect(engine->ready() && engine->view().totalSteps == 0 && engine->begin() == CommandResult::Duplicate,
          "Empty startup restores defaults and retries the identical boot candidate");
 }
+void idleClockNoCheckpoint() {
+  std::unique_ptr<World> w(new World);
+  const int64_t utc = 1792670400LL;
+  w->calibrate(w->reading(utc, 1000));
+  const uint64_t seq = w->engine.view().sequence;
+  const unsigned writes = w->slots.writes;
+  expect(w->engine.observeClock(w->reading(utc + 30, 31000)) == CommandResult::Applied,
+         "steady-state same-day clock poll succeeds");
+  expect(w->engine.observeClock(w->reading(utc + 60, 61000)) == CommandResult::Applied,
+         "repeated steady-state same-day clock poll succeeds");
+  expect(w->engine.view().clock.anchor.utcSeconds == utc + 60,
+         "steady-state clock poll updates the RAM anchor");
+  expect(w->engine.checkpoint() == CommandResult::Duplicate &&
+         w->slots.writes == writes && w->engine.view().sequence == seq,
+         "steady-state clock poll does not dirty the save for checkpoint");
+
+  w->step(w->reading(utc + 61, 62000));
+  expect(w->engine.checkpoint() == CommandResult::Applied &&
+         w->slots.writes == writes + 1 && w->engine.view().today.steps == 1,
+         "walking still checkpoints normally after steady-state clock polls");
+
+  expect(w->engine.observeClock(w->reading(utc + 86400, 86401000)) == CommandResult::Applied,
+         "midnight rollover commits immediately");
+  expect(w->slots.writes == writes + 2 && w->engine.view().today.dayKey == 20261023 &&
+         w->engine.view().today.complete,
+         "midnight rollover persists the new day and complete flag");
+
+  std::unique_ptr<World> uncalibrated(new World);
+  const unsigned uncalWrites = uncalibrated->slots.writes;
+  ClockReading untrusted;
+  untrusted.bootGeneration = uncalibrated->engine.view().bootGeneration;
+  expect(uncalibrated->engine.observeClock(untrusted) == CommandResult::Applied &&
+         uncalibrated->engine.checkpoint() == CommandResult::Duplicate &&
+         uncalibrated->slots.writes == uncalWrites,
+         "untrusted steady-state poll does not dirty an already incomplete day");
+
+  FileStore rebootStore(w->slots);
+  std::unique_ptr<Engine> reboot(new Engine(rebootStore));
+  REQUIRE(reboot->begin() == CommandResult::Applied);
+  expect(!reboot->view().clock.trusted && reboot->view().today.complete,
+         "reboot begins untrusted while preserving prior today.complete");
+  ClockReading lost;
+  lost.bootGeneration = reboot->view().bootGeneration;
+  lost.calibrationEpoch = reboot->view().clock.calibrationEpoch;
+  const unsigned rebootWrites = w->slots.writes;
+  expect(reboot->observeClock(lost) == CommandResult::Applied &&
+         !reboot->view().today.complete &&
+         reboot->checkpoint() == CommandResult::Applied &&
+         w->slots.writes == rebootWrites + 1,
+         "first untrusted clock after reboot marks today incomplete and persists once");
+  expect(reboot->observeClock(lost) == CommandResult::Applied &&
+         reboot->checkpoint() == CommandResult::Duplicate &&
+         w->slots.writes == rebootWrites + 1,
+         "subsequent untrusted polls do not repeatedly rewrite Flash");
+}
 }
 int main() {
   lateAchievement(1000, false); lateAchievement(10000, true);
   rebootSameDay(); clockEdges(); historicalBoundaries(); dateCorruption(); bootRetry();
+  idleClockNoCheckpoint();
   std::printf("adventure regressions: %u checks, %u failures\n", checks, failures);
   return failures ? 1 : 0;
 }

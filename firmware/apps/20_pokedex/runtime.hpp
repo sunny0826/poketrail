@@ -76,6 +76,13 @@ class Runtime {
   const Metrics& metrics() const { return metrics_; }
   const adventure::BattleView& practiceView() const { return practiceCapture_.battleView(); }
   bool dimmed() const { return display_ != DisplayState::Awake; }
+  bool idlePaceAllowed() const {
+    return !startupActive_ && !engine_.savePending() &&
+           screen_.page != Page::Battle && screen_.page != Page::Practice &&
+           screen_.page != Page::Throw && screen_.page != Page::PracticeThrow &&
+           screen_.page != Page::Evolution && screen_.page != Page::EvolutionPreview &&
+           screen_.page != Page::Viewer;
+  }
   // A USB host keeps light sleep from dropping CDC.
   bool pocketIdle() const {
     return display_ == DisplayState::Asleep && !releaseGate_ && !platform_.vibrationActive() &&

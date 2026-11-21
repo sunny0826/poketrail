@@ -17,7 +17,7 @@ struct HostM5 {
     uint32_t serial_baudrate = 0;
     bool clear_display = false, internal_imu = false, internal_rtc = false;
     bool external_rtc = false, disable_rtc_irq = true;
-    bool internal_spk = false, output_power = false;
+    bool internal_spk = false, internal_mic = false, pmic_button = false, output_power = false;
   };
   struct TouchStub {
     HostTouchDetail detail;
@@ -30,6 +30,7 @@ struct HostM5 {
   struct Pm1Stub {
     uint8_t button = 0;
     uint8_t hold_cfg = 0;
+    uint8_t pwr_cfg = 0x17;
     bool readRegister(uint8_t reg, uint8_t* out, size_t length) {
       if (length != 1) return false;
       if (reg == 0x48) {
@@ -41,12 +42,16 @@ struct HostM5 {
         *out = hold_cfg;
         return true;
       }
+      if (reg == 0x06) {
+        *out = pwr_cfg;
+        return true;
+      }
       return false;
     }
     bool writeRegister8(uint8_t reg, uint8_t value) {
-      if (reg != 0x07) return false;
-      hold_cfg = value;
-      return true;
+      if (reg == 0x07) { hold_cfg = value; return true; }
+      if (reg == 0x06) { pwr_cfg = value; return true; }
+      return false;
     }
   };
   struct PowerStub {

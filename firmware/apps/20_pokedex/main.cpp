@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <esp_system.h>
+#include <algorithm>
 #include <cstdlib>
 #include <cstdarg>
 #include <cstdio>
@@ -27,30 +28,23 @@ class DevicePlatform : public pokedex::ui::Platform {
   uint32_t randomSeed() override { return esp_random(); }
   pokedex::ui::Sample sample() override {
     pokedex::ui::Sample s;
-    const auto mask = M5.Imu.update();
+    const bool ok = c152::readAccel(s.x, s.y, s.z, s.fresh);
     s.at = millis();
-    s.fresh = (mask & m5::IMU_Class::sensor_mask_accel) != 0;
-    // The installed update API does not distinguish I/O failure from no new data.
-    if (s.fresh) {
-      const auto& data = M5.Imu.getImuData();
-      s.x = data.accel.x; s.y = data.accel.y; s.z = data.accel.z;
-    }
+    s.ioError = !ok;
     return s;
   }
   pokedex::ui::Input pollInput() override {
-    c152::update();
     pokedex::ui::Input input;
-    input.at = millis();
-    // M5Unified maps only PM1 IRQ bits 0/2 to BtnPWR, but this board reports the
-    // power key as bit 1 (wakeup), so installed versions never produce a click.
-    // Read the button status register instead: bit 0 is the live level and bit 7
-    // is a read-to-clear pressed flag that also catches presses shorter than one poll.
-    uint8_t button = 0;
-    if (M5.Power.M5pm1.readRegister(0x48, &button, 1)) {
-      const bool down = (button & 0x01) != 0;
-      input.power = (down && !powerWasDown_) || ((button & 0x80) != 0 && !down);
-      powerWasDown_ = down;
+    if (displayAsleep_) {
+      c152::updateVibration();
+      input.at = millis();
+      samplePowerKey(input, 20u);
+      lastInput_ = input;
+      return input;
     }
+    c152::update();
+    input.at = millis();
+    samplePowerKey(input, 25u);
     buttons_.sample(input, M5.BtnA, M5.BtnB);
     input.touch = c152::touchWasPressed();
     const auto detail = M5.Touch.getDetail();
@@ -72,9 +66,31 @@ class DevicePlatform : public pokedex::ui::Platform {
   bool vibrationActive() override { return c152::vibrationActive(); }
   bool usbHostPresent() override { return Serial.isPlugged(); }
   void brightness(uint8_t value) override { c152::setDisplayBrightness(value); }
-  c152::DisplayTransition displaySleep(bool sleeping) override { return c152::setDisplaySleep(sleeping); }
+  c152::DisplayTransition displaySleep(bool sleeping) override {
+    const auto result = c152::setDisplaySleep(sleeping);
+    if (result.accepted) {
+      displayAsleep_ = sleeping;
+      if (!sleeping) c152::resetTouchEdge();
+    }
+    return result;
+  }
   c152::BatteryStatus readBattery() override { return c152::readBattery(); }
  private:
+  void samplePowerKey(pokedex::ui::Input& input, uint32_t intervalMs) {
+    if (hasPowerPoll_ && input.at - lastPowerPoll_ < intervalMs) return;
+    lastPowerPoll_ = input.at;
+    hasPowerPoll_ = true;
+    // M5Unified maps only PM1 IRQ bits 0/2 to BtnPWR, but this board reports the
+    // power key as bit 1 (wakeup), so installed versions never produce a click.
+    // Read the button status register instead: bit 0 is the live level and bit 7
+    // is a read-to-clear pressed flag that also catches presses shorter than one poll.
+    uint8_t button = 0;
+    if (M5.Power.M5pm1.readRegister(0x48, &button, 1)) {
+      const bool down = (button & 0x01) != 0;
+      input.power = (down && !powerWasDown_) || ((button & 0x80) != 0 && !down);
+      powerWasDown_ = down;
+    }
+  }
   void logClockRegisters(const char* stage) {
     const uint8_t registers[] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
                                  0x1d, 0x1e, 0x1f, 0x20, 0x31};
@@ -91,6 +107,9 @@ class DevicePlatform : public pokedex::ui::Platform {
   pokedex::ui::Input lastInput_;
   pokedex::ui::ButtonInput buttons_;
   bool powerWasDown_ = false;
+  bool displayAsleep_ = false;
+  bool hasPowerPoll_ = false;
+  uint32_t lastPowerPoll_ = 0;
 };
 pokedex::adventure::DeviceStore store;
 DevicePlatform platform;
@@ -170,7 +189,7 @@ void pumpClockTransmit() {
 }
 
 void diagnostic(const char* format, ...) {
-  if (clockReplyPending()) return;
+  if (clockReplyPending() || !Serial.isPlugged()) return;
   char line[256];
   va_list args; va_start(args, format);
   const int length = vsnprintf(line, sizeof(line), format, args);
@@ -307,11 +326,11 @@ void loop() {
   }
   leftDown = input.leftDown; rightDown = input.rightDown;
   static uint32_t report = 0;
-  if (millis() - report >= 10000) {
+  if (Serial.isPlugged() && millis() - report >= 10000) {
     report = millis(); const auto& m = runtime->metrics();
-    diagnostic("sample=%lu maxgap=%lu input=%lu gaps=%lu noaccel=%lu imuio=not-exposed rtc=%lu render=%lu commit=%lu\n",
+    diagnostic("sample=%lu maxgap=%lu input=%lu gaps=%lu noaccel=%lu imuio=%lu rtc=%lu render=%lu commit=%lu\n",
       (unsigned long)m.samples, (unsigned long)m.maxSampleGapMs, (unsigned long)m.maxInputGapMs,
-      (unsigned long)m.qualityGaps, (unsigned long)m.noSample,
+      (unsigned long)m.qualityGaps, (unsigned long)m.noSample, (unsigned long)m.imuIoErrors,
       (unsigned long)m.rtcErrors, (unsigned long)m.maxRenderMs, (unsigned long)m.maxCommitMs);
     const auto& save = runtime->engine().view();
     diagnostic("state page=%u row=%u ready=%u pending=%u load=%u starter=%u partner=%u phase=%u seq=%llu total=%llu target=%u\n",
@@ -324,5 +343,14 @@ void loop() {
       unsigned(runtime->dimmed()), int(battery.percent), unsigned(battery.charge), (unsigned long)m.displayErrors);
   }
   const uint32_t wait = runtime->nextSampleMs(millis());
-  if (!(runtime->pocketIdle() && wait > 0 && c152::restUntilInput(wait))) delay(1);
+  if (runtime->pocketIdle() && wait > 0 && c152::restUntilInput(wait)) return;
+  uint32_t pauseMs = 1;
+  if (!clockReplyPending() && Serial.available() <= 0 && !platform.vibrationActive()) {
+    if (runtime->dimmed()) {
+      pauseMs = wait > 0 ? std::min<uint32_t>(wait, 20u) : 1u;
+    } else if (runtime->idlePaceAllowed()) {
+      pauseMs = wait > 0 ? std::min<uint32_t>(wait, 10u) : 1u;
+    }
+  }
+  delay(pauseMs);
 }

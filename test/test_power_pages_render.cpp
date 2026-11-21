@@ -100,6 +100,60 @@ void viewerErrorWake() {
         "viewer failure remains readable after waking");
   viewer_screen::g_ready = true;
 }
+class CalibratedPowerPlatform : public PowerPlatform {
+ public:
+  bool rtcValid = true;
+  int64_t utcBase = 1792670400LL;
+  uint32_t rtcStartMs = 0;
+  device_clock::Reading readClock() override {
+    device_clock::Reading reading = {};
+    reading.utcSeconds = utcBase + int64_t(now() - rtcStartMs) / 1000;
+    reading.valid = rtcValid;
+    reading.verificationFailed = !rtcValid;
+    return reading;
+  }
+};
+void calibratedAsleepIdleAndWalk() {
+  MemoryStore store;
+  CalibratedPowerPlatform platform;
+  platform.rtcStartMs = host_time_ms;
+  {
+    Engine engine(store);
+    check(engine.begin() == CommandResult::Applied, "calibrated power fixture boots");
+    check(engine.chooseStarter(1) == CommandResult::Applied, "calibrated power fixture picks starter");
+    ClockReading target;
+    target.trusted = true;
+    target.utcSeconds = platform.utcBase;
+    target.dayKey = 20261022;
+    target.bootGeneration = engine.view().bootGeneration;
+    target.monotonicMs = host_time_ms;
+    check(engine.beginClockChange(1, ClockChangeMode::Normal, target) == CommandResult::Applied &&
+          engine.finishClockChange(1, target) == CommandResult::Applied,
+          "calibrated power fixture has trusted clock");
+  }
+  Runtime runtime(store, platform);
+  start(runtime);
+  check(runtime.engine().view().clock.trusted, "calibrated power runtime starts trusted");
+  idle(runtime, 30020);
+  check(runtime.dimmed(), "calibrated home sleeps");
+  const unsigned commits = store.commits;
+  const uint64_t seq = runtime.engine().view().sequence;
+  idle(runtime, 65000);
+  check(store.commits == commits && runtime.engine().view().sequence == seq,
+        "asleep calibrated idle never triggers periodic Flash commits");
+  walk(runtime, platform, 4);
+  const auto& save = runtime.engine().view();
+  check(save.totalSteps >= 3 && save.today.steps == save.totalSteps && save.undatedSteps == 0,
+        "asleep steps beyond 2.5s anchor age still attribute to today");
+  idle(runtime, 30020);
+  check(store.commits == commits + 1, "asleep walking checkpoints once after the 30s idle save interval");
+  Save reloaded;
+  check(store.load(reloaded).status == LoadStatus::Loaded && reloaded.today.steps == save.today.steps,
+        "asleep dated steps survive reload");
+  platform.rtcValid = false;
+  wake(runtime);
+  check(!runtime.engine().view().clock.trusted, "waking immediately refreshes RTC and catches an invalid clock");
+}
 void wraparound() {
   host_time_ms = UINT32_MAX - 30050;
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -108,6 +162,6 @@ void wraparound() {
 }
 int main() {
   c152::begin("POWER PAGES TEST");
-  autoSleepAndWalk(); clockDraft(); pausedAndActive(); failedCommandsAndSave(); wakeFailureAndSaveRetry(); viewerErrorWake(); wraparound();
+  autoSleepAndWalk(); clockDraft(); pausedAndActive(); failedCommandsAndSave(); wakeFailureAndSaveRetry(); viewerErrorWake(); calibratedAsleepIdleAndWalk(); wraparound();
   std::printf("%u power Runtime checks, 0 failures\n", checks);
 }
