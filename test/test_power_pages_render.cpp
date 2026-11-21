@@ -154,6 +154,83 @@ void calibratedAsleepIdleAndWalk() {
   wake(runtime);
   check(!runtime.engine().view().clock.trusted, "waking immediately refreshes RTC and catches an invalid clock");
 }
+void activeInputCheckpointDeferral() {
+  {
+    MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform);
+    const uint32_t baseMs = host_time_ms;
+    start(runtime);
+    walk(runtime, platform, 4);
+    const auto steps = runtime.engine().view().totalSteps;
+    const unsigned commits = store.commits;
+    check(steps >= 3, "active input deferral fixture earns dirty steps");
+    openMenu(runtime);
+    while (host_time_ms - baseMs < 35000) {
+      idle(runtime, 960);
+      edge(runtime, false, true);
+      check(!runtime.dimmed() && store.commits == commits,
+            "active button input past 30s defers periodic checkpoint while awake");
+    }
+    const uint32_t lastInputAt = host_time_ms - 20;
+    idle(runtime, 2800);
+    check(!runtime.dimmed() && host_time_ms - lastInputAt < 3000 && store.commits == commits,
+          "periodic checkpoint stays deferred inside the 3s post-input window");
+    idle(runtime, 300);
+    check(!runtime.dimmed() && host_time_ms - lastInputAt >= 3000 && store.commits == commits + 1,
+          "periodic checkpoint commits immediately once input stays idle for 3s");
+    Save reloaded;
+    check(store.load(reloaded).status == LoadStatus::Loaded && reloaded.totalSteps == steps,
+          "deferred steps survive save reload after quiet flush");
+  }
+  {
+    MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform);
+    const uint32_t baseMs = host_time_ms;
+    start(runtime);
+    walk(runtime, platform, 4);
+    const auto steps = runtime.engine().view().totalSteps;
+    const unsigned commits = store.commits;
+    openMenu(runtime);
+    while (host_time_ms - baseMs < 119000) {
+      idle(runtime, 960);
+      edge(runtime, false, true);
+      check(!runtime.dimmed() && store.commits == commits,
+            "continuous active input defers checkpoint before the 120s ceiling");
+    }
+    while (host_time_ms - baseMs < 121000) {
+      idle(runtime, 960);
+      edge(runtime, false, true);
+    }
+    check(!runtime.dimmed() && store.commits == commits + 1,
+          "continuous active input still flushes at the 120s kCheckpointDeferralMs ceiling");
+    Save reloaded;
+    check(store.load(reloaded).status == LoadStatus::Loaded && reloaded.totalSteps == steps,
+          "120s ceiling checkpoint persists walked steps");
+  }
+  {
+    MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform);
+    const uint32_t baseMs = host_time_ms;
+    start(runtime);
+    walk(runtime, platform, 4);
+    const auto steps = runtime.engine().view().totalSteps;
+    const unsigned commits = store.commits;
+    openMenu(runtime);
+    while (host_time_ms - baseMs < 29000) {
+      idle(runtime, 960);
+      edge(runtime, false, true);
+    }
+    edge(runtime, false, true);
+    const uint32_t lastInputAt = host_time_ms - 20;
+    sleep(runtime);
+    check(runtime.dimmed() && store.commits == commits,
+          "power key dims the display before the 30s checkpoint window");
+    const uint32_t remaining = (baseMs + 30040) > host_time_ms ? (baseMs + 30040) - host_time_ms : 20;
+    idle(runtime, remaining);
+    check(runtime.dimmed() && host_time_ms - lastInputAt < 3000 && store.commits == commits + 1,
+          "dimmed display bypasses active-input deferral when 30s checkpoint is due");
+    Save reloaded;
+    check(store.load(reloaded).status == LoadStatus::Loaded && reloaded.totalSteps == steps,
+          "dimmed checkpoint after recent input survives save reload");
+  }
+}
 void wraparound() {
   host_time_ms = UINT32_MAX - 30050;
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
@@ -162,6 +239,6 @@ void wraparound() {
 }
 int main() {
   c152::begin("POWER PAGES TEST");
-  autoSleepAndWalk(); clockDraft(); pausedAndActive(); failedCommandsAndSave(); wakeFailureAndSaveRetry(); viewerErrorWake(); calibratedAsleepIdleAndWalk(); wraparound();
+  autoSleepAndWalk(); clockDraft(); pausedAndActive(); failedCommandsAndSave(); wakeFailureAndSaveRetry(); viewerErrorWake(); calibratedAsleepIdleAndWalk(); activeInputCheckpointDeferral(); wraparound();
   std::printf("%u power Runtime checks, 0 failures\n", checks);
 }

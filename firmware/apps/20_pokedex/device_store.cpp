@@ -155,7 +155,10 @@ LoadStatus DeviceStore::begin() {
   if (!mounted_) {
     if (!LittleFS.begin(false, "/littlefs", 10, "spiffs")) return LoadStatus::NeedsProvisioning;
     mounted_ = true;
+    dirReady_ = false;
   }
+  if (initialized_ && dirReady_) return LoadStatus::Loaded;
+  dirReady_ = false;
   if (!capacity().valid) return LoadStatus::IoError;
   if (!initialized_) {
     initialized_ = true;
@@ -171,6 +174,7 @@ LoadStatus DeviceStore::begin() {
     }
   }
   if (!ensureDirectory(root_)) return LoadStatus::IoError;
+  dirReady_ = true;
   return LoadStatus::Loaded;
 }
 
@@ -178,13 +182,16 @@ LoadStatus DeviceStore::prepare() {
   if (owner != this) return LoadStatus::NeedsProvisioning;
   if (mode_.active && mode_.ramOnly) return LoadStatus::Loaded;
   if (!mounted_) return LoadStatus::NeedsProvisioning;
-  if (!capacity().valid) return LoadStatus::IoError;
+  if (!dirReady_) return LoadStatus::IoError;
   char path[kPathSize];
   struct stat info;
   bool missing = false;
-  if (!buildDir(root_, path, sizeof(path)) || !statPath(path, info, missing) || missing)
+  if (!buildDir(root_, path, sizeof(path)) || !statPath(path, info, missing) || missing ||
+      !S_ISDIR(info.st_mode)) {
+    dirReady_ = false;
     return LoadStatus::IoError;
-  return S_ISDIR(info.st_mode) ? LoadStatus::Loaded : LoadStatus::IoError;
+  }
+  return LoadStatus::Loaded;
 }
 
 LoadResult DeviceStore::load(Save& out) {
@@ -244,18 +251,31 @@ bool DeviceStore::write(unsigned slot, const uint8_t* bytes, size_t length) {
   if (mode_.active && mode_.ramOnly) return false;
   if (prepare() != LoadStatus::Loaded) return false;
   char path[kPathSize];
-  if (!buildPath(root_, slot, path, sizeof(path))) return false;
+  if (!buildPath(root_, slot, path, sizeof(path))) {
+    dirReady_ = false;
+    return false;
+  }
   struct stat info;
   bool missing = false;
-  if (!statPath(path, info, missing) || (!missing && !S_ISREG(info.st_mode))) return false;
+  if (!statPath(path, info, missing) || (!missing && !S_ISREG(info.st_mode))) {
+    dirReady_ = false;
+    return false;
+  }
   const StorageCapacity c = capacity();
   // Conservative: leave room for a complete copy-on-write candidate, not just its growth.
-  if (!c.valid || c.availableBytes < length) return false;
+  if (!c.valid || c.availableBytes < length) {
+    dirReady_ = false;
+    return false;
+  }
   File file = LittleFS.open(path, "w");
-  if (!file) return false;
+  if (!file) {
+    dirReady_ = false;
+    return false;
+  }
   const bool complete = file.write(bytes, length) == length;
   file.flush(); // Arduino API is void; FileStore proves the result by close/readback.
   file.close();
+  if (!complete) dirReady_ = false;
   return complete;
 }
 
@@ -280,23 +300,32 @@ bool DeviceStore::enterTest(TestSeed seed) {
       mode_ = TestMode();
       mode_.active = true;
       mode_.ramOnly = true;
+      dirReady_ = false;
       store_.reset();
       return true;
     }
-    if (!ensureDirectory(kTestRoot)) return false;
+    if (!ensureDirectory(kTestRoot)) {
+      dirReady_ = false;
+      return false;
+    }
     if (!writeActive()) {
       LittleFS.remove(kActivePath);
+      dirReady_ = false;
       return false;
     }
     mode_ = TestMode();
     mode_.active = true;
     root_ = kTestRoot;
+    dirReady_ = false;
     store_.reset();
   } else if (mode_.ramOnly) {
     if (seed != TestSeed::Blank) return false;
     ramHasSave_ = false;
     mode_.seedFailed = false;
+    dirReady_ = false;
     return true;
+  } else {
+    dirReady_ = false;
   }
   mode_.fault = TestFault::None;
   store_.reset();
@@ -316,6 +345,7 @@ bool DeviceStore::leaveTest() {
   mode_ = TestMode();
   mode_.cleanupFailed = !clean;
   root_ = kOfficialRoot;
+  dirReady_ = false;
   ramSave_.reset();
   ramHasSave_ = false;
   store_.reset();

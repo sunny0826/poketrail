@@ -62,12 +62,60 @@ static void lifecycle() {
   CHECK(d.commit(a) == CommitStatus::IoError);
   CHECK(state.formats == 0);
 }
+static void capacityAndDirectoryRecovery() {
+  state = storage_test::State();
+  Save out;
+  Save a; a.sequence = 1; a.encounterTarget = 300;
+  Save b = a; b.sequence = 2;
+  Save c = a; c.sequence = 3;
+  DeviceStore d;
+  CHECK(d.begin() == LoadStatus::Loaded);
+  CHECK(d.commit(a) == CommitStatus::Committed);
+
+  const int writesBeforeInfoLoss = state.writes;
+  state.info = false;
+  CHECK(d.load(out).status == LoadStatus::Loaded && out.sequence == 1);
+  CHECK(d.commit(b) == CommitStatus::IoError && state.writes == writesBeforeInfoLoss);
+  state.info = true;
+  CHECK(d.commit(b) == CommitStatus::Committed);
+  CHECK(d.load(out).status == LoadStatus::Loaded && out.sequence == 2);
+
+  const int writesBeforeOveruse = state.writes;
+  state.used = state.total + 1;
+  CHECK(d.commit(c) == CommitStatus::IoError && state.writes == writesBeforeOveruse);
+  state.used = 1000;
+  CHECK(d.load(out).status == LoadStatus::Loaded && out.sequence == 2);
+
+  state.nodes.erase("/littlefs/adventure");
+  state.mkdir = false;
+  const int writesBeforeMissingDir = state.writes;
+  CHECK(d.commit(c) == CommitStatus::IoError && state.writes == writesBeforeMissingDir);
+  CHECK(d.begin() == LoadStatus::IoError);
+  state.mkdir = true;
+  CHECK(d.commit(c) == CommitStatus::Committed);
+  CHECK(d.load(out).status == LoadStatus::Loaded && out.sequence == 3);
+
+  state.open = false;
+  Save next = a; next.sequence = 4;
+  CHECK(d.commit(next) == CommitStatus::IoError);
+  state.open = true;
+  state.nodes.erase("/littlefs/adventure");
+  state.mkdir = false;
+  CHECK(d.commit(next) == CommitStatus::IoError);
+  state.mkdir = true;
+  CHECK(d.commit(next) == CommitStatus::Committed);
+  CHECK(d.load(out).status == LoadStatus::Loaded && out.sequence == 4);
+  CHECK(state.formats == 0);
+}
 int main() {
   lifecycle();
-  DeviceStore reboot; Save out;
-  state.nodes["/littlefs/adventure/save-a.bin"].directory = false;
-  CHECK(reboot.begin() == LoadStatus::Loaded);
-  CHECK(reboot.load(out).status == LoadStatus::Loaded && out.sequence == 2);
-  CHECK(state.formats == 0);
+  {
+    DeviceStore reboot; Save out;
+    state.nodes["/littlefs/adventure/save-a.bin"].directory = false;
+    CHECK(reboot.begin() == LoadStatus::Loaded);
+    CHECK(reboot.load(out).status == LoadStatus::Loaded && out.sequence == 2);
+    CHECK(state.formats == 0);
+  }
+  capacityAndDirectoryRecovery();
   std::printf("PASS device_store: %d checks (host LittleFS/VFS substitutes)\n", checks);
 }
