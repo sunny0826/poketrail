@@ -41,6 +41,7 @@ class DeviceStore : private SlotIO, public Store, public TestModeHost {
   bool ramHasSave_ = false;
   bool mounted_ = false;
   bool initialized_ = false;
+  bool dirReady_ = false;
   FileStore store_;
 };
 } }

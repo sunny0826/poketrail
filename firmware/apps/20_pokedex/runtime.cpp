@@ -6,6 +6,7 @@ namespace pokedex { namespace ui {
 using namespace adventure;
 namespace {
 constexpr uint32_t kStepActiveMs = 2000;
+constexpr uint32_t kInputActiveDeferMs = 3000;
 constexpr uint32_t kCheckpointDeferralMs = 120000;
 }
 CommitStatus TimedStore::commit(const Save& s) {
@@ -309,10 +310,12 @@ void Runtime::loop() {
     if (!graphicsReady_) { drawGraphicsError(screen_.battery, language()); ++metrics_.displayErrors; }
     platform_.brightness(96);
   }
-  if (engine_.ready() && safe() && !engine_.savePending() && platform_.now() - lastCheckpoint_ >= 30000) {
-    const uint32_t due = platform_.now() - lastCheckpoint_;
-    const bool stepping = platform_.now() - lastStepEventMs_ < kStepActiveMs;
-    if (!stepping || due >= kCheckpointDeferralMs) {
+  const uint32_t checkpointNow = platform_.now();
+  if (engine_.ready() && safe() && !engine_.savePending() && checkpointNow - lastCheckpoint_ >= 30000) {
+    const uint32_t due = checkpointNow - lastCheckpoint_;
+    const bool stepping = checkpointNow - lastStepEventMs_ < kStepActiveMs;
+    const bool interacting = !dimmed() && (checkpointNow - lastActivity_ < kInputActiveDeferMs);
+    if ((!stepping && !interacting) || due >= kCheckpointDeferralMs) {
       if (engine_.checkpoint() == CommandResult::Applied && screen_.page == Page::TestDiagnostics)
         dirty_ = true;
       lastCheckpoint_ = platform_.now();
