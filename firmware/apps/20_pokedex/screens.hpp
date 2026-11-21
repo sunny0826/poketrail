@@ -86,6 +86,9 @@ bool isTestPage(Page);
 void drawGraphicsError(const c152::BatteryStatus&, i18n::Language);
 class Screens {
  public:
+  Screens() = default;
+  Screens(const Screens&) = delete;
+  Screens& operator=(const Screens&) = delete;
   ~Screens();
   bool begin();
   bool startup(uint32_t elapsed);
@@ -158,18 +161,41 @@ class Screens {
   void warning(int cx, int cy, uint16_t color);
   void stamp(const adventure::Stamp&, int top);
   void badges(uint8_t mask, int top);
+  struct SpriteSlot {
+    uint16_t* pixels = nullptr;
+    uint16_t id = 0;
+    uint16_t frame = UINT16_MAX;
+    uint16_t scale = 0;
+    uint16_t silhouette = 0;
+    uint32_t lastUse = 0;
+    void reset() { id = 0; frame = UINT16_MAX; scale = 0; silhouette = 0; lastUse = 0; }
+  };
+  bool spriteBuffersReady() const {
+    return spriteSlots_[0].pixels != nullptr && spriteSlots_[1].pixels != nullptr;
+  }
+  void touchSlot(SpriteSlot&);
+  const SpriteSlot* resolveSprite(uint16_t id, uint32_t now, Playback&,
+                                  uint16_t silhouette, uint8_t maxScale,
+                                  uint16_t maxHeight, uint16_t& scaleOut);
   bool sprite(uint16_t id, uint32_t now);
   bool sprite(uint16_t id, uint32_t now, Playback&, int cy = 233, int cx = 233,
               uint16_t silhouette = 0, uint8_t maxScale = 3, uint16_t maxHeight = kMaxDisplayHeight);
+  bool spriteSilhouette(uint16_t id, uint32_t now, Playback&, int cy, int cx,
+                        uint16_t silhouette, uint8_t maxScale = 3,
+                        uint16_t maxHeight = kMaxDisplayHeight);
   bool advance(Playback&, uint16_t id, uint32_t now);
   i18n::Language language_ = i18n::Language::Chinese;
-  uint16_t* pixels_ = nullptr;
+  SpriteSlot spriteSlots_[2];
+  uint32_t spriteUseSeq_ = 0;
+  uint16_t* sceneCache_ = nullptr;
   uint16_t sceneRow_[456];
   Playback startupPlayback_, homePlayback_, battlePlayback_, enemyBattlePlayback_, resultPlayback_;
   adventure::Route sceneRoute_ = adventure::Route::Forest;
+  adventure::Route sceneCacheRoute_ = adventure::Route::Forest;
   uint64_t sceneSteps_ = 0;
   uint32_t sceneLastMs_ = 0;
   bool sceneTiming_ = false;
-  uint16_t decodedId_ = 0, decodedFrame_ = UINT16_MAX, decodedScale_ = 0, decodedSilhouette_ = 0;
+  bool sceneCacheDim_ = false;
+  bool sceneCacheValid_ = false;
 };
 } }
