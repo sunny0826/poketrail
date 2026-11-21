@@ -22,14 +22,12 @@ void motionTests() {
   stationary.cycle();
   stationary.rest(3000);
   check(stationary.steps.empty(), "single pickup/setdown no steps");
-  // 召回优先：弱冲击只要持续约 100 ms 并连续出现即确认，轻步与松口袋不再漏记。
   for (float amplitude : {0.20f, 0.12f, 0.10f, 0.08f}) {
     Feed light;
     light.rest(200);
     for (int i = 0; i < 10; ++i) light.cycleAmp(500, amplitude);
     check(light.steps.size() >= 9, "light gait still counted");
   }
-  // 混合档位：证据按档位向下兼容，弱峰不能截断更强峰的待确认候选。
   for (float companion : {0.30f, 0.10f}) {
     Feed mixed;
     mixed.rest(200);
@@ -37,8 +35,6 @@ void motionTests() {
     check(mixed.steps.size() >= 38, "alternating weak/stronger peaks keep counting");
     check(mixed.gaps == 0, "alternating tier gait keeps sampling continuous");
   }
-  // 口袋/背包佩戴：信号是脚步冲击谐波（~9Hz 衰减振荡），低通滤波必须放行
-  // 足够的冲击能量让谷值压过阈值，否则步数大量丢失。
   for (float impact : {0.15f, 0.20f, 0.30f}) {
     Feed pocket;
     for (int s = 0; s < 40; ++s)
@@ -46,7 +42,6 @@ void motionTests() {
         pocket.sample(1.0f + impact * cosf(6.2831853f * float(t) / 110.0f) * expf(-float(t) / 70.0f));
     check(pocket.steps.size() >= 38, "pocket impact steps counted at walking cadence");
   }
-  // 手持抖动叠加正常步态仍需计数。
   Feed handheld;
   uint32_t jitter = 777;
   handheld.rest(200);
@@ -57,18 +52,15 @@ void motionTests() {
                       + float(int(jitter % 101) - 50) / 1000);
     }
   check(handheld.steps.size() >= 9, "handheld jitter keeps walking cadence");
-  // 短距离：两步正常步行不再等待第三个峰；单个峰仍作为拿起/放下丢弃。
   Feed pair;
   pair.cycle(); pair.cycle();
   check(pair.steps.size() == 2, "two strong peaks confirmed as two steps");
   Feed single;
   single.cycle();
   check(single.steps.empty(), "single peak stays unconfirmed");
-  // 变节奏与上下楼不再反复清空候选。
   Feed varying;
   for (int i = 0; i < 3; ++i) { varying.cycle(500); varying.cycle(650); varying.cycle(430); }
   check(varying.steps.size() >= 8, "varying cadence keeps counting");
-  // 停顿后重新起步：2 s / 4 s 内的新峰都能确认。
   Feed paused;
   paused.cycle(); paused.cycle(); paused.cycle();
   check(paused.steps.size() == 3, "three strong peaks counted");
@@ -80,7 +72,6 @@ void motionTests() {
   before = paused.steps.size();
   paused.cycle(); paused.cycle();
   check(paused.steps.size() == before + 2, "restart after 4s pause counted");
-  // 有界噪声与孤立脉冲不能形成 cadence。
   Feed noise;
   uint32_t random = 12345;
   for (int i = 0; i < 2000; ++i) {
@@ -138,9 +129,6 @@ void motionTests() {
   check(duplicate.sample(1).qualityGap, "duplicate timestamp invalidates cadence");
 }
 void stallTests() {
-  // reviewer 场景：两个中峰正常落谷后，第三峰过顶回到 1.0g 并保持 10 s 不落谷。
-  // 跟踪必须有实际时限，否则最终落谷时会按 10 秒前的峰顶确认，释放出超过
-  // kMaxConfirmationDelayMs 的事件，日期窗口推导随之失效。
   for (float crest : {1.10f, 1.30f}) {
     Feed held;
     held.sampleFiltered(1.0f);
@@ -158,8 +146,6 @@ void stallTests() {
     check(held.steps.size() == before, "the valley after the stall releases no duplicate");
     check(held.gaps == 0, "held crest keeps sampling continuous");
   }
-  // 持续高压：只在跟踪时限达到时接受一次，之后必须停止跟踪并等待真正落谷，
-  // 不能每 2.2 s 重复产步。
   for (float level : {1.06f, 1.10f, 1.20f, 1.5f}) {
     Feed pressed;
     pressed.sampleFiltered(1.0f);

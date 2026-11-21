@@ -109,7 +109,6 @@ void scenarioLifecycle(Driver& d,const std::string& phase) {
     d.check(d.screen().page==Page::Throw,"throw fixture ready");
     d.key(SDL_SCANCODE_RIGHT,true);
     d.check(d.screen().charging,"throw held");
-    // Hold past the minimum so the release counts as one attempt.
     d.advance(600);
     if(phase=="throw-focus") {
       d.focusLost(); d.check(!d.runtime().engine().throwView().active,"focus loss releases and settles held throw");

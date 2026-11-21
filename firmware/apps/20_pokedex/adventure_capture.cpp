@@ -11,8 +11,6 @@ CommandResult Engine::beginThrow(AttemptKey key, uint32_t now) {
   if (key.attemptIndex != state_.encounter.usedBalls + 1) return CommandResult::InvalidInput;
   if (throw_.active) return CommandResult::Duplicate;
   if (state_.encounter.ruleVersion < 3 && !availableBalls(state_)) return CommandResult::NoBalls;
-  // The window starts when the player begins charging, so the countdown only
-  // runs while a ball is actually being aimed.
   throw_.active = true; throw_.key = key; throw_.targetMs = now + kThrowChargeMs;
   return CommandResult::Applied;
 }
@@ -20,7 +18,6 @@ CommandResult Engine::cancelThrow(AttemptKey key) {
   if (!throw_.active) return CommandResult::InvalidPhase;
   if (key.encounterId != throw_.key.encounterId || key.attemptIndex != throw_.key.attemptIndex)
     return CommandResult::InvalidInput;
-  // Releasing before the ball was aimed spends nothing: no attempt is written.
   throw_.active = false;
   return CommandResult::Applied;
 }
@@ -49,7 +46,6 @@ CommandResult Engine::resolveThrow(AttemptKey key, Timing timing, const ClockRea
     captureProbability(rule, catalogEntry(state_.encounter.species)->rare, timing);
   if (captured && !owns(state_, state_.encounter.species) && state_.rosterRevision == UINT64_MAX)
     return CommandResult::InvalidInput;
-  // Closing the timeline precedes any synchronous flash work.
   throw_.active = false;
   stage();
   if (overflow_) { candidate_.stepsIncomplete = true; candidate_.today.complete = false; }
@@ -68,8 +64,6 @@ CommandResult Engine::resolveThrow(AttemptKey key, Timing timing, const ClockRea
   } else if (key.attemptIndex == 2) {
     candidate_.phase = Phase::Resolved; candidate_.result = Result::Escaped;
   }
-  // Only newly counted steps may fill slots during throw settlement. Banked
-  // credit alone must not undo the waiting-count decrease from this battle.
   if (candidate_.totalSteps != state_.totalSteps) createEncounter(candidate_, queueSeed_);
   return submit();
 }

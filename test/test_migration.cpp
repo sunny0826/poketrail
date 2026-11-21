@@ -67,7 +67,6 @@ static void creditAndBoundary() {
       CHECK(e.view().phase==Phase::Walking&&e.view().explorationCredit==10000-(count-(retire?1:0))*500);
       CHECK(steps(e,1,1)==CommandResult::Applied);
       CHECK(e.view().encounter.id==2&&e.view().encounter.ruleVersion==3&&e.view().encounter.legacyFreeAttempts==0);
-      // New walking spends the upgraded save's banked credit on a random target.
       CHECK(e.view().explorationSpent+e.view().explorationCredit==e.view().totalSteps);
       CHECK(e.view().encounterTarget>=kEncounterMinSteps&&e.view().encounterTarget<=kEncounterMaxSteps);
       CHECK(e.view().voidedLegacyCount==(retire?1:0));
@@ -112,9 +111,6 @@ static void mixedSlots() {
   slots.files[0]=legacy(0);slots.files[1]=v2;FileStore chosen(slots);CHECK(chosen.load(*out).status==LoadStatus::Loaded&&out->schema==kSchemaVersion);
 }
 static void activityTail() {
-  // A real frame written by the unmerged activity-branch firmware: an ordinary
-  // schema-3 payload plus a 22-byte activity block, mid-activity-encounter
-  // (species 251, ThrowReady) with ids that consumed no exploration credit.
   char path[128]; std::snprintf(path, sizeof(path), "test/fixtures/progression/schema3-activity.bin");
   std::ifstream file(path, std::ios::binary); CHECK(bool(file));
   const std::vector<uint8_t> frame((std::istreambuf_iterator<char>(file)), {});
@@ -128,7 +124,6 @@ static void activityTail() {
   CHECK(e.begin() == CommandResult::Applied && e.ready());
   CHECK(e.view().schema == kSchemaVersion && e.view().totalSteps == 6293 && e.view().partner == 1);
   CHECK(e.view().phase == Phase::Walking && e.view().explorationCredit == 1293);
-  // The zero-cost activity ids stay inside schema-4 bookkeeping bounds.
   CHECK(e.view().explorationSpent + e.view().explorationCredit == e.view().totalSteps);
 }
 static std::unique_ptr<Save> schema4Encounter(uint16_t species, Route route, Phase phase, Result result) {
@@ -143,8 +138,6 @@ static std::unique_ptr<Save> schema4Encounter(uint16_t species, Route route, Pha
   return s;
 }
 static void routeUpgrade() {
-  // #4 小火龙 was a frozen-mask Forest encounter; schema 5 moves it to Cave and
-  // schema 7 to Kanto. Finished results keep their value.
   for(Phase phase:{Phase::EncounterReady,Phase::Resolved}){
     auto s=schema4Encounter(4,Route::Forest,phase,phase==Phase::Resolved?Result::Lost:Result::None);
     CHECK(validate(*s));
@@ -152,7 +145,6 @@ static void routeUpgrade() {
     CHECK(e.view().schema==kSchemaVersion&&e.view().encounter.species==4&&e.view().encounter.route==Route::Kanto);
     CHECK(e.view().phase==phase&&e.view().result==s->result&&e.view().encounter.id==1&&e.view().encounter.seed==0);
   }
-  // A retired activity boundary is repaired the same way and keeps its result.
   std::unique_ptr<Save> retired(new Save);
   retired->schema=4; retired->route=Route::Forest; retired->sequence=3; retired->bootGeneration=1; retired->starter=retired->partner=1;
   retired->rosterRevision=1; setRegistered(*retired,1); setOwned(*retired,1);
@@ -169,8 +161,6 @@ static void routeUpgrade() {
   CHECK(retiredEngine.view().encounter.route==Route::Kanto);
 }
 static void schema6Upgrade() {
-  // Schema 6 to 7: the encounter in play moves to its species' region, the
-  // selection restarts in Kanto, history keeps its route.
   struct Case { uint16_t species; Route from; Phase phase; Result result; Route region; };
   const Case cases[]={{72,Route::Coast,Phase::EncounterReady,Result::None,Route::Kanto},
     {158,Route::Coast,Phase::ThrowReady,Result::Won,Route::Johto},

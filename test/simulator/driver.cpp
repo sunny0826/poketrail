@@ -97,7 +97,7 @@ void Driver::focusLost(bool hostWindow) {
   event("focus-lost", hostWindow ? "host-window" : "synthetic");
   SDL_Event e = {}; e.type = SDL_WINDOWEVENT;
   e.window.event = SDL_WINDOWEVENT_FOCUS_LOST;
-  e.window.windowID = hostWindow ? app_->windowId() : 0;
+  e.window.windowID = hostWindow ? app_->windowId() : kScriptedWindowId;
   push(e);
 }
 int64_t Driver::rtcUtc() const { return app_->platform().readClock().utcSeconds; }

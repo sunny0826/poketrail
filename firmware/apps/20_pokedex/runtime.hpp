@@ -59,23 +59,15 @@ class Runtime {
   };
   Runtime(adventure::Store& store, Platform& platform,
           adventure::TestModeHost* testHost = nullptr);
-  // Cold boot only: draw before mounting storage, then call begin(). Rebuilds skip it.
   bool startStartup();
   bool startupActive() const { return startupActive_; }
   static constexpr uint32_t kStartupDurationMs = 1200;
   bool begin(bool persistBoot = true);
   void loop();
-  // Mode changes run from main.cpp after loop() returns; handle() only records
-  // the request so Runtime is never destroyed from inside its own call stack.
   TestRequest takeTestRequest() { const TestRequest r = testRequest_; testRequest_ = TestRequest::None; return r; }
   void openTestPage(Page, bool failure = false);
-  // Mode switches destroy and rebuild this object; the caller checkpoints the
-  // official engine first. This only reports eligibility and flushes.
   bool canSwitchMode() const { return safe() && !engine_.savePending(); }
   adventure::CommandResult checkpoint() { return engine_.checkpoint(); }
-  // Test-mode primitive: queue events through the same pending path as IMU
-  // steps. Large counts drain across frames; Engine always receives
-  // observeSteps from the main loop.
   bool injectSteps(unsigned count);
   const adventure::Engine& engine() const { return engine_; }
   adventure::Engine& engine() { return engine_; }
@@ -84,22 +76,20 @@ class Runtime {
   const Metrics& metrics() const { return metrics_; }
   const adventure::BattleView& practiceView() const { return practiceCapture_.battleView(); }
   bool dimmed() const { return display_ != DisplayState::Awake; }
-  // Pocket idle may pause the CPU until the next sample. Vibration, an
-  // unfinished save, and an attached USB host keep the loop awake; a key only
-  // ends the current pause. A USB host keeps light sleep from dropping CDC.
+  // A USB host keeps light sleep from dropping CDC.
   bool pocketIdle() const {
     return display_ == DisplayState::Asleep && !releaseGate_ && !platform_.vibrationActive() &&
            !engine_.savePending() && !platform_.usbHostPresent();
   }
   uint32_t nextSampleMs(uint32_t now) const {
-    // A 100ms gap discards the walking cadence. Keep 40ms for wake latency.
+    static constexpr uint32_t kWakeLatencyMarginMs = 40;
+    static constexpr uint32_t kMaxSleepWindowMs = motion::kMaxSampleGapMs - kWakeLatencyMarginMs;
+    static constexpr uint32_t kSamplePollIntervalMs = 20;
     const uint32_t elapsed = now - lastSample_;
-    if (!hasSample_ || elapsed >= 60) return 0;
-    return std::min<uint32_t>(60 - elapsed, 20);
+    if (!hasSample_ || elapsed >= kMaxSleepWindowMs) return 0;
+    return std::min<uint32_t>(kMaxSleepWindowMs - elapsed, kSamplePollIntervalMs);
   }
   void feedback(uint16_t duration);
-  // Host calibration over the bounded serial protocol. The query is read-only;
-  // the set path reuses the manual clock transaction and its save retries.
   clock_sync::Status clockSyncStatus();
   const char* syncClockFromHost(uint32_t id, int64_t utcSeconds, int16_t offsetMinutes);
  private:
@@ -109,7 +99,6 @@ class Runtime {
   bool hostClockVerified(int64_t targetUtc, int16_t offset);
   void clearHostClock();
   void navigate(Page);
-  // Opens the main menu on `focus`, or the first selectable entry after it.
   void openMenu(MenuItem focus);
   void syncTestMode();
   void waitForRelease();

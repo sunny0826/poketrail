@@ -12,14 +12,12 @@ inline adventure::Action battleEffectAction(const adventure::BattleView& battle)
   return battle.settledCue;
 }
 constexpr int kPartnerX = 155, kPartnerY = 232, kEnemyX = 311, kEnemyY = 226;
-// The cue circles the actor whose key it asks for: attack (right key) on the enemy, dodge (left key) on the partner.
 constexpr int kCueTargetRadius = 48, kCueStartRadius = 92;
 inline int cueRadius(int32_t remaining) {
   const int32_t lead = int32_t(adventure::kCueLeadMs);
   const int32_t left = remaining < 0 ? 0 : remaining > lead ? lead : remaining;
   return kCueTargetRadius + int((kCueStartRadius - kCueTargetRadius) * left / lead);
 }
-// A neutral next-beat dot slides left at 0.07 px/ms; no direction or judgment target.
 constexpr int kLaneY = 357, kLaneHalfWidth = 165;
 constexpr int laneOffset(int32_t remaining) { return int(remaining * 7 / 100); }
 inline bool laneVisible(int32_t remaining) {

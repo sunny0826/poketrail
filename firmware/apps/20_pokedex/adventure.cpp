@@ -30,8 +30,6 @@ CommandResult Engine::begin(bool persistBoot) {
     candidate_.result = Result::Released;
   }
   if (!persistBoot) {
-    // Mode switches are not device boots. Load the official slot without the
-    // normal boot-generation write so a test session cannot change its bytes.
     state_ = candidate_;
     ready_ = true;
     dirty_ = false;
@@ -186,7 +184,7 @@ CommandResult Engine::retreat() {
   stage(); candidate_.phase = Phase::Resolved; candidate_.result = Result::Retreated;
   return submit();
 }
-CommandResult Engine::acknowledgeResult(uint64_t id, uint32_t /* seed */) {
+CommandResult Engine::acknowledgeResult(uint64_t id, uint32_t) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
   if (state_.phase != Phase::Resolved) return CommandResult::InvalidPhase;
   if (id != state_.encounter.id) return CommandResult::InvalidInput;
@@ -199,9 +197,6 @@ CommandResult Engine::acknowledgeResult(uint64_t id, uint32_t /* seed */) {
     candidate_.encounterQueue[--candidate_.encounterQueueSize] = Encounter();
     candidate_.phase = Phase::EncounterReady;
   }
-  // Confirming a result only consumes the finished encounter and advances FIFO.
-  // Keep banked steps for the next walk or region change, so a stationary player
-  // can work through the queue without immediately refilling each freed slot.
   return submit();
 }
 } }

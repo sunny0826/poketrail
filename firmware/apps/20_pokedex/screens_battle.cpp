@@ -45,7 +45,6 @@ void impact(int x, int y, uint32_t age, uint16_t color, bool strong) {
 }
 uint16_t cueColor(bool attack, bool blink) { return blink ? theme::kText : attack ? theme::kRed : theme::kBlue; }
 void lane(const BattleView& b, uint32_t now) {
-  // A neutral dot previews the following beat, never its action or key direction.
   M5.Display.fillRoundRect(233 - kLaneHalfWidth - 10, 344, 2 * kLaneHalfWidth + 21, 27, 13, theme::kBackground);
   M5.Display.drawFastHLine(233 - kLaneHalfWidth, kLaneY, 2 * kLaneHalfWidth + 1, theme::kTrack);
   if (!b.active || b.paused) return;
@@ -94,15 +93,11 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
       aim(v.encounter.species, now, true, int32_t(e.throwView().targetMs - now));
       line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
     } else if (legacyNoBalls) {
-      // A legacy encounter with an empty ball stock cannot be thrown, and the
-      // menu is gone, so the page carries its own way out.
       actorShadow(233, 147);
       sprite(v.encounter.species, now, battlePlayback_, 147, 233, 0, 2, 110);
       line(tr(Text::NoBalls), 196, theme::kRed);
       item(s, 0, tr(Text::EndEncounter), menu_layout::kTop);
     } else {
-      // Aiming state: the ball waits in the hand, no window runs yet and no
-      // ring is drawn, so the ring only ever means "the clock is running".
       aim(v.encounter.species, now, false, 0);
       line(tr(Text::HoldThrow), 399, theme::kMint);
     }

@@ -52,7 +52,6 @@ bool update(State& state, const Sprite& sprite, uint32_t now_ms) {
   if (state.reacting) {
     const uint32_t elapsed = now_ms - state.reaction_started_ms;
     state.reacting = elapsed < kReactionMs;
-    // 一次轻跳，后半段自然落回中心；不重启原始动作。
     const int32_t t = elapsed < 480 ? static_cast<int32_t>(elapsed) : 480;
     state.jump = state.reacting ? 4 * 14 * t * (480 - t) / (480 * 480) : 0;
   }
@@ -60,5 +59,5 @@ bool update(State& state, const Sprite& sprite, uint32_t now_ms) {
          old_jump != state.jump;
 }
 
-}  // namespace viewer
-}  // namespace pokedex
+}
+}

@@ -23,8 +23,6 @@ struct Request {
   int16_t offsetMinutes = 0;
 };
 
-// Incremental parser. Bytes may be split arbitrarily across main-loop passes;
-// overlong, truncated or polluted lines are rejected without allocating.
 class Parser {
  public:
   Request feed(uint8_t byte);

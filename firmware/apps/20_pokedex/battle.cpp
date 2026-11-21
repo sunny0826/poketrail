@@ -31,7 +31,6 @@ namespace {
 struct Cue { bool attack, feint; uint8_t history; };
 Cue decide(uint32_t seed, uint8_t index, uint8_t history, uint8_t feintPercent) {
   const uint32_t h = mixRandom(seed ^ (uint32_t(index) * 0x9e3779b9u) ^ 0x5bd1e995u);
-  // Two equal actions in a row force a switch, so every seed offers at least 5 attack cues.
   const uint8_t last = history & 3;
   const bool attack = index >= 2 && last == 0 ? true : index >= 2 && last == 3 ? false : h % 100 < 55;
   return {attack, index > 0 && (h >> 8) % 100 < feintPercent, uint8_t((history << 1 | (attack ? 1 : 0)) & 3)};

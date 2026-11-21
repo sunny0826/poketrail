@@ -7,7 +7,6 @@ static unsigned checks = 0;
 
 namespace {
 void perfect(Battle& b, const BattleView& v) { b.press(v.expected, v.targetMs); }
-// Perfect dodges build energy while normal attacks keep the enemy alive.
 void charge(Battle& b, const BattleView& v) { b.press(v.expected, v.targetMs + (v.expected == Action::Attack ? 100 : 0)); }
 void chargeUntil(Battle& b, Action next) {
   while (b.view().active && (b.view().energy < kSpecialEnergy || b.view().expected != next)) {

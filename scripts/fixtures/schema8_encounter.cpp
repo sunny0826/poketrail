@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <vector>
 
-// Compiled against the frozen pre-queue encoder, never the implementation under test.
 int main(int argc, char** argv) {
   using namespace pokedex::adventure;
   if (argc != 2) return 1;

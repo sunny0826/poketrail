@@ -6,6 +6,8 @@
 #include <vector>
 
 namespace simulator {
+constexpr uint32_t kScriptedWindowId = 0;
+
 class App {
  public:
   App(const std::string& saveDir, const std::string& screenshots, const Options& options = Options());

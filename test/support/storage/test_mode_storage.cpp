@@ -251,7 +251,6 @@ static void faultInjection() {
   d.setFault(TestFault::Load);
   CHECK(d.load(loaded).status == LoadStatus::IoError);
   CHECK(d.leaveTest());
-  // Official mode ignores a stale fault switch.
   d.setFault(TestFault::Load);
   CHECK(!d.testMode());
   CHECK(d.load(loaded).status == LoadStatus::Loaded && loaded.sequence == 1);

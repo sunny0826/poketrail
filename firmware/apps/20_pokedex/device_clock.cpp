@@ -4,7 +4,16 @@
 
 namespace pokedex { namespace device_clock {
 namespace {
+const uint8_t kExtension = 0x1C;
 const uint8_t kFlags = 0x1D;
+const uint8_t kControl = 0x1E;
+const uint8_t kPowerControl = 0x1F;
+const uint8_t kDigitalOffset = 0x30;
+const uint8_t kExtension2 = 0x31;
+const uint8_t kExtensionDefaultTeOff = 0x04;
+const uint8_t kControlNormal = 0x00;
+const uint8_t kDigitalOffsetNone = 0x00;
+const uint8_t kExtension2ReservedTestMask = 0x01;
 const uint8_t kVblf = 0x80;
 const uint8_t kVlf = 0x02;
 const uint8_t kTestStop = 0xC0;
@@ -44,13 +53,13 @@ bool recover(m5::RTC_Base& base, Reading& result) {
   // Clock-only initialization: unused alarm/timer registers may remain RAM
   // (Epson ETM50E-10 pp57-58). Keep the board's charging/threshold settings.
   uint8_t power = 0, extension = 0;
-  if (!base.readRegister(0x1F, &power, 1)
-      || !base.readRegister(0x31, &extension, 1)
-      || !base.writeRegister8(0x1E, 0)  // TEST, STOP and IRQ enables off.
-      || !base.writeRegister8(0x1C, 0x04) // TE off, reset extension settings.
-      || !base.writeRegister8(0x30, 0) // No digital correction.
-      || !base.writeRegister8(0x31, extension & 1) // Reserved TEST bits off.
-      || !base.writeRegister8(0x1F, (power & 0xF7) | 0x10)) {
+  if (!base.readRegister(kPowerControl, &power, 1)
+      || !base.readRegister(kExtension2, &extension, 1)
+      || !base.writeRegister8(kControl, kControlNormal)
+      || !base.writeRegister8(kExtension, kExtensionDefaultTeOff)
+      || !base.writeRegister8(kDigitalOffset, kDigitalOffsetNone)
+      || !base.writeRegister8(kExtension2, extension & kExtension2ReservedTestMask)
+      || !base.writeRegister8(kPowerControl, (power & 0xF7) | 0x10)) {
     result.ioError = true;
     return false;
   }

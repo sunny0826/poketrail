@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# 烧录宝可梦像素应用到 M5Stack StopWatch。
-#
-# 用法：
-#   rtk proxy mise exec -- ./scripts/flash.sh              # 自动探测端口并校时
-#   rtk proxy mise exec -- ./scripts/flash.sh /dev/cu.usbmodemXXXX
-#   rtk proxy mise exec -- ./scripts/flash.sh --no-sync    # 只烧录，不校时
-#
-# 烧录前请确认：
-#   1. 已用数据线连接 USB Type-C
-#   2. 长按电源键约 2 秒进入下载模式（内部绿灯亮起）
-#   3. 已备份出厂固件（首次烧录前必做，见 scripts/backup.sh）
 
 set -euo pipefail
 
@@ -57,10 +46,6 @@ done
 
 echo "烧录到 ${port}"
 
-# 使用 requirements-dev.txt 固定的 esptool 5.6.0 进行设备写入。
-# 三个镜像的偏移与 PlatformIO 板级定义一致：
-#   bootloader 0x0 / partitions 0x8000 / app 0x10000
-# flash_mode、flash_freq、flash_size 从固件头读出来，不写死。
 read -r flash_mode flash_freq flash_size < <(
   rtk proxy mise exec -- python3 -m esptool --chip esp32s3 image-info "${build_dir}/firmware.bin" \
     | awk -F': +' '

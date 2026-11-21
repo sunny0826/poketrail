@@ -20,7 +20,6 @@ template<class T> using LargeObject = std::unique_ptr<T, LargeObjectDeleter<T>>;
 template<class T> using LargeObject = std::unique_ptr<T>;
 #endif
 
-// Large state stays in PSRAM on the C152, leaving internal RAM for I/O and stacks.
 template<class T, class... Args> LargeObject<T> makeLargeObject(Args&&... args) {
 #if defined(ARDUINO_ARCH_ESP32)
   void* memory = heap_caps_malloc(sizeof(T), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -30,4 +29,4 @@ template<class T, class... Args> LargeObject<T> makeLargeObject(Args&&... args) 
   return LargeObject<T>(new (std::nothrow) T(std::forward<Args>(args)...));
 #endif
 }
-}  // namespace pokedex
+}

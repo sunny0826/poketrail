@@ -9,13 +9,11 @@ struct ThrowView {
 };
 class Engine {
  public:
+  static constexpr size_t kStepQueueCapacity = 128;
   explicit Engine(Store& store) : store_(store) {}
   CommandResult begin(bool persistBoot = true);
-  // Re-anchor the in-memory clock after a mode switch without writing the save.
   void adoptClock(const ClockReading&);
   const Save& view() const { return state_; }
-  // Boot retries retain the language of the validated loaded save. Other
-  // pending transactions never expose their candidate language to the UI.
   i18n::Language language() const { return bootPending_ ? candidate_.language : state_.language; }
   const BattleView& battleView() const { return battle_.view(); }
   const ThrowView& throwView() const { return throw_; }
@@ -43,7 +41,6 @@ class Engine {
   CommandResult resume(uint32_t nowMs);
   CommandResult retreat();
   CommandResult beginThrow(AttemptKey, uint32_t nowMs);
-  // Abandons an in-flight throw window without spending an attempt.
   CommandResult cancelThrow(AttemptKey);
   CommandResult pressThrow(AttemptKey, uint32_t pressMs, const ClockReading&);
   CommandResult acknowledgeResult(uint64_t encounterId, uint32_t seedForNext);
@@ -75,7 +72,6 @@ class Engine {
   bool bootPending_ = false;
   Battle battle_;
   ThrowView throw_;
-  static constexpr size_t kStepQueueCapacity = 128;
   std::array<StepEvent, kStepQueueCapacity> queue_;
   size_t queueSize_ = 0;
   uint32_t queueSeed_ = 0;

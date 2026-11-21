@@ -166,14 +166,11 @@ void Runtime::handleThrow(const Input& input) {
   const auto& encounter = engine_.view().encounter;
   const bool legacyNoBalls = encounter.ruleVersion < 3 && !availableBalls(engine_.view());
   if (legacyNoBalls) {
-    // A legacy encounter with an empty ball stock cannot be thrown and the
-    // menu is gone, so the page offers one explicit way out.
     if (input.click && menu_layout::rowAt(input.x, input.y) == 0) {
       screen_.command = engine_.giveUpCapture(encounter.id);
       waitForRelease();
       return;
     }
-    // The side keys confirm the same single button.
     if (input.leftDown && input.rightDown) {
       screen_.command = engine_.giveUpCapture(encounter.id);
       waitForRelease();
@@ -181,7 +178,6 @@ void Runtime::handleThrow(const Input& input) {
     }
     if (input.click || input.swipe) return;
   }
-  // Exclude the top touch region from starting a throw.
   const bool throwTouch = input.touch && input.y >= 80;
   if (engine_.throwView().active) {
     if ((input.right || throwTouch) && !screen_.charging) {
@@ -191,7 +187,6 @@ void Runtime::handleThrow(const Input& input) {
     }
     return;
   }
-  // Starting charge opens the window without spending an attempt.
   if ((input.right || throwTouch) && !screen_.charging) {
     screen_.command = engine_.beginThrow(AttemptKey(encounter.id, encounter.usedBalls + 1), input.at);
     if (screen_.command == CommandResult::Applied) {
@@ -274,7 +269,6 @@ void Runtime::handlePracticeThrow(const Input& input) {
     if (input.any()) { captureSkip(screen_.capture, input.at); waitForRelease(); }
     return;
   }
-  // The top edge ends the practice session, so a throw never starts there.
   const bool throwTouch = input.touch && input.y >= 80;
   if (practiceCapture_.throwView().active) {
     if ((input.right || throwTouch) && !screen_.charging) {
@@ -284,8 +278,6 @@ void Runtime::handlePracticeThrow(const Input& input) {
     }
     return;
   }
-  // Aiming state: the first hold starts the practice throw window. The session
-  // still exits by touching the top edge, so practice never traps the player.
   if ((input.right || throwTouch) && !screen_.charging) {
     if (practiceCapture_.beginThrow(input.at)) {
       screen_.charging = true;

@@ -63,12 +63,16 @@ bool carry(Driver& d, unsigned row, uint16_t species, const std::string& tag) {
   return expect(d, d.save().partner == species, tag + " carries expected species");
 }
 
+void tapCenter(Driver& d, const pokedex::ui::menu_layout::Rect& rect) {
+  d.tap(rect.x + rect.width / 2, rect.y + rect.height / 2);
+}
+
 bool homeEvolution(Driver& d, uint16_t from, uint16_t to, const std::string& tag) {
   if (!toHome(d, tag)) return false;
   REQUIRE(d, wait(d, [&] { return homeEvolutionReady(d.runtime().engine()); }, 3000,
                   tag + " home evolve button becomes available"),
           tag + " home evolve button becomes available");
-  d.tap(233, 82);  // centre of kHomeEvolveButton {173, 67, 120, 30}
+  tapCenter(d, pokedex::ui::kHomeEvolveButton);
   REQUIRE(d, page(d, Page::EvolutionConfirm, tag + " opens evolution confirm"), tag + " opens evolution confirm");
   return expect(d, d.screen().evolution.from == from && d.screen().evolution.to == to,
                 tag + " confirmation names expected evolution");
@@ -80,7 +84,6 @@ bool revealEvolution(Driver& d, Page animation, const std::string& tag) {
   const char* target = pokedex::i18n::speciesName(d.runtime().language(), d.screen().evolutionAnim.to);
   REQUIRE(d, !rendered_text::contains(target, theme::kMint), tag + " has not yet revealed the target");
   d.press(SDL_SCANCODE_RIGHT);
-  // Broad input-response watchdog, well before the natural reveal/completion.
   d.until([&] {
     return d.screen().page == animation && rendered_text::contains(target, theme::kMint);
   }, 500, tag + " first new input reveals the target early");
@@ -149,7 +152,7 @@ void viewerKeys(Driver& d, SDL_Scancode key, unsigned count, const std::string& 
 
 bool openPreviewTargets(Driver& d, const std::string& tag) {
   d.frames(2);
-  d.tap(233, 423);  // centre of kEvolutionPreviewButton {153, 402, 160, 42}
+  tapCenter(d, pokedex::viewer_screen::kEvolutionPreviewButton);
   return page(d, Page::EvolutionPreviewTargets, tag + " opens evolution targets");
 }
 

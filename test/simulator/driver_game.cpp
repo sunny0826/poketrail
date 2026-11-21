@@ -20,7 +20,6 @@ void Driver::winBattle(bool practice) {
   until([&] { return screen().page == (practice ? Page::PracticeThrow : Page::Throw); }, 2000, "win reaches throw page");
 }
 void Driver::replayBattle() {
-  // Recorded player inputs are independent of Runtime's cue selection.
   const uint32_t start = now();
   const uint32_t offsets[] = {2012, 3512, 4612, 5712, 6812};
   const SDL_Scancode keys[] = {SDL_SCANCODE_RIGHT, SDL_SCANCODE_RIGHT,

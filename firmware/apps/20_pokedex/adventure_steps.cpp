@@ -36,7 +36,6 @@ CommandResult Engine::observeSteps(const StepEvent* events, size_t count, uint32
     const CommandResult r = enqueue(events, count, seed);
     return r == CommandResult::Applied ? (pending_ ? CommandResult::SavePending : CommandResult::Deferred) : r;
   }
-  // Process bounded chunks without imposing a 128-step maximum on callers.
   bool changed = false;
   for (size_t i = 0; i < count; ++i) {
     const CommandResult q = enqueue(events + i, 1, seed);

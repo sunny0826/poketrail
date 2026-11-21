@@ -4,22 +4,13 @@
 namespace pokedex { namespace motion {
 namespace {
 const uint32_t kGapMs = kMaxSampleGapMs;
-// Recall-first tuning: a step only has to be >=220 ms apart (273 steps/min) and
-// may be followed by up to 2.2 s of rest before its candidate is discarded.
 const uint32_t kMinStepMs = 220;
 const float kValley = 0.97f;
-// Evidence required scales down as the impact grows: a faint crest must stay
-// above kWeakPeak for ~100 ms, a medium crest is accepted whatever its width,
-// and a strong impact confirms on two peaks. Any accepted crest is at least
-// weak evidence, so a mixed tier gait confirms on kConfirmPeaks peaks.
 const float kWeakPeak = 1.05f;
 const float kMediumPeak = 1.08f;
 const float kStrongPeak = 1.12f;
 const uint8_t kWeakCrestSamples = 5;
 const uint8_t kStrongConfirm = 2;
-// Starting a cadence from ambiguous crests needs a rhythm, not just three
-// excursions: bounded IMU noise can also produce three candidate peaks close
-// together. Confirmed cadence keeps the wider tracking tolerance below.
 const uint32_t kConfirmLowPct = 65;
 const uint32_t kConfirmHighPct = 135;
 const uint32_t kIrregularLowPct = 60;
@@ -74,10 +65,6 @@ void Detector::acceptPeak(uint32_t at, float peak, uint8_t crest, StepBatch& res
   pending_[pendingCount_] = {at, peakTag_};
   pendingTier_[pendingCount_++] = tier;
   for (;;) {
-    // Evidence counts monotonically towards weaker tiers: a strong crest also
-    // proves medium and weak cadence, a medium crest also proves weak cadence.
-    // Counting the whole pending window, instead of a contiguous medium/strong
-    // suffix, keeps alternating tiers from being dropped before confirmation.
     uint8_t strongCount = 0;
     for (uint8_t i = 0; i < pendingCount_; ++i)
       if (pendingTier_[i] >= 2) ++strongCount;
@@ -89,7 +76,6 @@ void Detector::acceptPeak(uint32_t at, float peak, uint8_t crest, StepBatch& res
       return;
     }
     if (pendingCount_ < kConfirmPeaks) return;
-    // Irregular candidate chain: keep the newest peaks and re-check the rest.
     for (uint8_t i = 1; i < pendingCount_; ++i) {
       pending_[i - 1] = pending_[i];
       pendingTier_[i - 1] = pendingTier_[i];
@@ -141,18 +127,11 @@ StepBatch Detector::sample(float x, float y, float z, uint32_t now, uint16_t tag
     return result;
   }
   lastSample_ = now;
-  // 0.8 passes the ~9Hz footstep impact carried in pockets and bags; 0.5
-  // attenuated it below the valley threshold and lost most pocket steps.
   filtered_ += 0.8f * (magnitude - filtered_);
   if (!tracking_ && (confirmed_ || pendingCount_) && now - lastPeak_ > kMaxStepMs)
     clearCadence();
   if (filtered_ >= kWeakPeak && (armed_ || tracking_) && crestSamples_ < kWeakCrestSamples)
     ++crestSamples_;
-  // A crest that never returns to the valley would stay tracked forever and be
-  // released at an arbitrarily old timestamp once the signal finally dips.
-  // Bound that wait: confirm the tracked peak one cadence window after its apex
-  // and drop the cadence, so a sustained high load adds at most that one peak and
-  // cannot re-arm until the signal actually reaches the valley again.
   if (tracking_ && now - peakAt_ > kMaxStepMs) {
     acceptPeak(peakAt_, peak_, crestSamples_, result);
     clearCadence();

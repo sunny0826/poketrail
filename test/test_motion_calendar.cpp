@@ -42,7 +42,6 @@ void calendarTests() {
   check(dayKey(c, key) && key == 20240301, "actual calendar day key");
   uint8_t week = 255;
   check(weekday({2000,1,1,0,0,0}, week) && week == 6, "Saturday weekday");
-  // Confirm after midnight; assign each delayed peak with its original monotonic anchor.
   Feed midnight;
   midnight.cycle(); midnight.cycle(); midnight.cycle();
   check(toUtc({2026,10,22,23,59,59}, 480, utc), "midnight anchor");

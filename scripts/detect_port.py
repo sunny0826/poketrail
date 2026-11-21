@@ -13,12 +13,10 @@ from __future__ import annotations
 import glob
 import sys
 
-
 def candidates() -> list[str]:
     modem = sorted(glob.glob("/dev/cu.usbmodem*"))
     serial = sorted(glob.glob("/dev/cu.usbserial-*"))
     usb = sorted(glob.glob("/dev/cu.usb*"))
-    # 去重并保持优先级
     seen: set[str] = set()
     ordered: list[str] = []
     for path in modem + serial + usb:
@@ -27,18 +25,15 @@ def candidates() -> list[str]:
             ordered.append(path)
     return ordered
 
-
 def main() -> int:
     ports = candidates()
     if not ports:
         print("", file=sys.stderr)
         return 1
-    # 排除明显不是开发板的（蓝牙、内部调制解调器）
     filtered = [p for p in ports if "Bluetooth" not in p and "modem" not in p.lower() or "usbmodem" in p.lower()]
     chosen = (filtered or ports)[0]
     print(chosen)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

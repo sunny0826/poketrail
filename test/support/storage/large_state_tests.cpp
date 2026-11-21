@@ -54,7 +54,6 @@ void ramModeAllocation() {
 void scenarioAllocation() {
   MemoryStore store; TestHost host;
   store.saved.sequence = 10; store.saved.encounterTarget = 300;
-  // Candidate, encoded buffer and the real codec temporary each fail in turn.
   for (int allocation = 0; allocation != 3; ++allocation) {
     budget = allocation;
     CHECK(!TestConsole::seed(store, host, TestScenario::NearEncounter));

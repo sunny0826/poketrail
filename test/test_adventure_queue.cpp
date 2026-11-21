@@ -12,8 +12,6 @@ static void sameEncounter(const Encounter& a, const Encounter& b) {
   CHECK(a.id == b.id && a.species == b.species && a.partner == b.partner &&
         a.route == b.route && a.seed == b.seed && a.ruleVersion == b.ruleVersion);
 }
-// Banked exploration fills only available slots; every snapshot is published
-// atomically, remains unique, and is served FIFO even after roster changes.
 static void capacityAndFifo() {
   auto save = fixture(1, 20000); save->progress[0].walked = 20000;
   setOwned(*save, 4); setRegistered(*save, 4);
@@ -44,7 +42,6 @@ static void capacityAndFifo() {
   Engine reboot(store); CHECK(reboot.begin() == CommandResult::Applied);
   sameEncounter(reboot.view().encounter, frozen.encounterQueue[0]);
   CHECK(pendingEncounterCount(reboot.view()) == 31);
-  // Resuming walking can spend the retained balance, using the current partner.
   CHECK(steps(reboot, 1, 2) == CommandResult::Applied);
   CHECK(pendingEncounterCount(reboot.view()) == 32);
   CHECK(reboot.view().encounterQueue[30].partner == 2);
@@ -56,8 +53,6 @@ static void capacityAndFifo() {
   CHECK(reboot.checkpoint() == CommandResult::Deferred);
   CHECK(reboot.retreat() == CommandResult::Applied);
 }
-// Even with enough credit for more encounters, stationary play drains the queue
-// to zero. Failed confirmation, duplicate input and restart cannot refill it.
 static void drainBankedQueue() {
   auto save = fixture(1, 20000);
   MemoryStore store; store.disk = encoded(*save); Engine e(store);
@@ -103,7 +98,6 @@ static void drainBankedQueue() {
   CHECK(pendingEncounterCount(reboot.view()) > 0);
   CHECK(reboot.view().explorationCredit + reboot.view().explorationSpent == reboot.view().totalSteps);
 }
-// A failed append or FIFO pop must retry byte-for-byte, without revealing it.
 static void retryAndRecovery() {
   MemoryStore store; Engine e(store); CHECK(e.begin() == CommandResult::Applied);
   CHECK(e.chooseStarter(1) == CommandResult::Applied);
@@ -125,15 +119,12 @@ static void retryAndRecovery() {
   store.before = false; CHECK(e.retrySave() == CommandResult::Applied && store.disk == pop);
   sameEncounter(e.view().encounter, next);
   CHECK(e.startBattle(0) == CommandResult::Applied);
-  // Paused battles can checkpoint and reboot back into EncounterReady.
   CHECK(e.requestPause() == CommandResult::Applied);
   CHECK(e.tick(e.battleView().targetMs + 181, clockFor(e)) == CommandResult::Applied);
   CHECK(e.checkpoint() == CommandResult::Applied);
   Engine reboot(store); CHECK(reboot.begin() == CommandResult::Applied);
   CHECK(reboot.view().phase == Phase::EncounterReady); sameEncounter(reboot.view().encounter, next);
 }
-// Correct CRC cannot authorize duplicate species, reordered ids, stale attempt
-// data, wrong region/partner, oversized counts, or a hidden old-schema queue.
 static void semanticCorruption() {
   auto save = fixture(1, 3000); MemoryStore store; store.disk = encoded(*save); Engine e(store);
   CHECK(e.begin() == CommandResult::Applied && steps(e, 1, 1) == CommandResult::Applied);
@@ -157,7 +148,6 @@ static void semanticCorruption() {
   size_t written = 99; std::vector<uint8_t> bytes(codec::maxEncodedSize);
   CHECK(!codec::encode(old, bytes.data(), bytes.size(), written) && written == 0);
 }
-// Schema8 retains the old payload and encounter/ball state on migration.
 static void schema8Migration() {
   auto old = fixture(1, 1000); old->schema = 8; old->nextEncounterId = 2;
   old->legacyChargedCount = 1; old->explorationSpent = 500; old->explorationCredit = 500;
@@ -165,9 +155,6 @@ static void schema8Migration() {
   old->encounter.route = Route::Kanto; old->encounter.seed = 123; old->encounter.ruleVersion = 1;
   for (auto& a : old->encounter.attempts) a.ruleVersion = 1;
   old->phase = Phase::ThrowReady; old->result = Result::Won; old->ballsSpent = 1;
-  // No attempt was charged in this scene; ballsSpent is historical inventory.
-  // Frozen bytes emitted by the unmodified c5a99dd schema8 codec. This
-  // independent historical frame guards against matching encoder/decoder drift.
   struct Byte { size_t offset; uint8_t value; };
   const Byte nonzero[] = {
     {0,65},{1,86},{2,68},{3,49},{4,8},{6,19},{14,11},{15,190},

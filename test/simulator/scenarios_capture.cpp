@@ -8,10 +8,8 @@ namespace e2e {
 namespace {
 
 constexpr uint16_t kThrowSpecies = 72;
-}  // namespace
+}
 
-// 投球后等待结算落定：提交完成进 Result，保存故障进 Error，
-// 未结束时回到 Throw。
 void waitSettled(Driver& d, const char* what) {
   d.until(
       [&] {
@@ -34,9 +32,8 @@ uint16_t capturedSpecies(const Save& s) {
     if (s.captureCounts[id - 1]) return id;
   return 0;
 }
-}  // namespace
+}
 
-// 新档引导：跳过日期 → 选择伙伴 1 → Home
 void bootNewSave(Driver& d) {
   d.frames();
   d.check(d.screen().page == Page::DateWelcome, "new save opens date welcome");
@@ -49,7 +46,6 @@ void bootNewSave(Driver& d) {
   d.check(d.save().starter == 1, "starter 1 selected");
 }
 
-// EncounterReady 遭遇从菜单推进到战斗并真实获胜
 void enterAndWinBattle(Driver& d, bool fixed) {
   d.homeMenu();
   d.select(MenuItem::Encounter);
@@ -62,7 +58,6 @@ void enterAndWinBattle(Driver& d, bool fixed) {
   d.shot("throw-ready");
 }
 
-// Result 页确认（selected 0），遭遇收尾回 Home
 void acknowledge(Driver& d) {
   const auto completed = d.save().encounter.id;
   d.press(SDL_SCANCODE_RETURN);
@@ -72,7 +67,6 @@ void acknowledge(Driver& d) {
 }
 
 namespace {
-// 捕获记录的数据级断言（供 run 与 reload 复用）
 void checkCaptureRecord(Driver& d, uint16_t species) {
   const Save& s = d.save();
   d.check(s.captureCounts[species - 1] == 1, "exactly one capture of the species");
@@ -82,10 +76,8 @@ void checkCaptureRecord(Driver& d, uint16_t species) {
   d.check(!s.firstCapture[species - 1].at.timeKnown, "first capture keeps unknown date");
 }
 
-}  // namespace
+}
 
-// P0-02：新档走路遭遇 → 真实对战获胜 → 完美投球捕获 → 确认；
-// 检查图鉴/伙伴/记录入口与未知日期，reload 断言无重复奖励。
 void scenarioCapture(Driver& d, const std::string& phase) {
   const bool english = phase == "english" || phase == "english-reload";
   if (phase == "run" || phase == "fixed" || phase == "slow" || phase == "english") {
@@ -132,7 +124,6 @@ void scenarioCapture(Driver& d, const std::string& phase) {
     d.select(MenuItem::Pokedex);
     d.until([&] { return d.screen().page == Page::Viewer; }, 4000, "viewer opens after capture");
     d.frames();
-    // The frozen target is #116: walk forward from #1, avoiding a full-catalog detour.
     for (unsigned i = 0; pokedex::viewer_screen::species() != species && i < kSpeciesCount; ++i)
       d.press(SDL_SCANCODE_RIGHT);
     d.check(pokedex::viewer_screen::species() == species, "viewer displays captured species");
@@ -193,9 +184,6 @@ void scenarioCapture(Driver& d, const std::string& phase) {
   }
 }
 
-// P0-03：throw fixture（species 72、rule3）两投均 Miss 恰好 Escaped，
-// 库存不变，确认后走路开启新 ID；aim 变体证明空等与轻触都不消耗机会，
-// aim-reload 断言 ThrowReady 与已消耗的一球恢复且窗口不复活。
 void scenarioThrows(Driver& d, const std::string& phase) {
   if (phase == "run") {
     d.frames();
@@ -260,8 +248,6 @@ void scenarioThrows(Driver& d, const std::string& phase) {
   }
 }
 
-// Each fault starts from its own fixture. Hold the retry key across successful
-// publication to prove it cannot also acknowledge Result without a release.
 void scenarioRetry(Driver& d, const std::string& phase) {
   if (phase == "before" || phase == "after" || phase == "readback") {
     d.frames();
@@ -269,8 +255,6 @@ void scenarioRetry(Driver& d, const std::string& phase) {
     d.check(d.save().encounter.species == kThrowSpecies, "fixture species 72");
     d.event("retry-seed", "seed=" + std::to_string(d.save().encounter.seed) +
                               " rule=" + std::to_string(d.save().encounter.ruleVersion));
-    // pressThrow 在松开瞬间同步提交，故障必须先武装才命中该次写入；
-    // 提交失败时产品不启动捕获动画，Error 直接替换结果页。
     d.fault(phase == "before" ? Fault::BeforeWrite : phase == "after" ? Fault::AfterWrite : Fault::ReadBack);
     d.throwBall(true);
     d.check(!d.screen().capture.active, "failed commit starts no reward animation");
@@ -313,5 +297,5 @@ void scenarioRetry(Driver& d, const std::string& phase) {
   }
 }
 
-}  // namespace e2e
-}  // namespace simulator
+}
+}

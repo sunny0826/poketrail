@@ -120,12 +120,11 @@ size_t finishLine(char* out, size_t capacity, char* line, size_t lineSize, int l
   return writeLine(out, capacity, line) ? size_t(length) : 0;
 }
 
-}  // namespace
+}
 
 Request Parser::feed(uint8_t byte) {
   Request none;
   if (byte == '\n') return finish();
-  // Terminals may send CRLF; a CR never changes the payload.
   if (byte == '\r') return none;
   if (byte < 0x20 || byte > 0x7e) {
     invalid_ = true;

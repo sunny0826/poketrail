@@ -25,7 +25,6 @@ void label(const char* text, int x, int y, int width, uint16_t color, lgfx::text
   M5.Display.setTextColor(color);
   M5.Display.drawString(text, x, y);
 }
-// One label size per hub keeps neighbouring tiles visually aligned.
 int labelWidth(const menu_layout::Hub& hub, const char* const* labels) {
   M5.Display.setFont(&fonts::efontCN_24);
   for (unsigned i = 0; i < hub.tiles; ++i)

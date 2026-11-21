@@ -24,7 +24,6 @@ SOURCES = (
     *(f'assets/animations-gen{generation}.json' for generation in range(1, 6)),
 )
 
-
 class GeneratorCliTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -108,7 +107,6 @@ class GeneratorCliTests(unittest.TestCase):
         self.assertEqual([path.read_bytes() for path in self.protected], before)
         self.assertEqual([path.read_bytes() for path in manifests], before_manifests)
 
-
 class SpriteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -167,7 +165,6 @@ class SpriteTests(unittest.TestCase):
             image = Image.open(CACHE_DIR / f'{number:04d}.gif')
             for index in range(image.n_frames):
                 image.seek(index)
-                # 独立从原 GIF 合成帧计算，不读取生成器的RLE结果。
                 fingerprint = 14695981039346656037
                 for r,g,b,a in image.convert('RGBA').get_flattened_data():
                     value = 0xF81F if a < 128 else ((r//8)<<11)|((g//4)<<5)|(b//8)
@@ -181,7 +178,6 @@ class SpriteTests(unittest.TestCase):
             image.close()
         self.assertEqual(list(records), [])
         print(f'Firmware decoding and timing match {checked} original GIF frames')
-
 
 if __name__ == '__main__':
     unittest.main()

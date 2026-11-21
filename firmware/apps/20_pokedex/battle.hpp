@@ -9,15 +9,11 @@ constexpr uint32_t kFrenzyNormalWindowMs = 140;
 constexpr uint32_t kFrenzyPerfectWindowMs = 55;
 constexpr uint32_t kCueLeadMs = 700;
 constexpr uint32_t kFeintFlipMs = 350;
-// Begin and resume count 3-2-1 before the first cue appears; keys are ignored meanwhile.
 constexpr uint32_t kCountdownStepMs = 500;
 constexpr uint8_t kCountdownSteps = 3;
 constexpr uint32_t kOpeningMs = kCountdownSteps * kCountdownStepMs + kCueLeadMs;
 constexpr uint32_t kChordGraceMs = 80;
-// 投球时间线：从玩家开始蓄力到理想松手时刻的时长。
-// 窗口只在玩家实际按住时起算，空等不会消耗投球机会。
 constexpr uint32_t kThrowChargeMs = 1500;
-// 短于该时长的按压视为误触：关闭投球窗口且不占用一次投球机会。
 constexpr uint32_t kThrowMinHoldMs = 250;
 constexpr uint8_t kPlayerHp = 3;
 constexpr uint8_t kEnemyHp = 5;
@@ -45,15 +41,14 @@ struct BattleView {
   uint32_t settledMs = 0;
   Action expected = Action::Attack;
   Action nextExpected = Action::Attack;
-  Action settledAction = Action::Attack;   // key(s) the player used on the settled cue
-  Action settledCue = Action::Attack;      // what the settled cue required; drives its effect
+  Action settledAction = Action::Attack;
+  Action settledCue = Action::Attack;
   Timing lastTiming = Timing::Miss;
   Result result = Result::None;
 };
 class Battle {
  public:
   void begin(uint32_t nowMs, uint32_t seed = 0, bool rare = false);
-  // A second key within kChordGraceMs of the first upgrades the cue to a chord.
   bool press(Action, uint32_t nowMs);
   bool tick(uint32_t nowMs);
   bool requestPause();
@@ -75,10 +70,7 @@ class Battle {
 bool timeAfter(uint32_t a, uint32_t b);
 Timing battleTiming(uint32_t pressMs, uint32_t targetMs, bool frenzy = false);
 Timing throwTiming(uint32_t pressMs, uint32_t targetMs);
-// The action the cue ring shows at nowMs; feints flip to the judged action late.
 Action shownAction(const BattleView&, uint32_t nowMs);
-// The following cue is always more than kFeintFlipMs away, so a feint still shows its decoy.
 Action shownNextAction(const BattleView&);
-// 3, 2 or 1 while the opening countdown runs, otherwise 0.
 uint8_t countdownDigit(const BattleView&, uint32_t nowMs);
 } }

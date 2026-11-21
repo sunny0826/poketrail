@@ -27,8 +27,6 @@ bool migrateLegacy(Save& s) {
     if (!validate(s)) return false;
   }
   if (s.schema < 2 || s.schema > 8 || !validate(s)) return false;
-  // Schema 3 widens the catalog. Existing fields and the current encounter stay
-  // verbatim; species 152-251 start empty and unregistered.
   if (s.schema == 2) {
     for (size_t i = 151; i < speciesCapacity(3).count; ++i) {
       s.progress[i] = SpeciesProgress();
@@ -38,25 +36,12 @@ bool migrateLegacy(Save& s) {
     s.schema = 3;
     if (!validate(s)) return false;
   }
-  // Schema 4 switches to random encounter cadence and unlimited balls. The
-  // modern encounter account is reconstructed from the invariant it must keep:
-  // spent + credit == totalSteps. Any non-legacy encounter still in play is
-  // upgraded to the current rules; finished attempts keep their own version so
-  // their stored probability and roll stay verifiable.
   if (s.schema == 3) upgradeToSchema4(s);
-  // Schema 5 re-derives route eligibility from species types. A schema-4 save was
-  // validated against the frozen masks, so an in-play encounter may sit on a
-  // route it no longer belongs to; only that route is repaired.
   if (s.schema == 4) upgradeToSchema5(s);
   if (s.schema == 5) {
     if (!validate(s)) return false;
-    // The old schema's validated empty tail becomes the new permanent accounts.
     s.schema = 6;
   }
-  // Schema 7 selects regions instead of type routes. Old routes have no
-  // regional counterpart, so the selection restarts in Kanto and an in-play
-  // encounter moves to its species' region; capture history keeps the route
-  // it was caught on.
   if (s.schema == 6) {
     if (!validate(s)) return false;
     s.route = Route::Kanto;

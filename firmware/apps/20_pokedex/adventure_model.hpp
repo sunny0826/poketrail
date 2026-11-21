@@ -22,8 +22,6 @@ constexpr uint16_t kRuleVersion = 3;
 constexpr uint16_t kEncounterMinSteps = 200;
 constexpr uint16_t kEncounterMaxSteps = 500;
 constexpr uint32_t kLegacyEncounterSteps = 5000;
-// Forest/Coast/Cave are the schema 1-6 type routes; schema 7 keeps them only in
-// capture history and selects and draws encounters by region.
 enum class Route : uint8_t { Forest, Coast, Cave, Kanto, Johto, Hoenn, Sinnoh, Unova };
 constexpr uint8_t kRegionCount = 5;
 constexpr bool isRegion(Route r) { return uint8_t(r) >= uint8_t(Route::Kanto) && uint8_t(r) <= uint8_t(Route::Unova); }

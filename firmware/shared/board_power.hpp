@@ -14,6 +14,5 @@ struct DisplayTransition {
   uint32_t settleMs;
   DisplayTransition(bool ok, uint32_t ms = 0) : accepted(ok), settleMs(ms) {}
 };
-// The caller keeps sampling during the returned settling time.
 DisplayTransition setDisplaySleep(bool sleeping);
 }

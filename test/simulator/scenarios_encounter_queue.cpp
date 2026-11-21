@@ -40,7 +40,6 @@ void walkToCount(Driver& d, unsigned count) {
 }
 }
 
-// Protect the user-visible queue across real SDL input, failed storage, and new processes.
 void scenarioEncounterQueue(Driver& d, const std::string& phase) {
   d.frames();
   if (phase == "run") {

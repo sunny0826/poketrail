@@ -1,8 +1,6 @@
 #include "support/progression/harness.hpp"
 #include "adventure_migration.hpp"
 #include <algorithm>
-// Captured from c09d18d's 251-species codec before changing any implementation.
-// Every unspecified byte is zero, including the CRC-covered empty accounts.
 struct Byte { size_t offset; uint8_t value; };
 static std::vector<uint8_t> baseline(unsigned schema) {
   const size_t lengths[] = {0,12139,14672,21498,21508,21508};

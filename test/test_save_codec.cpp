@@ -26,7 +26,6 @@ static void reject(const Save& s) {
   std::vector<uint8_t> out(codec::maxEncodedSize); size_t n = 123;
   CHECK(!codec::encode(s, out.data(), out.size(), n) && n == 0);
 }
-// A rejected load must not replace any part of the player's current save.
 static void rejectBytes(const uint8_t* data, size_t size,
                         codec::DecodeStatus status = codec::DecodeStatus::Corrupt) {
   static const Save sentinel = [] {
@@ -63,14 +62,14 @@ int main() {
     data = original; data[i] ^= 0x80;
     rejectBytes(data.data(), data.size());
   }
-  for (uint8_t route : {0, 1, 2, 8}) {  // schema 7 stores a region, never a legacy type route
+  for (uint8_t route : {0, 1, 2, 8}) {
     data = original; data[22 + 4] = route; checksum(data);
     rejectBytes(data.data(), data.size());
   }
   data = original; data[22 + 4] = uint8_t(Route::Unova); checksum(data);
   CHECK(codec::decode(data.data(), data.size(), decoded) == codec::DecodeStatus::Ok && decoded.route == Route::Unova);
   Save toggled = s; toggled.stepsIncomplete = true; const auto incomplete = encode(toggled);
-  data = original; data[firstPayloadDiff(original, incomplete)] = 2; checksum(data); // bool is 0/1
+  data = original; data[firstPayloadDiff(original, incomplete)] = 2; checksum(data);
   rejectBytes(data.data(), data.size());
   Save changed = s; changed.clock.pending.mode = ClockChangeMode::RepairWrongDate;
   const auto mode = encode(changed);
@@ -84,13 +83,10 @@ int main() {
   bad = s; bad.partner = 151; reject(bad);
   bad = s; bad.owned[kSpeciesBytes - 1] = 0x02; reject(bad);
   bad = s; bad.registered[kSpeciesBytes - 1] = 0x02; reject(bad);
-  // Owned, walked and captured species must be registered. Start from a baseline
-  // where #200 is registered (bit 199 = byte 24, mask 0x80) and clear only that bit.
   Save gated; gated.sequence = 3; gated.bootGeneration = 1; gated.starter = gated.partner = 1;
   gated.rosterRevision = 1; setRegistered(gated, 1); setOwned(gated, 1);
   gated.encounterTarget = 300;
   setRegistered(gated, 200); gated.totalSteps = gated.undatedSteps = gated.explorationCredit = 5000;
-  // Registration and partner ownership are valid; only the starter choice is illegal.
   Save starter = gated; setRegistered(starter, 2); CHECK(validate(starter));
   bad = starter; bad.starter = 2; reject(bad);
   Save owned200 = gated; setOwned(owned200, 200); CHECK(validate(owned200));
@@ -104,7 +100,6 @@ int main() {
   caught200.nextEncounterId = 2; caught200.explorationCredit = 0; caught200.explorationSpent = 5000;
   CHECK(validate(caught200));
   bad = caught200; bad.registered[24] &= uint8_t(~0x80); reject(bad);
-  // A real capture requires its first record and cannot come from a future boot.
   bad = caught200; bad.firstCapture[199] = Capture(); reject(bad);
   bad = caught200; bad.firstCapture[199].at.bootGeneration = caught200.bootGeneration + 1; reject(bad);
   bad = s; bad.historySize = 15; reject(bad);

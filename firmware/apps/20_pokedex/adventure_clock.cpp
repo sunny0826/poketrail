@@ -38,8 +38,6 @@ void Engine::adoptClock(const ClockReading& r) {
       r.bootGeneration != state_.bootGeneration ||
       r.calibrationEpoch != state_.clock.calibrationEpoch ||
       r.offsetMinutes != state_.clock.offsetMinutes) return;
-  // A test-mode reboot must not make the restored official clock look like a
-  // backward jump. Refresh only the RAM anchor; the next save can persist it.
   state_.clock.anchor = r;
   state_.clock.trusted = true;
 }

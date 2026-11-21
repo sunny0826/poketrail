@@ -36,7 +36,6 @@ void longLabelsAndWarnings() {
   screenshot(incomplete, "home-step-warning");
 }
 }
-// The banner is only a target while an encounter waits; otherwise keys and touch pass over it.
 void mainMenuHub() {
   MemoryStore walking; legacyOwned(walking, {1, 4});
   HostPlatform platform; Runtime runtime(walking, platform); start(runtime); openMenu(runtime);

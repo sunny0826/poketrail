@@ -85,8 +85,6 @@ static void selection() {
   CHECK(store.commit(two) == CommitStatus::Committed);
 }
 static void unsupportedVersions() {
-  // The header gate must reject unknown schemas before the TooLarge branch so an
-  // oversized slot cannot be mistaken for a corrupt-but-overwritable copy.
   Save one; one.sequence = 1; one.encounterTarget = 300;
   Save two = one; two.sequence = 2;
   Save out;

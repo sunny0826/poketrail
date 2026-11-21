@@ -44,11 +44,10 @@ void makeFixture(const std::string& requested, const std::string& directory) {
       setRegistered(s,id);
     }
     if (name == "history-branches") {
-      setRegistered(s,26);  // Neither Pikachu nor Pichu was registered in this sparse history.
+      setRegistered(s,26);
       setRegistered(s,237); setOwned(s,237); s.partner=237; s.route=Route::Johto;
     }
   } else if (name == "history-pending") {
-    // A valid pre-change encounter of a gifted source, already evolved to #2.
     s.totalSteps=8000; s.explorationSpent=300; s.explorationCredit=7700;
     s.progress[0].walked=8000; s.progress[0].spent=7500;
     s.owned.fill(0); setOwned(s,2); setRegistered(s,2); s.partner=2;

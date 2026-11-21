@@ -1,4 +1,3 @@
-// 主机串口校时协议的最小回归：分片、边界、拒绝路径与回执格式。
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

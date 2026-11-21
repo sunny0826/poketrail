@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# 定向验证烧录后主机校时：协议边界、Runtime 事务与主机脚本。
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 build_dir="${MYM5_VERIFICATION_DIR:-${repo_root}/.pio/verification/clock-sync-$(date -u +%Y%m%dT%H%M%SZ)}"

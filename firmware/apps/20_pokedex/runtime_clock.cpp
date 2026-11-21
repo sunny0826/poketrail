@@ -3,9 +3,6 @@
 namespace pokedex { namespace ui {
 using namespace adventure;
 namespace {
-// Steps are dated from the newest trusted clock anchor, which is refreshed by a
-// 1 s clock poll. A batch released by a multi-peak confirmation can predate that
-// anchor by the detector's worst-case confirmation delay plus one poll interval.
 constexpr int32_t kPastAnchorMs = int32_t(motion::kMaxConfirmationDelayMs) + 1000;
 }
 ClockReading Runtime::makeReading(const device_clock::Reading& candidate, uint32_t at, int offset, bool transaction) const {
@@ -26,7 +23,6 @@ ClockReading Runtime::readingAt(uint32_t at) const {
       anchor_.calibrationEpoch != r.calibrationEpoch || anchor_.offsetMinutes != r.offsetMinutes) return r;
   int32_t ms = int32_t(at - anchor_.monotonicMs);
   if (ms < -kPastAnchorMs || ms > 2500) return r;
-  // A delayed confirmed peak may precede the newest anchor, within the same epoch.
   r.utcSeconds = anchor_.utcSeconds + (ms >= 0 ? ms / 1000 : (ms - 999) / 1000);
   calendar::CivilTime local;
   r.trusted = calendar::fromUtc(r.utcSeconds, r.offsetMinutes, local) && calendar::dayKey(local, r.dayKey);
@@ -65,8 +61,6 @@ void Runtime::openClock() {
   if (candidate.valid && calendar::fromUtc(candidate.utcSeconds, screen_.offset, local)) {
     screen_.civil = local;
   } else {
-    // A saved anchor is an editing reference, never a replacement RTC reading.
-    // Keep a known date instead of presenting the new-device default as a reset.
     const auto& clock = engine_.view().clock;
     if (clock.calibrated && clock.anchor.trusted &&
         calendar::fromUtc(clock.anchor.utcSeconds, screen_.offset, local))
@@ -212,7 +206,6 @@ const char* Runtime::resumeHostClock() {
     auto current = platform_.readClock();
     bool landed = current.valid && current.utcSeconds >= target && current.utcSeconds - target <= 5;
     if (!landed && hostClockWriteAttempted_) {
-      // A retry must never move the clock back to a stale target.
       clearHostClock();
       return "stale";
     }
@@ -279,8 +272,6 @@ const char* Runtime::syncClockFromHost(uint32_t id, int64_t utcSeconds, int16_t 
   }
 
   if (engine_.savePending()) return "save";
-  // A host transaction without a pending commit may be superseded by a fresh
-  // id. A manual transaction still in flight must not be hijacked.
   const bool ownHostTransaction = hostClockStage_ != HostClockStage::None &&
                                   pendingClockWrite_ == hostClockId_;
   if (pendingClockWrite_ && !ownHostTransaction) return "pending";
@@ -297,7 +288,6 @@ const char* Runtime::syncClockFromHost(uint32_t id, int64_t utcSeconds, int16_t 
   if (id <= pending.transactionId) return "id";
   if (!safe()) return "busy";
 
-  // An older host attempt without a pending commit may be superseded.
   if (hostClockStage_ != HostClockStage::None) clearHostClock();
 
   device_clock::Reading candidate = {};
