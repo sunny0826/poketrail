@@ -89,6 +89,7 @@ class Screens {
   void invalidate();
   bool advanceHome(uint16_t partner, uint32_t now);
   bool advanceResult(uint16_t species, uint32_t now);
+  bool advancePreview(uint16_t species, uint32_t now);
   bool advanceScene(adventure::Route, uint32_t now, bool active);
   bool draw(const ScreenState&, const adventure::Engine&,
             const adventure::BattleView& practice, uint32_t now);

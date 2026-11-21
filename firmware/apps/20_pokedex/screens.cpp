@@ -4,6 +4,7 @@
 #include "sprites_generated.hpp"
 #include "icons_generated.hpp"
 #include "battery_screen.hpp"
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 namespace pokedex { namespace ui {
@@ -161,6 +162,19 @@ void Screens::thumbnail(uint16_t id, int x, int y, unsigned scale) {
     M5.Display.pushImage(left, top, icon.width, icon.height, icon.pixels, kTransparentKey);
     return;
   }
+  const size_t scaledWidth = size_t(icon.width) * scale;
+  if (scaledWidth <= sizeof(sceneRow_) / sizeof(sceneRow_[0])) {
+    for (unsigned row = 0; row < icon.height; ++row) {
+      const uint16_t* src = icon.pixels + row * icon.width;
+      uint16_t* dst = sceneRow_;
+      for (unsigned col = 0; col < icon.width; ++col, dst += scale)
+        std::fill_n(dst, scale, src[col]);
+      for (unsigned dy = 0; dy < scale; ++dy)
+        M5.Display.pushImage(left, top + int(row * scale + dy), int(scaledWidth), 1,
+                             sceneRow_, kTransparentKey);
+    }
+    return;
+  }
   for (unsigned row = 0; row < icon.height; ++row)
     for (unsigned col = 0; col < icon.width; ++col) {
       const uint16_t color = icon.pixels[row * icon.width + col];
@@ -265,6 +279,7 @@ bool Screens::advance(Playback& playback, uint16_t id, uint32_t now) {
 }
 bool Screens::advanceHome(uint16_t partner, uint32_t now) { return advance(homePlayback_, partner, now); }
 bool Screens::advanceResult(uint16_t species, uint32_t now) { return advance(resultPlayback_, species, now); }
+bool Screens::advancePreview(uint16_t species, uint32_t now) { return advance(resultPlayback_, species, now); }
 bool Screens::advanceScene(Route route, uint32_t now, bool active) {
   if (sceneRoute_ != route || !sceneTiming_) {
     sceneRoute_ = route;
