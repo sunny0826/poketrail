@@ -29,7 +29,6 @@ void scenarioMigration(Driver& d,const std::string& phase) {
   }
   d.check(d.save().encounter.ruleVersion==1 && d.save().encounter.usedBalls==1,"frozen v1 in-flight encounter retains old attempt");
   d.check(availableBalls(d.save())==0,"legacy inventory begins empty");
-  // 旧规则零球：投球页没有菜单，但必须留一个明确出口，否则玩家卡死。
   d.check(d.screen().page==Page::Throw,"legacy encounter reaches the throw page");
   d.check(d.screen().command!=CommandResult::NoBalls,"the empty stock does not block the page itself");
   d.advance(3000);

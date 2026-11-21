@@ -4,9 +4,6 @@
 
 namespace pokedex { namespace ui {
 
-// Decorates the real Platform for a test session: simulated clock, synthetic
-// fresh IMU at rest, and no hardware RTC writes. Official mode delegates every
-// call unchanged.
 class TestModePlatform : public Platform {
  public:
   TestModePlatform(Platform& real, adventure::TestModeHost& host);

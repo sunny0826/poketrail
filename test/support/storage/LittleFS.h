@@ -11,8 +11,6 @@ struct State {
   bool mount = true, info = true, mkdir = true, open = true, read = true;
   bool statError = false, shortWrite = false, loseFlush = false;
   bool remove = true, rmdir = true;
-  // Remove fails only for this logical path when non-empty; other paths behave
-  // normally so tests can distinguish marker removal from data cleanup.
   std::string failRemove;
   size_t total = 1000000, used = 1000;
   int formats = 0, writes = 0;

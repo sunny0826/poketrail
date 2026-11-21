@@ -47,7 +47,7 @@ static void failedEncountersRemain() {
   CHECK(e.acknowledgeResult(e.view().encounter.id, 7) == CommandResult::Applied);
   CHECK(e.view().phase == Phase::Walking);
   CHECK(steps(e, 1, 1) == CommandResult::Applied);
-  CHECK(e.view().encounter.species == 4); // The uncaught species becomes eligible when its old slot is consumed.
+  CHECK(e.view().encounter.species == 4);
 }
 static void captureRetry() {
   auto s = collection(4); MemoryStore store; store.disk = encoded(*s);
@@ -113,7 +113,6 @@ static void pendingOldDuplicate() {
     store.before = false; CHECK(e.retrySave() == CommandResult::Applied);
     CHECK(e.view().phase == Phase::Resolved && e.view().result == Result::Released);
     CHECK(e.view().captureCounts == s->captureCounts);
-    // Historical repeat catches count as one species, not additional species.
     CHECK(capturedSpeciesCount(e.view()) == speciesBefore);
     CHECK(e.view().ballsSpent == (schema == 1 ? 0 : s->ballsSpent));
     CHECK(e.view().encounter.usedBalls == s->encounter.usedBalls);

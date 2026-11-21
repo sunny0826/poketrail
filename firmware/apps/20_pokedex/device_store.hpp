@@ -10,8 +10,6 @@ struct StorageCapacity {
   size_t usedBytes = 0;
   size_t availableBytes = 0;
 };
-// One runtime owner. No other code may mount/unmount/use LittleFS concurrently.
-// The same mounted filesystem serves both roots; only the directory changes.
 class DeviceStore : private SlotIO, public Store, public TestModeHost {
  public:
   DeviceStore();

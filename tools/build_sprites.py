@@ -33,18 +33,15 @@ SPRITE_URL = (
 TRANSPARENT_KEY = 0xF81F
 MAX_CANVAS = 160
 
-
 def generation_of(number: int) -> int:
     for generation, (first, last) in RANGES.items():
         if first <= number <= last:
             return generation
     raise ValueError(f"#{number} is outside National Dex 1-649")
 
-
 def requires_separate_output(wanted: list[int], has_ids: bool) -> bool:
     """非完整 1-649 输出（或显式 --ids）不得写入正式动画表。"""
     return has_ids or sorted(wanted) != list(range(1, POKEMON_COUNT + 1))
-
 
 def fetch(number: int, expected_hash: str | None = None) -> bytes:
     path = CACHE_DIR / f"{number:04d}.gif"
@@ -61,10 +58,8 @@ def fetch(number: int, expected_hash: str | None = None) -> bytes:
         raise ValueError(f"#{number} GIF differs from its animations manifest")
     return data
 
-
 def to_rgb565(r: int, g: int, b: int) -> int:
     return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
-
 
 def frame_colors(image: Image.Image) -> tuple[int, ...]:
     result = []
@@ -78,7 +73,6 @@ def frame_colors(image: Image.Image) -> tuple[int, ...]:
             result.append(color)
     return tuple(result)
 
-
 def build_animation(data: bytes) -> dict:
     image = Image.open(io.BytesIO(data))
     width, height = image.size
@@ -90,7 +84,7 @@ def build_animation(data: bytes) -> dict:
     blob = bytearray()
     frames = []
     for i in range(image.n_frames):
-        image.seek(i)  # Pillow 合成局部帧，并处理透明与 disposal。
+        image.seek(i)
         duration = image.info.get("duration", 0)
         if not 0 < duration <= 65535:
             raise ValueError(f"frame {i}: invalid duration {duration}")
@@ -117,7 +111,6 @@ def build_animation(data: bytes) -> dict:
                 duration=sum(frame[1] for frame in frames),
                 sha256=hashlib.sha256(data).hexdigest())
 
-
 def _unique_ids(entry: dict, key: str, field: str, first: int, last: int) -> set[int]:
     ids = entry.get(field)
     if not isinstance(ids, list) or not all(type(i) is int for i in ids):
@@ -125,7 +118,6 @@ def _unique_ids(entry: dict, key: str, field: str, first: int, last: int) -> set
     if len(set(ids)) != len(ids) or any(not first <= i <= last for i in ids):
         raise ValueError(f"generation {key}: invalid {field} IDs")
     return set(ids)
-
 
 def load_scales(path: Path = SCALE_CACHE) -> set[int]:
     """返回优先 3 倍的编号：中间／最终形态与无进化链物种。"""
@@ -152,7 +144,6 @@ def load_scales(path: Path = SCALE_CACHE) -> set[int]:
         enlarged |= evolved | standalone
     return enlarged
 
-
 def load_metadata() -> dict[int, dict]:
     by_id = {}
     for path in METADATA_CACHE:
@@ -166,7 +157,6 @@ def load_metadata() -> dict[int, dict]:
     if set(by_id) != set(range(1, POKEMON_COUNT + 1)):
         raise ValueError("metadata must contain exactly IDs 1-649")
     return by_id
-
 
 def load_manifests() -> tuple[dict[int, str], set[int]]:
     hashes = {}
@@ -185,7 +175,6 @@ def load_manifests() -> tuple[dict[int, str], set[int]]:
         for entry in manifest["sprites"]:
             hashes[entry["id"]] = entry["sha256"]
     return hashes, present
-
 
 def load_sprites(wanted: list[int]) -> list[dict]:
     enlarged_species = load_scales()
@@ -206,7 +195,6 @@ def load_sprites(wanted: list[int]) -> list[dict]:
                             enlarged=number in enlarged_species))
     return sprites
 
-
 def generate_header(sprites: list[dict]) -> str:
     return '''#pragma once
 
@@ -221,7 +209,6 @@ extern const size_t kSpriteCount;
 }  // namespace data
 }  // namespace pokedex
 '''
-
 
 def generate_source(sprites: list[dict]) -> str:
     lines = ['// 由 tools/build_sprites.py 自动生成，请勿手工编辑。',
@@ -255,14 +242,12 @@ def generate_source(sprites: list[dict]) -> str:
                   '}  // namespace data', '}  // namespace pokedex', ''])
     return '\n'.join(lines)
 
-
 def generate_manifest(sprites: list[dict]) -> str:
     entries = [dict(id=s["id"], sha256=s["sha256"], width=s["width"], height=s["height"],
                     frames=len(s["frames"]), unique_frames=s["unique"],
                     duration_ms=s["duration"], data_bytes=len(s["data"])) for s in sprites]
     return json.dumps(dict(revision=SPRITE_REVISION, sprites=entries),
                       ensure_ascii=False, indent=2) + '\n'
-
 
 def write_manifests(sprites: list[dict], generation: int) -> None:
     for key, path in MANIFESTS.items():
@@ -273,7 +258,6 @@ def write_manifests(sprites: list[dict], generation: int) -> None:
         if [s["id"] for s in selected] != list(range(first, last + 1)):
             raise ValueError(f"generation {key}: incomplete manifest output")
         path.write_text(generate_manifest(selected), encoding='utf-8')
-
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -301,7 +285,6 @@ def main() -> int:
     print(f'{len(sprites)} animations; {sum(len(s["frames"]) for s in sprites)} frames; '
           f'{sum(len(s["data"]) for s in sprites):,} compressed bytes')
     return 0
-
 
 if __name__ == '__main__':
     try:

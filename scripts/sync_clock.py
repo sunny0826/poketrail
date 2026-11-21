@@ -22,14 +22,11 @@ DEFAULT_TIMEOUT = 30.0
 READBACK_WINDOW_SECONDS = 5
 CLOCK_MATCH_SECONDS = 15
 
-
 class ClockSyncError(Exception):
     """Device, protocol or validation failure."""
 
-
 class TransportError(ClockSyncError):
     """USB CDC open/read/write failure or timeout."""
-
 
 def host_offset_minutes() -> int:
     offset = datetime.now().astimezone().utcoffset()
@@ -39,7 +36,6 @@ def host_offset_minutes() -> int:
     if not -720 <= minutes <= 840:
         raise ValueError(f"主机时区偏移超出范围: {minutes}")
     return minutes
-
 
 def parse_reply(line: str):
     """Parse one PTC line; return None for unrelated log lines."""
@@ -61,13 +57,11 @@ def parse_reply(line: str):
     fields["_raw"] = text
     return fields
 
-
 def _flag(status: dict, key: str) -> bool:
     value = status.get(key)
     if value not in ("0", "1"):
         raise ClockSyncError(f"回执缺少有效的 {key}")
     return value == "1"
-
 
 def _number(status: dict, key: str, low: int, high: int) -> int:
     value = status.get(key)
@@ -79,7 +73,6 @@ def _number(status: dict, key: str, low: int, high: int) -> int:
         raise ClockSyncError(f"回执 {key} 超出范围: {number}")
     return number
 
-
 def resolve_offset(status: dict, host_offset: int) -> int:
     """已校准设备保留自己的时区；未校准时采用主机时区。"""
     if _flag(status, "cal"):
@@ -87,7 +80,6 @@ def resolve_offset(status: dict, host_offset: int) -> int:
     if not -720 <= host_offset <= 840:
         raise ValueError(f"主机时区偏移超出范围: {host_offset}")
     return host_offset
-
 
 def choose_transaction_id(last_tx: int, now_epoch: float) -> int:
     """Pick a request id greater than the device's last transaction id."""
@@ -102,17 +94,14 @@ def choose_transaction_id(last_tx: int, now_epoch: float) -> int:
         value = last_tx + 1
     return value
 
-
 def _require_official(status: dict) -> None:
     if status.get("mode") != "official":
         raise ClockSyncError("设备处于测试模式，拒绝正式校时")
     if not _flag(status, "ready"):
         raise ClockSyncError("设备尚未就绪")
 
-
 def _utc_text(epoch: int) -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(epoch))
-
 
 def validate_query(status: dict, *, now_epoch: int) -> None:
     if status.get("_kind") != "q":
@@ -140,7 +129,6 @@ def validate_query(status: dict, *, now_epoch: int) -> None:
             f"（{_utc_text(now_epoch)}）相差 {abs(skew)} 秒，"
             f"超过 {CLOCK_MATCH_SECONDS} 秒容差")
 
-
 def validate_success(status: dict, *, transaction_id: int, target_utc: int,
                      offset: int, now_epoch: int) -> None:
     if status.get("_kind") != "s" or status.get("result") != "ok":
@@ -164,13 +152,11 @@ def validate_success(status: dict, *, transaction_id: int, target_utc: int,
     if abs(utc - now_epoch) > CLOCK_MATCH_SECONDS:
         raise ClockSyncError("RTC 回读已过期，不能证明本次校时")
 
-
 def _open_serial(port: str):
-    import serial  # pyserial is installed with the pinned esptool environment.
+    import serial
 
     return serial.Serial(port, 115200, timeout=0.05, write_timeout=1.0,
                          dsrdtr=False, rtscts=False)
-
 
 class _Channel:
     def __init__(self, io, sleep, monotonic):
@@ -187,14 +173,14 @@ class _Channel:
             return
         try:
             reset()
-        except Exception as exc:  # serial.SerialException and OSError
+        except Exception as exc:
             raise TransportError(f"串口积压清理失败: {exc}") from exc
 
     def send(self, command: str) -> None:
         payload = (command + "\n").encode("ascii")
         try:
             written = self.io.write(payload)
-        except Exception as exc:  # serial.SerialException and OSError
+        except Exception as exc:
             raise TransportError(f"串口写入失败: {exc}") from exc
         if written != len(payload):
             raise TransportError(
@@ -232,12 +218,10 @@ class _Channel:
             if chunk:
                 self.buffer.extend(chunk)
                 if len(self.buffer) > MAX_LINE and b"\n" not in self.buffer:
-                    # A single overlong line cannot be a protocol reply.
                     self.buffer.clear()
             else:
                 self.sleep(0.01)
         raise TransportError("等待设备回执超时")
-
 
 def _confirm_from_query(status: dict, *, transaction_id: int, target_utc: int,
                         offset: int, now_epoch: int) -> dict:
@@ -258,7 +242,6 @@ def _confirm_from_query(status: dict, *, transaction_id: int, target_utc: int,
     reply["_confirmed_by"] = "query"
     return reply
 
-
 def sync(open_port, *, port: str, query_only: bool = False,
          timeout: float = DEFAULT_TIMEOUT, now=time.time,
          host_offset=host_offset_minutes, sleep=time.sleep,
@@ -267,7 +250,7 @@ def sync(open_port, *, port: str, query_only: bool = False,
     deadline = monotonic() + timeout
     io = None
     channel = None
-    pending = None  # (transaction_id, target_utc, offset)
+    pending = None
     attempts = 0
     last_error = None
 
@@ -293,8 +276,6 @@ def sync(open_port, *, port: str, query_only: bool = False,
 
     def query(wait_until: float) -> dict:
         ch = connect()
-        # A recovery query must not consume a reply left over from an earlier
-        # transaction; drop local and OS-level backlog before asking again.
         ch.discard_input()
         ch.send("PTC?")
         return ch.read_reply(wait_until, "q")
@@ -335,8 +316,6 @@ def sync(open_port, *, port: str, query_only: bool = False,
                 pending = (transaction_id, target, offset)
                 command = f"PTC {transaction_id} {target} {offset}"
                 ch.send(command)
-                # Keep a small slice of the overall budget for a readback after a
-                # lost acknowledgement, instead of consuming it all on the reply.
                 reserve = min(1.0, max(0.2, timeout * 0.2))
                 set_deadline = min(deadline - reserve, monotonic() + 10.0)
                 if set_deadline <= monotonic():
@@ -378,8 +357,6 @@ def sync(open_port, *, port: str, query_only: bool = False,
                         except ClockSyncError:
                             pass
                         if _flag(status, "save"):
-                            # The commit is pending; resending the same id retries the
-                            # same candidate instead of starting a different result.
                             ch = connect()
                             ch.send(f"PTC {transaction_id} {target} {offset}")
                             reply = ch.read_reply(min(deadline, monotonic() + 10.0),
@@ -406,7 +383,6 @@ def sync(open_port, *, port: str, query_only: bool = False,
     raise ClockSyncError("校时超时，未收到可信的设备回执" +
                          (f"（最后一次串口错误：{last_error}）" if last_error else ""))
 
-
 def _select_port(ports) -> str:
     filtered = [port for port in ports
                 if "Bluetooth" not in port and
@@ -417,14 +393,12 @@ def _select_port(ports) -> str:
             "；请用 --port 指定目标设备")
     return filtered[0] if filtered else ""
 
-
 def _detect_port() -> str:
     try:
         import detect_port
     except ImportError:
         return ""
     return _select_port(detect_port.candidates())
-
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="校准 PokeTrail 设备 RTC")
@@ -462,7 +436,6 @@ def main(argv=None) -> int:
         print(f"校时完成{confirmed}：设备 UTC {reply.get('utc')}，"
               f"本地 {local.isoformat(timespec='seconds')}", file=sys.stderr)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

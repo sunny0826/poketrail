@@ -72,9 +72,6 @@ void midnightAndSampling() {
         "invalid RTC candidate keeps walking but does not fabricate today dates");
 }
 void slowGaitAttribution() {
-  // 慢步确认会释放早于最新时钟锚点的峰值，它们仍必须归属当天。
-  // 1600 ms 是 reviewer 的复现场景；2200 ms 是最慢允许步态，确认批次里最老的峰
-  // 早于锚点超过 4 s，覆盖日期回溯窗口的真实上界。
   for (unsigned period : {1600u, 2200u}) {
     MemoryStore store; TestPlatform p;
     {
@@ -99,9 +96,6 @@ void slowGaitAttribution() {
   }
 }
 void stallAttribution() {
-  // 末峰后长时间不落谷：两个中峰落谷后，第三峰回到 1.0g 并保持 10 s（始终 ≥ 谷值），
-  // 再落谷。跟踪时限必须让末峰在推导窗口内确认，事件仍归属当天，而不是释放超龄
-  // 的未知日期事件。
   MemoryStore store; TestPlatform p;
   {
     Engine e(store);

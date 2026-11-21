@@ -227,7 +227,6 @@ void dateCorruption() {
   expect(validReading(negative) && negative.dayKey == 20261021, "negative timezone derives the previous day");
   std::unique_ptr<Save> next(new Save(w->engine.view())); ++next->sequence;
   const auto good = encode(*next); unsigned changed = 0;
-  // Locate known UTC/offset/day tuples; mutate bytes after encoding and preserve CRC validity.
   for (size_t pos = 22; pos + 14 <= good.size(); ++pos) {
     uint64_t utc = 0; for (unsigned i = 0; i < 8; ++i) utc |= uint64_t(good[pos + i]) << (8 * i);
     uint32_t day = 0; for (unsigned i = 0; i < 4; ++i) day |= uint32_t(good[pos + 10 + i]) << (8 * i);

@@ -10,7 +10,6 @@ void TestModePlatform::ensureSimulation() {
   if (!host_.testMode()) return;
   TestMode& mode = host_.mode();
   if (mode.clockStarted) return;
-  // Reading the hardware clock is safe; only writes are suppressed in tests.
   const device_clock::Reading base = real_.readClock();
   mode.beginSimulation(real_.now(), base.valid ? base.utcSeconds : kTestDefaultUtc);
 }
@@ -20,8 +19,6 @@ uint32_t TestModePlatform::randomSeed() { return real_.randomSeed(); }
 
 Sample TestModePlatform::sample() {
   if (!host_.testMode()) return real_.sample();
-  // A stationary 1g sample keeps the detector cadence valid while producing no
-  // steps. The real IMU is never polled in test mode.
   Sample s;
   s.fresh = true;
   s.at = real_.now();

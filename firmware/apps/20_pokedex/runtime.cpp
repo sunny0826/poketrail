@@ -5,10 +5,6 @@
 namespace pokedex { namespace ui {
 using namespace adventure;
 namespace {
-// A checkpoint write blocks sampling long enough to break walking cadence.
-// Defer it while steps keep arriving and release once the cadence window
-// (kMaxStepMs) has lapsed, or force it after the deferral cap so progress
-// still reaches flash during long uninterrupted walks.
 constexpr uint32_t kStepActiveMs = 2000;
 constexpr uint32_t kCheckpointDeferralMs = 120000;
 }
@@ -68,9 +64,7 @@ void Runtime::fillTestSteps() {
     testStepsRemaining_ = 0;
     return;
   }
-  // Keep one injection batch within the Engine step queue (128) so a failed
-  // commit can retain the tail instead of overflowing it.
-  const unsigned capacity = 128;
+  const unsigned capacity = unsigned(adventure::Engine::kStepQueueCapacity);
   const unsigned queued = unsigned(engine_.bufferedSteps());
   if (queued >= capacity) return;
   const unsigned room = capacity - queued;
@@ -177,8 +171,6 @@ void Runtime::battleFeedback() {
   const bool practice = screen_.page == Page::Practice;
   if (!practice && screen_.page != Page::Battle) return;
   const auto& b = practice ? practiceCapture_.battleView() : engine_.battleView();
-  // A fresh battle restarts its count at zero, so only an increase is a new settlement.
-  // Vibration blanks the step detector, so walkers keep their steps instead of the buzz.
   if (b.settlements > battleSettlements_ && platform_.now() - lastStepEventMs_ >= kStepActiveMs)
     feedback(b.special || b.lastTiming == Timing::Perfect ? 40 : b.lastTiming == Timing::Miss ? 10 : 20);
   battleSettlements_ = b.settlements;
@@ -211,7 +203,7 @@ void Runtime::sample(uint32_t now) {
     StepEvent event; event.batchId = ++batchId_; event.clock = readingAt(batch.events[i].monotonicMs);
     event.partner = batch.events[i].tag;
     pendingSteps_[pendingStepCount_++] = event;
-    if (pendingStepCount_ >= 128 && practiceCapture_.active()) endPractice();
+    if (pendingStepCount_ >= adventure::Engine::kStepQueueCapacity && practiceCapture_.active()) endPractice();
   }
 }
 void Runtime::loop() {
@@ -232,7 +224,7 @@ void Runtime::loop() {
         startupRendered_ = start;
         metrics_.maxRenderMs = std::max(metrics_.maxRenderMs, platform_.now() - start);
       }
-      return;  // Sample and drain boot input, but never play a battle behind the splash.
+      return;
     }
     startupActive_ = false;
     waitForRelease();

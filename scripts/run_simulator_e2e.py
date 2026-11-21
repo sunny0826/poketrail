@@ -65,23 +65,18 @@ CASES = {
     "region-exhausted": ("P1-16", "sinnoh-done", [("regions", "exhausted"), ("regions", "exhausted-reload")]),
 }
 
-
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
 
 def write_json(path, data):
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
-
 def hashes(directory):
     return {p.name: digest(p) for p in sorted(directory.iterdir()) if p.is_file() and p.name != "session.lock"}
-
 
 def events(directory):
     path = directory / "events.jsonl"
     return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
-
 
 def invoke(executable, save, output, scenario, phase, utc, kill=False):
     output.mkdir()
@@ -94,7 +89,6 @@ def invoke(executable, save, output, scenario, phase, utc, kill=False):
         killed = False
         try:
             if kill:
-                # A FIFO wakes the parent at the exact frozen boundary; no runtime tick polling.
                 with os.fdopen(os.open(output / "ready.fifo", os.O_RDWR | os.O_NONBLOCK), "r") as ready:
                     with selectors.DefaultSelector() as selector:
                         selector.register(ready, selectors.EVENT_READ)
@@ -122,7 +116,6 @@ def invoke(executable, save, output, scenario, phase, utc, kill=False):
         raise RuntimeError(str(errors[-1] if errors else (output / "stderr.log").read_text()))
     return observed[-1]["at"] if observed else 0
 
-
 def storage_checks(executable, base, root):
     import fcntl
     for variant in ("truncated", "both-corrupt", "future", "locked"):
@@ -139,7 +132,6 @@ def storage_checks(executable, base, root):
             original = bytearray((save / "save-a.bin").read_bytes())
             original[4:6] = (65535).to_bytes(2, "little")
             (save / "save-b.bin").write_bytes(original)
-        # Include an existing clock sidecar to prove it is preserved on failed boot.
         (save / "clock.txt").write_text("0\n")
         before = hashes(save)
         if variant == "locked":
@@ -158,7 +150,6 @@ def storage_checks(executable, base, root):
             raise RuntimeError(f"{variant} changed protected save files")
         write_json(root / variant / "hashes.json", {"before": before, "after": hashes(save)})
 
-
 def check_clock_restart(before_path, after_path, offline_seconds):
     before = json.loads(before_path.read_text())
     after = json.loads(after_path.read_text())
@@ -173,7 +164,6 @@ def check_clock_restart(before_path, after_path, offline_seconds):
     write_json(after_path.parent / "restart-check.json", evidence)
     if not all(checks.values()):
         raise RuntimeError(f"clock restart mismatch: {evidence}")
-
 
 def verify_language_save(save, snapshot_path):
     import struct
@@ -195,7 +185,6 @@ def verify_language_save(save, snapshot_path):
         raise RuntimeError("language snapshot does not match CRC-valid disk slot")
     write_json(snapshot_path.parent / "language-disk-check.json", {"validSlots": valid,
                "displayedLanguage": snapshot["language"], "savedLanguage": snapshot["savedLanguage"]})
-
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -313,7 +302,6 @@ def main():
     write_json(root / "result.json", results)
     print(f"E2E evidence: {root}")
     return 1 if any(r["status"] != "pass" for r in results) else 0
-
 
 if __name__ == "__main__":
     sys.exit(main())

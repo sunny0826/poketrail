@@ -27,10 +27,8 @@ void recentRecord(Driver& d, const char* expected, const char* shot) {
   d.check(rendered_text::contains(expected, theme::kText), std::string("recent record shows ") + expected);
   d.shot(shot);
 }
-}  // namespace
+}
 
-// P1-16：新档切到神奥 → 只遇到神奥物种 → 捕获记录标为神奥 → 新进程恢复；
-// 神奥捕完时不消耗探索步并提示换地区，切到合众后立刻遭遇合众物种。
 void scenarioRegions(Driver& d, const std::string& phase) {
   if (phase == "run") {
     bootNewSave(d);
@@ -99,7 +97,6 @@ void scenarioRegions(Driver& d, const std::string& phase) {
   }
 }
 
-// P1-12：冻结 schema6 海边在途场与森林历史，升级到当前格式后继续投球。
 void scenarioSchema6Upgrade(Driver& d, const std::string& phase) {
   d.frames();
   d.check(d.save().schema == kSchemaVersion && d.save().route == Route::Kanto, "schema6 bytes upgrade to Kanto in current schema");
@@ -135,5 +132,5 @@ void scenarioSchema6Upgrade(Driver& d, const std::string& phase) {
     d.close();
   }
 }
-}  // namespace e2e
-}  // namespace simulator
+}
+}

@@ -45,8 +45,6 @@ unsigned menuCount(const ScreenState& s, const Engine& e) {
     case Page::Pause: return 2;
     case Page::Throw: {
       const auto& v = e.view();
-      // Only a legacy encounter whose ball stock is empty needs a way out:
-      // the engine refuses to open a window without balls.
       return (v.encounter.ruleVersion < 3 && !availableBalls(v)) ? 1 : 0;
     }
     case Page::PracticeThrow: return 0;
@@ -134,14 +132,13 @@ bool Screens::startup(uint32_t elapsed) {
   M5.Display.fillCircle(233, 233, 227, theme::kBackground);
   M5.Display.fillCircle(233, 207, 91, theme::kPanel);
   M5.Display.fillEllipse(233, 259, 45, 9, theme::kBackground);
-  // The brand illustration uses 3x pixels without changing gameplay scaling.
   advance(startupPlayback_, 1, elapsed);
   const auto& sprite = data::kSprites[0];
   const bool rendered = decodeFrame(sprite, startupPlayback_.state.frame_index, 3,
                                     pixels_, size_t(kMaxDisplayWidth) * kMaxDisplayHeight);
   if (rendered) M5.Display.pushImage(233 - sprite.width * 3 / 2, 207 - sprite.height * 3 / 2,
                                    sprite.width * 3, sprite.height * 3, pixels_, kTransparentKey);
-  decodedId_ = 0;  // The shared pixel buffer no longer contains the previous page's sprite.
+  decodedId_ = 0;
   M5.Display.setTextDatum(middle_center);
   M5.Display.setFont(&fonts::Font4);
   M5.Display.setTextSize(2);

@@ -4,16 +4,11 @@
 
 namespace pokedex { namespace adventure {
 
-// Test saves live beside the official slots. The marker records whether the
-// next boot should use the test root; it is never consulted by the official
-// store itself.
 enum class TestSeed : uint8_t { Snapshot, Blank };
 enum class TestFault : uint8_t { None, CommitBefore, CommitAfter, Load };
 
 constexpr int64_t kTestDefaultUtc = 1792627200;
 
-// Pure state for a test session. Clock simulation only affects the wrapped
-// Platform; the hardware RTC is never written through this structure.
 struct TestMode {
   bool active = false;
   bool ramOnly = false;
@@ -44,8 +39,6 @@ struct TestDiagnostics {
   size_t availableBytes = 0;
 };
 
-// Implemented by the storage owner. UI and Runtime only use this interface so
-// the official path never needs test-mode branches.
 class TestModeHost {
  public:
   virtual ~TestModeHost() {}
@@ -62,9 +55,6 @@ class TestModeHost {
 } }
 
 namespace pokedex { namespace app {
-// Implemented by the firmware composition root: checkpoint the official
-// runtime, rebuild it on the selected store root, and return whether the mode
-// changed. UI tasks call these instead of touching DeviceStore directly.
 bool enterTestMode(adventure::TestSeed seed);
 bool leaveTestMode();
 } }

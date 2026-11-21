@@ -11,8 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import sync_clock as clock  # noqa: E402
 
 TARGET = 1792670400
-STALE_UTC = 1767259321  # 2026-01-01 07:22:01 UTC, the field baseline date.
-
+STALE_UTC = 1767259321
 
 def reply(kind, **overrides):
     fields = {
@@ -23,7 +22,6 @@ def reply(kind, **overrides):
     }
     fields.update(overrides)
     return "PTC " + kind + " " + " ".join(f"{key}={value}" for key, value in fields.items())
-
 
 class FakePort:
     def __init__(self, handler):
@@ -66,7 +64,6 @@ class FakePort:
     def close(self):
         self.closed = True
 
-
 class FakeDevice:
     def __init__(self, calibrated=False, offset=480, utc=TARGET, tx="0"):
         self.state = {
@@ -98,13 +95,11 @@ class FakeDevice:
             return ("ui log\n" + reply("s", id=tx, result="ok", **self.state) + "\n").encode()
         return b""
 
-
 def run_sync(port, **kwargs):
     options = {"port": "fake", "timeout": 1.0,
                "now": lambda: TARGET, "host_offset": lambda: 480}
     options.update(kwargs)
     return clock.sync(lambda _: port, **options)
-
 
 class ClockSyncTests(unittest.TestCase):
     def test_validate_success(self):
@@ -189,10 +184,8 @@ class ClockSyncTests(unittest.TestCase):
         def handler(command):
             parts = command.decode("ascii").strip().split()
             if parts == ["PTC?"]:
-                # The clock happens to show the target time, but this belongs to
-                # transaction 5, not the request id the host sent.
                 return (reply("q", tx="5", utc=str(TARGET)) + "\n").encode()
-            return b""  # Lost before the device processed the set request.
+            return b""
 
         port = FakePort(handler)
         with self.assertRaises(clock.ClockSyncError):
@@ -296,7 +289,6 @@ class ClockSyncTests(unittest.TestCase):
             run_sync(port, timeout=0.15)
         self.assertLess(time.monotonic() - started, 2.0)
         self.assertTrue(port.closed)
-
 
 if __name__ == "__main__":
     unittest.main()

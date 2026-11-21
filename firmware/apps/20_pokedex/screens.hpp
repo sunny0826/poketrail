@@ -56,7 +56,6 @@ struct ScreenState {
 const char* routeName(i18n::Language, adventure::Route);
 using i18n::speciesName;
 const char* progressionMessage(i18n::Language, adventure::CommandResult);
-// Main menu entries in hub order; the value is ScreenState::selected on Page::Menu.
 enum class MenuItem : uint8_t { Encounter, Region, Partner, Pokedex, Records, Practice, Settings, Explore };
 constexpr unsigned kMenuItemCount = 8;
 unsigned menuCount(const ScreenState&, const adventure::Engine&);
@@ -65,15 +64,11 @@ const menu_layout::Hub* hubFor(Page);
 inline bool encounterWaiting(const adventure::Save& v) {
   return v.phase == adventure::Phase::EncounterReady || v.phase == adventure::Phase::ThrowReady;
 }
-// The encounter banner only takes focus while an encounter is waiting.
 bool menuSelectable(const ScreenState&, const adventure::Engine&, unsigned index);
-// Home shows the evolve button only while the carried partner can evolve now.
 constexpr menu_layout::Rect kHomeEvolveButton = {173, 67, 120, 30};
 bool homeEvolutionReady(const adventure::Engine&);
-// Throw pages show both attempts under the title; used ones become empty rings.
 constexpr int kBallSlotY = 82;
 constexpr int ballSlotX(unsigned index) { return 213 + 40 * int(index); }
-// Route scenes dissolve into the page over their outer three source rows (25/50/75% kept).
 inline bool sceneEdgeVisible(unsigned sourceX, unsigned sourceY) {
   const unsigned last = data::kSceneHeight - 1;
   const unsigned edge = sourceY < last - sourceY ? sourceY : last - sourceY;

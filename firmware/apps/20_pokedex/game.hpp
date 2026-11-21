@@ -25,5 +25,5 @@ Input releaseInput(int32_t start_x, int32_t start_y, int32_t end_x,
 bool applyInput(State& state, Input input, size_t count, uint32_t now_ms);
 bool update(State& state, const Sprite& sprite, uint32_t now_ms);
 
-}  // namespace viewer
-}  // namespace pokedex
+}
+}

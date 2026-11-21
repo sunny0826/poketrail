@@ -1,6 +1,3 @@
-// Progression, failure-retry, isolation and edge scenarios for the desktop E2E driver.
-// Only read-only Runtime/Save observations are used; every state change goes through
-// SDL input, the real Runtime/Engine and the real FileStore.
 #include "progression_support.hpp"
 #include "progression_conflict_cases.hpp"
 #include "viewer_screen.hpp"
@@ -92,7 +89,6 @@ bool progressionRun(Driver& d) {
   REQUIRE(d, page(d, Page::Error, "carried evolution failure opens retry") &&
                 d.save().partner == 1 && d.save().progress[0].spent == confirm.progress[0].spent,
           "failed carried evolution publishes no target or debit");
-  // A free preview must not replace the real evolution waiting for a save retry.
   d.select(1);
   REQUIRE(d, page(d, Page::Viewer, "save error still allows the free viewer") &&
                 pokedex::viewer_screen::species() == 1, "save error opens the free viewer on species 1");
@@ -212,7 +208,6 @@ bool edgesRun(Driver& d) {
   if (!openPartners(d, "edges partners")) return false;
   REQUIRE(d, menuCount(d.screen(), d.runtime().engine()) == 6, "edges partner list has five owners and return");
   d.shot("edges-partners-first");
-  // Fixed user coordinates: outside the third row must be inert; its visible edge must work.
   d.tap(90, 374); d.tap(376, 374);
   REQUIRE(d, d.screen().page == Page::Partners && d.screen().selected == 0,
           "touch outside the third partner row is inert");
@@ -231,7 +226,6 @@ bool edgesRun(Driver& d) {
   REQUIRE(d, page(d, Page::Menu, "carried partner returns to menu") &&
                 d.screen().selected == unsigned(MenuItem::Partner), "menu focus returns to the partner tile");
   d.frames(); d.shot("edges-menu-hub");
-  // Gaps between tiles and the walking status banner are inert; tile edges open their page.
   d.tap(170, 192); d.tap(233, 104);
   REQUIRE(d, d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Partner),
           "touch between tiles or on the walking banner is inert");
@@ -288,7 +282,7 @@ bool edgesRun(Driver& d) {
   return true;
 }
 
-}  // namespace
+}
 
 void scenarioProgression(Driver& d, const std::string& phase) {
   d.frames(4);
@@ -348,5 +342,5 @@ void scenarioEdges(Driver& d, const std::string& phase) {
 }
 
 #undef REQUIRE
-}  // namespace e2e
-}  // namespace simulator
+}
+}

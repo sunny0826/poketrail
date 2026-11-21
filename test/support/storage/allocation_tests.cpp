@@ -40,7 +40,7 @@ int main() {
     CHECK(store.load(out).status == LoadStatus::Loaded && out.sequence == 1);
   }
   {
-    FileStore store(io); budget = 1; // workspace succeeds, real codec allocation fails
+    FileStore store(io); budget = 1;
     CHECK(store.load(out).status == LoadStatus::IoError);
     CHECK(store.commit(a) == CommitStatus::IoError && io.writes == 0);
     budget = -1;

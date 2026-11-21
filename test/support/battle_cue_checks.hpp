@@ -14,7 +14,6 @@ inline bool targetRing(Action action, uint16_t color) {
   return action == Action::Attack ? ringAround(kEnemyX, kEnemyY, kCueTargetRadius, color)
                                   : ringAround(kPartnerX, kPartnerY, kCueTargetRadius, color);
 }
-// The cue circles only the actor whose key it asks for.
 inline bool cueOn(Action action, uint16_t color) {
   return targetRing(action, color) && !targetRing(action == Action::Attack ? Action::Dodge : Action::Attack, color);
 }

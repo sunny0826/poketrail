@@ -8,7 +8,6 @@ constexpr int kPitch = 68;
 constexpr int kWidth = 320;
 constexpr int kHeight = 60;
 constexpr int kCenter = 233;
-// Row corners stay 8px inside the 228px visible radius; lower rows narrow with the circle.
 constexpr int kRowRadius = 220;
 constexpr int kIconInset = 40;
 struct Rect {
@@ -43,8 +42,6 @@ constexpr int kPagerY = 430;
 constexpr unsigned kPagerDots = 6;
 constexpr Rect kPreviousPage = {118, 406, 90, 50};
 constexpr Rect kNextPage = {258, 406, 90, 50};
-// Hub pages fit on one screen: an optional banner, a tile grid and an exit pill,
-// indexed in that order. Every corner stays inside the 220px row radius.
 struct Hub { bool banner; unsigned columns, tiles; int top, width, height, gap; };
 constexpr unsigned kMaxHubTiles = 6;
 constexpr Hub kMainHub = {true, 3, 6, 144, 118, 96, 8};

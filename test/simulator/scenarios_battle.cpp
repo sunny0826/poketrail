@@ -32,7 +32,6 @@ bool cueVisibleOn(Action action, uint16_t& color, bool frenzy) {
   }
   return false;
 }
-// Reads each cue from the screen ~400ms ahead, then plays it on the beat with the key it points to.
 void playCues(Driver& d) {
   unsigned lastCue = 999; bool paused = false, sawFeint = false, usedSpecial = false;
   const uint32_t start = d.now();
@@ -81,8 +80,6 @@ void playCues(Driver& d) {
 }
 }
 
-// Visible cues guide successful inputs through feints, special attacks and pause/resume.
-// Remaining throw attempts stay visible after a new process restores the save.
 void scenarioBattle(Driver& d, const std::string& phase) {
   if (phase == "cues") {
     d.frames();

@@ -12,8 +12,6 @@ class LostClockPlatform : public TestPlatform {
 };
 
 void lostClockDraft() {
-  // A previously calibrated device must not present the new-device January 1
-  // draft as its recovered clock, nor silently trust or write the saved anchor.
   ScheduledStore store; LostClockPlatform p; setRtc(p, kNowUtc);
   {
     Runtime r(store, p); start(r); skipDateAndStarter(r, p);

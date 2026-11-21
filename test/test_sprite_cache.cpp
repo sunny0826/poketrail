@@ -39,7 +39,6 @@ int main() {
     draw(1, frame % 2, 2);
   }
   draw(2, 0, 1); draw(1, 1, 1); draw(0, 0, 1);
-  // A malformed replacement must not leave its partially written data under an old cache key.
   const uint8_t corrupt[] = {120,156,0};
   Sprite broken = sprites[1]; broken.data = corrupt; broken.data_size = sizeof(corrupt);
   check(!decodeFrame(broken, 0, 1, pixels, 16), "corrupt compressed data fails even with a reused species id");

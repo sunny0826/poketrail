@@ -227,9 +227,6 @@ bool validate(const Save& s) {
   const Encounter& e = s.encounter;
   const uint64_t legacyBoundary = s.legacyChargedCount + s.voidedLegacyCount;
   const bool legacyEncounter = s.schema == 1 || (e.id && e.id <= legacyBoundary);
-  // Schema 1/2/3 keep their frozen rule versions; schema 4 upgrades every
-  // non-legacy encounter to the current rules, while finished attempts stay
-  // verifiable under the table they were thrown with.
   if (e.route > lastStoredRoute(s.schema) || e.usedBalls > 2 || !e.ruleVersion || e.ruleVersion > kRuleVersion ||
       (legacyEncounter && e.ruleVersion != 1) ||
       (s.schema >= 4 && e.id && !legacyEncounter && e.ruleVersion != kRuleVersion) ||

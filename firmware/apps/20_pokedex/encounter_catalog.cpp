@@ -42,8 +42,6 @@ static bool marked(const SpeciesMask& mask, uint16_t id) {
 }
 static SpeciesMask retiredSpecies(const Save& s) {
   SpeciesMask retired = s.registered;
-  // Walk backwards to a fixed point: edges are not ordered by ancestry or dex ID.
-  // Only ancestors inherit retirement; unregistered siblings remain available.
   bool changed;
   do {
     changed = false;

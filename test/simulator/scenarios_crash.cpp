@@ -6,7 +6,6 @@ namespace {
 constexpr uint16_t kThrowSpecies = 72;
 }
 
-// Freeze at the recorded boundary until the parent sends SIGKILL.
 void scenarioCrash(Driver& d, const std::string& phase) {
   if (phase == "paused") {
     d.frames();
@@ -74,5 +73,5 @@ void scenarioCrash(Driver& d, const std::string& phase) {
   }
 }
 
-}  // namespace e2e
-}  // namespace simulator
+}
+}

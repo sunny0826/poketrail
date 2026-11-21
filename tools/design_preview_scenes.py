@@ -21,22 +21,18 @@ else:
 
 MIDDLE_PIXELS_PER_STEP = 1
 NEAR_PIXELS_PER_STEP = 2
-# Firmware region order: Route::Kanto..Route::Unova.
 REGIONS = ("kanto", "johto", "hoenn", "sinnoh", "unova")
 GROUND_TOP = {"kanto": 84, "johto": 84, "hoenn": 90, "sinnoh": 84, "unova": 86}
 _PAINTERS = {"kanto": kanto, "johto": johto, "hoenn": hoenn, "sinnoh": sinnoh, "unova": unova}
 
-
 def ground_height(route: str) -> int:
     return HEIGHT - GROUND_TOP[route]
-
 
 @dataclass(frozen=True)
 class SceneLayers:
     far: Image.Image
     middle: Image.Image
     near: Image.Image
-
 
 def pixel_scene_layers(route: str) -> SceneLayers:
     if route not in _PAINTERS:
@@ -46,11 +42,9 @@ def pixel_scene_layers(route: str) -> SceneLayers:
     _PAINTERS[route](far, middle, near, top)
     if far.getchannel("A").getextrema() != (255, 255):
         raise ValueError(f"{route} far layer leaves transparent pixels")
-    # Only the ground band loops; anything above it would never be shown.
     for moving in (middle, near):
         ImageDraw.Draw(moving).rectangle((0, 0, WIDTH - 1, top - 1), fill=(0, 0, 0, 0))
     return SceneLayers(far.convert("RGB"), middle, near)
-
 
 def ground_motion(layer: Image.Image, route: str, offset: int) -> Image.Image:
     top = GROUND_TOP[route]
@@ -58,7 +52,6 @@ def ground_motion(layer: Image.Image, route: str, offset: int) -> Image.Image:
     shifted = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
     shifted.paste(band, (0, top))
     return shifted
-
 
 def pixel_scene_motion(route: str, visual_steps: int = 0) -> Image.Image:
     layers = pixel_scene_layers(route)
@@ -69,10 +62,8 @@ def pixel_scene_motion(route: str, visual_steps: int = 0) -> Image.Image:
     image.alpha_composite(near)
     return image.convert("RGB")
 
-
 def pixel_scene_source(route: str) -> Image.Image:
     return pixel_scene_motion(route)
-
 
 def pixel_scene(route: str, visual_steps: int = 0) -> Image.Image:
     return pixel_scene_motion(route, visual_steps).resize((456, 270), Image.Resampling.NEAREST)

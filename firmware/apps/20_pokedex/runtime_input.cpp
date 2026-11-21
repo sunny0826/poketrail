@@ -7,7 +7,6 @@ namespace {
 bool recordPage(Page page) {
   return page == Page::FirstCaptures || page == Page::Recent || page == Page::Days || page == Page::Achievements;
 }
-// Record pages return to the records hub tile that opened them.
 unsigned recordTile(Page page) {
   return page == Page::FirstCaptures ? 0 : page == Page::Recent ? 1 : page == Page::Days ? 2 : 3;
 }
@@ -101,8 +100,6 @@ void Runtime::handle(const Input& raw) {
         !input.touchDown && !input.rightDown) {
       screen_.charging = false;
       const auto key = engine_.throwView().key;
-      // A tap shorter than the minimum hold is a mis-press: the window closes
-      // and no attempt is spent, so the player can aim again.
       if (input.at - screen_.chargeStartMs < kThrowMinHoldMs) {
         engine_.cancelThrow(key);
         dirty_ = true;
@@ -119,7 +116,6 @@ void Runtime::handle(const Input& raw) {
         anim.wiggleBreak = a.captured ? 0 : uint8_t(1 + a.roll % 3);
         screen_.capture = anim;
         lastCaptureCue_ = 0;
-        // The throw just saved; a checkpoint write now would eat the first flight frames.
         lastCheckpoint_ = anim.startMs;
         feedback(a.timing == Timing::Perfect ? 40 : 20);
       } else {
@@ -164,7 +160,6 @@ void Runtime::handle(const Input& raw) {
   }
   if (screen_.page == Page::Throw) { handleThrow(input); return; }
   if (screen_.page == Page::PracticeThrow) {
-    // Practice has no menu any more, so the top edge ends the session.
     if (input.back && !screen_.charging) { endPractice(); return; }
     handlePracticeThrow(input);
     return;

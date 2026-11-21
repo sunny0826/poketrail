@@ -9,7 +9,6 @@ namespace pokedex { namespace ui {
 using namespace adventure;
 static_assert(data::kSceneCount == kRegionCount, "one scene per region");
 namespace {
-// Legacy type routes survive only in capture history and never select a scene.
 unsigned sceneIndex(Route route) { return isRegion(route) ? regionIndex(route) : 0; }
 }
 void Screens::line(const char* text, int y, uint16_t color, bool large) {

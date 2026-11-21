@@ -34,8 +34,6 @@ void bootWithPm1Failure(unsigned failing) {
 }
 int main(int argc,char** argv) {
   reset(); bootBegin();
-  // Product assumption: a short power press must reach Runtime without a PMIC
-  // reset; enabling that policy must preserve button timing and double-off.
   expect(bank[kButtonCfg1]==(kButtonSeed|1),"single press cannot reset the host; timing bits preserved");
   expect(bank[kButtonCfg2]==kDoubleSeed,"double-press shutdown settings preserved");
   const auto policyTrace=trace;

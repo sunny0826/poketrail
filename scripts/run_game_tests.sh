@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# 在电脑上编译并运行动画时序、展示交互与解码器的逻辑测试。
-#
-# 这些测试不需要硬件。目的是在烧录到真机之前把状态机的问题暴露出来。
-#
-# 用法：
-#   mise exec -- ./scripts/run_game_tests.sh
 
 set -euo pipefail
 

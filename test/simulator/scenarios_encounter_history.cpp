@@ -41,7 +41,7 @@ void evolutionState(Driver& d) {
           "gifts and evolution do not manufacture capture records");
   d.check(remainingEncounters(d.save(),Route::Kanto)==0,"acquired Kanto pool is empty");
 }
-} // namespace
+}
 
 void scenarioEncounterHistory(Driver& d, const std::string& phase) {
   d.frames();

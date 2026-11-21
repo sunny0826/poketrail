@@ -1,4 +1,3 @@
-// Runtime 主机校时：复用正式时钟事务，覆盖初校、跨日、回拨、失败重试与测试模式隔离。
 #include <cstring>
 #include <vector>
 
@@ -10,15 +9,15 @@ using namespace pokedex::ui;
 using namespace pokedex::clock_sync;
 
 namespace {
-const int64_t kOldUtc = 1767259321;      // 2026-01-01T09:22:01Z，设备原错误日期
-const int64_t kNowUtc = 1792670400;      // 2026-10-22T12:00:00Z
+const int64_t kOldUtc = 1767259321;
+const int64_t kNowUtc = 1792670400;
 
 class ScheduledStore : public Store {
  public:
   std::vector<uint8_t> bytes;
   LoadStatus status = LoadStatus::Empty;
   unsigned commits = 0;
-  unsigned failAt = 0;  // 1-based commit index; 0 disables.
+  unsigned failAt = 0;
   bool writeThenFail = true;
   LoadResult load(Save& s) override {
     if (status != LoadStatus::Loaded) return LoadResult(status);

@@ -42,13 +42,20 @@ App::~App() {
   SDL_DestroyTexture(texture_); SDL_DestroyRenderer(renderer_); SDL_DestroyWindow(window_);
   SDL_Quit();
 }
+namespace {
+bool isInputEdgeEvent(const SDL_Event& event) {
+  return event.type == SDL_KEYDOWN || event.type == SDL_KEYUP ||
+         event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP ||
+         (event.type == SDL_MOUSEMOTION && M5.Touch.detail.pressed);
+}
+}
 bool App::step() {
   const auto tr = [this](Text id) { return pokedex::i18n::text(runtime_->language(), id); };
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     if (event.type == SDL_WINDOWEVENT && options_.windowEvent) options_.windowEvent(event.window.event);
-    // Scripted focus events use windowID 0; normal desktop mode handles all focus changes.
-    if (options_.isolateHostFocus && event.type == SDL_WINDOWEVENT && event.window.windowID != 0 &&
+    if (options_.isolateHostFocus && event.type == SDL_WINDOWEVENT &&
+        event.window.windowID != kScriptedWindowId &&
         event.window.event == SDL_WINDOWEVENT_FOCUS_LOST) continue;
     if (event.type == SDL_QUIT || (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE) ||
         (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_Q &&
@@ -60,10 +67,7 @@ bool App::step() {
       break;
     }
     platform_.event(event);
-    // Consume input edges on separate ticks, including down/up in one SDL batch.
-    if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP ||
-        event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP ||
-        (event.type == SDL_MOUSEMOTION && M5.Touch.detail.pressed)) break;
+    if (isInputEdgeEvent(event)) break;
   }
   if (!running_) return false;
   for (unsigned i = 0, count = platform_.fast() ? 16 : 1; i < count; ++i) {

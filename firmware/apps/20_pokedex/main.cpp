@@ -76,7 +76,6 @@ class DevicePlatform : public pokedex::ui::Platform {
   c152::BatteryStatus readBattery() override { return c152::readBattery(); }
  private:
   void logClockRegisters(const char* stage) {
-    // Read before initialization changes STOP/TEST flags; never clear a fault here.
     const uint8_t registers[] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
                                  0x1d, 0x1e, 0x1f, 0x20, 0x31};
     Serial.printf("[rtc] %s", stage);
@@ -101,9 +100,6 @@ bool ready = false;
 
 bool rebuildRuntime(bool persistBoot = true) {
   runtime.reset();
-  // Always pass the delegating platform. It reads the final store identity
-  // after any mount/marker retry, so a late transition to test mode cannot
-  // bind the test save to real IMU sampling or hardware RTC writes.
   runtime = pokedex::makeLargeObject<pokedex::ui::Runtime>(
     store, static_cast<pokedex::ui::Platform&>(testPlatform), &store);
   ready = runtime && runtime->begin(persistBoot);
@@ -137,7 +133,6 @@ void pumpClockSerial() {
   wasPlugged = plugged;
   if (!plugged) clockTxLength = clockTxSent = 0;
   if (clockReplyPending()) return;
-  // Bound the work per main-loop pass so serial traffic cannot starve sampling.
   for (unsigned budget = 0; budget < 64; ++budget) {
     const int value = Serial.read();
     if (value < 0) break;
@@ -186,8 +181,6 @@ void diagnostic(const char* format, ...) {
 }
 
 namespace pokedex { namespace app {
-// UI tasks call these entry points. The old Runtime is destroyed before the
-// storage root changes so a rebuild never keeps two Screen buffers or Engines.
 bool enterTestMode(adventure::TestSeed seed) {
   if (!runtime || store.testMode()) return false;
   if (runtime->engine().savePending()) {

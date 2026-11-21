@@ -6,7 +6,7 @@
 #include <type_traits>
 namespace pokedex { namespace adventure { namespace codec {
 namespace {
-constexpr uint32_t kMagic = 0x31445641u; // AVD1 on disk
+constexpr uint32_t kMagic = 0x31445641u;
 struct Writer {
   uint8_t* data; size_t capacity; size_t pos; bool ok;
   Writer(uint8_t* p, size_t n) : data(p), capacity(n), pos(0), ok(p != nullptr) {}
@@ -91,7 +91,6 @@ template<class A, class T> void payload(A& a, T& s) {
     a.field(s.lastEvolution.request.rosterRevision); a.field(s.lastEvolution.cost);
     stamp(a, s.lastEvolution.at); a.field(s.encounter.legacyFreeAttempts);
   }
-  // Schema 4 adds the random encounter cadence account.
   if (s.schema >= 4) { a.field(s.encounterTarget); a.field(s.explorationSpent); }
   if (s.schema >= 8) a.field(s.language);
   if (s.schema >= 9) {
@@ -140,19 +139,11 @@ DecodeStatus decode(const uint8_t* bytes, size_t length, Save& out) {
   if (schema < 1 || schema > kSchemaVersion) return DecodeStatus::UnsupportedVersion;
   if (length > maxEncodedSize) return DecodeStatus::Corrupt;
   if (payloadLength != length - kHeaderSize || crc != frameCrc(bytes, length)) return DecodeStatus::Corrupt;
-  // A Save exceeds a typical embedded task stack. Decode transactionally in PSRAM.
   LargeObject<Save> parsed = makeLargeObject<Save>();
   if (!parsed) return DecodeStatus::IoError;
   parsed->schema = schema; parsed->sequence = sequence;
   Reader data(bytes + kHeaderSize, payloadLength); payload(data, *parsed);
   if (!data.ok) return DecodeStatus::Corrupt;
-  // Frames written by the unmerged activity-branch firmware (legendary-ruins,
-  // dragon-trial) append a 22-byte activity block to an otherwise ordinary
-  // schema-3 payload. Skip that block, retire any in-flight activity encounter
-  // (its species lies outside the ordinary pool), and upgrade to schema 4 and
-  // then 5 on the spot: schema-3 bookkeeping cannot express encounters that
-  // consumed no exploration credit, while schema-4 accepts the zero-cost id
-  // range and schema 5 repairs the route of an in-play ordinary encounter.
   const bool activityTail = parsed->schema == 3 && data.pos + 22 == payloadLength;
   if (!activityTail && data.pos != payloadLength) return DecodeStatus::Corrupt;
   if (activityTail) {

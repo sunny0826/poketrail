@@ -6,11 +6,10 @@
 namespace pokedex {
 
 constexpr uint16_t kTransparentKey = 0xF81F;
-constexpr uint16_t kMaxSourceSize = 160;  // Measured through #649: 153 wide, 117 tall.
+constexpr uint16_t kMaxSourceSize = 160;
 constexpr uint16_t kMaxDisplayWidth = 336;
 constexpr uint16_t kMaxDisplayHeight = 270;
 
-// data 是该宝可梦全部去重帧的 zlib 数据。Frame::offset 指向解压后的调色板索引。
 struct Frame {
   uint32_t offset;
   uint16_t duration_ms;
@@ -32,8 +31,6 @@ struct Sprite {
   uint32_t duration_ms;
   const char* height_text;
   const char* weight_text;
-  // 优先 3 倍类别：中间／最终形态与目录内无进化链物种；
-  // 实际缩放仍受 336x270 画布与页面高度限制。
   bool enlarged;
 };
 
@@ -41,4 +38,4 @@ uint16_t displayScale(const Sprite& sprite);
 bool decodeFrame(const Sprite& sprite, uint16_t frame, uint16_t scale,
                  uint16_t* pixels, size_t capacity);
 
-}  // namespace pokedex
+}

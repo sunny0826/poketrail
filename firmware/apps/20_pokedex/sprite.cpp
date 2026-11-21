@@ -17,7 +17,6 @@ struct DecodedSprite {
   const uint8_t* source = nullptr;
   uint32_t compressedSize = 0, rawSize = 0;
 };
-// Two resident sources cover both battle actors and both evolution forms.
 DecodedSprite slots[2];
 unsigned recent = 0;
 const uint8_t* cache(const Sprite& sprite) {
@@ -116,4 +115,4 @@ bool decodeFrame(const Sprite& sprite, uint16_t frame_index, uint16_t scale,
   return true;
 }
 
-}  // namespace pokedex
+}

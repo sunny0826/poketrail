@@ -3,8 +3,6 @@
 #include <lgfx/v1/LGFX_Sprite.hpp>
 #include <vector>
 
-// 使用真实像素绘制和 IPanel 事务，模拟 StopWatch 的自动刷新开关。
-// 每次 display 保留当时的画面，便于检测擦除后、重画前暴露的中间帧。
 class HostDisplay : public lgfx::LGFXBase {
  public:
   HostDisplay() {

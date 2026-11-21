@@ -19,7 +19,7 @@ constexpr uint8_t kPm1LdoHold = 0x20;
 constexpr uint8_t kPm1ButtonCfg1 = 0x49;
 constexpr uint8_t kPm1SingleResetDisable = 0x01;
 
-}  // namespace
+}
 
 namespace c152 {
 
@@ -38,7 +38,7 @@ void begin(const char* title) {
   M5.Display.setRotation(0);
   M5.Display.setBrightness(96);
   M5.Display.setTextWrap(false);
-  M5.Display.setSwapBytes(true);  // 素材数组保存原生 RGB565 数值。
+  M5.Display.setSwapBytes(true);
   M5.Speaker.setVolume(72);
   previous_touch_down = M5.Touch.getDetail().isPressed();
 
@@ -137,4 +137,4 @@ void drawFooter(const char* text, uint16_t color) {
   M5.Display.drawString(text, kScreenCenter, kScreenSize - 44);
 }
 
-}  // namespace c152
+}

@@ -35,14 +35,12 @@ POKE_BALL_URL = (
     "sprites/items/poke-ball.png"
 )
 POKE_BALL_CACHE = "poke-ball.png"
-TRANSPARENT_KEY = 0xF81F  # 与 firmware/apps/20_pokedex/sprite.hpp kTransparentKey 一致
+TRANSPARENT_KEY = 0xF81F
 GEN1_COUNT = 151
 POKEMON_COUNT = 649
 
-
 def cache_path(name: str) -> Path:
     return CACHE_DIR / name
-
 
 def fetch(name: str, url: str, download: bool) -> bytes:
     path = cache_path(name)
@@ -56,10 +54,8 @@ def fetch(name: str, url: str, download: bool) -> bytes:
         path.write_bytes(data)
     return path.read_bytes()
 
-
 def to_rgb565(r: int, g: int, b: int) -> int:
     return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
-
 
 def build_icon(data: bytes, name: str) -> dict:
     image = Image.open(io.BytesIO(data))
@@ -83,7 +79,6 @@ def build_icon(data: bytes, name: str) -> dict:
         raise ValueError(f"{name}: icon has no transparent pixels")
     return dict(width=width, height=height, pixels=tuple(pixels),
                 sha256=hashlib.sha256(data).hexdigest())
-
 
 def load_manifests() -> tuple[dict[int, dict], set[int]]:
     """读取 Gen1/Gen2 图标清单；任一缺失即失败，只有 --write-manifests 可重建。"""
@@ -110,16 +105,13 @@ def load_manifests() -> tuple[dict[int, dict], set[int]]:
             raise ValueError("generation 1 icon manifest missing poke_ball entry")
     return entries, present
 
-
 def verify_hash(name: str, data: bytes, expected: str) -> None:
     actual = hashlib.sha256(data).hexdigest()
     if actual != expected:
         raise ValueError(f"{name}: SHA256 differs from its icon manifest")
 
-
 def generation_of(number: int) -> int:
     return 1 if number <= GEN1_COUNT else 2
-
 
 def load_icons(download: bool, write_manifests: bool) -> tuple[list[dict], dict]:
     """返回 (251只宝可梦图标, 精灵球图标)，按清单核对或重建清单。"""
@@ -147,7 +139,6 @@ def load_icons(download: bool, write_manifests: bool) -> tuple[list[dict], dict]
             raise ValueError(f"{POKE_BALL_CACHE}: size differs from manifest")
     return pokemon, poke_ball
 
-
 def generate_header() -> str:
     return '''#pragma once
 
@@ -171,13 +162,11 @@ extern const Icon kPokeBallIcon;
 }  // namespace pokedex
 '''
 
-
 def emit_pixels(lines: list[str], ident: str, pixels: tuple[int, ...]) -> None:
     lines.append(f'const uint16_t {ident}[] = {{')
     for start in range(0, len(pixels), 12):
         lines.append('    ' + ', '.join(f'0x{v:04X}' for v in pixels[start:start + 12]) + ',')
     lines.append('};')
-
 
 def generate_source(pokemon: list[dict], poke_ball: dict) -> str:
     lines = ['// 由 tools/build_icons.py 自动生成，请勿手工编辑。',
@@ -198,7 +187,6 @@ def generate_source(pokemon: list[dict], poke_ball: dict) -> str:
                   '}  // namespace data', '}  // namespace pokedex', ''])
     return '\n'.join(lines)
 
-
 def generate_manifest(pokemon: list[dict], poke_ball: dict | None) -> str:
     entries = [dict(id=icon["id"], sha256=icon["sha256"],
                     width=icon["width"], height=icon["height"]) for icon in pokemon]
@@ -214,7 +202,6 @@ def generate_manifest(pokemon: list[dict], poke_ball: dict | None) -> str:
         data["poke_ball"] = dict(sha256=poke_ball["sha256"],
                                  width=poke_ball["width"], height=poke_ball["height"])
     return json.dumps(data, ensure_ascii=False, indent=2) + '\n'
-
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -253,7 +240,6 @@ def main() -> int:
     total = sum(len(icon["pixels"]) for icon in pokemon) + len(poke_ball["pixels"])
     print(f'{len(pokemon)} pokemon icons + poke-ball; {total * 2:,} pixel bytes')
     return 0
-
 
 if __name__ == '__main__':
     try:

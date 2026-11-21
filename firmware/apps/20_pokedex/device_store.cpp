@@ -92,7 +92,6 @@ bool clearSlots(const char* root) {
   }
   return ok;
 }
-// Raw byte copy: the test engine, not the snapshot, applies migration.
 bool copyFile(const char* source, const char* target) {
   struct stat info;
   bool missing = false;
@@ -152,7 +151,6 @@ StorageCapacity DeviceStore::capacity() const {
 LoadStatus DeviceStore::begin() {
   if (owner && owner != this) return LoadStatus::IoError;
   owner = this;
-  // A RAM-only session has no filesystem identity to remount or validate.
   if (mode_.active && mode_.ramOnly) return LoadStatus::Loaded;
   if (!mounted_) {
     if (!LittleFS.begin(false, "/littlefs", 10, "spiffs")) return LoadStatus::NeedsProvisioning;
@@ -162,8 +160,6 @@ LoadStatus DeviceStore::begin() {
   if (!initialized_) {
     initialized_ = true;
     root_ = kOfficialRoot;
-    // The marker is the only boot-time authority. A read error is not proof
-    // that it is absent, so fail closed rather than adopting an identity.
     const MarkerState marker = markerState();
     if (marker == MarkerState::Error) {
       initialized_ = false;
@@ -174,8 +170,6 @@ LoadStatus DeviceStore::begin() {
       root_ = kTestRoot;
     }
   }
-  // Repeated calls only validate the root already selected; they must not drop
-  // fault or seed state the user set in this session.
   if (!ensureDirectory(root_)) return LoadStatus::IoError;
   return LoadStatus::Loaded;
 }
@@ -279,8 +273,6 @@ bool DeviceStore::seedSnapshot() {
 bool DeviceStore::enterTest(TestSeed seed) {
   if (!mode_.active) {
     if (!mounted_) {
-      // No filesystem identity can be persisted here: accept only a blank
-      // single-save session that never touches LittleFS.
       if (seed != TestSeed::Blank) return false;
       ramSave_ = makeLargeObject<Save>();
       if (!ramSave_) return false;
@@ -292,8 +284,6 @@ bool DeviceStore::enterTest(TestSeed seed) {
       return true;
     }
     if (!ensureDirectory(kTestRoot)) return false;
-    // Write identity before seeding: a power loss may leave a blank test save,
-    // but must never make the official runtime load the test directory.
     if (!writeActive()) {
       LittleFS.remove(kActivePath);
       return false;
@@ -319,8 +309,6 @@ bool DeviceStore::leaveTest() {
   if (!mode_.active) return false;
   bool clean = true;
   if (!mode_.ramOnly && mounted_) {
-    // Deactivate first. If the marker cannot be removed the session stays in
-    // test mode so a restart cannot disagree with the visible UI.
     if (!removeFile(kActivePath)) return false;
     if (!clearSlots(kTestRoot)) clean = false;
     if (!removeDirectory(kTestRoot)) clean = false;

@@ -134,7 +134,6 @@ void finalConfirmation() {
            : !r.valid && r.verificationFailed,
            "date changing at final confirmation must still satisfy 0..2 second tolerance");
     if(seconds<0 || seconds>2) {
-      // Keep the hardware state but remove the transient time shift before reboot.
       advance=0;
       Clock reboot; reboot.begin(m5::In_I2C);
       const Reading next=reboot.read();

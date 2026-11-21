@@ -1,7 +1,6 @@
 #pragma once
 #include "adventure_model.hpp"
 namespace pokedex { namespace adventure {
-// `routes` holds the schema 5-6 type masks; schema 7 draws encounters by region.
 struct CatalogEntry { uint8_t routes; bool rare; uint16_t weight; };
 struct RegionRange { uint16_t first, last; };
 struct EvolutionRule { uint16_t from, to; uint32_t steps; };

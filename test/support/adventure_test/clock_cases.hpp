@@ -47,7 +47,6 @@ static void clockTransactions() {
   CHECK(w.e.finishClockChange(id, target) == CommandResult::SavePending);
   w.store.failBefore = false; CHECK(w.e.retrySave() == CommandResult::Applied);
   CHECK(w.e.view().clock.pending.active && !w.e.view().clock.trusted);
-  // Hardware failure means no finish call; restart retains pending and requires a new confirmation.
   Engine reboot(w.store); CHECK(reboot.begin() == CommandResult::Applied);
   ClockReading fresh = reading(reboot, target.utcSeconds, 1000);
   CHECK(reboot.view().clock.pending.active && !reboot.view().clock.trusted);

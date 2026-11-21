@@ -23,8 +23,6 @@ struct PracticeOutcome {
   uint32_t at = 0;
 };
 
-// 捕获练习只复用真实对战的节拍、投球时机与概率规则。
-// 它不接触 Save、球库存或图鉴：成功只在本对象内结算。
 class CapturePractice {
  public:
   void begin(uint32_t nowMs, uint32_t seed);
@@ -45,7 +43,6 @@ class CapturePractice {
   bool requestPause();
   bool resume(uint32_t nowMs);
   bool beginThrow(uint32_t nowMs);
-  // Abandons the throw window without spending a practice ball.
   void cancelThrow();
   PracticeOutcome pressThrow(uint32_t nowMs);
 
