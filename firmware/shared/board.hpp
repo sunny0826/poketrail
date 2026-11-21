@@ -22,6 +22,9 @@ void resetTouchEdge();
 bool readAccel(float& x, float& y, float& z, bool& fresh);
 
 void feedback(uint16_t frequency_hz, uint16_t duration_ms, uint8_t vibration);
+void feedbackPulse(uint16_t on1_ms, uint16_t gap_ms, uint16_t on2_ms,
+                   uint8_t vibration);
+void stopVibration();
 bool vibrationActive();
 
 }

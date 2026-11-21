@@ -236,9 +236,162 @@ void wraparound() {
   MemoryStore store; ready(store); PowerPlatform platform; Runtime runtime(store, platform); start(runtime);
   idle(runtime, 30020); check(runtime.dimmed(), "idle sleep survives clock rollover"); wake(runtime);
 }
+struct HapticCall {
+  enum class Kind : uint8_t { Single, Double };
+  Kind kind;
+  uint16_t on1, gap, on2;
+  uint8_t strength;
+  uint32_t at;
+};
+class HapticPowerPlatform : public PowerPlatform {
+ public:
+  std::vector<HapticCall> calls;
+  unsigned stopCalls = 0;
+  bool forceInactive = false;
+  void emit(HapticCall::Kind kind, uint16_t on1, uint16_t gap, uint16_t on2, uint8_t strength) {
+    const uint16_t total = uint16_t(on1 + gap + on2);
+    ++feedbacks;
+    lastFeedback = total;
+    vibrationEnd = forceInactive ? now() : now() + total;
+    calls.push_back({kind, on1, gap, on2, strength, now()});
+  }
+  void feedback(uint16_t ms) override { emit(HapticCall::Kind::Single, ms, 0, 0, 0); }
+  void feedbackStrength(uint16_t ms, uint8_t strength) override {
+    emit(HapticCall::Kind::Single, ms, 0, 0, strength);
+  }
+  void feedbackDouble(uint16_t on1, uint16_t gap, uint16_t on2, uint8_t strength) override {
+    emit(HapticCall::Kind::Double, on1, gap, on2, strength);
+  }
+  void stopVibration() override { ++stopCalls; vibrationEnd = now(); }
+};
+class SlowCommitStore : public MemoryStore {
+ public:
+  uint32_t delayMs = 0;
+  HapticPowerPlatform* observed = nullptr;
+  unsigned stopsBefore = 0;
+  bool stoppedBeforeDelay = false;
+  CommitStatus commit(const Save& s) override {
+    if (observed) stoppedBeforeDelay = observed->stopCalls > stopsBefore && !observed->vibrationActive();
+    host_time_ms += delayMs;
+    return MemoryStore::commit(s);
+  }
+};
+void checkBoardVib(uint32_t dt, bool active, uint8_t vib, const char* msg) {
+  host_time_ms += dt;
+  c152::updateVibration();
+  check(c152::vibrationActive() == active && M5.Power.vibration == vib, msg);
+}
+void boardPulseStateMachine() {
+  host_time_ms = 10000;
+  c152::stopVibration();
+  M5.Power.vibration = 0;
+  check(!c152::vibrationActive(), "board vibration starts idle");
+  c152::feedbackPulse(65, 50, 85, 255);
+  checkBoardVib(0, true, 255, "pulse 1 starts at 255");
+  checkBoardVib(60, true, 255, "pulse 1 holds before 65ms");
+  checkBoardVib(5, true, 0, "pulse 1 enters gap keeping active true");
+  checkBoardVib(45, true, 0, "gap holds off before 50ms");
+  checkBoardVib(5, true, 255, "pulse 2 starts at 255");
+  checkBoardVib(80, true, 255, "pulse 2 holds before 85ms");
+  checkBoardVib(5, false, 0, "pulse 2 completes idle");
+
+  c152::feedbackPulse(65, 50, 85, 255);
+  checkBoardVib(65, true, 0, "gap entered before stop");
+  c152::stopVibration();
+  check(!c152::vibrationActive() && M5.Power.vibration == 0, "stopVibration cancels gap pulse 2");
+  checkBoardVib(100, false, 0, "cancelled double pulse stays off");
+
+  c152::feedback(0, 80, 215);
+  check(c152::vibrationActive() && M5.Power.vibration == 215, "single pulse sets strength 215");
+  c152::stopVibration();
+  check(!c152::vibrationActive() && M5.Power.vibration == 0, "stopVibration clears single pulse");
+}
+void feedStrongCrest(Runtime& runtime, HapticPowerPlatform& platform) {
+  for (float z : {0.70f, 0.70f, 1.30f, 1.30f, 0.70f}) { platform.z = z; frame(runtime); }
+  platform.z = 1.0f;
+}
+void encounterDoublePulseAndSuppression() {
+  host_time_ms = 20000;
+  MemoryStore store;
+  {
+    Engine engine(store);
+    check(engine.begin() == CommandResult::Applied && engine.chooseStarter(1) == CommandResult::Applied,
+          "encounter haptic fixture boots");
+    step(engine, 1, engine.view().encounterTarget - 1);
+    check(engine.checkpoint() == CommandResult::Applied, "encounter haptic fixture checkpoints");
+  }
+  HapticPowerPlatform platform; platform.forceInactive = true;
+  Runtime runtime(store, platform); start(runtime); platform.calls.clear();
+  for (unsigned ms = 0; ms < 3000 && runtime.engine().view().phase != Phase::EncounterReady; ms += 20) {
+    platform.z = 1 - 0.30f * std::cos(6.28318530718f * float(ms % 500) / 500.0f);
+    frame(runtime);
+  }
+  platform.z = 1;
+  check(runtime.engine().view().phase == Phase::EncounterReady, "walking triggers encounter");
+  check(platform.calls.size() == 1 && platform.calls[0].kind == HapticCall::Kind::Double &&
+            platform.calls[0].on1 == 65 && platform.calls[0].gap == 50 &&
+            platform.calls[0].on2 == 85 && platform.calls[0].strength == 255,
+        "new encounter triggers 65/50/85ms double pulse at strength 255");
+
+  const uint64_t stepsAt = runtime.engine().view().totalSteps;
+  const uint32_t encAt = platform.calls[0].at;
+  idle(runtime, 220); feedStrongCrest(runtime, platform);
+  check(host_time_ms - encAt < 400, "first crest completes inside 400ms suppression window");
+  idle(runtime, 160); feedStrongCrest(runtime, platform);
+  check(runtime.engine().view().totalSteps == stepsAt, "encounter double pulse suppresses 200+200ms");
+  idle(runtime, 140); feedStrongCrest(runtime, platform);
+  check(runtime.engine().view().totalSteps > stepsAt, "walking resumes after 400ms window");
+}
+void slowCommitStopsVibration() {
+  host_time_ms = 40000;
+  SlowCommitStore store; ready(store, 2);
+  HapticPowerPlatform platform; Runtime runtime(store, platform); start(runtime);
+  walk(runtime, platform, 3);
+  store.observed = &platform; store.delayMs = 800; store.stopsBefore = platform.stopCalls;
+  runtime.feedback(Haptic::Strong);
+  check(platform.vibrationActive(), "vibration active before slow commit");
+  const uint32_t beforeMs = host_time_ms;
+  check(runtime.checkpoint() == CommandResult::Applied, "slow commit succeeds");
+  check(store.stoppedBeforeDelay && host_time_ms - beforeMs >= 800,
+        "TimedStore::commit stops vibration before 800ms store commit");
+}
+void battleHapticTiersAndWalkingMute() {
+  host_time_ms = 60000;
+  MemoryStore store; ready(store);
+  HapticPowerPlatform platform; Runtime runtime(store, platform); start(runtime);
+  idle(runtime, 2100); openMenu(runtime); select(runtime, MenuItem::Practice);
+  platform.calls.clear(); walk(runtime, platform, 6);
+  check(runtime.practiceView().settlements > 0 && platform.calls.empty(),
+        "battle beats within 2s of walking suppress vibration");
+  tap(runtime, 233, 30); idle(runtime, 1000);
+  check(runtime.screen().page == Page::Pause, "first practice pauses");
+  select(runtime, 1); idle(runtime, 2200);
+
+  openMenu(runtime); select(runtime, MenuItem::Practice);
+  auto judgeBeat = [&](int32_t leadMs, bool press, Timing timing, uint16_t ms, uint8_t str, const char* msg) {
+    while (runtime.practiceView().consumed) frame(runtime);
+    if (press) {
+      while (int32_t(runtime.practiceView().targetMs - host_time_ms) > leadMs) frame(runtime);
+      platform.calls.clear();
+      const Action act = runtime.practiceView().expected;
+      edge(runtime, act == Action::Dodge, act == Action::Attack);
+    } else {
+      const uint8_t s = runtime.practiceView().settlements;
+      platform.calls.clear();
+      while (runtime.practiceView().settlements == s) frame(runtime);
+    }
+    check(runtime.practiceView().lastTiming == timing && platform.calls.size() == 1 &&
+              platform.calls[0].kind == HapticCall::Kind::Single &&
+              platform.calls[0].on1 == ms && platform.calls[0].strength == str, msg);
+  };
+  judgeBeat(20, true, Timing::Perfect, 80, 255, "perfect hit triggers Strong 80ms/255");
+  judgeBeat(130, true, Timing::Normal, 50, 215, "normal hit triggers Medium 50ms/215");
+  judgeBeat(0, false, Timing::Miss, 35, 180, "missed beat triggers Light 35ms/180");
+}
 }
 int main() {
   c152::begin("POWER PAGES TEST");
   autoSleepAndWalk(); clockDraft(); pausedAndActive(); failedCommandsAndSave(); wakeFailureAndSaveRetry(); viewerErrorWake(); calibratedAsleepIdleAndWalk(); activeInputCheckpointDeferral(); wraparound();
+  boardPulseStateMachine(); encounterDoublePulseAndSuppression(); slowCommitStopsVibration(); battleHapticTiersAndWalkingMute();
   std::printf("%u power Runtime checks, 0 failures\n", checks);
 }

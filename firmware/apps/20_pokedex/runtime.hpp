@@ -21,6 +21,7 @@ struct Sample {
   float x = 0, y = 0, z = 0;
   uint32_t at = 0;
 };
+enum class Haptic : uint8_t { Light, Medium, Strong, Encounter };
 class Platform {
  public:
   virtual ~Platform() {}
@@ -31,6 +32,15 @@ class Platform {
   virtual device_clock::Reading readClock() = 0;
   virtual device_clock::Reading writeClock(int64_t utc) = 0;
   virtual void feedback(uint16_t duration) = 0;
+  virtual void feedbackStrength(uint16_t duration, uint8_t strength) {
+    (void)strength;
+    feedback(duration);
+  }
+  virtual void feedbackDouble(uint16_t on1, uint16_t gap, uint16_t on2, uint8_t strength) {
+    (void)strength;
+    feedback(uint16_t(on1 + gap + on2));
+  }
+  virtual void stopVibration() {}
   virtual bool vibrationActive() = 0;
   virtual bool usbHostPresent() { return false; }
   virtual void brightness(uint8_t) = 0;
@@ -97,6 +107,7 @@ class Runtime {
     return std::min<uint32_t>(kMaxSleepWindowMs - elapsed, kSamplePollIntervalMs);
   }
   void feedback(uint16_t duration);
+  void feedback(Haptic kind);
   clock_sync::Status clockSyncStatus();
   const char* syncClockFromHost(uint32_t id, int64_t utcSeconds, int16_t offsetMinutes);
  private:
