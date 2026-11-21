@@ -7,7 +7,7 @@
 Walk with your partner, encounter Pokémon, and catch them through rhythm battles and ball throws.<br>
 An offline walking adventure for the round screen of the M5Stack StopWatch (C152).
 
-<img src="docs/images/readme/home.png" width="360" alt="Round home screen: Bulbasaur stands on a Kanto farm path, marked as the carried partner, with 0 species caught beside the ball icon and 4 steps today shown below. Host Runtime/M5GFX render, not a device photo.">
+<img src="docs/images/readme/home.png" width="360" alt="Round home screen: Bulbasaur stands on a Kanto farm path, with 0 species caught beside the ball icon and 4 steps today shown below. Host Runtime/M5GFX render, not a device photo.">
 
 [Getting started](#getting-started) · [Desktop simulation](#desktop-simulation) · [Build and flash](#build-and-flash) · [Development guide (Chinese only)](docs/development.md) · [Verification notes (Chinese only)](docs/verification.md)
 
@@ -45,14 +45,14 @@ See the [usage guide](docs/usage.en.md) for probabilities, evolution costs, cont
 <details>
 <summary>Image sources</summary>
 
-All images are screenshots rendered offscreen with the host Runtime/M5GFX from the 649-species version. The battle and throw images were updated on 2026-11-03; the other images are from 2026-11-02. They are not C152 device photos and cannot establish on-device frame rate, visual quality, or acceptance results. Click an image to open the original 468×468 file. The physical round screen is 466×466; the current M5GFX driver reports 468×468. The PNGs retain only pixels inside the round screen, with transparency outside it.
+All images are screenshots rendered offscreen with the host Runtime/M5GFX from the 649-species version. The initial home screen and five region images were updated on 2026-11-21; the battle and throw images are from 2026-11-03, and the Pokédex image is from 2026-11-02. They are not C152 device photos and cannot establish on-device frame rate, visual quality, or acceptance results. Click an image to open the original 468×468 file. The physical round screen is 466×466; the current M5GFX driver reports 468×468. The PNGs retain only pixels inside the round screen, with transparency outside it.
 
 The table records the original screenshot sources. Some of these tests and screenshot exports were removed during the test audit; they are not current reproduction commands.
 
 | Screen | Original render suite | Screenshot |
 | --- | --- | --- |
 | Initial home screen | `test_home_render` | `home-today-complete-live`: the 4 steps today come from simulated walking in the test; nothing caught yet |
-| Five regions | `test_home_render` | `home-scene-0`–`home-scene-4`: today's count shows -- because the clock is not set; the test save has caught 2 species |
+| Five regions | Host Runtime/M5GFX offscreen render (current Home) | `region-kanto`–`region-unova`: today's count shows -- because the clock is not set; the test save has caught 2 species |
 | Rhythm battle | `test_battle_render` | `battle-idle`: Kanto, Charmander against Pikachu, attack cue |
 | Charged throw | `test_capture_render` | `throw-aim-key-800`: Kanto, facing Bulbasaur after an 800ms hold, upper timing ring closing, two attempts left |
 | Pokédex | `test_adventure_render` | `viewer-entry`: the starter partner in the test save |
