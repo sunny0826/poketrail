@@ -104,8 +104,8 @@ class Screens {
   const char* speciesName(uint16_t id) const { return i18n::speciesName(language_, id); }
   const char* routeName(adventure::Route route) const { return ui::routeName(language_, route); }
   const char* progressionMessage(adventure::CommandResult result) const { return ui::progressionMessage(language_, result); }
-  void language(const ScreenState&, const adventure::Engine&);
   struct Playback { viewer::State state; uint16_t species = 0; };
+  void drawResultHero(uint16_t species, bool first, uint32_t now);
   bool exploration(const adventure::Engine&, uint32_t now);
   void home(const ScreenState&, const adventure::Engine&, uint32_t now);
   void progression(const ScreenState&, const adventure::Engine&);
@@ -184,6 +184,134 @@ class Screens {
                         uint16_t silhouette, uint8_t maxScale = 3,
                         uint16_t maxHeight = kMaxDisplayHeight);
   bool advance(Playback&, uint16_t id, uint32_t now);
+  struct DrawSnapshot {
+    bool valid = false;
+    Page page = Page::Home;
+    i18n::Language language = i18n::Language::Chinese;
+    LanguagePersistence languagePersistence = LanguagePersistence::Saved;
+    bool testMode = false;
+    c152::BatteryStatus battery;
+    uint16_t selected = 0;
+    bool editing = false;
+    bool clockError = false;
+    bool clockNeedsSync = false;
+    bool testFailure = false;
+    bool evolved = false;
+    bool savePending = false;
+    bool legacyNoBalls = false;
+    bool captureActive = false;
+    bool prevCaptureBurst = false;
+    bool showBallSlots = false;
+    bool evoRevealed = false;
+    bool homePartnerRendered = false;
+    bool homeEvolvable = false;
+    bool todayKnown = false;
+    bool todayComplete = false;
+    bool clockTrusted = false;
+    bool clockPending = false;
+    bool routeExhausted = false;
+    bool allExhausted = false;
+    bool encounterWaiting = false;
+    bool firstCapture = false;
+    bool throwCommitting = false;
+    bool timingActive = false;
+    adventure::Phase phase = adventure::Phase::Walking;
+    adventure::Result result = adventure::Result::None;
+    adventure::Route route = adventure::Route::Forest;
+    adventure::CommandResult command = adventure::CommandResult::Applied;
+    adventure::LoadStatus loadStatus = adventure::LoadStatus::Empty;
+    adventure::ClockChangeMode clockMode = adventure::ClockChangeMode::Normal;
+    adventure::TestFault testFault = adventure::TestFault::None;
+    adventure::TestDiagnostics testDiagnostics;
+    calendar::CivilTime civil = {};
+    int offset = 0;
+    int battleShake = 0;
+    uint8_t usedBalls = 0;
+    uint8_t playerHp = 0;
+    uint8_t enemyHp = 0;
+    uint8_t battleFooterKind = 0;
+    uint8_t countdown = 0;
+    uint8_t throwPromptKind = 0;
+    uint8_t homeFooterKind = 0;
+    uint8_t todayMilestonesMask = 0;
+    uint8_t achievementsMask = 0;
+    uint8_t selectedDayMilestonesMask = 0;
+    bool selectedDayComplete = false;
+    uint16_t partner = 0;
+    uint16_t species = 0;
+    uint16_t enemy = 0;
+    uint16_t evoFrom = 0;
+    uint16_t evoTo = 0;
+    uint16_t capturedCount = 0;
+    uint16_t pendingEncounters = 0;
+    uint16_t recentSize = 0;
+    uint16_t historySize = 0;
+    uint16_t selectedCaptureCount = 0;
+    uint16_t alertTarget = 0;
+    uint16_t battleFooterColor = 0;
+    uint16_t animFrame = UINT16_MAX;
+    uint32_t rosterRevision = 0;
+    uint32_t encounterTarget = 0;
+    uint32_t todayDayKey = 0;
+    uint32_t schema = 0;
+    uint32_t ruleVersion = 0;
+    uint32_t alertCost = 0;
+    uint64_t sequence = 0;
+    uint64_t bestDaySteps = 0;
+    uint64_t explorationCredit = 0;
+    uint64_t todaySteps = 0;
+    uint64_t totalSteps = 0;
+    uint64_t walked = 0;
+    uint64_t available = 0;
+    uint64_t selectedDaySteps = 0;
+    uint64_t sceneSteps = 0;
+    const char* battleFooterText = nullptr;
+    adventure::CommandResult alertStatus = adventure::CommandResult::Applied;
+    uint8_t alertKind = 0;
+    menu_layout::Rect spriteRect = {0, 0, 0, 0};
+  };
+  using RowDrawer = void (Screens::*)(const ScreenState&, const adventure::Engine&, unsigned index, int top);
+  struct WriteScope {
+    WriteScope();
+    ~WriteScope();
+  };
+  static bool hasPager(Page page);
+  bool dispatchPage(const ScreenState&, const adventure::Engine&,
+                    const adventure::BattleView& practice, uint32_t now, bool full);
+  void clearRegion(int x, int y, int w, int h, uint16_t bg = theme::kBackground);
+  void restoreSceneRegion(int x, int y, int w, int h, adventure::Route route, bool dim);
+  void restoreBackdrop(int x, int y, int w, int h, adventure::Route route, bool dim, bool hasScene);
+  menu_layout::Rect spriteBounds(uint16_t id, int cx, int cy, uint8_t maxScale, uint16_t maxHeight) const;
+  void updateListRows(const ScreenState&, const adventure::Engine&, int top, bool pagerOn,
+                      unsigned count, RowDrawer drawer, bool hasScene = false,
+                      adventure::Route sceneRoute = adventure::Route::Forest, bool dim = false);
+  void drawTitleCleared(const ScreenState&, const char* heading, const char* subtitle,
+                        uint16_t accent, bool clearSubtitle = true);
+  void drawMainMenu(const ScreenState&, const adventure::Engine&, bool full);
+  void drawRecordsHub(const ScreenState&, const adventure::Engine&, bool full);
+  bool drawHome(const ScreenState&, const adventure::Engine&, uint32_t now, bool full);
+  void drawBattle(const ScreenState&, const adventure::Engine&,
+                  const adventure::BattleView& practice, uint32_t now, bool full);
+  void drawThrow(const ScreenState&, const adventure::Engine&, uint32_t now, bool full);
+  void drawThrowStagePartial(const ScreenState&, adventure::Route route, uint16_t species,
+                             bool timing, int32_t remaining, bool committing, uint8_t usedBalls,
+                             bool legacyNoBalls, uint32_t now, bool allowExitHint);
+  void drawPractice(const ScreenState&, const adventure::Engine&,
+                    const adventure::BattleView& practice, uint32_t now, bool full);
+  bool drawEvolution(const ScreenState&, uint32_t now, bool full);
+  void drawEvolutionTargets(const ScreenState&, const adventure::Engine&, bool full);
+  void drawClock(const ScreenState&, const adventure::Engine&, bool full);
+  void drawProgression(const ScreenState&, const adventure::Engine&, bool full);
+  void drawRecords(const ScreenState&, const adventure::Engine&, bool full);
+  void drawTest(const ScreenState&, const adventure::Engine&, bool full);
+  void drawHomeGroup(const ScreenState&, const adventure::Engine&, uint32_t now, bool full);
+  void drawMenuRow(const ScreenState&, const adventure::Engine&, unsigned index, int top);
+  void drawLanguageRow(const ScreenState&, const adventure::Engine&, unsigned index, int top);
+  void drawProgressionRow(const ScreenState&, const adventure::Engine&, unsigned index, int top);
+  void drawEvolutionTargetRow(const ScreenState&, const adventure::Engine&, unsigned index, int top);
+  void drawClockRow(const ScreenState&, const adventure::Engine&, unsigned index, int top);
+  void drawTestRow(const ScreenState&, const adventure::Engine&, unsigned index, int top);
+  void drawPracticeResultRow(const ScreenState&, const adventure::Engine&, unsigned index, int top);
   i18n::Language language_ = i18n::Language::Chinese;
   SpriteSlot spriteSlots_[2];
   uint32_t spriteUseSeq_ = 0;
@@ -197,5 +325,6 @@ class Screens {
   bool sceneTiming_ = false;
   bool sceneCacheDim_ = false;
   bool sceneCacheValid_ = false;
+  DrawSnapshot snap_;
 };
 } }

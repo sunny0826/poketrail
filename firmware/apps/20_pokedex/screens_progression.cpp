@@ -84,4 +84,120 @@ void Screens::progression(const ScreenState& s, const Engine& e) {
   }
   item(s, view.count + 1, tr(carried ? Text::BackToMenu : Text::BackToPartners), menu_layout::kTop);
 }
+void Screens::drawProgressionRow(const ScreenState& s, const Engine& e, unsigned index, int top) {
+  if (s.page == Page::EvolutionConfirm) {
+    item(s, index, index == 0 ? tr(Text::ConfirmEvolution) : tr(Text::Later), top);
+    return;
+  }
+  const Save& save = e.view();
+  const bool carried = s.page == Page::CarriedPartner;
+  const uint16_t species = carried ? save.partner : s.species;
+  if (carried && !species) { item(s, 0, tr(Text::BackToMenu), top); return; }
+  const EvolutionView view = e.evolutionView(species);
+  if (index == 0) {
+    item(s, 0, carried ? tr(Text::SwitchPartner) : save.partner == species ? tr(Text::Carried) : tr(Text::SelectPartner), top);
+    return;
+  }
+  if (index <= view.count) {
+    char text[40];
+    const EvolutionOption& option = view.options[index - 1];
+    const char* note = option.status == CommandResult::TargetOwned ? tr(Text::OwnedNote) :
+      option.status == CommandResult::InsufficientProgress ? tr(Text::NotReady) : nullptr;
+    if (carried) {
+      snprintf(text, sizeof(text), "%lu %s", static_cast<unsigned long>(option.cost), tr(Text::Steps));
+      note = text;
+    }
+    item(s, index, speciesName(option.target), top, option.target, false, note,
+         carried && option.status != CommandResult::Applied);
+    return;
+  }
+  item(s, view.count + 1, tr(carried ? Text::BackToMenu : Text::BackToPartners), top);
+}
+void Screens::drawProgression(const ScreenState& s, const Engine& e, bool full) {
+  const Save& save = e.view();
+  if (s.page == Page::EvolutionConfirm) {
+    const bool fromCap = s.evolution.from && save.captureCounts[s.evolution.from - 1];
+    if (full) {
+      progression(s, e);
+    } else if (s.evolution.from != snap_.evoFrom || s.evolution.to != snap_.evoTo ||
+               fromCap != snap_.firstCapture || s.command != snap_.command) {
+      WriteScope sc;
+      clearRegion(0, 36, 468, 405, theme::kBackground);
+      progression(s, e);
+      glyph(theme::Icon::Back, 112, 52, theme::kMuted);
+    } else {
+      updateListRows(s, e, menu_layout::kTop, false, 2, &Screens::drawProgressionRow);
+    }
+    snap_.evoFrom = s.evolution.from;
+    snap_.evoTo = s.evolution.to;
+    snap_.firstCapture = fromCap;
+    snap_.command = s.command;
+    return;
+  }
+  const bool carried = s.page == Page::CarriedPartner;
+  const uint16_t species = carried ? save.partner : s.species;
+  if (carried && !species) {
+    if (full || snap_.species != 0) {
+      if (!full) {
+        WriteScope sc;
+        clearRegion(0, 36, 468, 405, theme::kBackground);
+        progression(s, e);
+        glyph(theme::Icon::Back, 112, 52, theme::kMuted);
+      } else {
+        progression(s, e);
+      }
+    }
+    snap_.species = 0;
+    return;
+  }
+  const EvolutionView view = e.evolutionView(species);
+  uint8_t alertKind = 4;
+  uint16_t alertTarget = 0;
+  uint32_t alertCost = 0;
+  CommandResult alertStatus = CommandResult::Applied;
+  if (s.evolved) alertKind = 1;
+  else if (!carried && s.command != CommandResult::Applied && s.command != CommandResult::Duplicate) {
+    alertKind = 2; alertStatus = s.command; alertTarget = save.partner;
+  } else if (!view.count) alertKind = 3;
+  else {
+    const EvolutionOption& opt = view.options[s.selected > 0 && s.selected <= view.count ? s.selected - 1 : 0];
+    alertTarget = opt.target; alertCost = opt.cost; alertStatus = opt.status;
+  }
+  if (full) {
+    progression(s, e);
+  } else if (species != snap_.species || save.partner != snap_.partner ||
+             save.rosterRevision != snap_.rosterRevision || view.walked != snap_.walked ||
+             view.available != snap_.available || s.evolved != snap_.evolved ||
+             (!carried && s.command != snap_.command)) {
+    WriteScope sc;
+    clearRegion(0, 36, 468, 405, theme::kBackground);
+    progression(s, e);
+    if (2 + view.count > menu_layout::kPageSize) pager(s, 2 + view.count);
+    glyph(theme::Icon::Back, 112, 52, theme::kMuted);
+  } else {
+    if (alertKind != snap_.alertKind || alertTarget != snap_.alertTarget ||
+        alertCost != snap_.alertCost || alertStatus != snap_.alertStatus) {
+      WriteScope sc;
+      clearRegion(55, 172, 358, 32, theme::kBackground);
+      char text[120];
+      const EvolutionOption& option = view.options[s.selected > 0 && s.selected <= view.count ? s.selected - 1 : 0];
+      snprintf(text, sizeof(text), tr(Text::EvolutionNeeds), speciesName(option.target),
+               static_cast<unsigned long>(option.cost));
+      alert(carried && option.status != CommandResult::Applied ? progressionMessage(option.status) : text,
+            188, theme::kGold);
+    }
+    updateListRows(s, e, menu_layout::kTop, true, 2 + view.count, &Screens::drawProgressionRow);
+  }
+  snap_.species = species;
+  snap_.partner = save.partner;
+  snap_.rosterRevision = save.rosterRevision;
+  snap_.walked = view.walked;
+  snap_.available = view.available;
+  snap_.evolved = s.evolved;
+  snap_.command = s.command;
+  snap_.alertKind = alertKind;
+  snap_.alertTarget = alertTarget;
+  snap_.alertCost = alertCost;
+  snap_.alertStatus = alertStatus;
+}
 } }

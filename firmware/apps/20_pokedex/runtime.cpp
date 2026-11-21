@@ -348,8 +348,9 @@ void Runtime::loop() {
       viewer_screen::update(now);
       if (screen_.testMode) viewer_screen::paintTestBadge();
     } else {
-      const bool periodicRedraw = timedPage && now - lastRender_ >= 40u;
+      const bool periodicRedraw = timedPage && now - lastRender_ >= 30u;
       if (screen_.page != Page::Viewer && (dirty_ || periodicRedraw)) {
+        if (waking) screens_.invalidate();
         if (!screens_.draw(screen_, engine_, practiceCapture_.battleView(), now)) ++metrics_.displayErrors;
         lastRender_ = now; dirty_ = false;
       }

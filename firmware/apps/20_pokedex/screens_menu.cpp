@@ -175,4 +175,116 @@ void Screens::recordsHub(const ScreenState& s, const Engine& e) {
   hubTiles(s, menu_layout::kRecordsHub, labels, icons, v);
   hubExit(s, menu_layout::kRecordsHub, tr(Text::Back), HubIcon::Back, v);
 }
+void Screens::drawMainMenu(const ScreenState& s, const Engine& e, bool full) {
+  const Save& v = e.view();
+  const bool waiting = encounterWaiting(v);
+  const bool evolvable = homeEvolutionReady(e);
+  const uint16_t pending = pendingEncounterCount(v);
+  bool routeEx = false, allEx = false;
+  if (!waiting) {
+    routeEx = !remainingEncounters(v, v.route);
+    if (routeEx) {
+      allEx = true;
+      for (uint8_t i = 0; i < kRegionCount; ++i) allEx = allEx && !remainingEncounters(v, regionAt(i));
+    }
+  }
+  if (full) {
+    mainMenu(s, e);
+  } else {
+    bool dirty[kMenuItemCount] = {};
+    const bool bannerChanged =
+        waiting != snap_.encounterWaiting ||
+        (waiting ? (v.phase != snap_.phase || pending != snap_.pendingEncounters)
+                 : (v.explorationCredit != snap_.explorationCredit ||
+                    v.encounterTarget != snap_.encounterTarget ||
+                    v.route != snap_.route || routeEx != snap_.routeExhausted ||
+                    allEx != snap_.allExhausted));
+    if (bannerChanged || (waiting && (s.selected == 0) != (snap_.selected == 0))) dirty[0] = true;
+    if (v.route != snap_.route) dirty[unsigned(MenuItem::Region)] = true;
+    if (v.partner != snap_.partner || evolvable != snap_.homeEvolvable)
+      dirty[unsigned(MenuItem::Partner)] = true;
+    if (s.selected != snap_.selected) {
+      if (snap_.selected < kMenuItemCount) dirty[snap_.selected] = true;
+      if (s.selected < kMenuItemCount) dirty[s.selected] = true;
+    }
+    static const Text kLabels[] = {Text::MenuRegion, Text::MenuPartner, Text::MenuPokedex,
+                                   Text::MenuRecords, Text::MenuPractice, Text::Settings};
+    static const HubIcon kIcons[] = {HubIcon::Region, HubIcon::Partner, HubIcon::Pokedex,
+                                     HubIcon::Records, HubIcon::Practice, HubIcon::Settings};
+    const char* texts[menu_layout::kMaxHubTiles];
+    for (unsigned i = 0; i < menu_layout::kMainHub.tiles; ++i) texts[i] = tr(kLabels[i]);
+    const int width = labelWidth(menu_layout::kMainHub, texts);
+    auto paint = [&](unsigned idx) {
+      const Rect b = menu_layout::hubBounds(menu_layout::kMainHub, idx);
+      clearRegion(b.x, b.y, b.width, b.height, theme::kBackground);
+      if (idx == 0) {
+        encounterBanner(s, v);
+      } else if (idx <= menu_layout::kMainHub.tiles) {
+        hubTile(s, menu_layout::kMainHub, idx, texts[idx - 1], width, kIcons[idx - 1], v);
+        if (idx == unsigned(MenuItem::Partner) && evolvable)
+          M5.Display.fillCircle(b.x + b.width - 18, b.y + 16, 5, theme::kGold);
+      } else {
+        hubExit(s, menu_layout::kMainHub, tr(Text::ReturnExploration), HubIcon::Explore, v);
+      }
+    };
+    const bool row1 = dirty[1] || dirty[2] || dirty[3];
+    const bool row2 = dirty[4] || dirty[5] || dirty[6];
+    const bool merge01 = dirty[0] && row1;
+    const bool merge23 = row2 && dirty[7];
+    if (dirty[0] && !merge01) { WriteScope sc; paint(0); }
+    if (merge01 || row1 || row2 || merge23) {
+      WriteScope sc;
+      if (merge01) paint(0);
+      for (unsigned i = 1; i <= 6; ++i) if (dirty[i]) paint(i);
+      if (merge23) paint(7);
+    }
+    if (dirty[7] && !merge23) { WriteScope sc; paint(7); }
+  }
+  snap_.route = v.route;
+  snap_.partner = v.partner;
+  snap_.homeEvolvable = evolvable;
+  snap_.encounterWaiting = waiting;
+  snap_.phase = v.phase;
+  snap_.pendingEncounters = pending;
+  snap_.explorationCredit = v.explorationCredit;
+  snap_.encounterTarget = v.encounterTarget;
+  snap_.routeExhausted = routeEx;
+  snap_.allExhausted = allEx;
+}
+void Screens::drawRecordsHub(const ScreenState& s, const Engine& e, bool full) {
+  const Save& v = e.view();
+  if (full) {
+    recordsHub(s, e);
+  } else {
+    if (v.bestDaySteps != snap_.bestDaySteps) {
+      WriteScope sc;
+      char text[64];
+      clearRegion(60, 88, 348, 28, theme::kBackground);
+      snprintf(text, sizeof(text), tr(Text::BestDaySteps), static_cast<unsigned long long>(v.bestDaySteps));
+      line(text, 102, theme::kGold);
+    }
+    if (s.selected != snap_.selected) {
+      bool dirty[5] = {};
+      if (snap_.selected < 5) dirty[snap_.selected] = true;
+      if (s.selected < 5) dirty[s.selected] = true;
+      static const Text kLabels[] = {Text::FirstCaptureCards, Text::RecentCaptures, Text::DailySteps, Text::Milestones};
+      static const HubIcon kIcons[] = {HubIcon::FirstCaptures, HubIcon::Recent, HubIcon::Days, HubIcon::Milestones};
+      const char* texts[4];
+      for (unsigned i = 0; i < 4; ++i) texts[i] = tr(kLabels[i]);
+      const int width = labelWidth(menu_layout::kRecordsHub, texts);
+      auto paint = [&](unsigned idx) {
+        const Rect b = menu_layout::hubBounds(menu_layout::kRecordsHub, idx);
+        clearRegion(b.x, b.y, b.width, b.height, theme::kBackground);
+        if (idx < 4) hubTile(s, menu_layout::kRecordsHub, idx, texts[idx], width, kIcons[idx], v);
+        else hubExit(s, menu_layout::kRecordsHub, tr(Text::Back), HubIcon::Back, v);
+      };
+      if (dirty[0] || dirty[1] || dirty[2] || dirty[3]) {
+        WriteScope sc;
+        for (unsigned i = 0; i < 4; ++i) if (dirty[i]) paint(i);
+      }
+      if (dirty[4]) { WriteScope sc; paint(4); }
+    }
+  }
+  snap_.bestDaySteps = v.bestDaySteps;
+}
 } }

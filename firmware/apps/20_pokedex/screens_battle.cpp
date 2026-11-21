@@ -80,6 +80,172 @@ void Screens::ballSlots(uint8_t used) {
     M5.Display.drawCircle(ballSlotX(i), kBallSlotY, 12, theme::kDisabled);
   }
 }
+void Screens::drawBattle(const ScreenState& s, const Engine& e, const BattleView& practice, uint32_t now, bool full) {
+  const auto& v = e.view();
+  const auto& b = s.page == Page::Practice ? practice : e.battleView();
+  const uint16_t partner = s.page == Page::Practice ? (v.partner ? v.partner : 1) : v.encounter.partner;
+  const uint16_t enemy = s.page == Page::Practice ? (s.practiceSpecies ? s.practiceSpecies : 25) : v.encounter.species;
+  const bool overrideEffect = s.page == Page::Battle && s.battleEffectOverride &&
+                              now - s.battleEffectStartMs < kBattleEffectMs;
+  const bool effect = overrideEffect || battleEffectActive(b, now);
+  const uint32_t age = effect ? now - (overrideEffect ? s.battleEffectStartMs : b.settledMs) : kBattleEffectMs;
+  const Action action = effect ? battleEffectAction(b) : b.expected;
+  const bool attack = action == Action::Attack;
+  const bool hit = b.lastTiming != Timing::Miss;
+  const bool perfect = effect && (b.lastTiming == Timing::Perfect || b.special);
+  const int shake = perfect && attack && age >= 100 && age < 200 ? ((age / 25) % 2 ? 2 : -2) : 0;
+  const int playerX = kPartnerX + shake + (attack ? pulse(age, 0, 100, 400, 34) :
+                                           hit ? -pulse(age, 30, 120, 370, 26) : 0);
+  const int enemyX = kEnemyX + shake + (attack ? (hit ? pulse(age, 100, 175, 330, 14) : 0) :
+                                        -pulse(age, 0, 80, 330, 30));
+  const Route route = s.page == Page::Practice ? regionOf(enemy) : v.encounter.route;
+  const uint8_t playerScale = actorScale(partner), enemyScale = actorScale(enemy);
+
+  auto drawStage = [&]() {
+    if (!attack && hit && age >= 10 && age < 250) {
+      spriteSilhouette(partner, now, battlePlayback_, kPartnerY, 145 + shake, theme::kOutline, playerScale);
+      spriteSilhouette(partner, now, battlePlayback_, kPartnerY, 133 + shake, theme::kTrack, playerScale);
+    }
+    if (!attack && age < 100) M5.Display.fillRect(286 - int(age) * 65 / 100, 225, 9, 5, theme::kBlue);
+    if (attack && age < 100) brackets(enemyX, kEnemyY, perfect ? theme::kGold : theme::routeColor(route));
+    actorShadow(playerX, kPartnerY); actorShadow(enemyX, kEnemyY);
+    const bool flash = effect && age >= 100 && age < 250 && (age / 50) % 2 == 0;
+    if (flash && !attack && !hit)
+      spriteSilhouette(partner, now, battlePlayback_, kPartnerY, playerX, theme::kText, playerScale);
+    else
+      sprite(partner, now, battlePlayback_, kPartnerY, playerX, 0, playerScale);
+    if (flash && attack && hit)
+      spriteSilhouette(enemy, now, enemyBattlePlayback_, kEnemyY, enemyX, theme::kText, enemyScale);
+    else
+      sprite(enemy, now, enemyBattlePlayback_, kEnemyY, enemyX, 0, enemyScale);
+    if (effect && attack && hit) impact(enemyX, kEnemyY - 4, age, perfect ? theme::kGold : theme::kText, perfect);
+    if (effect && !attack && !hit) impact(playerX, kPartnerY - 4, age, theme::kRed, false);
+    lane(b, now);
+    for (unsigned i = 0; i < kSpecialEnergy; ++i) {
+      const bool fullEnergy = b.energy >= kSpecialEnergy;
+      const uint16_t color = i < b.energy ? (fullEnergy && (now / 200) % 2 ? theme::kText : theme::kGold) : theme::kDisabled;
+      M5.Display.fillCircle(209 + int(i) * 24, 326, 5, color);
+    }
+    cueRing(b, now);
+  };
+
+  const uint8_t countdown = countdownDigit(b, now);
+  const char* result = attack ? (hit ? tr(Text::Hit) : tr(Text::Miss)) : (hit ? tr(Text::Dodged) : tr(Text::Hurt));
+  uint8_t footerKind = 0;
+  const char* footerText = nullptr;
+  uint16_t footerColor = 0;
+  if (b.pauseRequested) {
+    footerKind = 1; footerText = tr(Text::PauseAfterBeat); footerColor = theme::kText;
+  } else if (countdown) {
+    footerKind = 2; footerColor = theme::kGold;
+  } else if (effect || b.consumed) {
+    footerKind = 3;
+    footerText = b.special ? tr(Text::SpecialHit) : result;
+    footerColor = b.special || perfect ? theme::kGold : effect && !hit ? theme::kMuted : theme::kText;
+  } else if (b.frenzy) {
+    footerKind = 4; footerText = tr(Text::Frenzy); footerColor = theme::kRed;
+  }
+  auto drawFooter = [&]() {
+    if (footerKind == 2) {
+      const char digit[2] = {char('0' + countdown), 0};
+      M5.Display.setTextDatum(middle_center);
+      M5.Display.setFont(&fonts::Font6);
+      M5.Display.setTextColor(theme::kGold);
+      M5.Display.drawString(digit, 233, kCountdownY);
+    } else if (footerText) {
+      line(footerText, 401, footerColor, true);
+    }
+  };
+
+  if (full) {
+    scene(route, true, shake);
+    title(s.page == Page::Practice ? tr(Text::CapturePractice) : tr(Text::RhythmBattle), "", theme::kMint);
+    pauseGlyph();
+    hp(speciesName(partner), b.playerHp, kPlayerHp, false, theme::kMint);
+    hp(speciesName(enemy), b.enemyHp, kEnemyHp, true, theme::kGold);
+    drawStage();
+    drawFooter();
+  } else {
+    if (shake != 0 || snap_.battleShake != 0 || route != snap_.route) {
+      WriteScope sc;
+      if (shake != snap_.battleShake) {
+        clearRegion(5, 195, 5, 78, theme::kBackground);
+        clearRegion(456, 195, 6, 78, theme::kBackground);
+      }
+      scene(route, true, shake);
+      hp(speciesName(partner), b.playerHp, kPlayerHp, false, theme::kMint);
+      hp(speciesName(enemy), b.enemyHp, kEnemyHp, true, theme::kGold);
+      drawStage();
+    } else {
+      if (b.playerHp != snap_.playerHp || partner != snap_.partner ||
+          b.enemyHp != snap_.enemyHp || enemy != snap_.enemy) {
+        WriteScope sc;
+        if (b.playerHp != snap_.playerHp || partner != snap_.partner)
+          hp(speciesName(partner), b.playerHp, kPlayerHp, false, theme::kMint);
+        if (b.enemyHp != snap_.enemyHp || enemy != snap_.enemy)
+          hp(speciesName(enemy), b.enemyHp, kEnemyHp, true, theme::kGold);
+      }
+      const int pHalfW = partner && partner <= data::kSpriteCount ? int(data::kSprites[partner - 1].width) * int(playerScale) / 2 : 0;
+      const int eHalfW = enemy && enemy <= data::kSpriteCount ? int(data::kSprites[enemy - 1].width) * int(enemyScale) / 2 : 0;
+      const int sx0 = std::min(58, std::min(133, playerX) - pHalfW);
+      const int sx1 = std::max(409, enemyX + eHalfW);
+      WriteScope sc;
+      restoreSceneRegion(sx0, 134, sx1 - sx0, 210, route, true);
+      drawStage();
+    }
+    if (footerKind != snap_.battleFooterKind || countdown != snap_.countdown ||
+        footerText != snap_.battleFooterText || footerColor != snap_.battleFooterColor) {
+      WriteScope sc;
+      clearRegion(40, 374, 388, 56, theme::kBackground);
+      drawFooter();
+    }
+  }
+  snap_.route = route;
+  snap_.partner = partner;
+  snap_.enemy = enemy;
+  snap_.playerHp = b.playerHp;
+  snap_.enemyHp = b.enemyHp;
+  snap_.battleShake = shake;
+  snap_.battleFooterKind = footerKind;
+  snap_.countdown = countdown;
+  snap_.battleFooterText = footerText;
+  snap_.battleFooterColor = footerColor;
+}
+void Screens::drawThrow(const ScreenState& s, const Engine& e, uint32_t now, bool full) {
+  const auto& v = e.view();
+  const bool legacyNoBalls = v.encounter.ruleVersion < 3 && !availableBalls(v);
+  const bool timing = e.throwView().active;
+  const int32_t remaining = timing ? int32_t(e.throwView().targetMs - now) : 0;
+  if (!full) {
+    drawThrowStagePartial(s, v.encounter.route, v.encounter.species, timing, remaining,
+                          s.throwCommitting, v.encounter.usedBalls, legacyNoBalls, now, false);
+    return;
+  }
+  battle(s, e, {}, now);
+  bool isBurst = false;
+  uint8_t promptKind = legacyNoBalls ? 6 : 2;
+  if (!legacyNoBalls) {
+    if (s.capture.active) {
+      const auto f = captureFrameAt(s.capture, now);
+      isBurst = f.stage == CaptureStage::Reveal && !s.capture.captured;
+      promptKind = f.stage == CaptureStage::Reveal ? (s.capture.captured ? 3 : 4) : 0;
+    } else if (timing) {
+      promptKind = s.throwCommitting ? 0 : 1;
+    }
+  }
+  snap_.route = v.encounter.route;
+  snap_.species = v.encounter.species;
+  snap_.legacyNoBalls = legacyNoBalls;
+  snap_.showBallSlots = !s.capture.active && !legacyNoBalls;
+  snap_.usedBalls = v.encounter.usedBalls;
+  snap_.captureActive = s.capture.active;
+  snap_.prevCaptureBurst = isBurst;
+  snap_.throwPromptKind = promptKind;
+  snap_.timingActive = timing;
+  snap_.throwCommitting = s.throwCommitting;
+  snap_.spriteRect = spriteBounds(v.encounter.species, 233, legacyNoBalls ? 147 : 233, 2, legacyNoBalls ? 110 : 190);
+  snap_.animFrame = v.encounter.species ? battlePlayback_.state.frame_index : UINT16_MAX;
+}
 void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& practice, uint32_t now) {
   const auto& v = e.view();
   if (s.page == Page::Throw) {
@@ -103,66 +269,6 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
     }
     return;
   }
-  const auto& b = s.page == Page::Practice ? practice : e.battleView();
-  uint16_t partner = s.page == Page::Practice ? (v.partner ? v.partner : 1) : v.encounter.partner;
-  uint16_t enemy = s.page == Page::Practice ? (s.practiceSpecies ? s.practiceSpecies : 25) : v.encounter.species;
-  const bool overrideEffect = s.page == Page::Battle && s.battleEffectOverride &&
-                              now - s.battleEffectStartMs < kBattleEffectMs;
-  const bool effect = overrideEffect || battleEffectActive(b, now);
-  const uint32_t age = effect ? now - (overrideEffect ? s.battleEffectStartMs : b.settledMs) : kBattleEffectMs;
-  const Action action = effect ? battleEffectAction(b) : b.expected;
-  const bool attack = action == Action::Attack;
-  const bool hit = b.lastTiming != Timing::Miss;
-  const bool perfect = effect && (b.lastTiming == Timing::Perfect || b.special);
-  const int shake = perfect && attack && age >= 100 && age < 200 ? ((age / 25) % 2 ? 2 : -2) : 0;
-  const int playerX = kPartnerX + shake + (attack ? pulse(age, 0, 100, 400, 34) :
-                                           hit ? -pulse(age, 30, 120, 370, 26) : 0);
-  const int enemyX = kEnemyX + shake + (attack ? (hit ? pulse(age, 100, 175, 330, 14) : 0) :
-                                        -pulse(age, 0, 80, 330, 30));
-  const Route route = s.page == Page::Practice ? regionOf(enemy) : v.encounter.route;
-  scene(route, true, shake);
-  title(s.page == Page::Practice ? tr(Text::CapturePractice) : tr(Text::RhythmBattle), "", theme::kMint);
-  pauseGlyph();
-  hp(speciesName(partner), b.playerHp, kPlayerHp, false, theme::kMint);
-  hp(speciesName(enemy), b.enemyHp, kEnemyHp, true, theme::kGold);
-  const uint8_t playerScale = actorScale(partner), enemyScale = actorScale(enemy);
-  if (!attack && hit && age >= 10 && age < 250) {
-    spriteSilhouette(partner, now, battlePlayback_, kPartnerY, 145 + shake, theme::kOutline, playerScale);
-    spriteSilhouette(partner, now, battlePlayback_, kPartnerY, 133 + shake, theme::kTrack, playerScale);
-  }
-  if (!attack && age < 100) M5.Display.fillRect(286 - int(age) * 65 / 100, 225, 9, 5, theme::kBlue);
-  if (attack && age < 100) brackets(enemyX, kEnemyY, perfect ? theme::kGold : theme::routeColor(route));
-  actorShadow(playerX, kPartnerY); actorShadow(enemyX, kEnemyY);
-  const bool flash = effect && age >= 100 && age < 250 && (age / 50) % 2 == 0;
-  if (flash && !attack && !hit)
-    spriteSilhouette(partner, now, battlePlayback_, kPartnerY, playerX, theme::kText, playerScale);
-  else
-    sprite(partner, now, battlePlayback_, kPartnerY, playerX, 0, playerScale);
-  if (flash && attack && hit)
-    spriteSilhouette(enemy, now, enemyBattlePlayback_, kEnemyY, enemyX, theme::kText, enemyScale);
-  else
-    sprite(enemy, now, enemyBattlePlayback_, kEnemyY, enemyX, 0, enemyScale);
-  if (effect && attack && hit) impact(enemyX, kEnemyY - 4, age, perfect ? theme::kGold : theme::kText, perfect);
-  if (effect && !attack && !hit) impact(playerX, kPartnerY - 4, age, theme::kRed, false);
-  lane(b, now);
-  for (unsigned i = 0; i < kSpecialEnergy; ++i) {
-    const bool full = b.energy >= kSpecialEnergy;
-    const uint16_t color = i < b.energy ? (full && (now / 200) % 2 ? theme::kText : theme::kGold) : theme::kDisabled;
-    M5.Display.fillCircle(209 + int(i) * 24, 326, 5, color);
-  }
-  cueRing(b, now);
-  const uint8_t countdown = countdownDigit(b, now);
-  const char* result = attack ? (hit ? tr(Text::Hit) : tr(Text::Miss)) : (hit ? tr(Text::Dodged) : tr(Text::Hurt));
-  if (b.pauseRequested) line(tr(Text::PauseAfterBeat), 401, theme::kText, true);
-  else if (countdown) {
-    const char digit[2] = {char('0' + countdown), 0};
-    M5.Display.setTextDatum(middle_center);
-    M5.Display.setFont(&fonts::Font6);
-    M5.Display.setTextColor(theme::kGold);
-    M5.Display.drawString(digit, 233, kCountdownY);
-  } else if (effect || b.consumed)
-    line(b.special ? tr(Text::SpecialHit) : result, 401,
-         b.special || perfect ? theme::kGold : effect && !hit ? theme::kMuted : theme::kText, true);
-  else if (b.frenzy) line(tr(Text::Frenzy), 401, theme::kRed, true);
+  drawBattle(s, e, practice, now, true);
 }
 } }

@@ -147,6 +147,7 @@ bool Screens::begin() {
 }
 bool Screens::startup(uint32_t elapsed) {
   if (!spriteSlots_[0].pixels) return false;
+  snap_.valid = false;
   M5.Display.startWrite();
   M5.Display.fillScreen(TFT_BLACK);
   M5.Display.fillCircle(233, 233, 227, theme::kBackground);
@@ -170,6 +171,7 @@ bool Screens::startup(uint32_t elapsed) {
   return rendered;
 }
 void Screens::invalidate() {
+  snap_.valid = false;
   battlePlayback_.species = enemyBattlePlayback_.species = resultPlayback_.species = 0;
   for (auto& slot : spriteSlots_) slot.reset();
   spriteUseSeq_ = 0;
@@ -286,52 +288,73 @@ bool Screens::spriteSilhouette(uint16_t id, uint32_t now, Playback& playback, in
   }
   return true;
 }
-bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& practice, uint32_t now) {
-  language_ = s.language;
-  M5.Display.startWrite();
-  M5.Display.fillScreen(TFT_BLACK);
-  M5.Display.fillCircle(233, 233, 227, theme::kBackground);
+Screens::WriteScope::WriteScope() { M5.Display.startWrite(); }
+Screens::WriteScope::~WriteScope() { M5.Display.endWrite(); }
+bool Screens::hasPager(Page page) {
+  return page == Page::DateWelcome || page == Page::Settings || page == Page::Clock ||
+         page == Page::Partners || page == Page::PartnerDetail || page == Page::CarriedPartner ||
+         page == Page::EvolutionPreviewTargets || page == Page::TestHub ||
+         page == Page::TestSteps || page == Page::TestScenarios || page == Page::TestFaults;
+}
+bool Screens::dispatchPage(const ScreenState& s, const Engine& e,
+                           const BattleView& practice, uint32_t now, bool full) {
   bool rendered = spriteBuffersReady();
   switch (s.page) {
-    case Page::Home: rendered = exploration(e, now); break;
-    case Page::Battle: case Page::Practice: case Page::Throw:
-      battle(s, e, practice, now); break;
-    case Page::PracticeThrow: practiceThrow(s, now); break;
-    case Page::PracticeResult: practiceResult(s, now); break;
-    case Page::Evolution: case Page::EvolutionPreview: rendered = evolution(s, now); break;
-    case Page::EvolutionPreviewTargets: evolutionPreviewTargets(s, e); break;
+    case Page::Home: rendered = drawHome(s, e, now, full); break;
+    case Page::Battle: case Page::Practice: drawBattle(s, e, practice, now, full); break;
+    case Page::Throw: drawThrow(s, e, now, full); break;
+    case Page::PracticeThrow: case Page::PracticeResult: drawPractice(s, e, practice, now, full); break;
+    case Page::Evolution: case Page::EvolutionPreview: rendered = drawEvolution(s, now, full); break;
+    case Page::EvolutionPreviewTargets: drawEvolutionTargets(s, e, full); break;
     case Page::FirstCaptures: case Page::Recent: case Page::Days: case Page::Achievements:
-      records(s, e); break;
-    case Page::Clock: clock(s); break;
-    case Page::Language: language(s, e); break;
-    case Page::TestEntry: testEntry(s); break;
-    case Page::TestHub: testHub(s, e); break;
-    case Page::TestSteps: testSteps(s); break;
-    case Page::TestScenarios: testScenarios(s); break;
-    case Page::TestFaults: testFaults(s); break;
-    case Page::TestDiagnostics: testDiagnostics(s, e); break;
-    case Page::TestExit: testExit(s); break;
+      drawRecords(s, e, full); break;
+    case Page::Clock: drawClock(s, e, full); break;
+    case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
+    case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit:
+      drawTest(s, e, full); break;
     case Page::CarriedPartner: case Page::PartnerDetail: case Page::EvolutionConfirm:
-      progression(s, e); break;
-    case Page::Menu: mainMenu(s, e); break;
-    case Page::Records: recordsHub(s, e); break;
-    default: home(s, e, now); break;
+      drawProgression(s, e, full); break;
+    case Page::Menu: drawMainMenu(s, e, full); break;
+    case Page::Records: drawRecordsHub(s, e, full); break;
+    default: drawHomeGroup(s, e, now, full); break;
   }
-  const bool listPage = s.page == Page::DateWelcome || s.page == Page::Settings || s.page == Page::Clock ||
-                        s.page == Page::Partners || s.page == Page::PartnerDetail || s.page == Page::CarriedPartner ||
-                        s.page == Page::EvolutionPreviewTargets || s.page == Page::TestHub ||
-                        s.page == Page::TestSteps || s.page == Page::TestScenarios ||
-                        s.page == Page::TestFaults;
-  if (listPage && menuCount(s, e) > menu_layout::kPageSize) pager(s, menuCount(s, e));
-  if (touchBackEnabled(s.page)) glyph(theme::Icon::Back, 112, 52, theme::kMuted);
-  drawBattery(s.battery);
-  if (s.testMode) {
-    M5.Display.setTextDatum(middle_center);
-    M5.Display.setFont(&fonts::efontCN_16);
-    M5.Display.setTextColor(theme::kGold);
-    M5.Display.drawString(tr(Text::TestBadge), 233, 452);
+  return rendered;
+}
+bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& practice, uint32_t now) {
+  language_ = s.language;
+  const bool full = !snap_.valid || snap_.page != s.page ||
+                    snap_.language != s.language || snap_.testMode != s.testMode;
+  bool rendered = spriteBuffersReady();
+  if (full) {
+    snap_ = DrawSnapshot();
+    WriteScope scope;
+    M5.Display.fillScreen(TFT_BLACK);
+    M5.Display.fillCircle(233, 233, 227, theme::kBackground);
+    rendered = dispatchPage(s, e, practice, now, true);
+    if (hasPager(s.page) && menuCount(s, e) > menu_layout::kPageSize) pager(s, menuCount(s, e));
+    if (touchBackEnabled(s.page)) glyph(theme::Icon::Back, 112, 52, theme::kMuted);
+    drawBattery(s.battery);
+    if (s.testMode) {
+      M5.Display.setTextDatum(middle_center);
+      M5.Display.setFont(&fonts::efontCN_16);
+      M5.Display.setTextColor(theme::kGold);
+      M5.Display.drawString(tr(Text::TestBadge), 233, 452);
+    }
+  } else {
+    if (s.battery.percent != snap_.battery.percent || s.battery.charge != snap_.battery.charge) {
+      WriteScope scope;
+      drawBattery(s.battery);
+      snap_.battery = s.battery;
+    }
+    rendered = dispatchPage(s, e, practice, now, false);
   }
-  M5.Display.endWrite();
+  snap_.valid = rendered;
+  snap_.page = s.page;
+  snap_.language = s.language;
+  snap_.testMode = s.testMode;
+  snap_.battery = s.battery;
+  snap_.selected = s.selected;
+  snap_.editing = s.editing;
   return rendered;
 }
 } }
