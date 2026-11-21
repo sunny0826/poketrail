@@ -1,6 +1,7 @@
 #include "screens.hpp"
 #include "board.hpp"
 #include "icons_generated.hpp"
+#include <algorithm>
 #include <cmath>
 namespace pokedex { namespace ui {
 using namespace adventure;
@@ -19,6 +20,14 @@ namespace {
 void star(int x, int y, int r, uint16_t color) {
   M5.Display.drawFastHLine(x - r, y, 2 * r + 1, color);
   M5.Display.drawFastVLine(x, y - r, 2 * r + 1, color);
+}
+menu_layout::Rect unionRect(const menu_layout::Rect& a, const menu_layout::Rect& b) {
+  if (a.width <= 0 || a.height <= 0) return b;
+  if (b.width <= 0 || b.height <= 0) return a;
+  const int x0 = std::min(a.x, b.x), y0 = std::min(a.y, b.y);
+  const int x1 = std::max(a.x + a.width, b.x + b.width);
+  const int y1 = std::max(a.y + a.height, b.y + b.height);
+  return {x0, y0, x1 - x0, y1 - y0};
 }
 }
 void Screens::aim(uint16_t species, uint32_t now, bool timing, int32_t remaining, bool committing) {
@@ -108,5 +117,133 @@ void Screens::capture(const ScreenState& s, uint16_t species, uint32_t now) {
       break;
     case CaptureStage::Done: break;
   }
+}
+void Screens::drawThrowStagePartial(const ScreenState& s, Route route, uint16_t species,
+                                    bool timing, int32_t remaining, bool committing,
+                                    uint8_t usedBalls, bool legacyNoBalls, uint32_t now,
+                                    bool allowExitHint) {
+  const bool showSlots = !s.capture.active && !legacyNoBalls;
+  bool isReveal = false, isBurst = false;
+  uint8_t promptKind = 0;
+  if (legacyNoBalls) {
+    promptKind = 6;
+  } else if (s.capture.active) {
+    const auto f = captureFrameAt(s.capture, now);
+    isReveal = f.stage == CaptureStage::Reveal;
+    isBurst = isReveal && !s.capture.captured;
+    if (isReveal) promptKind = s.capture.captured ? 3 : 4;
+  } else if (timing) {
+    promptKind = committing ? 0 : 1;
+  } else {
+    promptKind = allowExitHint ? 5 : 2;
+  }
+  const int cy = legacyNoBalls ? 147 : 233;
+  const uint16_t maxH = legacyNoBalls ? 110 : 190;
+  const auto spriteBox = spriteBounds(species, 233, cy, 2, maxH);
+
+  if (legacyNoBalls != snap_.legacyNoBalls || route != snap_.route || species != snap_.species) {
+    WriteScope sc;
+    clearRegion(0, 36, 468, 56, theme::kBackground);
+    scene(route, true);
+    clearRegion(0, 362, 468, 78, theme::kBackground);
+    title(speciesName(species), "", theme::kGold);
+    if (legacyNoBalls) {
+      actorShadow(233, 147);
+      sprite(species, now, battlePlayback_, 147, 233, 0, 2, 110);
+      line(tr(Text::NoBalls), 196, theme::kRed);
+      item(s, 0, tr(Text::EndEncounter), menu_layout::kTop);
+    } else {
+      if (showSlots) ballSlots(usedBalls);
+      if (s.capture.active) capture(s, species, now);
+      else {
+        aim(species, now, timing, remaining, committing);
+        if (promptKind == 1) line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
+        else if (promptKind == 2 || promptKind == 5) {
+          line(tr(Text::HoldThrow), 399, theme::kMint);
+          if (promptKind == 5) line(tr(Text::EndPracticeTop), 426, theme::kMuted);
+        }
+      }
+    }
+  } else if (legacyNoBalls) {
+    if (species) advance(battlePlayback_, species, now);
+    const uint16_t curFrame = species ? battlePlayback_.state.frame_index : UINT16_MAX;
+    if (curFrame != snap_.animFrame) {
+      auto dirty = unionRect(snap_.spriteRect, spriteBox);
+      dirty = unionRect(dirty, {60, 186, 348, 22});
+      if (dirty.y + dirty.height > 208) dirty.height = 208 - dirty.y;
+      if (dirty.height > 0) {
+        WriteScope sc;
+        restoreSceneRegion(dirty.x, dirty.y, dirty.width, dirty.height, route, true);
+        M5.Display.setClipRect(dirty.x, dirty.y, dirty.width, dirty.height);
+        sprite(species, now, battlePlayback_, 147, 233, 0, 2, 110);
+        M5.Display.clearClipRect();
+        line(tr(Text::NoBalls), 196, theme::kRed);
+      }
+    }
+  } else {
+    if (showSlots != snap_.showBallSlots || (showSlots && usedBalls != snap_.usedBalls)) {
+      WriteScope sc;
+      restoreBackdrop(195, 67, 76, 30, route, true, true);
+      if (showSlots) ballSlots(usedBalls);
+    }
+    const bool pureIdle = !s.capture.active && !timing && !snap_.captureActive &&
+                          !snap_.timingActive && snap_.throwPromptKind == promptKind &&
+                          !snap_.prevCaptureBurst;
+    if (pureIdle) {
+      if (species) advance(battlePlayback_, species, now);
+      const uint16_t curFrame = species ? battlePlayback_.state.frame_index : UINT16_MAX;
+      if (curFrame != snap_.animFrame) {
+        auto dirty = unionRect(snap_.spriteRect, spriteBox);
+        if (dirty.y + dirty.height > 294 && dirty.y < 307)
+          dirty = unionRect(dirty, {193, 294, 81, 13});
+        if (dirty.y + dirty.height > 329) dirty.height = 329 - dirty.y;
+        if (dirty.height > 0) {
+          WriteScope sc;
+          restoreSceneRegion(dirty.x, dirty.y, dirty.width, dirty.height, route, true);
+          if (dirty.y + dirty.height > 294 && dirty.y < 307) actorShadow(233, 233);
+          sprite(species, now, battlePlayback_, 233, 233, 0, 2, 190);
+        }
+      }
+    } else {
+      const int sx0 = std::min(102, spriteBox.x);
+      const int sx1 = std::max(364, spriteBox.x + spriteBox.width);
+      const int burstBottom = std::max(390, 300 + spriteBox.height / 2 + 1);
+      const int stageBottom = (isBurst || snap_.prevCaptureBurst) ? burstBottom : 368;
+      const bool promptDirty = promptKind != snap_.throwPromptKind || stageBottom > 368;
+      WriteScope sc;
+      if (promptDirty) clearRegion(60, 384, 348, 54, theme::kBackground);
+      restoreBackdrop(sx0, 103, sx1 - sx0, stageBottom - 103, route, true, true);
+      if (s.capture.active) {
+        if (isReveal && !promptDirty) {
+          M5.Display.setClipRect(0, 0, 468, stageBottom);
+          capture(s, species, now);
+          M5.Display.clearClipRect();
+        } else {
+          capture(s, species, now);
+        }
+      } else {
+        aim(species, now, timing, remaining, committing);
+        if (promptDirty) {
+          if (promptKind == 1) line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
+          else if (promptKind == 2 || promptKind == 5) {
+            line(tr(Text::HoldThrow), 399, theme::kMint);
+            if (promptKind == 5) line(tr(Text::EndPracticeTop), 426, theme::kMuted);
+          }
+        }
+      }
+    }
+  }
+  snap_.route = route;
+  snap_.species = species;
+  snap_.legacyNoBalls = legacyNoBalls;
+  snap_.showBallSlots = showSlots;
+  snap_.usedBalls = usedBalls;
+  snap_.captureActive = s.capture.active;
+  snap_.prevCaptureBurst = isBurst;
+  snap_.throwPromptKind = promptKind;
+  snap_.timingActive = timing;
+  snap_.throwCommitting = committing;
+  snap_.spriteRect = spriteBox;
+  snap_.animFrame = species ? battlePlayback_.state.frame_index : UINT16_MAX;
 }
 } }
