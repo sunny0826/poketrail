@@ -95,9 +95,22 @@ class FakeDevice:
             return ("ui log\n" + reply("s", id=tx, result="ok", **self.state) + "\n").encode()
         return b""
 
+class FakeClock:
+    def __init__(self):
+        self.now = 0.0
+
+    def monotonic(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += max(seconds, 0.0)
+
+
 def run_sync(port, **kwargs):
+    fake = FakeClock()
     options = {"port": "fake", "timeout": 1.0,
-               "now": lambda: TARGET, "host_offset": lambda: 480}
+               "now": lambda: TARGET, "host_offset": lambda: 480,
+               "sleep": fake.sleep, "monotonic": fake.monotonic}
     options.update(kwargs)
     return clock.sync(lambda _: port, **options)
 
@@ -275,7 +288,7 @@ class ClockSyncTests(unittest.TestCase):
         stderr = io.StringIO()
         with mock.patch.object(clock, "_open_serial", lambda _port: port):
             with contextlib.redirect_stderr(stderr):
-                code = clock.main(["--port", "fake", "--query", "--timeout", "0.4"])
+                code = clock.main(["--port", "fake", "--query", "--timeout", "0.05"])
         self.assertEqual(code, 1)
         self.assertIn("容差", stderr.getvalue())
         self.assertNotIn("设备时钟状态正常", stderr.getvalue())
@@ -283,11 +296,13 @@ class ClockSyncTests(unittest.TestCase):
         self.assertTrue(port.closed)
 
     def test_timeout_is_bounded(self):
+        fake = FakeClock()
         port = FakePort(lambda _: b"")
         started = time.monotonic()
         with self.assertRaises(clock.ClockSyncError):
-            run_sync(port, timeout=0.15)
-        self.assertLess(time.monotonic() - started, 2.0)
+            run_sync(port, timeout=0.15, sleep=fake.sleep, monotonic=fake.monotonic)
+        self.assertLess(fake.now, 2.0)
+        self.assertLess(time.monotonic() - started, 0.5)
         self.assertTrue(port.closed)
 
 if __name__ == "__main__":

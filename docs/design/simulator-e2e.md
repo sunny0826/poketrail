@@ -47,7 +47,7 @@ d.close();
 
 捕获场景用固定种子复现成功、失败和重试，断言投球结果、次数、账户、记录及新进程恢复；不再把完整 seed／roll／probability 数值组合冻结为 E2E 契约。英文捕获场景仍检查 #116 Horsea 的名称与属性可读。捕获概率阈值由 `test-adventure` 的独立边界检查承担。
 
-2026-11-03 的首帧像素比较属于当时的历史证据，保留于 [cue-pixel-review.json](../../.pio/verification/simulator-e2e-20261103T091103.877196Z/battle-fixed/cue-pixel-review.json)。当前 runner 已删除整屏哈希分支，也不再生成逐拍 `fixed-cue-*` 截图；历史比较结果不能代表本轮测试通过。
+2026-11-03 的首帧像素比较属于当时的历史证据（原产物仅保留于本地 `.pio/verification/simulator-e2e-20261103T091103.877196Z/` 时期）。当前 runner 已删除整屏哈希分支，也不再生成逐拍 `fixed-cue-*` 截图；历史比较结果不能代表本轮测试通过。
 
 GUI 串行运行，实际窗口事件写入日志。E2E 开启 `isolateHostFocus`：宿主窗口的失焦事件仍记录，但不改变脚本输入；Driver 主动注入的 `windowID=0` 失焦事件照常进入 Platform，验证释放按键、停止走路和结算蓄力。正常桌面模式不开启隔离，宿主失焦照常处理。旧 smoke 的真实窗口 ID 路径不再单独自动测试，原生 OS 输入与焦点仍需人工验证。原始事件、截图和业务结果保留作诊断证据，不要求整屏像素完全一致。
 
@@ -76,7 +76,7 @@ FileStore 在 write 返回 false 后立即结束本次提交；下次重试扫�
 
 ## 执行与证据
 
-新功能必须新增对应的 E2E 操作链与断言，接入默认全量运行并更新上方矩阵；新增覆盖不自动要求跑全量。局部改动默认用相关筛选场景完成验收，纯文档等非行为改动不跑 E2E。仅在跨流程核心行为、存档协议／迁移、全局测试基础设施等触发条件成立时，或明确要求完整回归时执行全量；边界见[验证指南](../verification.md#每次任务的-e2e-验收要求)。仅编译不证明行为通过，失败或环境阻塞须明确报告。
+新功能必须新增对应的 E2E 操作链与断言，接入默认全量运行并更新覆盖矩阵；局部改动默认用相关筛选场景验收，全量触发边界与交付要求见[每次任务的 E2E 验收要求](../verification.md#每次任务的-e2e-验收要求)。
 
 ```bash
 rtk proxy mise run test-simulator-e2e
@@ -87,10 +87,10 @@ rtk proxy mise run test-simulator-e2e -- --build-only
 
 输出为 `.pio/verification/simulator-e2e-时间戳/`。`MYM5_VERIFICATION_DIR` 可指定尚不存在的目录。每个场景独立，后续阶段复用该场景存档，既有个人存档与历史验收目录不会被覆盖。
 
-- 根目录 `manifest.json`：HEAD、dirty 状态、源码及二进制哈希、seed、UTC、系统、Python、编译器、SDL版本。
+- 根目录 `manifest.json`：HEAD、dirty 状态、实际参与编译的仓库内源码及可执行文件哈希、seed、UTC、系统、Python、编译器、SDL版本。
 - 根目录 `result.json`：每个场景的ID、起点、状态和错误。
 - 场景 `fixture.json`、`before/`、`after.json`、`save/`：初始字节及哈希、终态哈希与真实存档。中间文件哈希不能替代最终业务断言。
-- 各启动目录：`events.jsonl`、`stdout.log`、`stderr.log`、`result.json`、命名业务快照、BMP/PNG截图；进程结果含退出码、墙钟耗时与是否强杀。
+- 各启动目录：`events.jsonl`、`stdout.log`、`stderr.log`、`result.json`、命名业务快照、PNG 截图（转换后清理中间 `.bmp`）；进程结果含退出码、墙钟耗时与是否强杀。
 - `restart-check.json`：跨进程时钟与账户比较；`language-disk-check.json`：显示语言与 CRC 有效磁盘槽的核对；`queue-restart-check.json`：跨进程核对活动场、FIFO 顺序与完整生成快照、计数及探索账目。
 
 首次断言失败保留快照与截图并退出，runner 继续其他独立场景。超时也保留进程结果；最近截图和日志仍可查看。构建依赖或SDL不可用时命令非零退出，不记为通过。

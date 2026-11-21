@@ -281,11 +281,20 @@ def main():
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     catalogue = national_catalog()
-    NATIONAL_SOURCE.write_text(json.dumps(
+    expected_national = json.dumps(
         {key: value for key, value in catalogue.items() if key != "species"} |
-        {"speciesFiles": ["adventure-649-species.json"]}, ensure_ascii=False, indent=2) + "\n")
-    (ROOT / "assets/adventure-649-species.json").write_text(json.dumps(
-        {"species": catalogue["species"]}, ensure_ascii=False, indent=2) + "\n")
+        {"speciesFiles": ["adventure-649-species.json"]}, ensure_ascii=False, indent=2) + "\n"
+    species_path = ROOT / "assets/adventure-649-species.json"
+    expected_species = json.dumps(
+        {"species": catalogue["species"]}, ensure_ascii=False, indent=2) + "\n"
+    if args.check:
+        if not NATIONAL_SOURCE.exists() or NATIONAL_SOURCE.read_text() != expected_national:
+            raise SystemExit("adventure-649.json stale; regenerate")
+        if not species_path.exists() or species_path.read_text() != expected_species:
+            raise SystemExit("adventure-649-species.json stale; regenerate")
+    else:
+        NATIONAL_SOURCE.write_text(expected_national)
+        species_path.write_text(expected_species)
     catalogue = load_catalog(NATIONAL_SOURCE)
     progression = json.loads((ROOT / "assets/evolution-649.json").read_text())
     text = generate(catalogue, progression)

@@ -20,7 +20,7 @@ fi
 mkdir -p "${backup_dir}"
 echo "读取 ${port} 的整片 Flash -> ${output}"
 
-rtk proxy mise exec -- "${repo_root}/scripts/esptool.sh" \
+"${repo_root}/scripts/esptool.sh" \
   --chip esp32s3 \
   --port "${port}" \
   --baud 460800 \

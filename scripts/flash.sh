@@ -33,8 +33,16 @@ fi
 
 cd "${repo_root}"
 
+run_tool() {
+  if command -v "$1" >/dev/null 2>&1; then
+    "$@"
+  else
+    mise exec -- "$@"
+  fi
+}
+
 echo "编译固件 ..."
-rtk proxy mise exec -- pio run -e 20_pokedex
+run_tool pio run -e 20_pokedex
 
 build_dir="${repo_root}/.pio/build/20_pokedex"
 for image in bootloader.bin partitions.bin firmware.bin; do
@@ -47,7 +55,7 @@ done
 echo "烧录到 ${port}"
 
 read -r flash_mode flash_freq flash_size < <(
-  rtk proxy mise exec -- python3 -m esptool --chip esp32s3 image-info "${build_dir}/firmware.bin" \
+  "${repo_root}/scripts/esptool.sh" --chip esp32s3 image-info "${build_dir}/firmware.bin" \
     | awk -F': +' '
       /Flash mode/ {mode=$2}
       /Flash freq/ {freq=$2}
@@ -65,7 +73,7 @@ fi
 
 echo "flash 参数：mode=${flash_mode} freq=${flash_freq} size=${flash_size}MB"
 
-rtk proxy mise exec -- "${repo_root}/scripts/esptool.sh" \
+"${repo_root}/scripts/esptool.sh" \
   --chip esp32s3 \
   --port "${port}" \
   --baud 460800 \
@@ -88,16 +96,19 @@ if [[ "${skip_sync}" == 0 ]]; then
     [[ -e "${port}" ]] && break
     sleep 0.2
   done
-  if ! rtk proxy mise exec -- python3 "${repo_root}/scripts/sync_clock.py" \
-      --port "${port}" --timeout 30; then
+  sync_cmd=(mise exec -- python3)
+  if python3 -c "import serial" >/dev/null 2>&1; then
+    sync_cmd=(python3)
+  fi
+  if ! "${sync_cmd[@]}" "${repo_root}/scripts/sync_clock.py" --port "${port}" --timeout 30; then
     echo >&2
     echo "固件已写入 ${port}，但校时失败。" >&2
     echo "设备可能仍在使用旧日期。确认 USB 串口后重试：" >&2
-    echo "  rtk proxy mise exec -- python3 scripts/sync_clock.py --port ${port}" >&2
+    echo "  mise exec -- python3 scripts/sync_clock.py --port ${port}" >&2
     exit 3
   fi
   echo
-  echo "完成。串口输出用：rtk proxy mise exec -- pio device monitor -p ${port} --baud 115200"
+  echo "完成。串口输出用：mise exec -- pio device monitor -p ${port} --baud 115200"
 else
-  echo "已跳过校时。串口输出用：rtk proxy mise exec -- pio device monitor -p ${port} --baud 115200"
+  echo "已跳过校时。串口输出用：mise exec -- pio device monitor -p ${port} --baud 115200"
 fi

@@ -1,18 +1,17 @@
-# 归档的设备资源快照为单页静态文档，不按 5000 token 上限拆分
-docs/verification/stopwatch-c152-dev-resources.html token-limit-ignore
+# 由生成器写入的固件表与资源清单
+firmware/apps/20_pokedex/*_generated.hpp linguist-generated=true
+firmware/apps/20_pokedex/*_generated.cpp linguist-generated=true
+assets/animations-gen*.json linguist-generated=true
+assets/icons-gen*.json linguist-generated=true
+assets/pokedex-gen[2-5].json linguist-generated=true
+assets/evolution-*.json linguist-generated=true
+assets/adventure-649*.json linguist-generated=true
+assets/adventure-251.json linguist-generated=true
+assets/adventure-routes/*-gen2.json linguist-generated=true
+assets/scene-backgrounds.json linguist-generated=true
 
-# 图鉴、动画、图标、进化与遭遇清单由生成器写入并校验，不按手写文件拆分
-assets/adventure-649-species.json token-limit-ignore
-assets/adventure-649.json token-limit-ignore
-assets/animations-gen1.json token-limit-ignore
-assets/animations-gen2.json token-limit-ignore
-assets/animations-gen3.json token-limit-ignore
-assets/animations-gen4.json token-limit-ignore
-assets/animations-gen5.json token-limit-ignore
-assets/evolution-649.json token-limit-ignore
-assets/icons-gen3.json token-limit-ignore
-assets/icons-gen4.json token-limit-ignore
-assets/icons-gen5.json token-limit-ignore
-assets/pokedex-gen3.json token-limit-ignore
-assets/pokedex-gen4.json token-limit-ignore
-assets/pokedex-gen5.json token-limit-ignore
+# 上游数据快照与静态归档文档；来源与许可见 THIRD_PARTY_NOTICES.md
+assets/evolution-source/*.csv linguist-vendored=true linguist-generated=true
+assets/pokedex-source/*.csv linguist-vendored=true linguist-generated=true
+assets/pokedex-gen1.json linguist-vendored=true linguist-generated=true
+docs/verification/stopwatch-c152-dev-resources.html linguist-vendored=true linguist-generated=true

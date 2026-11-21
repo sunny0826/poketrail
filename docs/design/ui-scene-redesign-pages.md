@@ -1,45 +1,43 @@
 # 全场景页面覆盖
 
-返回[视觉设计](ui-scene-redesign.md)。下表按 [screens.hpp](../../firmware/apps/20_pokedex/screens.hpp) 的 `Page` 枚举列出当前 37 页。历史设计画廊保留原 26 页（含已删除的放弃确认页），三张进化／预览页、七张测试模式页、语言页和携带伙伴页尚无设计帧，表中链接到对应行为契约与主机测试。联系表和设计帧保留旧规则示例，不表示当前 Runtime 的完整页面覆盖。
+返回[视觉设计](ui-scene-redesign.md)。下表按 [screens.hpp](../../firmware/apps/20_pokedex/screens.hpp) 的 `Page` 枚举列出当前 37 页，并链接到对应行为契约、实现或主机测试。原 251 种三路线 Pillow 设计画廊已退役清理，页面验证以真实 Runtime/M5GFX 渲染测试与 SDL E2E 为准。
 
-| Page | 设计帧与状态 |
+| Page | 状态与验证入口 |
 | --- | --- |
-| `Home` | 历史三路线：[森林](ui-scene-redesign/frames/home-forest.png) · [海边](ui-scene-redesign/frames/home-coast.png) · [洞窟](ui-scene-redesign/frames/home-cave.png)（当前五地区见[视觉设计](ui-scene-redesign.md#地区场景)） · [遭遇](ui-scene-redesign/frames/home-encounter.png) · [待捕捉](ui-scene-redesign/frames/home-throw-ready.png) · [日期未知](ui-scene-redesign/frames/home-unknown-date.png) · [部分日](ui-scene-redesign/frames/home-partial-day.png) · [步数缺失](ui-scene-redesign/frames/home-step-warning.png) · [恢复警告](ui-scene-redesign/frames/home-recovery.png) · 可进化按钮无设计帧，见[伙伴与进化 E2E](../../test/simulator/scenarios_progression.cpp) |
-| `Menu` | 当前一屏宫格无设计帧，见[菜单宫格渲染检查](../../test/test_touch_menu_render.cpp)；历史分页列表：[第一页](ui-scene-redesign/frames/menu-main.png) · [第二页](ui-scene-redesign/frames/menu-second.png) · [末页](ui-scene-redesign/frames/menu-last.png) · [恢复警告](ui-scene-redesign/frames/menu-recovery.png) |
-| `Settings` | 无设计帧，见[菜单宫格渲染检查](../../test/test_touch_menu_render.cpp)；历史[资源与数据](ui-scene-redesign/frames/resources.png)页已拆分到菜单横幅、伙伴、记录与设置 |
-| `DateWelcome` | [首次日期确认](ui-scene-redesign/frames/date-welcome.png) · [未完成校时恢复](ui-scene-redesign/frames/date-pending.png) |
-| `Starter` | [初始伙伴](ui-scene-redesign/frames/starter.png) |
-| `Routes` | [路线选择](ui-scene-redesign/frames/routes.png)（历史三路线设计稿；当前为两页“选择地区”，见[地区选择 E2E](../../test/simulator/scenarios_regions.cpp)） |
-| `Partners` | [列表](ui-scene-redesign/frames/partners.png) · [长名称](ui-scene-redesign/frames/partners-long.png) · [末页返回](ui-scene-redesign/frames/partners-last.png) |
-| `Encounter` | [遭遇预告](ui-scene-redesign/frames/encounter.png) |
-| `Battle` | [攻击](ui-scene-redesign/frames/battle-attack.png) · [躲避](ui-scene-redesign/frames/battle-dodge.png) · [完美判定](ui-scene-redesign/frames/battle-perfect.png) · [播放动画](ui-scene-redesign/animations/battle-attack.gif) |
-| `Practice` | [捕获练习](ui-scene-redesign/frames/practice.png) |
-| `PracticeThrow` | [练习投球 · 不消耗精灵球](ui-scene-redesign/frames/practice-throw.png) |
-| `PracticeResult` | [练习成功 · 未收入图鉴](ui-scene-redesign/frames/practice-result.png) |
-| `Pause` | [实战](ui-scene-redesign/frames/pause.png) · [练习](ui-scene-redesign/frames/pause-practice.png) |
-| `Throw` | [投球菜单旧稿](ui-scene-redesign/frames/throw-menu.png)（现已改为无菜单瞄准态） · [零球旧稿](ui-scene-redesign/frames/throw-zero.png)（旧库存规则示例；规则 3 不限球） · [蓄力](ui-scene-redesign/frames/throw-active.png) · [捕获规格](ui-scene-redesign-motion.md) |
-| `Result` | [首捕](ui-scene-redesign/frames/result-captured.png) · [失败](ui-scene-redesign/frames/result-lost.png) · [撤退](ui-scene-redesign/frames/result-retreated.png) · [已捕获后放弃](ui-scene-redesign/frames/result-released-owned.png) · [放弃新捕捉](ui-scene-redesign/frames/result-released-new.png) · [迁移结清](ui-scene-redesign/frames/result-migration.png) · [离开](ui-scene-redesign/frames/result-left.png) |
-| `Records` | 当前 2×2 宫格无设计帧，见[菜单宫格渲染检查](../../test/test_touch_menu_render.cpp)；历史列表：[目录](ui-scene-redesign/frames/records.png) · [末页](ui-scene-redesign/frames/records-last.png) |
-| `FirstCaptures` | [首捕卡](ui-scene-redesign/frames/first-capture.png) · [初始赠送空态](ui-scene-redesign/frames/first-capture-empty.png) |
-| `Recent` | [最近捕捉](ui-scene-redesign/frames/recent.png) |
-| `Days` | [每日步数与未达成项](ui-scene-redesign/frames/days.png) |
-| `Achievements` | [已达成](ui-scene-redesign/frames/achievements.png) · [未达成](ui-scene-redesign/frames/achievements-empty.png) |
-| `Clock` | [浏览](ui-scene-redesign/frames/clock.png) · [编辑](ui-scene-redesign/frames/clock-editing.png) · [校时错误](ui-scene-redesign/frames/clock-error.png) |
-| `Error` | [保存重试](ui-scene-redesign/frames/error-save.png) · [未初始化](ui-scene-redesign/frames/error-storage.png) · [坏档](ui-scene-redesign/frames/error-corrupt.png) · [较新版本](ui-scene-redesign/frames/error-unsupported.png) · [画面不可用](ui-scene-redesign/frames/error-graphics.png) |
-| `Viewer` | [拥有](ui-scene-redesign/frames/viewer-owned.png) · [曾经获得](ui-scene-redesign/frames/viewer-history.png) · [未获得](ui-scene-redesign/frames/viewer-unowned.png) · [互动](ui-scene-redesign/frames/viewer-reacting.png) · [内存不足](ui-scene-redesign/frames/viewer-memory-error.png) |
-| `PartnerDetail` | [进化就绪](ui-scene-redesign/frames/partner-ready.png) · [进化已保存](ui-scene-redesign/frames/partner-saved.png) · [最终形态](ui-scene-redesign/frames/partner-final.png) · [目标已拥有](ui-scene-redesign/frames/partner-owned.png) · [步数不足](ui-scene-redesign/frames/partner-unready.png) |
-| `CarriedPartner` | 无设计帧；当前携带者、培养账户、切换入口、进化费用与不可用原因，见[玩法契约](walking-progression.md)与[伙伴 E2E](../../test/simulator/scenarios_progression.cpp) |
-| `EvolutionConfirm` | [进化确认](ui-scene-redesign/frames/evolution-confirm.png) |
-| `Evolution` | 无独立设计帧；保存成功后的真实进化动画，见[动画契约](evolution-animation.md)与[进化 E2E](../../test/simulator/scenarios_progression.cpp) |
-| `EvolutionPreviewTargets` | 无独立设计帧；伊布七分支、无畏小子三分支的预览选择，见[预览契约](evolution-animation.md)与[预览隔离与伊布分支 E2E](../../test/simulator/scenarios_progression.cpp) |
-| `EvolutionPreview` | 无独立设计帧；不改变账户、结束返回原图鉴条目的预览动画，见[预览契约](evolution-animation.md)与[预览隔离与伊布分支 E2E](../../test/simulator/scenarios_progression.cpp) |
-| `TestEntry` | 无设计帧；进入、重置时选择正式快照或空档，见[测试模式指南](../usage-test-mode.md)与[测试模式渲染](../../test/test_test_mode_render.cpp) |
-| `TestHub` | 无设计帧；测试控制台，见[页面实现](../../firmware/apps/20_pokedex/screens_test.cpp) |
-| `TestSteps` | 无设计帧；手动步数注入，见[测试模式指南](../usage-test-mode.md) |
-| `TestScenarios` | 无设计帧；四种固定场景，见[场景构造](../../firmware/apps/20_pokedex/test_console.cpp) |
-| `TestFaults` | 无设计帧；存储故障选择，见[测试模式指南](../usage-test-mode.md) |
-| `TestDiagnostics` | 无设计帧；模式、容量、版本与故障诊断，见[页面实现](../../firmware/apps/20_pokedex/screens_test.cpp) |
-| `TestExit` | 无设计帧；退出确认，见[测试模式指南](../usage-test-mode.md) |
-| `Language` | 无设计帧；中文／English选择、当前标记、“仅本次生效”提示与待保存限制，见[语言契约](i18n.md) |
-
-分组联系表：[探索与菜单](ui-scene-redesign/contacts/exploration.png) · [遭遇与捕捉](ui-scene-redesign/contacts/capture.png) · [伙伴与图鉴](ui-scene-redesign/contacts/partners.png) · [步行记录](ui-scene-redesign/contacts/records.png) · [日期与异常](ui-scene-redesign/contacts/system.png) · [步行纵深关键帧](ui-scene-redesign/contacts/walking-animation.png) · [战斗动画分镜](ui-scene-redesign/contacts/battle-animation.png)
+| `Home` | 关都～合众五地区场景（见[视觉设计](ui-scene-redesign.md#地区场景)）、遭遇／待捕捉横幅、日期与极大计数、步数缺失、恢复警告与可进化按钮；见[首页渲染](../../test/test_home_render.cpp)与[伙伴与进化 E2E](../../test/simulator/scenarios_progression.cpp) |
+| `Menu` | 一屏宫格（遭遇横幅 + 6 格 + 返回探索）与恢复警告；见[菜单宫格渲染检查](../../test/test_touch_menu_render.cpp) |
+| `Settings` | 设置页（日期与时间、语言 / Language、返回）；见[菜单宫格渲染检查](../../test/test_touch_menu_render.cpp) |
+| `DateWelcome` | 首次日期确认与未完成校时恢复；见[按键菜单渲染](../../test/test_button_menu_render.cpp)与[时钟 E2E](../../test/simulator/scenarios_environment.cpp) |
+| `Starter` | 初始伙伴选择（妙蛙种子 / 小火龙 / 杰尼龟）；见[按键菜单渲染](../../test/test_button_menu_render.cpp)与[捕获 E2E](../../test/simulator/scenarios_capture.cpp) |
+| `Routes` | 两页“选择地区”（关都～合众五地区预览）；见[地区选择 E2E](../../test/simulator/scenarios_regions.cpp) |
+| `Partners` | 伙伴列表、长名称与末页返回；见[菜单输出渲染](../../test/test_touch_menu_render.cpp)与[边界 E2E](../../test/simulator/scenarios_environment.cpp) |
+| `Encounter` | 遭遇预告；见[捕获 E2E](../../test/simulator/scenarios_capture.cpp) |
+| `Battle` | 攻击／躲避／完美判定、假动作、必杀与狂暴；见[战斗 E2E](../../test/simulator/scenarios_battle.cpp) |
+| `Practice` | 捕获练习对战；见[隔离 E2E](../../test/simulator/scenarios_environment.cpp) |
+| `PracticeThrow` | 练习投球（不消耗精灵球）；见[隔离 E2E](../../test/simulator/scenarios_environment.cpp) |
+| `PracticeResult` | 练习结算（不收入图鉴或记录）；见[隔离 E2E](../../test/simulator/scenarios_environment.cpp) |
+| `Pause` | 实战与练习暂停；见[按键菜单渲染](../../test/test_button_menu_render.cpp) |
+| `Throw` | 瞄准蓄力与三幕捕获动画；见[捕获渲染](../../test/test_capture_render.cpp)与[捕获规格](ui-scene-redesign-motion.md) |
+| `Result` | 首捕、战败、撤退、已捕获后放弃、放弃新捕捉、迁移结清与离开；见[捕获 E2E](../../test/simulator/scenarios_capture.cpp)与[迁移 E2E](../../test/simulator/scenarios_migration.cpp) |
+| `Records` | 2×2 记录宫格；见[菜单宫格渲染检查](../../test/test_touch_menu_render.cpp) |
+| `FirstCaptures` | 永久首捕卡与初始赠送空态；见[捕获 E2E](../../test/simulator/scenarios_capture.cpp) |
+| `Recent` | 最近捕捉；见[按键菜单渲染](../../test/test_button_menu_render.cpp)与[捕获 E2E](../../test/simulator/scenarios_capture.cpp) |
+| `Days` | 每日步数与每日里程碑；见[页面实现](../../firmware/apps/20_pokedex/screens_records.cpp) |
+| `Achievements` | 累计里程碑（已达成 / 未达成）；见[页面实现](../../firmware/apps/20_pokedex/screens_records.cpp) |
+| `Clock` | 日期与时间浏览、编辑与校时错误恢复；见[校时渲染](../../test/test_clock_sync_render.cpp) |
+| `Error` | 保存重试、未初始化、坏档、较新版本与画面不可用；见[启动渲染](../../test/test_startup_render.cpp)与[冒险渲染](../../test/test_adventure_render.cpp) |
+| `Viewer` | 图鉴浏览（当前拥有 / 曾经获得 / 未获得）、互动与动画内存不足；见[图鉴渲染](../../test/test_render.cpp)与[边界 E2E](../../test/simulator/scenarios_environment.cpp) |
+| `PartnerDetail` | 进化就绪、已保存、最终形态、目标已拥有与步数不足；见[伙伴 E2E](../../test/simulator/scenarios_progression.cpp) |
+| `CarriedPartner` | 当前携带者、培养账户、切换入口、进化费用与不可用原因；见[玩法契约](walking-progression.md)与[伙伴 E2E](../../test/simulator/scenarios_progression.cpp) |
+| `EvolutionConfirm` | 进化确认；见[伙伴 E2E](../../test/simulator/scenarios_progression.cpp) |
+| `Evolution` | 保存成功后的真实进化动画；见[动画契约](evolution-animation.md)与[进化 E2E](../../test/simulator/scenarios_progression.cpp) |
+| `EvolutionPreviewTargets` | 伊布七分支、无畏小子三分支预览选择；见[预览契约](evolution-animation.md)与[预览隔离 E2E](../../test/simulator/scenarios_progression.cpp) |
+| `EvolutionPreview` | 不改变账户、结束返回原图鉴条目的预览动画；见[预览契约](evolution-animation.md)与[预览隔离 E2E](../../test/simulator/scenarios_progression.cpp) |
+| `TestEntry` | 测试模式进入／重置时选择正式快照或空档；见[测试模式指南](../usage-test-mode.md)与[测试模式渲染](../../test/test_test_mode_render.cpp) |
+| `TestHub` | 测试控制台；见[页面实现](../../firmware/apps/20_pokedex/screens_test.cpp) |
+| `TestSteps` | 手动步数注入；见[测试模式指南](../usage-test-mode.md) |
+| `TestScenarios` | 四种固定场景构造；见[场景构造](../../firmware/apps/20_pokedex/test_console.cpp) |
+| `TestFaults` | 存储故障选择；见[测试模式指南](../usage-test-mode.md) |
+| `TestDiagnostics` | 模式、容量、版本与故障诊断；见[页面实现](../../firmware/apps/20_pokedex/screens_test.cpp) |
+| `TestExit` | 测试模式退出确认；见[测试模式指南](../usage-test-mode.md) |
+| `Language` | 中文／English 选择、当前标记、“仅本次生效”提示与待保存限制；见[语言契约](i18n.md)与[语言 E2E](../../test/simulator/scenarios_language.cpp) |

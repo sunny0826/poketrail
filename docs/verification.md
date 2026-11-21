@@ -40,7 +40,7 @@ rtk proxy mise run test-simulator-e2e
 
 仍须完成[相应专项检查](development.md#检查入口)、固件构建和必要的设备验收；纯文档不重建固件。下述 CI 自动触发不构成本地重复验收要求。
 
-[GitHub Actions](../.github/workflows/simulator-e2e.yml) 对所有 PR、`main` 推送和手动运行执行同一全量入口，不设置路径过滤。Ubuntu + Xvfb 的结果与截图随每次 run 上传，保留 7 天；具体准备步骤见[开发指南](development.md#github-actions)。是否通过以对应提交的 Actions 结果为准。
+[GitHub Actions](../.github/workflows/simulator-e2e.yml) 对涉及非文档文件的 PR、`main` 推送和手动运行执行全量 E2E（纯文档、README、AGENTS、许可与声明改动通过 `paths-ignore` 跳过）。工作流缓存 PlatformIO／pip 依赖与 `.pio/host-build` 目标文件，并上传 PNG 截图、结果与测试存档，保留 7 天；具体步骤见[开发指南](development.md#github-actions)。是否通过以对应提交的 Actions 结果为准。
 
 ## 自动检查覆盖
 
@@ -54,7 +54,7 @@ rtk proxy mise run test-simulator-e2e
 
 2026-10-31 曾修正两项渲染测试问题：旧战斗检查在绘制间隔内读到上一帧，测试模式菜单辅助操作的次数上限不足；当时的定向回归属于历史记录。2026-11-04 审计后，独立战斗渲染套件已删除，测试模式仍保留真实控制台操作链。历史通过结果不能代替本轮验收；当前 48 场 E2E 与 12 套渲染入口的状态以本次输出为准。
 
-历史 Pillow 画廊仍为 26 页，使用旧 251 种素材解析和三路线名称，无法据此验收当前 649 种、37 页固件。设计稿测试已按保留标准删除，生成器兼容问题仍开放；历史图片、画廊与原始证据保留，见[设计稿维护](design/ui-scene-redesign-implementation.md)。
+原 251 种、26 页三路线的独立 Pillow 历史设计画廊及失效预览脚本已退役清理，不再作为验收依据；实际页面覆盖与渲染检查入口见[UI 实现维护](design/ui-scene-redesign-implementation.md)。
 
 其他限制：
 
@@ -81,6 +81,6 @@ rtk proxy mise run test-simulator-e2e
 
 按[开发指南](development.md#检查入口)准备依赖。E2E 默认创建 `.pio/verification/` 下的新时间戳目录，`MYM5_VERIFICATION_DIR` 可指定尚不存在的目录。渲染、玩法、计步、RTC、校时和存储任务也支持该变量，应为每轮选择独立路径，避免覆盖。普通桌面模拟器的截图位于 `.simulator/screenshots/本次启动时间/`，不再另有 smoke 验收目录入口。
 
-E2E 根目录的 `manifest.json` 记录源码、依赖和可执行文件哈希及环境，`result.json` 汇总场景结果；每个启动阶段保留事件、业务快照、真实存档、截图和进程退出码。三种强杀场景的预期退出码为 SIGKILL（`-9`），必须连同新进程恢复断言判断，不能单看非零退出码。字段说明见[E2E 证据](design/simulator-e2e.md#执行与证据)。
+E2E 根目录的 `manifest.json` 记录仓库内实际参与编译的源码、依赖配置和可执行文件哈希及环境，`result.json` 汇总场景结果；每个启动阶段保留事件、业务快照、真实存档、PNG 截图和进程退出码。三种强杀场景的预期退出码为 SIGKILL（`-9`），必须连同新进程恢复断言判断，不能单看非零退出码。字段说明见[E2E 证据](design/simulator-e2e.md#执行与证据)。
 
 需要命令日志时保存标准输出、标准错误和退出状态。重跑只验证当时源码与环境，不恢复已清理的历史证据。保留原始验收数据、Flash 备份及存档；新用户构建不依赖这些产物。

@@ -2,8 +2,22 @@ name: Simulator E2E
 
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'README.en.md'
+      - 'AGENTS.md'
+      - 'LICENSE'
+      - 'THIRD_PARTY_NOTICES.md'
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'README.en.md'
+      - 'AGENTS.md'
+      - 'LICENSE'
+      - 'THIRD_PARTY_NOTICES.md'
   workflow_dispatch:
 
 permissions:
@@ -30,26 +44,43 @@ jobs:
 
       - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
 
+      - name: Cache PlatformIO and Python dependencies
+        uses: actions/cache@d4323d4df104b026c6a166049fb557cb5d0bedfc # v4.2.0
+        with:
+          path: |
+            ~/.platformio
+            .pio/libdeps/20_pokedex
+            ~/.cache/pip
+          key: ${{ runner.os }}-deps-${{ hashFiles('platformio.ini', 'requirements-dev.txt') }}
+
+      - name: Cache host build objects
+        uses: actions/cache@d4323d4df104b026c6a166049fb557cb5d0bedfc # v4.2.0
+        with:
+          path: .pio/host-build
+          key: ${{ runner.os }}-host-build-${{ hashFiles('platformio.ini', 'scripts/host_build.py', 'firmware/apps/20_pokedex/sprites_generated.cpp', 'firmware/apps/20_pokedex/icons_generated.cpp', 'firmware/apps/20_pokedex/scene_backgrounds_generated.cpp') }}
+          restore-keys: |
+            ${{ runner.os }}-host-build-
+
       - name: Install native dependencies
         run: |
-          rtk proxy sudo apt-get update
-          rtk proxy sudo apt-get install -y clang libsdl2-dev zlib1g-dev xvfb xauth
+          sudo apt-get update
+          sudo apt-get install -y clang libsdl2-dev zlib1g-dev xvfb xauth
 
       - name: Install project dependencies
         run: |
-          rtk proxy mise exec -- python3 -m pip install -r requirements-dev.txt
-          rtk proxy mise exec -- pio pkg install -e 20_pokedex
+          mise exec -- python3 -m pip install -r requirements-dev.txt
+          mise exec -- pio pkg install -e 20_pokedex
 
       - name: Check workflow and tool versions
         run: |
-          rtk proxy mise run check-ci
-          rtk proxy mise exec -- python3 --version
-          rtk proxy mise exec -- pio --version
-          rtk proxy mise exec -- clang++ --version
-          rtk proxy mise exec -- sdl2-config --version
+          mise run check-ci
+          mise exec -- python3 --version
+          mise exec -- pio --version
+          mise exec -- clang++ --version
+          mise exec -- sdl2-config --version
 
       - name: Run full simulator E2E
-        run: rtk proxy xvfb-run -a -s '-screen 0 1280x1024x24' rtk proxy mise run test-simulator-e2e
+        run: xvfb-run -a -s '-screen 0 1280x1024x24' mise run test-simulator-e2e
 
       - name: Upload E2E evidence
         if: ${{ always() }}
@@ -59,6 +90,7 @@ jobs:
           path: |
             ${{ env.MYM5_VERIFICATION_DIR }}/
             !${{ env.MYM5_VERIFICATION_DIR }}/**/ready.fifo
+            !${{ env.MYM5_VERIFICATION_DIR }}/**/*.bmp
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 7

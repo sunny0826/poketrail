@@ -14,11 +14,12 @@ sources=(firmware/apps/20_pokedex/adventure_progression.cpp
   firmware/apps/20_pokedex/save_codec.cpp firmware/apps/20_pokedex/file_store.cpp)
 flags=(-Ifirmware/apps/20_pokedex -std=c++11 -O1 -g -Wall -Wextra -Werror)
 if [[ "${SANITIZE:-1}" == 1 ]]; then flags+=(-fsanitize=address,undefined -fno-omit-frame-pointer); fi
+targets=()
 for suite in adventure_queue battle adventure save_codec save_codec_modern save_schema6 save_language language adventure_regressions progression migration unique_encounters; do
-  "${CXX:-clang++}" "${flags[@]}" -Ifirmware/apps/20_pokedex "test/test_${suite}.cpp" "${sources[@]}" -o "${build_dir}/test_${suite}"
-  "${build_dir}/test_${suite}"
+  targets+=(--target "test_${suite}:test/test_${suite}.cpp")
 done
-"${CXX:-clang++}" "${flags[@]}" -Ifirmware/apps/20_pokedex -Ifirmware/shared test/test_test_mode.cpp \
-  firmware/apps/20_pokedex/test_mode.cpp firmware/apps/20_pokedex/test_mode_platform.cpp \
-  "${sources[@]}" -o "${build_dir}/test_test_mode"
-"${build_dir}/test_test_mode"
+python3 scripts/host_build.py unit --cxx "${CXX:-clang++}" --run --shared "${sources[@]}" "${targets[@]}" -- "${flags[@]}"
+python3 scripts/host_build.py unit --cxx "${CXX:-clang++}" --run \
+  --shared "${sources[@]}" firmware/apps/20_pokedex/test_mode.cpp firmware/apps/20_pokedex/test_mode_platform.cpp \
+  --target "test_test_mode:test/test_test_mode.cpp" \
+  -- "${flags[@]}" -Ifirmware/shared

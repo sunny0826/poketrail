@@ -11,7 +11,7 @@ rtk proxy mise exec -- python3 -m pip install -r requirements-dev.txt
 rtk proxy mise run build
 ```
 
-[mise.toml](../mise.toml) 固定 Python 3.14.2、Node 24.22.1、pipx 1.18.4、PlatformIO 6.2.0、RTK 1.1.0 和 actionlint 1.7.12；[requirements-dev.txt](../requirements-dev.txt) 固定 esptool 5.6.0 与 Pillow 12.1.0。ESP32 工具链和 Arduino 由 [platformio.ini](../platformio.ini) 的 Espressif32 6.10.0 管理，库版本为 M5Unified 0.2.19、M5GFX 0.2.27、M5PM1 1.0.6、M5IOE1 1.0.8。
+[mise.toml](../mise.toml) 固定 Python 3.14.2、pipx 1.18.4、PlatformIO 6.2.0、RTK 1.1.0 和 actionlint 1.7.12；[requirements-dev.txt](../requirements-dev.txt) 固定 esptool 5.6.0 与 Pillow 12.1.0。ESP32 工具链和 Arduino 由 [platformio.ini](../platformio.ini) 的 Espressif32 6.10.0 管理，库版本为 M5Unified 0.2.19、M5GFX 0.2.27、M5PM1 1.0.6、M5IOE1 1.0.8。
 
 PlatformIO 使用当前用户的 `~/.platformio` 工具缓存，项目依赖位于 `.pio/libdeps/20_pokedex`。首次构建需要联网；完整生成数据随仓库提供，固件编译不需要下载原始图片。
 
@@ -25,9 +25,9 @@ E2E 入口为 `rtk proxy mise run test-simulator-e2e`，可加 `-- --case captur
 
 ## GitHub Actions
 
-[Simulator E2E 工作流](../.github/workflows/simulator-e2e.yml) 在每个 PR、`main` 推送和手动触发时运行，包括仅修改文档的 PR。Ubuntu 24.04 使用 Clang、SDL2 和 Xvfb，mise 安装项目固定工具，PlatformIO 按 `platformio.ini` 安装库，再执行无筛选的 `rtk proxy mise run test-simulator-e2e`。CI 不构建或烧录设备固件。
+[Simulator E2E 工作流](../.github/workflows/simulator-e2e.yml)在 PR、`main` 推送和手动触发时运行，并通过 `paths-ignore` 跳过纯文档、`README*`、`AGENTS.md`、`LICENSE` 与 `THIRD_PARTY_NOTICES.md` 变更。Ubuntu 24.04 使用 Clang、SDL2 和 Xvfb，mise 安装项目固定工具，缓存 PlatformIO／pip 依赖与 `.pio/host-build` 目标文件，再执行无筛选的 `mise run test-simulator-e2e`。CI 不构建或烧录设备固件。
 
-测试成功或失败都会上传本次目录中的结果、事件、截图和测试存档，artifact 名称为 `simulator-e2e-<run-id>-<attempt>`，保留 7 天。依赖或编译失败时可能尚无测试证据，原因见步骤日志。PR 更新会取消同一 PR 的旧运行。工作流通过 `rtk proxy mise run check-ci` 检查。
+测试成功或失败都会上传本次目录中的结果、事件、PNG 截图和测试存档（排除 `ready.fifo` 与中间 `.bmp`），artifact 名称为 `simulator-e2e-<run-id>-<attempt>`，保留 7 天。依赖或编译失败时可能尚无测试证据，原因见步骤日志。PR 更新会取消同一 PR 的旧运行。工作流通过 `rtk proxy mise run check-ci` 检查。
 
 ## 新功能与任务交付
 
@@ -35,11 +35,7 @@ E2E 入口为 `rtk proxy mise run test-simulator-e2e`，可加 `-- --case captur
 
 新功能必须随实现新增对应 E2E 测试：在 [test/simulator](../test/simulator) 新增场景或扩展已有场景的操作链和断言，接入 [runner](../scripts/run_simulator_e2e.py) 的默认全量运行，并更新[覆盖矩阵](design/simulator-e2e-coverage.md)。测试复用真实 SDL → Runtime 路径；涉及持久状态时验证新进程恢复。
 
-默认按影响范围运行专项检查和相关 `--case`，包括新增功能、局部 UI、单流程修复和单场景测试调整。纯文档、注释、说明截图只核对内容、链接与格式，不触发 E2E，也不中断运行中的验收。
-
-全量仅用于定向检查不足以覆盖的跨流程核心变化、存档协议与迁移、全局 E2E 基础设施变化，或明确的完整回归要求；边界见[验证指南](verification.md#每次任务的-e2e-验收要求)。主 agent 先说明触发理由，再自己或指定一个验收 agent 统一执行，子 agent 默认只做定向检查。
-
-失败先排障并定向复测，后续改动只重验受影响范围；只有再次命中全量条件才重跑。可组合未受影响的已有结果与修复后的定向结果，但须分别列出，不称为最终全量通过。`--build-only` 不证明行为通过，失败或阻塞必须如实报告，保留各轮证据。
+默认按影响范围运行专项检查和相关 `--case`，纯文档等非行为改动不触发 E2E。仅命中跨流程状态、存档协议／迁移、全局 E2E 基础设施或明确要求时执行全量回归；详细分级边界、并发协调与重跑规则见[每次任务的 E2E 验收要求](verification.md#每次任务的-e2e-验收要求)。
 
 ## 检查入口
 

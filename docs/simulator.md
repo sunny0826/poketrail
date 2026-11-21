@@ -54,9 +54,9 @@ rtk proxy mise run simulate -- --save-dir .simulator/another-save
 
 ## 验证与边界
 
-`test-simulator-e2e` 当前注册 45 场（P0 24、P1 21），检查启动、语言、走路捕获、培养进化、保存失败重试、强杀恢复、旧档迁移、地区与遭遇历史、窗口生命周期和时钟。独立 smoke／`test-simulator` 入口已删除，普通集成路径由这些用户流程覆盖；原生窗口焦点与 OS 输入仍需单独验收。数量表示源码覆盖，是否通过以本轮输出为准，结构与边界见[模拟器 E2E](design/simulator-e2e.md)。
+`test-simulator-e2e` 当前注册 48 场（P0 27、P1 21），检查启动、语言、走路捕获、培养进化、保存失败重试、强杀恢复、旧档迁移、地区与遭遇历史、窗口生命周期和时钟。独立 smoke／`test-simulator` 入口已删除，普通集成路径由这些用户流程覆盖；原生窗口焦点与 OS 输入仍需单独验收。数量表示源码覆盖，是否通过以本轮输出为准，结构与边界见[模拟器 E2E](design/simulator-e2e.md)。
 
-新功能必须新增对应 E2E 覆盖；默认按影响范围运行专项检查和定向 E2E，命中全量触发条件或用户明确要求时才运行全量 `test-simulator-e2e`。未触发全量时，相关 `--case` 可作为交付验收；触发全量时，`--suite core` 或 `--case` 不能替代全量。`--build-only` 只证明编译，纯文档改动只核对内容、链接及格式。完整规则见[验证指南](verification.md#每次任务的-e2e-验收要求)。
+新功能必须新增对应 E2E 覆盖；默认按影响范围运行专项检查和定向 E2E，全量触发边界、证据规范与交付限制见[验证说明](verification.md#每次任务的-e2e-验收要求)。
 
 ```bash
 rtk proxy mise run test-simulator-e2e

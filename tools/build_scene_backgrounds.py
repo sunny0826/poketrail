@@ -11,11 +11,9 @@ from pathlib import Path
 from PIL import ImageEnhance
 
 if __package__:
-    from tools.design_preview import pixel_scene_source
-    from tools.design_preview_scenes import GROUND_TOP, REGIONS, pixel_scene_layers
+    from tools.design_preview_scenes import GROUND_TOP, REGIONS, pixel_scene_layers, pixel_scene_source
 else:
-    from design_preview import pixel_scene_source
-    from design_preview_scenes import GROUND_TOP, REGIONS, pixel_scene_layers
+    from design_preview_scenes import GROUND_TOP, REGIONS, pixel_scene_layers, pixel_scene_source
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_HEADER = ROOT / "firmware/apps/20_pokedex/scene_backgrounds_generated.hpp"
