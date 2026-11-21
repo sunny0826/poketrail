@@ -73,6 +73,10 @@ void begin(const char* title) {
   config.pmic_button = false;
   config.output_power = false;
   M5.begin(config);
+#if defined(ESP32) || defined(ESP32S3)
+  M5.Touch.setFlickThresh(20);
+  M5.Touch.setHoldThresh(650);
+#endif
 
   M5.Display.setRotation(0);
   M5.Display.setBrightness(96);

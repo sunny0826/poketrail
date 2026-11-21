@@ -8,6 +8,7 @@ namespace viewer {
 constexpr int32_t kCenter = 233;
 constexpr uint32_t kReactionMs = 800;
 constexpr int32_t kSwipeDistance = 45;
+constexpr int32_t kTouchClickTolerancePx = 20;
 
 enum class Input : uint8_t { None, React, Previous, Next };
 

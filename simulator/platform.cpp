@@ -43,7 +43,8 @@ void Platform::event(const SDL_Event& event) {
   } else if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT && touch.pressed) {
     touch.x = event.button.x - kScreenX; touch.y = event.button.y - kScreenY;
     touch.pressed = false; touch.released = true;
-    touch.clicked = std::abs(touch.x - touch.base_x) <= 12 && std::abs(touch.y - touch.base_y) <= 12;
+    touch.clicked = std::abs(touch.x - touch.base_x) <= pokedex::viewer::kTouchClickTolerancePx &&
+                    std::abs(touch.y - touch.base_y) <= pokedex::viewer::kTouchClickTolerancePx;
     SDL_CaptureMouse(SDL_FALSE);
   }
 }
@@ -64,7 +65,9 @@ pokedex::ui::Input Platform::pollInput() {
   const auto& detail = M5.Touch.detail;
   input.x = detail.x; input.y = detail.y;
   const int dx = detail.x - detail.base_x, dy = detail.y - detail.base_y;
-  input.click = detail.wasReleased() && detail.wasClicked() && std::abs(dx) <= 12 && std::abs(dy) <= 12;
+  input.click = detail.wasReleased() && detail.wasClicked() &&
+                std::abs(dx) <= pokedex::viewer::kTouchClickTolerancePx &&
+                std::abs(dy) <= pokedex::viewer::kTouchClickTolerancePx;
   input.back = input.click && detail.base_y < 80 && detail.y < 80;
   if (detail.wasReleased() && std::abs(dx) >= 45 && std::abs(dx) > std::abs(dy))
     input.swipe = dx < 0 ? 1 : -1;

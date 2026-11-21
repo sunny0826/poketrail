@@ -68,7 +68,70 @@ void mainMenuHub() {
   tap(encounter, 233, 104);
   check(encounter.screen().page == Page::Encounter, "touching the waiting banner opens the encounter");
 }
+namespace {
+void touchRelease(Runtime& runtime, int startX, int startY, int endX, int endY, bool clicked = true) {
+  auto& detail = M5.Touch.detail;
+  detail.base_x = detail.x = startX; detail.base_y = detail.y = startY; detail.pressed = true;
+  frame(runtime);
+  detail.x = endX; detail.y = endY; detail.pressed = false; detail.released = true; detail.clicked = clicked;
+  frame(runtime);
+  detail = HostTouchDetail();
+}
+void touchToleranceAndHomeEvolve() {
+  MemoryStore walking; legacyOwned(walking, {1, 4});
+  HostPlatform platform; Runtime menu(walking, platform); start(menu); openMenu(menu);
+  touchRelease(menu, 359, 296, 375, 296);
+  check(menu.screen().page == Page::Settings, "16px micro-jitter still activates a menu tile");
+  touchRelease(menu, 233, 35, 221, 45);
+  check(menu.screen().page == Page::Menu, "jitter within tolerance still activates back");
+  touchRelease(menu, 359, 296, 384, 296, false);
+  check(menu.screen().page == Page::Menu, "25px short drag does not activate a menu tile");
+
+  MemoryStore evolvable;
+  { Engine e(evolvable); e.begin(); e.chooseStarter(1); step(e, 1, 7500); e.checkpoint(); }
+  Runtime home(evolvable, platform); start(home);
+  check(home.screen().page == Page::Home && homeEvolutionReady(home.engine()),
+        "home evolve fixture starts ready on exploration");
+  screenshot(home, "home-evolve-ready");
+
+  auto& detail = M5.Touch.detail;
+  detail.base_x = detail.x = 233; detail.base_y = detail.y = 76; detail.pressed = true;
+  frame(home);
+  check(home.screen().page == Page::Home,
+        "pressing the home evolve button waits for release instead of opening the menu");
+  detail.x = 249; detail.y = 76; detail.pressed = false; detail.released = detail.clicked = true;
+  frame(home);
+  detail = HostTouchDetail();
+  check(home.screen().page == Page::EvolutionConfirm &&
+        home.screen().evolution.from == 1 && home.screen().evolution.to == 2,
+        "16px micro-jitter click on the home evolve button opens evolution confirm without triggering back");
+  screenshot(home, "home-evolve-confirm");
+
+  tap(home, 233, 35);
+  check(home.screen().page == Page::Home, "back returns from evolution confirm to home");
+  touchRelease(home, 169, 62, 176, 61);
+  check(home.screen().page == Page::EvolutionConfirm,
+        "8px expanded evolve touch padding above y=60 opens evolution confirm");
+  tap(home, 233, 35);
+  check(home.screen().page == Page::Home, "back returns to home after top-edge evolve tap");
+  touchRelease(home, 297, 102, 286, 98);
+  check(home.screen().page == Page::EvolutionConfirm,
+        "8px expanded evolve touch padding at bottom-right opens evolution confirm");
+  tap(home, 233, 35);
+  touchRelease(home, 233, 59, 233, 59);
+  check(home.screen().page == Page::Menu,
+        "touch above y=60 stays outside evolve hitbox and opens the menu");
+  tap(home, 233, 35);
+  check(home.screen().page == Page::Home, "menu back returns to home");
+  touchRelease(home, 233, 82, 283, 82, false);
+  check(home.screen().page == Page::Home,
+        "horizontal swipe across the home evolve button does not trigger evolution or menu");
+  touchRelease(home, 233, 82, 233, 82, false);
+  check(home.screen().page == Page::Home,
+        "hold release on the home evolve button does not trigger evolution or menu");
+}
+}
 int main() {
-  c152::begin("MENU OUTPUT TEST"); longLabelsAndWarnings(); mainMenuHub();
+  c152::begin("MENU OUTPUT TEST"); longLabelsAndWarnings(); mainMenuHub(); touchToleranceAndHomeEvolve();
   std::printf("%u menu output checks, 0 failures\n", checks);
 }

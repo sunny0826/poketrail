@@ -11,7 +11,8 @@ Input releaseInput(int32_t start_x, int32_t start_y, int32_t end_x,
   const int32_t dy = end_y - start_y;
   if (std::abs(dx) >= kSwipeDistance && std::abs(dx) > std::abs(dy))
     return dx < 0 ? Input::Next : Input::Previous;
-  if (clicked && std::abs(dx) <= 12 && std::abs(dy) <= 12 &&
+  if (clicked && std::abs(dx) <= kTouchClickTolerancePx &&
+      std::abs(dy) <= kTouchClickTolerancePx &&
       std::abs(start_x - kCenter) <= 140 && std::abs(start_y - kCenter) <= 140)
     return Input::React;
   return Input::None;

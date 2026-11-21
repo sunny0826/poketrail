@@ -22,11 +22,16 @@ const Sprite sample = {"test", "", 1, 3, 2, palette, 6, data, sizeof(data), size
 
 void testInputs() {
   check(releaseInput(233,233,238,237,true) == Input::React, "small click jitter tolerated");
+  check(releaseInput(233,233,251,245,true) == Input::React, "18px click jitter still triggers reaction");
+  check(releaseInput(233,233,253,213,true) == Input::React, "20px tolerance boundary triggers reaction");
+  check(releaseInput(233,233,258,233,false) == Input::None, "25px short drag ignored");
+  check(releaseInput(233,233,258,233,true) == Input::None, "25px drift beyond tolerance is not a click");
+  check(releaseInput(233,233,188,233,false) == Input::Next, "45px left swipe advances");
+  check(releaseInput(233,233,278,233,false) == Input::Previous, "45px right swipe goes back");
   check(releaseInput(233,233,235,130,false) == Input::None, "vertical swipe ignored");
   check(releaseInput(233,233,170,140,false) == Input::None, "mostly vertical drag ignored");
   check(releaseInput(233,233,233,233,false) == Input::None, "hold release is not a tap");
   check(releaseInput(233,65,233,65,true) == Input::None, "title click ignored");
-
 }
 
 void testTimeline() {
