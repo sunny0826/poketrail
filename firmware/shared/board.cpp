@@ -7,8 +7,18 @@
 
 namespace {
 
-uint32_t vibration_until_ms = 0;
-bool vibration_active = false;
+enum class VibrationStage : uint8_t { Idle, Pulse1, Gap, Pulse2 };
+
+struct VibrationState {
+  VibrationStage stage = VibrationStage::Idle;
+  uint32_t until_ms = 0;
+  uint16_t gap_ms = 0;
+  uint16_t on2_ms = 0;
+  uint8_t level = 0;
+  bool motor_on = false;
+};
+
+VibrationState vibration_state;
 bool previous_touch_down = false;
 
 // L1 同时供电 RTC 与 IMU；hold 使双击关机后 RTC 继续走时。
@@ -61,6 +71,7 @@ void configureLowPowerImu() {
 namespace c152 {
 
 void begin(const char* title) {
+  vibration_state = VibrationState();
   auto config = M5.config();
   config.serial_baudrate = 115200;
   config.clear_display = true;
@@ -136,11 +147,32 @@ void begin(const char* title) {
 }
 
 void updateVibration() {
-  if (vibration_active &&
-      static_cast<int32_t>(millis() - vibration_until_ms) >= 0) {
+  if (vibration_state.stage == VibrationStage::Idle) return;
+  const uint32_t now = millis();
+  if (static_cast<int32_t>(now - vibration_state.until_ms) < 0) return;
+
+  if (vibration_state.stage == VibrationStage::Pulse1 &&
+      vibration_state.gap_ms > 0 && vibration_state.on2_ms > 0) {
     M5.Power.setVibration(0);
-    vibration_active = false;
+    vibration_state.motor_on = false;
+    vibration_state.stage = VibrationStage::Gap;
+    vibration_state.until_ms = now + vibration_state.gap_ms;
+    return;
   }
+
+  if (vibration_state.stage == VibrationStage::Gap &&
+      vibration_state.on2_ms > 0) {
+    M5.Power.setVibration(vibration_state.level);
+    vibration_state.motor_on = true;
+    vibration_state.stage = VibrationStage::Pulse2;
+    vibration_state.until_ms = now + vibration_state.on2_ms;
+    vibration_state.gap_ms = 0;
+    vibration_state.on2_ms = 0;
+    return;
+  }
+
+  M5.Power.setVibration(0);
+  vibration_state = VibrationState();
 }
 
 void update() {
@@ -219,18 +251,67 @@ bool readAccel(float& x, float& y, float& z, bool& fresh) {
 #endif
 }
 
+void stopVibration() {
+  if (vibration_state.stage == VibrationStage::Idle &&
+      !vibration_state.motor_on) {
+    return;
+  }
+  if (vibration_state.motor_on) {
+    M5.Power.setVibration(0);
+  }
+  vibration_state = VibrationState();
+}
+
 void feedback(uint16_t frequency_hz, uint16_t duration_ms,
               uint8_t vibration) {
   if (frequency_hz > 0) {
     M5.Speaker.tone(frequency_hz, duration_ms);
   }
-  if (vibration > 0) {
-    M5.Power.setVibration(vibration);
-    vibration_until_ms = millis() + duration_ms;
-    vibration_active = true;
+  if (vibration == 0) return;
+  if (duration_ms == 0) {
+    stopVibration();
+    return;
   }
+  M5.Power.setVibration(vibration);
+  vibration_state = VibrationState();
+  vibration_state.stage = VibrationStage::Pulse1;
+  vibration_state.until_ms = millis() + duration_ms;
+  vibration_state.level = vibration;
+  vibration_state.motor_on = true;
 }
 
-bool vibrationActive() { return vibration_active; }
+void feedbackPulse(uint16_t on1_ms, uint16_t gap_ms, uint16_t on2_ms,
+                   uint8_t vibration) {
+  if (vibration == 0) {
+    stopVibration();
+    return;
+  }
+  if (on1_ms == 0) {
+    feedback(0, on2_ms, vibration);
+    return;
+  }
+  if (on2_ms == 0) {
+    feedback(0, on1_ms, vibration);
+    return;
+  }
+  if (gap_ms == 0) {
+    const uint32_t combined = uint32_t(on1_ms) + uint32_t(on2_ms);
+    feedback(0, combined > 0xffffu ? uint16_t(0xffffu) : uint16_t(combined),
+             vibration);
+    return;
+  }
+  M5.Power.setVibration(vibration);
+  vibration_state = VibrationState();
+  vibration_state.stage = VibrationStage::Pulse1;
+  vibration_state.until_ms = millis() + on1_ms;
+  vibration_state.gap_ms = gap_ms;
+  vibration_state.on2_ms = on2_ms;
+  vibration_state.level = vibration;
+  vibration_state.motor_on = true;
+}
+
+bool vibrationActive() {
+  return vibration_state.stage != VibrationStage::Idle;
+}
 
 }

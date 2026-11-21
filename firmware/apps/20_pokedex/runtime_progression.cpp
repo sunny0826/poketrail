@@ -141,12 +141,12 @@ void Runtime::tickCapture(uint32_t now) {
   if (cue != lastCaptureCue_) {
     lastCaptureCue_ = cue;
     switch (CaptureCue(cue)) {
-      case CaptureCue::Land1: case CaptureCue::Land2: feedback(10); break;
+      case CaptureCue::Land1: case CaptureCue::Land2: feedback(Haptic::Light); break;
       case CaptureCue::Wiggle1: case CaptureCue::Wiggle2: case CaptureCue::Wiggle3:
-        feedback(15); break;
-      case CaptureCue::BreakOut: feedback(25); break;
+        feedback(Haptic::Medium); break;
+      case CaptureCue::BreakOut: feedback(Haptic::Strong); break;
       case CaptureCue::Success1: case CaptureCue::Success2: case CaptureCue::Success3:
-        feedback(30); break;
+        feedback(Haptic::Strong); break;
       default: break;
     }
     dirty_ = true;
@@ -183,7 +183,7 @@ void Runtime::handleThrow(const Input& input) {
     if ((input.right || throwTouch) && !screen_.charging) {
       screen_.charging = true;
       screen_.chargeStartMs = input.at;
-      feedback(20);
+      feedback(Haptic::Medium);
     }
     return;
   }
@@ -192,7 +192,7 @@ void Runtime::handleThrow(const Input& input) {
     if (screen_.command == CommandResult::Applied) {
       screen_.charging = true;
       screen_.chargeStartMs = input.at;
-      feedback(20);
+      feedback(Haptic::Medium);
     }
   }
 }
@@ -261,7 +261,7 @@ void Runtime::startPracticeCapture(const PracticeOutcome& outcome) {
   anim.wiggleBreak = outcome.captured ? 0 : uint8_t(1 + outcome.roll % 3);
   screen_.capture = anim;
   lastCaptureCue_ = 0;
-  feedback(outcome.timing == Timing::Perfect ? 40 : 20);
+  feedback(outcome.timing == Timing::Perfect ? Haptic::Strong : Haptic::Medium);
   dirty_ = true;
 }
 void Runtime::handlePracticeThrow(const Input& input) {
@@ -274,7 +274,7 @@ void Runtime::handlePracticeThrow(const Input& input) {
     if ((input.right || throwTouch) && !screen_.charging) {
       screen_.charging = true;
       screen_.chargeStartMs = input.at;
-      feedback(20);
+      feedback(Haptic::Medium);
     }
     return;
   }
@@ -282,7 +282,7 @@ void Runtime::handlePracticeThrow(const Input& input) {
     if (practiceCapture_.beginThrow(input.at)) {
       screen_.charging = true;
       screen_.chargeStartMs = input.at;
-      feedback(20);
+      feedback(Haptic::Medium);
     }
   }
 }

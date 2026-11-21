@@ -10,6 +10,7 @@ constexpr uint32_t kInputActiveDeferMs = 3000;
 constexpr uint32_t kCheckpointDeferralMs = 120000;
 }
 CommitStatus TimedStore::commit(const Save& s) {
+  platform_.stopVibration();
   uint32_t start = platform_.now();
   auto result = store_.commit(s);
   metrics_.maxCommitMs = std::max(metrics_.maxCommitMs, platform_.now() - start);
@@ -144,7 +145,7 @@ void Runtime::syncPage() {
   }
   const auto& v = engine_.view();
   if (engine_.ready() && !engine_.savePending() && v.phase == Phase::EncounterReady && v.nextEncounterId - 1 != notifiedEncounter_) {
-    notifiedEncounter_ = v.nextEncounterId - 1; feedback(35);
+    notifiedEncounter_ = v.nextEncounterId - 1; feedback(Haptic::Encounter);
   }
   if (isTestPage(screen_.page)) return;
   if (screen_.page == Page::Language) {
@@ -176,8 +177,30 @@ void Runtime::syncPage() {
   } else if (screen_.page == Page::Error || screen_.page == Page::Battle || screen_.page == Page::Throw || screen_.page == Page::Result) navigate(Page::Home);
 }
 void Runtime::feedback(uint16_t duration) {
-  platform_.feedback(duration);
-  detector_.suppressUntil(platform_.now() + duration + 200);
+  feedback(duration >= 40 ? Haptic::Strong
+                          : duration >= 20 ? Haptic::Medium : Haptic::Light);
+}
+void Runtime::feedback(Haptic kind) {
+  uint32_t totalMs = 0;
+  switch (kind) {
+    case Haptic::Light:
+      totalMs = 35;
+      platform_.feedbackStrength(35, 180);
+      break;
+    case Haptic::Medium:
+      totalMs = 50;
+      platform_.feedbackStrength(50, 215);
+      break;
+    case Haptic::Strong:
+      totalMs = 80;
+      platform_.feedbackStrength(80, 255);
+      break;
+    case Haptic::Encounter:
+      totalMs = 200;
+      platform_.feedbackDouble(65, 50, 85, 255);
+      break;
+  }
+  detector_.suppressUntil(platform_.now() + totalMs + 200);
   wasVibrating_ = true;
 }
 void Runtime::battleFeedback() {
@@ -185,7 +208,9 @@ void Runtime::battleFeedback() {
   if (!practice && screen_.page != Page::Battle) return;
   const auto& b = practice ? practiceCapture_.battleView() : engine_.battleView();
   if (b.settlements > battleSettlements_ && platform_.now() - lastStepEventMs_ >= kStepActiveMs)
-    feedback(b.special || b.lastTiming == Timing::Perfect ? 40 : b.lastTiming == Timing::Miss ? 10 : 20);
+    feedback(b.special || b.lastTiming == Timing::Perfect
+                 ? Haptic::Strong
+                 : b.lastTiming == Timing::Miss ? Haptic::Light : Haptic::Medium);
   battleSettlements_ = b.settlements;
 }
 void Runtime::discardAnchors() {

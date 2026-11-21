@@ -64,7 +64,16 @@ class DevicePlatform : public pokedex::ui::Platform {
   const pokedex::ui::Input& lastInput() const { return lastInput_; }
   pokedex::device_clock::Reading readClock() override { return clock_.read(); }
   pokedex::device_clock::Reading writeClock(int64_t utc) override { return clock_.setAndVerify(utc); }
-  void feedback(uint16_t duration) override { c152::feedback(0, duration, 70); }
+  void feedback(uint16_t duration) override {
+    c152::feedback(0, duration, duration >= 50 ? 255 : 215);
+  }
+  void feedbackStrength(uint16_t duration, uint8_t strength) override {
+    c152::feedback(0, duration, strength);
+  }
+  void feedbackDouble(uint16_t on1, uint16_t gap, uint16_t on2, uint8_t strength) override {
+    c152::feedbackPulse(on1, gap, on2, strength);
+  }
+  void stopVibration() override { c152::stopVibration(); }
   bool vibrationActive() override { return c152::vibrationActive(); }
   bool usbHostPresent() override { return Serial.isPlugged(); }
   void brightness(uint8_t value) override { c152::setDisplayBrightness(value); }
@@ -113,16 +122,47 @@ class DevicePlatform : public pokedex::ui::Platform {
   bool hasPowerPoll_ = false;
   uint32_t lastPowerPoll_ = 0;
 };
+// TestModePlatform does not forward the extended haptic/stop hooks, so bridge them directly to DevicePlatform.
+class MainPlatform : public pokedex::ui::Platform {
+ public:
+  MainPlatform(pokedex::ui::Platform& routed, DevicePlatform& device)
+      : routed_(routed), device_(device) {}
+  uint32_t now() override { return routed_.now(); }
+  uint32_t randomSeed() override { return routed_.randomSeed(); }
+  pokedex::ui::Sample sample() override { return routed_.sample(); }
+  pokedex::ui::Input pollInput() override { return routed_.pollInput(); }
+  pokedex::device_clock::Reading readClock() override { return routed_.readClock(); }
+  pokedex::device_clock::Reading writeClock(int64_t utc) override { return routed_.writeClock(utc); }
+  void feedback(uint16_t duration) override { device_.feedback(duration); }
+  void feedbackStrength(uint16_t duration, uint8_t strength) override {
+    device_.feedbackStrength(duration, strength);
+  }
+  void feedbackDouble(uint16_t on1, uint16_t gap, uint16_t on2, uint8_t strength) override {
+    device_.feedbackDouble(on1, gap, on2, strength);
+  }
+  void stopVibration() override { device_.stopVibration(); }
+  bool vibrationActive() override { return device_.vibrationActive(); }
+  bool usbHostPresent() override { return routed_.usbHostPresent(); }
+  void brightness(uint8_t value) override { routed_.brightness(value); }
+  c152::DisplayTransition displaySleep(bool sleeping) override { return routed_.displaySleep(sleeping); }
+  c152::BatteryStatus readBattery() override { return routed_.readBattery(); }
+
+ private:
+  pokedex::ui::Platform& routed_;
+  DevicePlatform& device_;
+};
+
 pokedex::adventure::DeviceStore store;
 DevicePlatform platform;
 pokedex::ui::TestModePlatform testPlatform(platform, store);
+MainPlatform mainPlatform(testPlatform, platform);
 pokedex::LargeObject<pokedex::ui::Runtime> runtime;
 bool ready = false;
 
 bool rebuildRuntime(bool persistBoot = true) {
   runtime.reset();
   runtime = pokedex::makeLargeObject<pokedex::ui::Runtime>(
-    store, static_cast<pokedex::ui::Platform&>(testPlatform), &store);
+    store, static_cast<pokedex::ui::Platform&>(mainPlatform), &store);
   ready = runtime && runtime->begin(persistBoot);
   if (!runtime) pokedex::ui::drawGraphicsError(platform.readBattery(), pokedex::i18n::Language::Chinese);
   return ready;
@@ -293,7 +333,7 @@ void handleTestRequest(pokedex::ui::Runtime::TestRequest request) {
 void setup() {
   c152::begin("PokeTrail");
   runtime = pokedex::makeLargeObject<pokedex::ui::Runtime>(
-    store, static_cast<pokedex::ui::Platform&>(testPlatform), &store);
+    store, static_cast<pokedex::ui::Platform&>(mainPlatform), &store);
   if (runtime) runtime->startStartup();
   else pokedex::ui::drawGraphicsError({}, pokedex::i18n::Language::Chinese);
   platform.beginClock();
