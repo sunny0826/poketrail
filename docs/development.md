@@ -123,7 +123,7 @@ rtk proxy mise run test-simulator-e2e -- --case progression --case isolation --c
 
 生成入口、固定来源、目录规则、解码和整数缩放见[素材维护参考](assets.md)。`*_generated.hpp/.cpp` 必须通过对应生成器更新，不手工修改。
 
-串口每 10 秒输出采样、最大间隔、输入轮询、质量缺口、RTC 错误、绘制与保存耗时。`maxgap`、`input`、`render`、`commit` 的单位为毫秒。锁定 IMU 接口不能区分 I/O 失败和无新样本，显示 `imuio=not-exposed`；日志不代替真实计步和屏幕观察。
+仅在连接 USB 主机时，串口每 10 秒输出采样、最大间隔、输入轮询、质量缺口、IMU/RTC 错误、绘制与保存耗时。`maxgap`、`input`、`render`、`commit` 的单位为毫秒。BMI270 低功耗直读路径启用后，`imuio` 输出实际 I2C 读错计数（初始化失败回退 `M5.Imu.update()` 时不额外计入）；日志不代替真实计步和屏幕观察。
 
 ## 发布文件
 

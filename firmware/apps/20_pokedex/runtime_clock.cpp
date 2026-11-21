@@ -4,6 +4,7 @@ namespace pokedex { namespace ui {
 using namespace adventure;
 namespace {
 constexpr int32_t kPastAnchorMs = int32_t(motion::kMaxConfirmationDelayMs) + 1000;
+constexpr int32_t kMaxAnchorForwardMs = 35000;
 }
 ClockReading Runtime::makeReading(const device_clock::Reading& candidate, uint32_t at, int offset, bool transaction) const {
   const auto& s = engine_.view(); ClockReading r;
@@ -22,13 +23,20 @@ ClockReading Runtime::readingAt(uint32_t at) const {
   if (!anchor_.trusted || !s.clock.trusted || s.clock.pending.active || s.clock.anomaly ||
       anchor_.calibrationEpoch != r.calibrationEpoch || anchor_.offsetMinutes != r.offsetMinutes) return r;
   int32_t ms = int32_t(at - anchor_.monotonicMs);
-  if (ms < -kPastAnchorMs || ms > 2500) return r;
+  if (ms < -kPastAnchorMs || ms > kMaxAnchorForwardMs) return r;
   r.utcSeconds = anchor_.utcSeconds + (ms >= 0 ? ms / 1000 : (ms - 999) / 1000);
   calendar::CivilTime local;
   r.trusted = calendar::fromUtc(r.utcSeconds, r.offsetMinutes, local) && calendar::dayKey(local, r.dayKey);
   return r;
 }
 void Runtime::pollClock(uint32_t now) {
+  const auto& beforeClock = engine_.view().clock;
+  const bool wasTrusted = beforeClock.trusted;
+  const bool wasAnomaly = beforeClock.anomaly;
+  const bool wasPending = beforeClock.pending.active;
+  const uint32_t prevDay = engine_.view().today.dayKey;
+  const bool prevComplete = engine_.view().today.complete;
+  const bool prevAnchorTrusted = anchor_.trusted;
   auto candidate = platform_.readClock();
   if (!candidate.valid) ++metrics_.rtcErrors;
   now = platform_.now();
@@ -49,7 +57,14 @@ void Runtime::pollClock(uint32_t now) {
     if (anchor_.trusted) detector_.reset();
     anchor_ = ClockReading();
   } else if (engine_.view().clock.trusted) anchor_ = r;
-  dirty_ = true;
+  const auto& afterClock = engine_.view().clock;
+  if (afterClock.trusted != wasTrusted || afterClock.anomaly != wasAnomaly ||
+      afterClock.pending.active != wasPending ||
+      engine_.view().today.dayKey != prevDay ||
+      engine_.view().today.complete != prevComplete ||
+      anchor_.trusted != prevAnchorTrusted) {
+    dirty_ = true;
+  }
 }
 void Runtime::openClock() {
   navigate(Page::Clock); screen_.clockError = false;

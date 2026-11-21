@@ -3,7 +3,7 @@
 
 namespace pokedex { namespace ui {
 void Runtime::pollBattery(uint32_t now, bool force) {
-  if (!force && (!safe() || now - lastBattery_ < 5000)) return;
+  if (!force && (!safe() || now - lastBattery_ < 30000)) return;
   auto battery = platform_.readBattery();
   if (battery.percent < 0 || battery.percent > 100) battery.percent = -1;
   lastBattery_ = now;

@@ -8,12 +8,14 @@ HostSerial Serial;
 m5::M5Unified M5;
 namespace {
 constexpr unsigned kHoldCfg = 0x07, kHoldSeed = 0x03, kLdoHold = 0x20;
+constexpr unsigned kPwrCfg = 0x06, kPwrSeed = 0x17, kLedEn = 0x10;
 constexpr unsigned kButtonCfg1 = 0x49, kButtonSeed = 0xaa;
 constexpr unsigned kButtonCfg2 = 0x4a, kDoubleSeed = 0x1e;
 
 void bootBegin() {
   M5.~M5Unified(); new (&M5) m5::M5Unified;
   bank[kHoldCfg] = kHoldSeed;
+  bank[kPwrCfg] = kPwrSeed;
   bank[kButtonCfg1] = kButtonSeed;
   bank[kButtonCfg2] = kDoubleSeed;
   c152::begin("startup regression");
@@ -34,17 +36,29 @@ void bootWithPm1Failure(unsigned failing) {
 }
 int main(int argc,char** argv) {
   reset(); bootBegin();
+  expect(!M5.lastConfig.output_power && !M5.lastConfig.pmic_button &&
+         !M5.lastConfig.internal_spk && !M5.lastConfig.internal_mic,
+         "board startup disables unused 5V boost, PMIC button polling and audio");
+  expect(bank[kPwrCfg] == (kPwrSeed & ~kLedEn),
+         "board startup disables internal PM1 LED while preserving power rail bits");
   expect(bank[kButtonCfg1]==(kButtonSeed|1),"single press cannot reset the host; timing bits preserved");
   expect(bank[kButtonCfg2]==kDoubleSeed,"double-press shutdown settings preserved");
   const auto policyTrace=trace;
   for (unsigned i=0;i<policyTrace.size();++i) {
     const auto& op=policyTrace[i];
-    if (op.addr!=0x6e || op.reg!=kButtonCfg1) continue;
-    reset(); failAt=i+1; bootBegin();
-    expect((bank[kButtonCfg1]&0xfe)==kButtonSeed && bank[kButtonCfg2]==kDoubleSeed,
-           "power policy I/O failure does not corrupt other key settings");
-    failAt=0; trace.clear(); Clock rtc; rtc.begin(M5.In_I2C);
-    expect(rtc.read().valid,"power policy I/O failure preserves RTC startup");
+    if (op.addr==0x6e && op.reg==kButtonCfg1) {
+      reset(); failAt=i+1; bootBegin();
+      expect((bank[kButtonCfg1]&0xfe)==kButtonSeed && bank[kButtonCfg2]==kDoubleSeed,
+             "power policy I/O failure does not corrupt other key settings");
+      failAt=0; trace.clear(); Clock rtc; rtc.begin(M5.In_I2C);
+      expect(rtc.read().valid,"power policy I/O failure preserves RTC startup");
+    } else if (op.addr==0x6e && op.reg==kPwrCfg) {
+      reset(); failAt=i+1; bootBegin();
+      expect((bank[kPwrCfg]&~kLedEn)==(kPwrSeed&~kLedEn),
+             "LED disable I/O failure preserves other PM1 power rail bits");
+      failAt=0; trace.clear(); Clock rtc; rtc.begin(M5.In_I2C);
+      expect(rtc.read().valid,"LED disable I/O failure preserves RTC startup");
+    }
   }
   reset();
   const bool zero=argc>1 && !std::strcmp(argv[1],"weekday-zero");

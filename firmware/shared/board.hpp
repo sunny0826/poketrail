@@ -13,10 +13,13 @@ constexpr int32_t kVisibleRadius = 228;
 void begin(const char* title);
 
 void update();
+void updateVibration();
 
 bool restUntilInput(uint32_t durationMs);
 
 bool touchWasPressed();
+void resetTouchEdge();
+bool readAccel(float& x, float& y, float& z, bool& fresh);
 
 void feedback(uint16_t frequency_hz, uint16_t duration_ms, uint8_t vibration);
 bool vibrationActive();

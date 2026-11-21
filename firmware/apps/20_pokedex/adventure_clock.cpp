@@ -45,9 +45,23 @@ CommandResult Engine::observeClock(const ClockReading& r) {
   const CommandResult g = guard(); if (g != CommandResult::Applied) return g;
   if (!validReading(r) || r.bootGeneration != state_.bootGeneration) return CommandResult::InvalidInput;
   if ((battle_.view().active && !battle_.view().paused) || throw_.active) return CommandResult::Deferred;
+  const ClockState& c = state_.clock;
+  if (c.calibrated && c.trusted && !c.pending.active && !c.anomaly &&
+      r.trusted && r.calibrationEpoch == c.calibrationEpoch &&
+      r.offsetMinutes == c.offsetMinutes && state_.today.dayKey &&
+      r.dayKey == c.dayHighWater &&
+      (!c.anchor.trusted || consistentReading(c.anchor, r, false))) {
+    state_.clock.anchor = r;
+    return CommandResult::Applied;
+  }
+  const bool untrusted = !c.calibrated || c.pending.active || c.anomaly || !r.trusted ||
+      r.calibrationEpoch != c.calibrationEpoch || r.offsetMinutes != c.offsetMinutes;
+  if (untrusted && !c.trusted && !state_.today.complete) return CommandResult::Applied;
   stage();
+  const bool wasComplete = candidate_.today.complete;
   if (applyClock(candidate_, r)) return submit();
-  state_ = candidate_; dirty_ = true;
+  state_ = candidate_;
+  if (wasComplete != state_.today.complete) dirty_ = true;
   return CommandResult::Applied;
 }
 CommandResult Engine::beginClockChange(uint64_t id, ClockChangeMode mode, const ClockReading& target) {

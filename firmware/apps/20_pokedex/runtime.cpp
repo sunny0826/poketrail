@@ -242,8 +242,17 @@ void Runtime::loop() {
   fillTestSteps();
   const bool waking = updateDisplayPower(input);
   if (input.power && !waking && !dimmed() && safe()) sleepDisplay();
+  const auto& clockState = engine_.view().clock;
+  const bool sleepSlowClock =
+      dimmed() && !clockDeferred_ &&
+      (!clockState.calibrated ||
+       (anchor_.trusted && clockState.trusted && !clockState.pending.active && !clockState.anomaly));
+  const uint32_t clockInterval = sleepSlowClock ? 30000u : 1000u;
   if (engine_.ready() &&
-      (start - lastClock_ >= 1000 || (clockDeferred_ && safe() && !engine_.savePending()))) pollClock(platform_.now());
+      (waking || start - lastClock_ >= clockInterval ||
+       (clockDeferred_ && safe() && !engine_.savePending()))) {
+    pollClock(platform_.now());
+  }
   const bool blockedInput = releaseGate_;
   const bool viewerWasActive = screen_.page == Page::Viewer;
   if (releaseGate_) {
@@ -282,9 +291,17 @@ void Runtime::loop() {
     } else if (screen_.page == Page::Viewer && viewerWasActive && !releaseGate_ && !blockedInput) {
       viewer_screen::update(now);
       if (screen_.testMode) viewer_screen::paintTestBadge();
-    } else if (screen_.page != Page::Viewer && (dirty_ || now - lastRender_ >= (timedPage ? 40u : 500u))) {
-      if (!screens_.draw(screen_, engine_, practiceCapture_.battleView(), now)) ++metrics_.displayErrors;
-      lastRender_ = now; dirty_ = false;
+    } else {
+      const bool previewAnimPage =
+          (screen_.page == Page::Starter && screen_.selected < 3) ||
+          screen_.page == Page::Encounter;
+      const bool periodicRedraw =
+          (timedPage && now - lastRender_ >= 40u) ||
+          (previewAnimPage && now - lastRender_ >= 500u);
+      if (screen_.page != Page::Viewer && (dirty_ || periodicRedraw)) {
+        if (!screens_.draw(screen_, engine_, practiceCapture_.battleView(), now)) ++metrics_.displayErrors;
+        lastRender_ = now; dirty_ = false;
+      }
     }
     metrics_.maxRenderMs = std::max(metrics_.maxRenderMs, platform_.now() - now);
   }
@@ -296,7 +313,9 @@ void Runtime::loop() {
     const uint32_t due = platform_.now() - lastCheckpoint_;
     const bool stepping = platform_.now() - lastStepEventMs_ < kStepActiveMs;
     if (!stepping || due >= kCheckpointDeferralMs) {
-      engine_.checkpoint(); lastCheckpoint_ = platform_.now();
+      if (engine_.checkpoint() == CommandResult::Applied && screen_.page == Page::TestDiagnostics)
+        dirty_ = true;
+      lastCheckpoint_ = platform_.now();
     }
   }
 }
