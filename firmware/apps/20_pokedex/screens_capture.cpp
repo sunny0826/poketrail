@@ -1,11 +1,17 @@
 #include "screens.hpp"
 #include "board.hpp"
 #include "icons_generated.hpp"
+#include <cmath>
 namespace pokedex { namespace ui {
 using namespace adventure;
 using i18n::Text;
 void Screens::ballAt(int x, int y, float angle) {
   const auto& icon = data::kPokeBallIcon;
+  if (std::fabs(angle) < 0.01f) {
+    M5.Display.pushImage(x - icon.width / 2, y - icon.height / 2,
+                         icon.width, icon.height, icon.pixels, kTransparentKey);
+    return;
+  }
   M5.Display.pushImageRotateZoom(float(x), float(y), icon.width / 2.0f, icon.height / 2.0f,
                                  angle, 1.0f, 1.0f, icon.width, icon.height, icon.pixels, kTransparentKey);
 }

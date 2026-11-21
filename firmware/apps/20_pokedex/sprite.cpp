@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #if defined(ARDUINO_ARCH_ESP32)
 #include <esp32s3/rom/miniz.h>
 #include <esp_heap_caps.h>
@@ -103,14 +104,18 @@ bool decodeFrame(const Sprite& sprite, uint16_t frame_index, uint16_t scale,
       source_size > sprite.raw_size - frame.offset) return false;
   const uint8_t* raw = cache(sprite);
   if (!raw) return false;
-  for (size_t position = 0; position < source_size; ++position) {
-    const uint8_t index = raw[frame.offset + position];
-    if (index >= sprite.palette_size) return false;
-    const uint16_t color = sprite.palette[index];
-    const size_t x = (position % sprite.width) * scale;
-    const size_t y = (position / sprite.width) * scale;
-    for (uint16_t dy = 0; dy < scale; ++dy)
-      std::fill_n(pixels + (y + dy) * width + x, scale, color);
+  const uint8_t* src = raw + frame.offset;
+  for (uint16_t y = 0; y < sprite.height; ++y, src += sprite.width) {
+    uint16_t* row = pixels + size_t(y) * scale * width;
+    uint16_t* dst = row;
+    for (uint16_t x = 0; x < sprite.width; ++x, dst += scale) {
+      const uint8_t index = src[x];
+      if (index >= sprite.palette_size) return false;
+      std::fill_n(dst, scale, sprite.palette[index]);
+    }
+    for (uint16_t dy = 1; dy < scale; ++dy) {
+      std::memcpy(row + size_t(dy) * width, row, width * sizeof(uint16_t));
+    }
   }
   return true;
 }

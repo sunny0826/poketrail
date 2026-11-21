@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <M5Unified.h>
+#include <cstdarg>
+#include <cstdio>
 #include <stdlib.h>
 #include <utility>
 
@@ -40,6 +42,28 @@ const char* (*collectionCallback)(uint16_t, void*) = nullptr;
 void* collectionContext = nullptr;
 bool (*evolutionPreviewCallback)(uint16_t, void*) = nullptr;
 void* evolutionPreviewContext = nullptr;
+
+namespace {
+void diagnostic(const char* format, ...) {
+#if defined(ARDUINO_ARCH_ESP32)
+  if (!Serial.isPlugged()) return;
+  char line[256];
+  va_list args;
+  va_start(args, format);
+  const int length = vsnprintf(line, sizeof(line), format, args);
+  va_end(args);
+  if (length > 0 && length < int(sizeof(line)) && Serial.availableForWrite() >= length)
+    Serial.write(reinterpret_cast<const uint8_t*>(line), size_t(length));
+#else
+  char line[256];
+  va_list args;
+  va_start(args, format);
+  const int length = vsnprintf(line, sizeof(line), format, args);
+  va_end(args);
+  if (length > 0 && length < int(sizeof(line))) Serial.printf("%s", line);
+#endif
+}
+}
 
 void text(const char* value, int32_t y, uint16_t color, const lgfx::IFont* font) {
   M5.Display.setTextDatum(middle_center);
@@ -93,7 +117,7 @@ bool render() {
   if (sprite.height * scale > 220) scale = 2;
   if (g_decoded_sprite != g_state.sprite_index || g_decoded_frame != g_state.frame_index) {
     if (!pokedex::decodeFrame(sprite, g_state.frame_index, scale, g_pixels, kPixelCapacity)) {
-      Serial.printf("animation decode failed: id=%u frame=%u\n", sprite.id, g_state.frame_index);
+      diagnostic("animation decode failed: id=%u frame=%u\n", sprite.id, g_state.frame_index);
       return false;
     }
     g_decoded_sprite = g_state.sprite_index;
@@ -139,7 +163,7 @@ void begin() {
     g_pixels = static_cast<uint16_t*>(malloc(kPixelCapacity * sizeof(uint16_t)));
   }
   if (!g_pixels) {
-    Serial.printf("animation framebuffer allocation failed\n");
+    diagnostic("animation framebuffer allocation failed\n");
     M5.Display.startWrite();
     clearBackground();
     M5.Display.drawTriangle(233, 153, 184, 239, 282, 239, theme::kRed);
@@ -152,9 +176,9 @@ void begin() {
   g_state.frame_index = 0;
   g_state.reacting = false; g_state.jump = 0;
   g_ready = render();
-  Serial.printf("viewer ready=%u animations=%u first=#%03u frames=%u\n",
-                unsigned(g_ready), unsigned(pokedex::data::kSpriteCount),
-                pokedex::data::kSprites[0].id, pokedex::data::kSprites[0].frame_count);
+  diagnostic("viewer ready=%u animations=%u first=#%03u frames=%u\n",
+             unsigned(g_ready), unsigned(pokedex::data::kSpriteCount),
+             pokedex::data::kSprites[0].id, pokedex::data::kSprites[0].frame_count);
 }
 
 void update(uint32_t now) {
@@ -175,7 +199,7 @@ void update(uint32_t now) {
   bool dirty = pokedex::viewer::applyInput(g_state, input, pokedex::data::kSpriteCount, now);
   if (dirty) {
     if (feedbackCallback) feedbackCallback(input == Input::React ? 55 : 25, callbackContext);
-    Serial.printf("input=%s id=%d\n", source, pokedex::data::kSprites[g_state.sprite_index].id);
+    diagnostic("input=%s id=%d\n", source, pokedex::data::kSprites[g_state.sprite_index].id);
   }
   dirty = pokedex::viewer::update(g_state, pokedex::data::kSprites[g_state.sprite_index], now) || dirty;
   static uint32_t frames = 0;
@@ -185,8 +209,8 @@ void update(uint32_t now) {
   }
   static uint32_t report_ms = 0;
   if (now - report_ms >= 2000) {
-    Serial.printf("viewer id=%u frame=%u rendered=%lu ready=%u\n", g_state.sprite_index + 1,
-                  g_state.frame_index, static_cast<unsigned long>(frames), unsigned(g_ready));
+    diagnostic("viewer id=%u frame=%u rendered=%lu ready=%u\n", g_state.sprite_index + 1,
+               g_state.frame_index, static_cast<unsigned long>(frames), unsigned(g_ready));
     frames = 0;
     report_ms = now;
   }

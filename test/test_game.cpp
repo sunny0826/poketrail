@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <vector>
+#include <zlib.h>
 
 #include "../firmware/apps/20_pokedex/game.hpp"
 
@@ -70,6 +71,61 @@ void testDecode() {
   Sprite broken = sample;
   broken.frames = out_of_bounds;
   check(!decodeFrame(broken, 0, 1, pixels.data(), 24), "out of blob frame fails");
+
+  struct SizeCase { uint16_t w, h; const char* label; };
+  const SizeCase sizes[] = {
+    {5, 3, "odd x odd"},
+    {4, 3, "even x odd"},
+    {3, 4, "odd x even"},
+    {4, 4, "even x even"},
+  };
+  for (const auto& sz : sizes) {
+    const size_t framePixels = size_t(sz.w) * sz.h;
+    const uint16_t kFrames = 3;
+    std::vector<uint8_t> raw(framePixels * kFrames);
+    std::vector<Frame> multiFrames(kFrames);
+    for (uint16_t f = 0; f < kFrames; ++f) {
+      multiFrames[f] = {uint32_t(f * framePixels), uint16_t(60 + f * 20)};
+      for (size_t i = 0; i < framePixels; ++i)
+        raw[f * framePixels + i] = uint8_t((i * 5 + f * 3) % 6);
+    }
+    std::vector<uint8_t> compressed(compressBound(uLong(raw.size())));
+    uLongf compSize = compressed.size();
+    check(compress(compressed.data(), &compSize, raw.data(), uLong(raw.size())) == Z_OK,
+          "multi-frame fixture compresses");
+    compressed.resize(compSize);
+    const Sprite multi = {"multi", "", 1, sz.w, sz.h, palette, 6,
+                          compressed.data(), uint32_t(compSize), uint32_t(raw.size()),
+                          multiFrames.data(), kFrames, 240, "", "", false};
+    for (uint16_t scale : {uint16_t(1), uint16_t(2), uint16_t(3)}) {
+      const size_t outW = size_t(sz.w) * scale;
+      const size_t outH = size_t(sz.h) * scale;
+      std::vector<uint16_t> out(outW * outH, 0xABCD);
+      for (uint16_t f = 0; f < kFrames; ++f) {
+        check(decodeFrame(multi, f, scale, out.data(), out.size()),
+              "multi-frame odd/even sprite decodes across scales");
+        bool exact = true;
+        for (size_t y = 0; y < outH && exact; ++y)
+          for (size_t x = 0; x < outW; ++x) {
+            const uint8_t idx = raw[f * framePixels + (y / scale) * sz.w + (x / scale)];
+            if (out[y * outW + x] != palette[idx]) { exact = false; break; }
+          }
+        check(exact, sz.label);
+      }
+    }
+  }
+
+  std::vector<uint8_t> badRaw = {0, 1, 6, 2, 3, 4};
+  std::vector<uint8_t> badComp(compressBound(uLong(badRaw.size())));
+  uLongf badCompSize = badComp.size();
+  check(compress(badComp.data(), &badCompSize, badRaw.data(), uLong(badRaw.size())) == Z_OK,
+        "invalid palette fixture compresses");
+  const Frame badFrame[] = {{0, 100}};
+  const Sprite badSprite = {"bad", "", 1, 3, 2, palette, 6,
+                            badComp.data(), uint32_t(badCompSize), uint32_t(badRaw.size()),
+                            badFrame, 1, 100, "", "", false};
+  check(!decodeFrame(badSprite, 0, 2, pixels.data(), pixels.size()),
+        "palette index out of range fails");
 }
 }
 

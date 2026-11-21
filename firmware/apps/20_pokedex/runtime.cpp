@@ -282,6 +282,12 @@ void Runtime::loop() {
   dirty_ |= screens_.advanceScene(engine_.view().route, now, sceneActive);
   if (!dimmed() && graphicsReady_) {
     if (screen_.page == Page::Home) dirty_ |= screens_.advanceHome(engine_.view().partner, now);
+    if (screen_.page == Page::Starter && screen_.selected < 3) {
+      constexpr uint16_t kStarters[] = {1, 4, 7};
+      dirty_ |= screens_.advancePreview(kStarters[screen_.selected], now);
+    }
+    if (screen_.page == Page::Encounter)
+      dirty_ |= screens_.advancePreview(engine_.view().encounter.species, now);
     if (screen_.page == Page::Result && engine_.view().result == Result::Captured)
       dirty_ |= screens_.advanceResult(engine_.view().encounter.species, now);
     if (screen_.page == Page::PracticeResult && practiceCapture_.result() == Result::Captured)
@@ -293,12 +299,7 @@ void Runtime::loop() {
       viewer_screen::update(now);
       if (screen_.testMode) viewer_screen::paintTestBadge();
     } else {
-      const bool previewAnimPage =
-          (screen_.page == Page::Starter && screen_.selected < 3) ||
-          screen_.page == Page::Encounter;
-      const bool periodicRedraw =
-          (timedPage && now - lastRender_ >= 40u) ||
-          (previewAnimPage && now - lastRender_ >= 500u);
+      const bool periodicRedraw = timedPage && now - lastRender_ >= 40u;
       if (screen_.page != Page::Viewer && (dirty_ || periodicRedraw)) {
         if (!screens_.draw(screen_, engine_, practiceCapture_.battleView(), now)) ++metrics_.displayErrors;
         lastRender_ = now; dirty_ = false;
