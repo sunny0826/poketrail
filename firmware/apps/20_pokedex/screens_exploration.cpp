@@ -58,7 +58,7 @@ bool Screens::exploration(const Engine& engine, uint32_t now) {
   const bool rendered = save.partner && sprite(save.partner, now, homePlayback_, 248, 233, 0, maxScale);
   if (!rendered) line(tr(Text::PartnerImageFailed), 233, theme::kRed);
   const bool evolvable = homeEvolutionReady(engine);
-  title(speciesName(save.partner), evolvable ? "" : tr(Text::Carrying), theme::routeColor(save.route));
+  title(speciesName(save.partner), "", theme::routeColor(save.route));
   if (evolvable) {
     const auto& b = kHomeEvolveButton;
     M5.Display.fillRoundRect(b.x, b.y, b.width, b.height, 12, theme::kPanelActive);

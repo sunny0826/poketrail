@@ -24,6 +24,4 @@ bool readAccel(float& x, float& y, float& z, bool& fresh);
 void feedback(uint16_t frequency_hz, uint16_t duration_ms, uint8_t vibration);
 bool vibrationActive();
 
-void drawFooter(const char* text, uint16_t color);
-
 }

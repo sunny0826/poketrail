@@ -12,7 +12,6 @@ void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
   if (s.practiceThrowing) {
     aim(s.practiceSpecies, now, true, int32_t(s.practiceTargetMs - now));
     line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
-    line(tr(Text::PracticeNoCollection), 426, theme::kMuted);
     return;
   }
   aim(s.practiceSpecies, now, false, 0);
@@ -29,7 +28,7 @@ void Screens::practiceResult(const ScreenState& s, uint32_t now) {
     line(tr(Text::NotCollected), 262, theme::kMuted);
   } else {
     thumbnail(s.practiceSpecies, 233, 160, 2);
-    line(s.practiceResult == Result::Lost ? tr(Text::BattleTryAgain) : tr(Text::PokemonFled), 240, theme::kMuted);
+    if (s.practiceResult != Result::Lost) line(tr(Text::PokemonFled), 240, theme::kMuted);
   }
   item(s, 0, tr(Text::PracticeAgain), menu_layout::kTop);
   item(s, 1, tr(Text::ReturnExploration), menu_layout::kTop);

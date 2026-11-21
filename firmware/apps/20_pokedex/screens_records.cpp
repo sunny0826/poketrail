@@ -13,7 +13,13 @@ void footer(const ScreenState& s, unsigned count) {
   M5.Display.drawLine(157, 400, 163, 406, theme::kMuted);
   M5.Display.drawLine(303, 394, 309, 400, theme::kMuted);
   M5.Display.drawLine(309, 400, 303, 406, theme::kMuted);
-  M5.Display.drawString(i18n::text(s.language, Text::BottomBack), 233, 426);
+}
+bool duplicateDayKey(const Save& v, uint32_t dayKey) {
+  if (!dayKey) return false;
+  unsigned matches = v.today.dayKey == dayKey ? 1u : 0u;
+  for (uint8_t i = 0; i < v.historySize; ++i)
+    if (v.history[i].dayKey == dayKey) ++matches;
+  return matches > 1;
 }
 void number(const char* text, int y) {
   M5.Display.setTextDatum(middle_center); M5.Display.setFont(&fonts::Font4);
@@ -35,24 +41,29 @@ void Screens::stamp(const Stamp& s, int top) {
              s.dayComplete ? tr(Text::FullDay) : tr(Text::PartialDay));
     line(text, top + 25, theme::kMuted);
   } else {
-    line(tr(Text::TimeNotSet), top, theme::kGold);
-    line(tr(Text::DailyStepsUnknown), top + 25, theme::kMuted);
+    line(tr(Text::TimeUnknown), top, theme::kGold);
   }
   if (s.timeKnown) {
     snprintf(text, sizeof(text), tr(Text::TodaySteps), static_cast<unsigned long long>(s.dailySteps));
     line(text, top + 48, theme::kText);
   }
   snprintf(text, sizeof(text), tr(Text::TotalSteps), static_cast<unsigned long long>(s.totalSteps));
-  line(text, top + 70, theme::kText);
+  line(text, s.timeKnown ? top + 70 : top + 28, theme::kText);
 }
 void Screens::badges(uint8_t mask, int top) {
   char text[96];
-  snprintf(text, sizeof(text), tr(Text::DailyBadges), mask & 1 ? tr(Text::OneThousand) : "", mask & 2 ? tr(Text::ThreeThousand) : "",
-           mask & 4 ? tr(Text::FiveThousand) : "", mask & 7 ? "" : tr(Text::NoMilestones));
-  line(text, top, theme::kGold);
-  snprintf(text, sizeof(text), tr(Text::TotalBadges), mask & 8 ? tr(Text::TenThousand) : "", mask & 16 ? tr(Text::FiftyThousand) : "",
-           mask & 32 ? tr(Text::HundredThousand) : "", mask & 56 ? "" : tr(Text::NoMilestones));
-  line(text, top + 26, theme::kGold);
+  int y = top;
+  if (mask & 7) {
+    snprintf(text, sizeof(text), tr(Text::DailyBadges), mask & 1 ? tr(Text::OneThousand) : "",
+             mask & 2 ? tr(Text::ThreeThousand) : "", mask & 4 ? tr(Text::FiveThousand) : "");
+    line(text, y, theme::kGold);
+    y += 26;
+  }
+  if (mask & 56) {
+    snprintf(text, sizeof(text), tr(Text::TotalBadges), mask & 8 ? tr(Text::TenThousand) : "",
+             mask & 16 ? tr(Text::FiftyThousand) : "", mask & 32 ? tr(Text::HundredThousand) : "");
+    line(text, y, theme::kGold);
+  }
 }
 void Screens::records(const ScreenState& s, const Engine& e) {
   const auto& v = e.view();
@@ -71,8 +82,9 @@ void Screens::records(const ScreenState& s, const Engine& e) {
     snprintf(text, sizeof(text), "#%03u %s", species, speciesName(species)); line(text, 80, theme::kGold);
   } else if (s.page == Page::Days) {
     const DayBucket& d = s.selected == 0 ? v.today : v.history[v.historySize - s.selected];
-    if (d.dayKey) snprintf(text, sizeof(text), tr(Text::DayEpoch), d.dayKey, d.epoch);
-    else snprintf(text, sizeof(text), "%s", tr(Text::DateUnknown));
+    if (!d.dayKey) snprintf(text, sizeof(text), "%s", tr(Text::DateUnknown));
+    else if (duplicateDayKey(v, d.dayKey)) snprintf(text, sizeof(text), tr(Text::DayEpoch), d.dayKey, d.epoch);
+    else snprintf(text, sizeof(text), "%u", d.dayKey);
     line(text, 80, theme::kBlue);
   } else if (s.page == Page::Achievements) {
     const bool daily = s.selected < 3;
@@ -85,7 +97,6 @@ void Screens::records(const ScreenState& s, const Engine& e) {
     if (!c.species) {
       thumbnail(species, 233, 162, 2);
       alert(v.starter == species ? tr(Text::GiftNotCaught) : tr(Text::NoCaptureRecord), 230, theme::kGold);
-      line(tr(Text::BrowsingNoCapture), 271, theme::kMuted);
     } else {
       actorShadow(233, 157);
       sprite(species, 0, resultPlayback_, 157, 233, 0, 2, 120);
