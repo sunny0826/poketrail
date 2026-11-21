@@ -127,15 +127,21 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
   hp(speciesName(enemy), b.enemyHp, kEnemyHp, true, theme::kGold);
   const uint8_t playerScale = actorScale(partner), enemyScale = actorScale(enemy);
   if (!attack && hit && age >= 10 && age < 250) {
-    sprite(partner, now, battlePlayback_, kPartnerY, 145 + shake, theme::kOutline, playerScale);
-    sprite(partner, now, battlePlayback_, kPartnerY, 133 + shake, theme::kTrack, playerScale);
+    spriteSilhouette(partner, now, battlePlayback_, kPartnerY, 145 + shake, theme::kOutline, playerScale);
+    spriteSilhouette(partner, now, battlePlayback_, kPartnerY, 133 + shake, theme::kTrack, playerScale);
   }
   if (!attack && age < 100) M5.Display.fillRect(286 - int(age) * 65 / 100, 225, 9, 5, theme::kBlue);
   if (attack && age < 100) brackets(enemyX, kEnemyY, perfect ? theme::kGold : theme::routeColor(route));
   actorShadow(playerX, kPartnerY); actorShadow(enemyX, kEnemyY);
   const bool flash = effect && age >= 100 && age < 250 && (age / 50) % 2 == 0;
-  sprite(partner, now, battlePlayback_, kPartnerY, playerX, flash && !attack && !hit ? theme::kText : 0, playerScale);
-  sprite(enemy, now, enemyBattlePlayback_, kEnemyY, enemyX, flash && attack && hit ? theme::kText : 0, enemyScale);
+  if (flash && !attack && !hit)
+    spriteSilhouette(partner, now, battlePlayback_, kPartnerY, playerX, theme::kText, playerScale);
+  else
+    sprite(partner, now, battlePlayback_, kPartnerY, playerX, 0, playerScale);
+  if (flash && attack && hit)
+    spriteSilhouette(enemy, now, enemyBattlePlayback_, kEnemyY, enemyX, theme::kText, enemyScale);
+  else
+    sprite(enemy, now, enemyBattlePlayback_, kEnemyY, enemyX, 0, enemyScale);
   if (effect && attack && hit) impact(enemyX, kEnemyY - 4, age, perfect ? theme::kGold : theme::kText, perfect);
   if (effect && !attack && !hit) impact(playerX, kPartnerY - 4, age, theme::kRed, false);
   lane(b, now);

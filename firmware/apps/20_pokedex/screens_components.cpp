@@ -1,15 +1,49 @@
 #include "screens.hpp"
 #include "board.hpp"
+#include "icons_generated.hpp"
 #include "scene_backgrounds_generated.hpp"
 #include "battle_presentation.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cstring>
 
 namespace pokedex { namespace ui {
 using namespace adventure;
+using i18n::Text;
 static_assert(data::kSceneCount == kRegionCount, "one scene per region");
+static_assert(data::kSceneWidth * data::kSceneScale == 456, "scene display width matches row buffer");
+static_assert(data::kSceneHeight * data::kSceneScale == 270, "scene display height matches lookup table");
 namespace {
+constexpr unsigned kSceneDisplayWidth = data::kSceneWidth * data::kSceneScale;
+constexpr unsigned kSceneDisplayHeight = data::kSceneHeight * data::kSceneScale;
+const uint8_t* sceneHalfSpan() {
+  static uint8_t table[kSceneDisplayHeight];
+  static bool ready = false;
+  if (!ready) {
+    for (unsigned row = 0; row < kSceneDisplayHeight; ++row) {
+      const int vertical = 92 + int(row) - c152::kScreenCenter;
+      table[row] = uint8_t(std::sqrt(float(c152::kVisibleRadius * c152::kVisibleRadius - vertical * vertical)));
+    }
+    ready = true;
+  }
+  return table;
+}
 unsigned sceneIndex(Route route) { return isRegion(route) ? regionIndex(route) : 0; }
+uint16_t accentFor(Page page) {
+  switch (page) {
+    case Page::DateWelcome: case Page::Starter: case Page::Encounter: case Page::Pause:
+    case Page::Throw: case Page::Result: case Page::Records: case Page::FirstCaptures:
+    case Page::Recent: case Page::Days: case Page::Achievements: case Page::EvolutionConfirm:
+    case Page::EvolutionPreviewTargets:
+      return theme::kGold;
+    case Page::Error: return theme::kRed;
+    case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
+    case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit: return theme::kPurple;
+    case Page::Clock: return theme::kBlue;
+    default: return theme::kMint;
+  }
+}
 }
 void Screens::line(const char* text, int y, uint16_t color, bool large) {
   M5.Display.setTextDatum(middle_center);
@@ -34,12 +68,42 @@ void Screens::title(const char* heading, const char* subtitle, uint16_t accent) 
   if (subtitle && *subtitle) fitLine(subtitle, 80, 300, accent, false);
 }
 void Screens::scene(Route route, bool dim, int dx, uint64_t visualSteps) {
+  const uint8_t* halfSpans = sceneHalfSpan();
   const unsigned index = sceneIndex(route);
   const auto& source = dim ? data::kRegionScenesDim[index] : data::kRegionScenes[index];
   const auto& layers = data::kRegionSceneLayers[index];
   const unsigned groundTop = layers.groundTop;
   const unsigned groundHeight = data::kSceneHeight - groundTop;
   const bool depth = !dim && visualSteps;
+  if (!depth && sceneCache_) {
+    if (!sceneCacheValid_ || sceneCacheRoute_ != route || sceneCacheDim_ != dim) {
+      for (unsigned y = 0; y < data::kSceneHeight; ++y) {
+        const uint16_t* row = source.pixels + y * data::kSceneWidth;
+        uint16_t* dst = sceneCache_ + size_t(y * data::kSceneScale) * kSceneDisplayWidth;
+        for (unsigned x = 0; x < data::kSceneWidth; ++x) {
+          const uint16_t pixel = sceneEdgeVisible(x, y) ? row[x] : theme::kBackground;
+          dst[x * 2] = dst[x * 2 + 1] = pixel;
+        }
+        std::memcpy(dst + kSceneDisplayWidth, dst, kSceneDisplayWidth * sizeof(uint16_t));
+      }
+      sceneCacheRoute_ = route;
+      sceneCacheDim_ = dim;
+      sceneCacheValid_ = true;
+    }
+    unsigned row = 0;
+    while (row < kSceneDisplayHeight) {
+      const int span = halfSpans[row];
+      unsigned end = row + 1;
+      while (end < kSceneDisplayHeight && halfSpans[end] == span) ++end;
+      const int left = c152::kScreenCenter - span;
+      M5.Display.setClipRect(left, 92 + int(row), span * 2 + 1, int(end - row));
+      M5.Display.pushImage(5 + dx, 92 + int(row), int(kSceneDisplayWidth), int(end - row),
+                           sceneCache_ + size_t(row) * kSceneDisplayWidth);
+      row = end;
+    }
+    M5.Display.clearClipRect();
+    return;
+  }
   const unsigned middleOffset = depth ? visualSteps % groundHeight : 0;
   const unsigned nearOffset = depth ? (visualSteps % groundHeight * 2) % groundHeight : 0;
   for (unsigned y = 0; y < data::kSceneHeight; ++y) {
@@ -57,13 +121,13 @@ void Screens::scene(Route route, bool dim, int dx, uint64_t visualSteps) {
       if (!sceneEdgeVisible(x, y)) pixel = theme::kBackground;
       sceneRow_[x * 2] = sceneRow_[x * 2 + 1] = pixel;
     }
-    for (unsigned dy = 0; dy < 2; ++dy) {
-      const int screenY = 92 + y * 2 + dy;
-      const int vertical = screenY - 233;
-      const int span = int(std::sqrt(float(228 * 228 - vertical * vertical)));
-      const int left = 233 - span;
+    for (unsigned dy = 0; dy < data::kSceneScale; ++dy) {
+      const unsigned displayRow = y * data::kSceneScale + dy;
+      const int screenY = 92 + int(displayRow);
+      const int span = halfSpans[displayRow];
+      const int left = c152::kScreenCenter - span;
       M5.Display.setClipRect(left, screenY, span * 2 + 1, 1);
-      M5.Display.pushImage(5 + dx, screenY, 456, 1, sceneRow_);
+      M5.Display.pushImage(5 + dx, screenY, int(kSceneDisplayWidth), 1, sceneRow_);
     }
   }
   M5.Display.clearClipRect();
@@ -130,5 +194,120 @@ void Screens::warning(int cx, int cy, uint16_t color) {
   M5.Display.drawTriangle(cx, cy - 28, cx - 31, cy + 27, cx + 31, cy + 27, color);
   M5.Display.setTextDatum(middle_center); M5.Display.setFont(&fonts::efontCN_24);
   M5.Display.setTextColor(color); M5.Display.drawString("!", cx, cy + 11);
+}
+void Screens::thumbnail(uint16_t id, int x, int y, unsigned scale) {
+  if (!id || id > kSpeciesCount || !scale) return;
+  const auto& icon = data::kPokemonIcons[id - 1];
+  const int left = x - icon.width * int(scale) / 2;
+  const int top = y - icon.height * int(scale) / 2;
+  if (scale == 1) {
+    M5.Display.pushImage(left, top, icon.width, icon.height, icon.pixels, kTransparentKey);
+    return;
+  }
+  const size_t scaledWidth = size_t(icon.width) * scale;
+  if (scaledWidth <= sizeof(sceneRow_) / sizeof(sceneRow_[0])) {
+    for (unsigned row = 0; row < icon.height; ++row) {
+      const uint16_t* src = icon.pixels + row * icon.width;
+      uint16_t* dst = sceneRow_;
+      for (unsigned col = 0; col < icon.width; ++col, dst += scale)
+        std::fill_n(dst, scale, src[col]);
+      for (unsigned dy = 0; dy < scale; ++dy)
+        M5.Display.pushImage(left, top + int(row * scale + dy), int(scaledWidth), 1,
+                             sceneRow_, kTransparentKey);
+    }
+    return;
+  }
+  for (unsigned row = 0; row < icon.height; ++row)
+    for (unsigned col = 0; col < icon.width; ++col) {
+      const uint16_t color = icon.pixels[row * icon.width + col];
+      if (color != kTransparentKey)
+        M5.Display.fillRect(left + col * scale, top + row * scale, scale, scale, color);
+    }
+}
+void Screens::captureBadge(const Save& save, int x, int y) {
+  const auto& icon = data::kPokeBallIcon;
+  M5.Display.pushImage(x - icon.width / 2, y - icon.height / 2, icon.width, icon.height,
+                       icon.pixels, kTransparentKey);
+  char text[8];
+  snprintf(text, sizeof(text), "%u", capturedSpeciesCount(save));
+  M5.Display.setTextDatum(middle_left);
+  M5.Display.setFont(&fonts::Font2);
+  M5.Display.setTextColor(theme::kText);
+  M5.Display.drawString(text, x + icon.width / 2 + 8, y);
+}
+void Screens::encounterBadge(const Save& save, int x, int y) {
+  const unsigned count = pendingEncounterCount(save);
+  if (!count) return;
+  char text[32];
+  snprintf(text, sizeof(text), tr(Text::EncounterCount), count);
+  M5.Display.setTextDatum(middle_right);
+  M5.Display.setFont(&fonts::efontCN_16);
+  const int width = M5.Display.textWidth(text) + 16;
+  M5.Display.fillRoundRect(x + 8 - width, y - 12, width, 24, 7, theme::kPanel);
+  M5.Display.setTextColor(theme::kGold);
+  M5.Display.drawString(text, x, y);
+}
+void Screens::item(const ScreenState& s, unsigned index, const char* label, int top,
+                   uint16_t species, bool carried, const char* note, bool disabled) {
+  const unsigned first = menu_layout::first(s.selected);
+  if (index < first || index >= first + menu_layout::kPageSize) return;
+  const auto bounds = menu_layout::rowBounds(index - first, top);
+  const int y = menu_layout::center(index - first, top);
+  const bool active = index == s.selected;
+  const uint16_t accent = s.page == Page::Routes && index < kRegionCount ? theme::routeColor(regionAt(uint8_t(index)))
+                                                                           : accentFor(s.page);
+  const uint16_t background = active ? theme::kPanelActive : theme::kPanel;
+  const uint16_t color = disabled ? theme::kMuted : active ? accent : theme::kText;
+  const int radius = bounds.height / 2;
+  M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, radius, background);
+  if (active) {
+    M5.Display.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, radius, accent);
+    M5.Display.drawRoundRect(bounds.x + 1, bounds.y + 1, bounds.width - 2, bounds.height - 2, radius - 1, accent);
+    M5.Display.fillRoundRect(bounds.x + 12, y - 10, 4, 20, 2, accent);
+  }
+  if (species) thumbnail(species, bounds.x + menu_layout::kIconInset, y);
+  const char* trailing = note ? note : carried ? tr(Text::CarryNote) : nullptr;
+  M5.Display.setFont(&fonts::efontCN_24);
+  M5.Display.setTextColor(color);
+  if (!species && !trailing) {
+    if (M5.Display.textWidth(label) > bounds.width - 48) M5.Display.setFont(&fonts::efontCN_16);
+    M5.Display.setClipRect(bounds.x + 24, y - 24, bounds.width - 48, 48);
+    M5.Display.setTextDatum(middle_center);
+    M5.Display.drawString(label, 233, y);
+    M5.Display.clearClipRect();
+    return;
+  }
+  const int left = species ? bounds.x + 68 : bounds.x + 30;
+  const int right = bounds.x + bounds.width - 26;
+  int trailingWidth = 0;
+  if (trailing) {
+    if (M5.Display.textWidth(label) + M5.Display.textWidth(trailing) + 12 > right - left)
+      M5.Display.setFont(&fonts::efontCN_16);
+    trailingWidth = M5.Display.textWidth(trailing) + 12;
+    M5.Display.setTextDatum(middle_right);
+    M5.Display.drawString(trailing, right, y);
+    M5.Display.setFont(&fonts::efontCN_24);
+  }
+  if (M5.Display.textWidth(label) > right - left - trailingWidth) M5.Display.setFont(&fonts::efontCN_16);
+  M5.Display.setClipRect(left, y - 24, right - left - trailingWidth, 48);
+  M5.Display.setTextDatum(middle_left);
+  M5.Display.drawString(label, left, y);
+  M5.Display.clearClipRect();
+}
+void Screens::pager(const ScreenState& s, unsigned count) {
+  const int y = menu_layout::kPagerY;
+  const unsigned pages = menu_layout::pageCount(count), page = s.selected / menu_layout::kPageSize;
+  glyph(theme::Icon::Back, 168, y, theme::kMuted);
+  glyph(theme::Icon::Next, 298, y, theme::kMuted);
+  if (pages <= menu_layout::kPagerDots) {
+    const int first = 233 - int(pages - 1) * 7;
+    for (unsigned i = 0; i < pages; ++i)
+      M5.Display.fillCircle(first + int(i) * 14, y, i == page ? 4 : 2, i == page ? accentFor(s.page) : theme::kTrack);
+    return;
+  }
+  char text[24]; snprintf(text, sizeof(text), "%u / %u", page + 1, pages);
+  M5.Display.setTextDatum(middle_center); M5.Display.setFont(&fonts::efontCN_16);
+  M5.Display.setTextColor(theme::kMuted);
+  M5.Display.drawString(text, 233, y);
 }
 } }
