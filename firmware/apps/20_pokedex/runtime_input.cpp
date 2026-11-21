@@ -70,7 +70,17 @@ void Runtime::handle(const Input& raw) {
     return;
   }
   if (screen_.page == Page::Home) {
-    const bool onEvolve = homeEvolutionReady(engine_) && kHomeEvolveButton.contains(raw.x, raw.y);
+    constexpr int kHomeEvolveTouchPad = 8;
+    constexpr int kHomeEvolveTop = kHomeEvolveButton.y - kHomeEvolveTouchPad < 60
+                                       ? 60
+                                       : kHomeEvolveButton.y - kHomeEvolveTouchPad;
+    constexpr menu_layout::Rect kHomeEvolveTouchArea = {
+        kHomeEvolveButton.x - kHomeEvolveTouchPad,
+        kHomeEvolveTop,
+        kHomeEvolveButton.width + kHomeEvolveTouchPad * 2,
+        kHomeEvolveButton.y + kHomeEvolveButton.height + kHomeEvolveTouchPad - kHomeEvolveTop,
+    };
+    const bool onEvolve = homeEvolutionReady(engine_) && kHomeEvolveTouchArea.contains(raw.x, raw.y);
     if (onEvolve && raw.click) { openHomeEvolution(); return; }
     if (onEvolve && raw.touch) return;
     if (raw.touch) { openMenu(MenuItem::Encounter); return; }
