@@ -115,7 +115,16 @@ void Runtime::handle(const Input& raw) {
         dirty_ = true;
         return;
       }
+      if (!dimmed() && graphicsReady_) {
+        screen_.throwCommitting = true;
+        const uint32_t renderStart = platform_.now();
+        if (!screens_.draw(screen_, engine_, practiceCapture_.battleView(), input.at))
+          ++metrics_.displayErrors;
+        lastRender_ = platform_.now();
+        metrics_.maxRenderMs = std::max(metrics_.maxRenderMs, lastRender_ - renderStart);
+      }
       const auto result = engine_.pressThrow(key, input.at, readingAt(input.at));
+      screen_.throwCommitting = false;
       if (result == CommandResult::Applied) {
         const auto& a = engine_.view().encounter.attempts[key.attemptIndex - 1];
         CaptureAnim anim;
