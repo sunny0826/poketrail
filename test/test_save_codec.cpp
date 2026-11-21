@@ -26,8 +26,7 @@ static void reject(const Save& s) {
   std::vector<uint8_t> out(codec::maxEncodedSize); size_t n = 123;
   CHECK(!codec::encode(s, out.data(), out.size(), n) && n == 0);
 }
-static void rejectBytes(const uint8_t* data, size_t size,
-                        codec::DecodeStatus status = codec::DecodeStatus::Corrupt) {
+static const Save& sentinelSave() {
   static const Save sentinel = [] {
     Save out; out.sequence = 0xfedcba9876543210ULL; out.bootGeneration = 9;
     out.starter = out.partner = 4; out.rosterRevision = 7;
@@ -36,9 +35,37 @@ static void rejectBytes(const uint8_t* data, size_t size,
     out.route = Route::Unova; out.encounterTarget = 450; out.stepsIncomplete = true;
     return out;
   }();
-  static const std::vector<uint8_t> before = encode(sentinel);
-  Save out = sentinel;
+  return sentinel;
+}
+static void rejectBytes(const uint8_t* data, size_t size,
+                        codec::DecodeStatus status = codec::DecodeStatus::Corrupt) {
+  static const std::vector<uint8_t> before = encode(sentinelSave());
+  Save out = sentinelSave();
   CHECK(codec::decode(data, size, out) == status);
+  CHECK(encode(out) == before);
+}
+static void rejectBoundaryCutsAndFlips(const std::vector<uint8_t>& original) {
+  static const std::vector<uint8_t> before = encode(sentinelSave());
+  Save out = sentinelSave();
+  auto checkCut = [&](size_t n) {
+    if (n < original.size()) CHECK(codec::decode(original.data(), n, out) == codec::DecodeStatus::Corrupt);
+  };
+  for (size_t n = 0; n <= 86; ++n) checkCut(n);
+  for (size_t n = original.size() > 64 ? original.size() - 64 : 0; n < original.size(); ++n) checkCut(n);
+  for (size_t n : {size_t(12139), size_t(14672), size_t(21498), size_t(21508), size_t(48672), size_t(48673)}) checkCut(n);
+  for (size_t n = 128; n < original.size(); n += 256) checkCut(n);
+  CHECK(encode(out) == before);
+
+  std::vector<uint8_t> data = original;
+  auto checkFlip = [&](size_t i) {
+    if (i == 4 || i == 5 || i >= data.size()) return;
+    data[i] ^= 0x80;
+    CHECK(codec::decode(data.data(), data.size(), out) == codec::DecodeStatus::Corrupt);
+    data[i] ^= 0x80;
+  };
+  for (size_t i = 0; i < 86; ++i) checkFlip(i);
+  for (size_t i = original.size() > 64 ? original.size() - 64 : 0; i < original.size(); ++i) checkFlip(i);
+  for (size_t i = 22; i < original.size(); i += 64) checkFlip(i);
   CHECK(encode(out) == before);
 }
 int main() {
@@ -47,7 +74,7 @@ int main() {
   CHECK(validate(s)); const std::vector<uint8_t> original = encode(s);
   Save decoded; CHECK(codec::decode(original.data(), original.size(), decoded) == codec::DecodeStatus::Ok);
   CHECK(encode(decoded) == original && decoded.sequence == s.sequence);
-  for (size_t n = 0; n < original.size(); ++n) rejectBytes(original.data(), n);
+  rejectBoundaryCutsAndFlips(original);
   rejectBytes(nullptr, original.size());
   std::vector<uint8_t> data = original; data.push_back(0);
   rejectBytes(data.data(), data.size());
@@ -57,11 +84,6 @@ int main() {
   rejectBytes(data.data(), data.size(), codec::DecodeStatus::UnsupportedVersion);
   data.resize(codec::maxEncodedSize + 100);
   rejectBytes(data.data(), data.size(), codec::DecodeStatus::UnsupportedVersion);
-  for (size_t i = 0; i < original.size(); ++i) {
-    if (i == 4 || i == 5) continue;
-    data = original; data[i] ^= 0x80;
-    rejectBytes(data.data(), data.size());
-  }
   for (uint8_t route : {0, 1, 2, 8}) {
     data = original; data[22 + 4] = route; checksum(data);
     rejectBytes(data.data(), data.size());

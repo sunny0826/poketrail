@@ -22,3 +22,7 @@ backups/
 
 # macOS
 .DS_Store
+
+# 本地 Agent 目录
+.agent-conductor/
+.lody/

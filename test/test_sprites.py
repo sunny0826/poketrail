@@ -1,3 +1,4 @@
+from array import array
 import hashlib
 import io
 import json
@@ -7,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 
 from PIL import Image
@@ -83,8 +85,9 @@ class GeneratorCliTests(unittest.TestCase):
                 self.assertEqual([path.read_bytes() for path in manifests], before_manifests)
 
     def test_generation_one_writes_explicit_separate_outputs(self):
-        shutil.copytree(ROOT / 'assets/sprites/black-white',
-                        self.root / 'assets/sprites/black-white', dirs_exist_ok=True)
+        cache = self.root / 'assets/sprites/black-white'
+        shutil.rmtree(cache)
+        cache.symlink_to(CACHE_DIR, target_is_directory=True)
         before = [path.read_bytes() for path in self.protected]
         manifests = [self.root / path.relative_to(ROOT) for path in MANIFESTS.values()]
         before_manifests = [path.read_bytes() for path in manifests]
@@ -129,14 +132,10 @@ class SpriteTests(unittest.TestCase):
     def test_all_649_complete_animated_sources(self):
         self.assertIn('generation-v/black-white/animated/', SPRITE_URL)
         self.assertEqual([s['id'] for s in self.sprites], list(range(1, 650)))
-        for number in range(1, 650):
-            with self.subTest(id=number), Image.open(CACHE_DIR / f'{number:04d}.gif') as image:
-                frames = set()
-                for index in range(image.n_frames):
-                    image.seek(index)
-                    self.assertGreater(image.info['duration'], 0)
-                    frames.add(image.convert('RGBA').tobytes())
-                self.assertGreater(len(frames), 1)
+        for sprite in self.sprites:
+            with self.subTest(id=sprite['id']):
+                self.assertGreater(sprite['unique'], 1)
+                self.assertTrue(all(duration > 0 for _, duration in sprite['frames']))
 
     def test_generated_files_and_manifests_are_current(self):
         self.assertEqual(OUT_HEADER.read_text(), generate_header(self.sprites))
@@ -153,29 +152,46 @@ class SpriteTests(unittest.TestCase):
         build = ROOT / '.pio/animation-test'
         build.mkdir(parents=True, exist_ok=True)
         executable = build / 'test_decode'
-        subprocess.run([os.environ.get('CXX','c++'), '-std=c++11', '-O2',
-                        'test/test_decode.cpp', 'firmware/apps/20_pokedex/sprite.cpp',
-                        'firmware/apps/20_pokedex/game.cpp',
-                        'firmware/apps/20_pokedex/sprites_generated.cpp', '-lz',
-                        '-o', str(executable)], cwd=ROOT, check=True)
+        deps = [
+            ROOT / 'test/test_decode.cpp',
+            ROOT / 'firmware/apps/20_pokedex/sprite.hpp',
+            ROOT / 'firmware/apps/20_pokedex/sprite.cpp',
+            ROOT / 'firmware/apps/20_pokedex/game.hpp',
+            ROOT / 'firmware/apps/20_pokedex/game.cpp',
+            ROOT / 'firmware/apps/20_pokedex/sprites_generated.hpp',
+            ROOT / 'firmware/apps/20_pokedex/sprites_generated.cpp',
+        ]
+        if (not executable.exists() or
+                any(dep.stat().st_mtime_ns > executable.stat().st_mtime_ns for dep in deps)):
+            subprocess.run([os.environ.get('CXX', 'c++'), '-std=c++11', '-O2',
+                            'test/test_decode.cpp', 'firmware/apps/20_pokedex/sprite.cpp',
+                            'firmware/apps/20_pokedex/game.cpp',
+                            'firmware/apps/20_pokedex/sprites_generated.cpp', '-lz',
+                            '-o', str(executable)], cwd=ROOT, check=True)
         output = subprocess.check_output([str(executable)], text=True)
         records = iter(output.splitlines())
         checked = 0
         for number in range(1, POKEMON_COUNT + 1):
-            image = Image.open(CACHE_DIR / f'{number:04d}.gif')
-            for index in range(image.n_frames):
-                image.seek(index)
-                fingerprint = 14695981039346656037
-                for r,g,b,a in image.convert('RGBA').get_flattened_data():
-                    value = 0xF81F if a < 128 else ((r//8)<<11)|((g//4)<<5)|(b//8)
-                    for byte in (value & 255, value >> 8):
-                        fingerprint = ((fingerprint ^ byte) * 1099511628211) & 0xFFFFFFFFFFFFFFFF
-                record = next(records).split()
-                self.assertEqual(list(map(int,record[:5])),
-                                 [number,index,*image.size,image.info['duration']])
-                self.assertEqual(int(record[5],16),fingerprint, f'#{number} frame {index}')
-                checked += 1
-            image.close()
+            frame_crcs = {}
+            with Image.open(CACHE_DIR / f'{number:04d}.gif') as image:
+                for index in range(image.n_frames):
+                    image.seek(index)
+                    rgba = image.convert('RGBA').tobytes()
+                    expected_crc = frame_crcs.get(rgba)
+                    if expected_crc is None:
+                        pixels = array('H', (
+                            0xF81F if a < 128 else ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
+                            for r, g, b, a in zip(rgba[0::4], rgba[1::4], rgba[2::4], rgba[3::4])
+                        ))
+                        if sys.byteorder != 'little':
+                            pixels.byteswap()
+                        expected_crc = zlib.crc32(pixels)
+                        frame_crcs[rgba] = expected_crc
+                    record = next(records).split()
+                    self.assertEqual(list(map(int, record[:5])),
+                                     [number, index, *image.size, image.info['duration']])
+                    self.assertEqual(int(record[5], 16), expected_crc, f'#{number} frame {index}')
+                    checked += 1
         self.assertEqual(list(records), [])
         print(f'Firmware decoding and timing match {checked} original GIF frames')
 

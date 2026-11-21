@@ -229,11 +229,4 @@ void feedback(uint16_t frequency_hz, uint16_t duration_ms,
 
 bool vibrationActive() { return vibration_active; }
 
-void drawFooter(const char* text, uint16_t color) {
-  M5.Display.setTextDatum(bottom_center);
-  M5.Display.setFont(&fonts::Font2);
-  M5.Display.setTextColor(color, TFT_BLACK);
-  M5.Display.drawString(text, kScreenCenter, kScreenSize - 44);
-}
-
 }

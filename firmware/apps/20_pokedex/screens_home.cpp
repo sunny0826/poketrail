@@ -67,12 +67,11 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
       if (!v.clock.trusted) alert(tr(Text::TimeNotSet), 178, theme::kGold);
       break;
     case Page::DateWelcome:
-      title(tr(Text::ConfirmDate), v.clock.pending.active ? tr(Text::ClockPending) : tr(Text::OfflineClock), theme::kGold);
+      title(tr(Text::ConfirmDate), v.clock.pending.active ? tr(Text::ClockPending) : "", theme::kGold);
       M5.Display.drawCircle(233, 133, 29, theme::kGold);
       M5.Display.drawLine(233, 111, 233, 133, theme::kGold);
       M5.Display.drawLine(233, 133, 249, 142, theme::kGold);
-      line(tr(Text::SkipKeepsSteps), 174, theme::kText);
-      line(tr(Text::CaptureTimeUnknown), 194, theme::kMuted);
+      line(tr(Text::SkipKeepsSteps), 182, theme::kMuted);
       break;
     case Page::Starter:
       title(tr(Text::ChooseStarter), tr(Text::StarterOnce), theme::kGold);
@@ -84,7 +83,7 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
       break;
     case Page::Routes: {
       const Route region = s.selected < kRegionCount ? regionAt(uint8_t(s.selected)) : v.route;
-      title(tr(Text::ChooseRegion), tr(Text::NextEncounterOnly), theme::routeColor(region));
+      title(tr(Text::ChooseRegion), pendingEncounterCount(v) ? tr(Text::NextEncounterOnly) : "", theme::routeColor(region));
       sceneThumbnail(region, 233, 151);
       break;
     }
@@ -106,7 +105,7 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
       sprite(v.encounter.species, now, resultPlayback_, 147, 233, 0, 2, 110);
       break;
     case Page::Pause:
-      title(tr(Text::Paused), s.practice ? tr(Text::PracticeFree) : tr(Text::ResumeNextBeat), theme::kGold);
+      title(tr(Text::Paused), "", theme::kGold);
       M5.Display.fillRect(216, 120, 13, 44, theme::kGold);
       M5.Display.fillRect(239, 120, 13, 44, theme::kGold);
       break;
@@ -146,14 +145,10 @@ void Screens::home(const ScreenState& s, const Engine& e, uint32_t now) {
         if (v.result == Result::MigrationRetired) {
           line(tr(Text::MigrationRefund), 249, theme::kGold);
           line(tr(Text::UnlimitedBalls), 277, theme::kText);
-        } else if (v.result == Result::Released && !v.captureCounts[v.encounter.species - 1]) {
-          if (v.encounter.ruleVersion < 3 && !availableBalls(v)) {
-            line(tr(Text::NoBalls), 249, theme::kRed);
-            line(tr(Text::EncounterEnded), 277, theme::kMuted);
-          } else {
-            line(tr(Text::NoRefund), 249, theme::kRed);
-          }
-        } else line(tr(Text::KeepExploring), 249, theme::kMuted);
+        } else if (v.result == Result::Released && !v.captureCounts[v.encounter.species - 1] &&
+                   v.encounter.ruleVersion < 3 && !availableBalls(v)) {
+          line(tr(Text::NoBalls), 249, theme::kRed);
+        }
       }
       menu(s, e); return;
     case Page::Error:

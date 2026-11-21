@@ -15,7 +15,7 @@ void require(bool ok) { if (!ok) throw std::runtime_error(SDL_GetError()); }
 }
 App::App(const std::string& saveDir, const std::string& screenshots, const Options& options)
     : options_(options), storage_(saveDir, options), io_(storage_), store_(io_), platform_(storage_, options.seed),
-      pixels_(kWidth * kHeight * 3), screenshots_(screenshots) {
+      pixels_(kWidth * kHeight * 3), screen_(kScreenSize * kScreenSize * 3), screenshots_(screenshots) {
   const auto tr = [](Text id) { return pokedex::i18n::text(Language::Chinese, id); };
   require(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) == 0);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
@@ -32,7 +32,7 @@ App::App(const std::string& saveDir, const std::string& screenshots, const Optio
   if (!M5.Display.getBuffer()) throw std::runtime_error(tr(Text::ScreenAllocation));
   runtime_.reset(new pokedex::ui::Runtime(store_, platform_));
   runtime_->startStartup();
-  draw();
+  if (options_.presentEveryStep) draw();
   if (!runtime_->begin()) throw std::runtime_error(tr(Text::RuntimeInitFailed));
   std::printf(tr(Text::SimulatorPaths), saveDir.c_str(), screenshots.c_str());
 }
@@ -75,13 +75,14 @@ bool App::step() {
   }
   if (runtime_->takeTestRequest() != pokedex::ui::Runtime::TestRequest::None)
     runtime_->openTestPage(pokedex::ui::Page::TestEntry, true);
-  draw();
+  if (options_.presentEveryStep) draw();
   if (closing_ && !(runtime_->engine().battleView().active && !runtime_->engine().battleView().paused) &&
       !runtime_->engine().throwView().active) {
     if (close()) running_ = false;
     closing_ = false;
   }
   if (platform_.takeScreenshot()) {
+    if (!options_.presentEveryStep) draw();
     try { screenshot("capture-" + std::to_string(++shots_)); }
     catch (const std::exception& error) { std::fprintf(stderr, tr(Text::ScreenshotFailed), error.what()); }
   }
@@ -89,15 +90,19 @@ bool App::step() {
 }
 void App::draw() {
   const auto tr = [this](Text id) { return pokedex::i18n::text(runtime_->language(), id); };
-  SDL_SetWindowTitle(window_, tr(Text::SimulatorTitle));
+  const char* title = tr(Text::SimulatorTitle);
+  if (windowTitle_ != title) {
+    windowTitle_ = title;
+    SDL_SetWindowTitle(window_, windowTitle_.c_str());
+  }
   std::fill(pixels_.begin(), pixels_.end(), uint8_t(18));
-  std::vector<uint8_t> screen(kScreenSize * kScreenSize * 3);
-  if (!runtime_->dimmed()) M5.Display.readRectRGB(0, 0, kScreenSize, kScreenSize, screen.data());
+  if (runtime_->dimmed()) std::fill(screen_.begin(), screen_.end(), uint8_t(0));
+  else M5.Display.readRectRGB(0, 0, kScreenSize, kScreenSize, screen_.data());
   for (int y = 0; y < kScreenSize; ++y) for (int x = 0; x < kScreenSize; ++x) {
     if ((x - 233) * (x - 233) + (y - 233) * (y - 233) > 233 * 233) continue;
     const size_t target = ((y + kScreenY) * kWidth + x + kScreenX) * 3;
     const size_t source = (y * kScreenSize + x) * 3;
-    std::copy_n(screen.data() + source, 3, pixels_.data() + target);
+    std::copy_n(screen_.data() + source, 3, pixels_.data() + target);
   }
   footer_.fillScreen(0x1082);
   footer_.setTextDatum(middle_center);

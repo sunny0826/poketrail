@@ -204,19 +204,14 @@ def main():
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
     root = Path(os.environ.get("MYM5_VERIFICATION_DIR", str(ROOT / ".pio/verification" / f"simulator-e2e-{stamp}"))).resolve()
     root.mkdir(parents=True, exist_ok=False)
-    source_files = set(sources + RUNTIME_SOURCES + build.sources +
-                       [APP / "file_store.cpp", Path(__file__).resolve(), ROOT / "scripts/host_build.py",
-                        ROOT / "mise.toml", ROOT / "platformio.ini", ROOT / "requirements-dev.txt"])
-    for dependency in build.build.rglob("*.d"):
-        import shlex
-        source_files.update((ROOT / p).resolve() for p in shlex.split(
-            dependency.read_text().replace("\\\n", " ").split(":", 1)[1]) if (ROOT / p).is_file())
-    for directory in (ROOT / "simulator", ROOT / "test/simulator", APP, ROOT / "test/support", ROOT / "firmware/shared"):
-        source_files.update(directory.rglob("*.hpp"))
-        source_files.update(directory.rglob("*.h"))
+    compiled = [*sources, *RUNTIME_SOURCES, APP / "file_store.cpp", *build.sources]
+    source_files = set(compiled + [Path(__file__).resolve(), ROOT / "scripts/host_build.py",
+                                   ROOT / "mise.toml", ROOT / "platformio.ini", ROOT / "requirements-dev.txt"])
+    source_files.update(build.dependencies_for(compiled))
     manifest = {"head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                 "dirty": subprocess.check_output(["git", "status", "--short"], cwd=ROOT, text=True),
-                "sources": {str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p): digest(p) for p in sorted(source_files)},
+                "sources": {str(p.relative_to(ROOT)): digest(p)
+                            for p in sorted(source_files) if p.is_relative_to(ROOT) and p.is_file()},
                 "compiler": subprocess.check_output([os.environ.get("CXX", "c++"), "--version"], text=True).splitlines()[0],
                 "binary": digest(executable), "seed": SEED, "utc": UTC, "python": sys.version,
                 "platform": sys.platform, "sdl": subprocess.check_output(["sdl2-config", "--version"], text=True).strip()}
@@ -298,6 +293,7 @@ def main():
         for image in output.rglob("*.bmp"):
             with Image.open(image) as source:
                 source.save(image.with_suffix(".png"))
+            image.unlink()
         write_json(output / "result.json", result)
         results.append(result)
         print(f"{result['status'].upper()} {name}: {result.get('error', '')}", flush=True)

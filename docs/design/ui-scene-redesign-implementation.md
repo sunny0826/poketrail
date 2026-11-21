@@ -8,19 +8,9 @@
 
 `tools/design_preview_scenes.py` 汇总关都、城都、丰缘、神奥、合众五个地区的场景来源（共用绘制工具在 `tools/scene_paint.py`，各地区分别在 `tools/scene_kanto.py`、`scene_johto.py`、`scene_hoenn.py`、`scene_sinnoh.py`、`scene_unova.py`）；`tools/build_scene_backgrounds.py` 按固件地区顺序生成普通、暗色与分层 RGB565 数据。`Screens::advanceScene()` 持有展示层进度：首页且屏幕唤醒时每 100ms 推进一次，走路不加速；地区切换归零，其他页面和熄屏期间暂停。绘制使用 456 像素行缓冲，远景和 UI 不动。遭遇、对战和投球使用已保存遭遇地区的静态暗色图，捕获练习使用对手所属地区。“选择地区”菜单两页列出五个地区，选中项的强调色取 `theme::routeColor`，标题下方显示选中地区（选到“返回”时为当前地区）的场景缩略图。
 
-双角色各自保留原始动画时长与完整像素，按尺寸使用 1 倍或 2 倍整数缩放。Engine 判定后立即更新 HP；胜负提交成功后，页面最多保留 450ms 的最后动作窗口。保存失败立即显示错误，重试同一结果。设计 GIF 的示例 HP 与受击帧不代表当前玩法，读招提示圈、假动作、狂暴和必杀规则以[对战与投球](../usage-battle.md)为准。
+双角色各自保留原始动画时长与完整像素，按尺寸使用 1 倍或 2 倍整数缩放。Engine 判定后立即更新 HP；胜负提交成功后，页面最多保留 450ms 的最后动作窗口。保存失败立即显示错误，重试同一结果。读招提示圈、假动作、狂暴和必杀规则以[对战与投球](../usage-battle.md)为准。
 
-## 重建设计稿
-
-先按[开发指南](../development.md)安装依赖。Pillow 设计预览输出到 `docs/design/ui-scene-redesign/`，只作为历史视觉参考；当前生成入口仍受下述素材解析问题阻塞，不能作为发布或 Runtime 验收入口：
-
-```bash
-rtk proxy mise exec -- python3 tools/build_ui_design_previews.py
-```
-
-画廊仍是原 26 页、77 帧和 6 条动画的历史视觉参考。`tools/design_preview.py` 的 `GeneratedAssets` 按 1～251 和旧 Sprite／帧字段布局解析数据，无法读取当前 649 种的 zlib 格式。五地区改版后 `design_preview_scenes.py` 只提供 `kanto`～`unova`，而 `design_preview_screens.py`、`design_preview_walk.py`、`design_preview_battle.py` 仍请求 `forest`、`coast`、`cave`。清单也缺少后续新增页面，并保留已删除的 `ReleaseConfirm`。
-
-2026-11-04 按[测试保留标准](../verification/test-policy.md)删除设计稿测试：页面数、文档内容、固定坐标及示例动画不能证明实际产品行为。历史图片、画廊和原始验收证据继续保留；删除测试不表示旧生成器的问题已修复。维护画廊时需同步素材解析、地区名和页面清单，再检查生成差异，不手工修改生成物。
+> 注：早期 251 种、26 页三路线的独立 Pillow 设计画廊及对应失效预览脚本已退役清理。UI 与交互核对使用下述真实 Runtime/M5GFX 渲染测试及 SDL E2E；正式五地区像素场景生成器（`tools/design_preview_scenes.py`、`tools/scene_*.py`、`tools/build_scene_backgrounds.py`）保留维护。
 
 ## 验证真实页面
 

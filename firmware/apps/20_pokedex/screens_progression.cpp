@@ -11,7 +11,6 @@ const char* progressionMessage(i18n::Language language, CommandResult result) {
     case CommandResult::InsufficientProgress: return i18n::text(language, Text::InsufficientProgress);
     case CommandResult::Stale: return i18n::text(language, Text::PartnerChanged);
     case CommandResult::InvalidPhase: return i18n::text(language, Text::FinishAndCarry);
-    case CommandResult::NoBalls: return i18n::text(language, Text::LegacyBalls);
     case CommandResult::SavePending: case CommandResult::StorageError: return i18n::text(language, Text::WaitForSave);
     case CommandResult::InvalidInput: return i18n::text(language, Text::CannotAct);
     case CommandResult::Applied: case CommandResult::Duplicate: return "";
@@ -34,10 +33,9 @@ void Screens::progression(const ScreenState& s, const Engine& e) {
     line(tr(Text::OriginalUnavailable), 193, theme::kGold);
     item(s, 0, tr(Text::ConfirmEvolution), menu_layout::kTop);
     item(s, 1, tr(Text::Later), menu_layout::kTop);
-    line(tr(Text::RemainderStays), 350, theme::kMuted);
     if (s.evolution.from && save.captureCounts[s.evolution.from - 1])
-      line(tr(Text::CapturedNeverReturns), 376, theme::kGold);
-    if (s.command != CommandResult::Applied) line(progressionMessage(s.command), 402, theme::kGold);
+      line(tr(Text::CapturedNeverReturns), 350, theme::kGold);
+    if (s.command != CommandResult::Applied) line(progressionMessage(s.command), 376, theme::kGold);
     return;
   }
   const bool carried = s.page == Page::CarriedPartner;

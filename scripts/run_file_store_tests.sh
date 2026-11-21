@@ -9,20 +9,17 @@ if [[ "${SANITIZE:-1}" == 1 ]]; then flags+=(-fsanitize=address,undefined -fno-o
 sources=(firmware/apps/20_pokedex/file_store.cpp firmware/apps/20_pokedex/save_codec.cpp
   firmware/apps/20_pokedex/adventure_migration.cpp
   firmware/apps/20_pokedex/adventure_model.cpp firmware/apps/20_pokedex/calendar.cpp firmware/apps/20_pokedex/encounter_catalog.cpp)
-"${CXX:-clang++}" "${flags[@]}" test/test_file_store.cpp "${sources[@]}" -o "${build_dir}/test_file_store"
-"${build_dir}/test_file_store"
-"${CXX:-clang++}" "${flags[@]}" -Itest/support/storage test/support/storage/device_tests.cpp \
-  firmware/apps/20_pokedex/device_store.cpp "${sources[@]}" -o "${build_dir}/test_device_store"
-"${build_dir}/test_device_store"
-"${CXX:-clang++}" "${flags[@]}" -Itest/support/storage test/support/storage/test_mode_storage.cpp \
-  firmware/apps/20_pokedex/device_store.cpp "${sources[@]}" -o "${build_dir}/test_mode_storage"
-"${build_dir}/test_mode_storage"
-"${CXX:-clang++}" "${flags[@]}" test/support/storage/allocation_tests.cpp "${sources[@]}" -o "${build_dir}/test_storage_allocation"
-"${build_dir}/test_storage_allocation"
-"${CXX:-clang++}" "${flags[@]}" -DARDUINO_ARCH_ESP32 -Itest/support/psram \
-  test/support/storage/allocation_tests.cpp "${sources[@]}" -o "${build_dir}/test_storage_psram"
-"${build_dir}/test_storage_psram"
-"${CXX:-clang++}" "${flags[@]}" -DARDUINO_ARCH_ESP32 -Itest/support/psram -Itest/support/storage \
-  test/support/storage/large_state_tests.cpp firmware/apps/20_pokedex/device_store.cpp \
-  firmware/apps/20_pokedex/test_console.cpp "${sources[@]}" -o "${build_dir}/test_large_state"
-"${build_dir}/test_large_state"
+python3 scripts/host_build.py unit --cxx "${CXX:-clang++}" --run --shared "${sources[@]}" \
+  --target test_file_store:test/test_file_store.cpp \
+  --target test_storage_allocation:test/support/storage/allocation_tests.cpp \
+  -- "${flags[@]}"
+python3 scripts/host_build.py unit --cxx "${CXX:-clang++}" --run --shared "${sources[@]}" firmware/apps/20_pokedex/device_store.cpp \
+  --target test_device_store:test/support/storage/device_tests.cpp \
+  --target test_mode_storage:test/support/storage/test_mode_storage.cpp \
+  -- "${flags[@]}" -Itest/support/storage
+python3 scripts/host_build.py unit --cxx "${CXX:-clang++}" --run --shared "${sources[@]}" \
+  --target test_storage_psram:test/support/storage/allocation_tests.cpp \
+  -- "${flags[@]}" -DARDUINO_ARCH_ESP32 -Itest/support/psram
+python3 scripts/host_build.py unit --cxx "${CXX:-clang++}" --run --shared "${sources[@]}" firmware/apps/20_pokedex/device_store.cpp firmware/apps/20_pokedex/test_console.cpp \
+  --target test_large_state:test/support/storage/large_state_tests.cpp \
+  -- "${flags[@]}" -DARDUINO_ARCH_ESP32 -Itest/support/psram -Itest/support/storage

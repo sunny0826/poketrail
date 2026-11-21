@@ -7,7 +7,7 @@
 带着伙伴走路，遇见宝可梦，用节奏对战和投球完成捕捉。<br>
 运行在 M5Stack StopWatch（C152）圆屏上的离线步行探险。
 
-<img src="docs/images/readme/home.png" width="360" alt="圆屏首页：妙蛙种子站在关都的田间小路上，标注携带中，球图标旁显示已捕获 0 种，下方为今日 4 步。主机 Runtime/M5GFX 渲染，不是实机拍摄。">
+<img src="docs/images/readme/home.png" width="360" alt="圆屏首页：妙蛙种子站在关都的田间小路上，球图标旁显示已捕获 0 种，下方为今日 4 步。主机 Runtime/M5GFX 渲染，不是实机拍摄。">
 
 [开始使用](#开始使用) · [桌面模拟](#桌面模拟) · [构建和烧录](#构建和烧录) · [开发指南](docs/development.md) · [验证说明](docs/verification.md)
 
@@ -46,12 +46,12 @@
 <details>
 <summary>画面来源</summary>
 
-全部画面是 649 种版本用主机 Runtime/M5GFX 离屏渲染的截图；对战和投球画面更新于 2026-11-03，其余画面为 2026-11-02。不是 C152 实机拍摄，也不能当作实机帧率、观感或验收结果。点图片打开 468×468 原文件。物理圆屏为 466×466，当前 M5GFX 驱动报告 468×468；PNG 只保留圆屏内像素，圆外透明。
+全部画面是 649 种版本用主机 Runtime/M5GFX 离屏渲染的截图；首屏首页与五个地区画面更新于 2026-11-21，对战和投球画面为 2026-11-03，图鉴为 2026-11-02。不是 C152 实机拍摄，也不能当作实机帧率、观感或验收结果。点图片打开 468×468 原文件。物理圆屏为 466×466，当前 M5GFX 驱动报告 468×468；PNG 只保留圆屏内像素，圆外透明。
 
 | 画面 | 当时的来源 | 截图 |
 | --- | --- | --- |
 | 首屏首页 | `test_home_render` | `home-today-complete-live`：今日 4 步来自测试中的模拟走路，尚未捕获 |
-| 五个地区 | `test_home_render` 的旧地区场景 | `home-scene-0`～`home-scene-4`：未校时，所以今日显示 --；测试档已捕获 2 种 |
+| 五个地区 | 主机 Runtime/M5GFX 离屏渲染（当前首页） | `region-kanto`～`region-unova`：未校时，所以今日显示 --；测试档已捕获 2 种 |
 | 节奏对战 | 已删除的 `test_battle_render` | `battle-idle`：关都，小火龙对皮卡丘，攻击提示 |
 | 蓄力投球 | `test_capture_render` 的旧瞄准场景 | `throw-aim-key-800`：关都，对手为妙蛙种子，按住 800ms，上方判定圈收拢，剩余两次 |
 | 图鉴 | `test_adventure_render` 的旧旅程 | `viewer-entry`：测试档中的初始伙伴 |

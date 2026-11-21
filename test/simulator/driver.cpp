@@ -15,7 +15,7 @@ Driver::Driver(const std::string& saveDir, const std::string& output, uint32_t s
     : output_(output) {
   events_ = std::fopen((output + "/events.jsonl").c_str(), "w");
   if (!events_) throw std::runtime_error("cannot create events");
-  Options options; options.seed = seed; options.isolateHostFocus = true;
+  Options options; options.seed = seed; options.isolateHostFocus = true; options.presentEveryStep = false;
   options.wallClock = [utc] { return utc + host_time_ms / 1000; };
   options.error = [this](const std::string& message) { ++closeErrors_; event("close-error", message); };
   options.windowEvent = [this](unsigned value) { event("window-event", std::to_string(value)); };

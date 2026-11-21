@@ -35,6 +35,8 @@ class App {
   SDL_Texture* texture_ = nullptr;
   lgfx::LGFX_Sprite footer_;
   std::vector<uint8_t> pixels_;
+  std::vector<uint8_t> screen_;
+  std::string windowTitle_;
   std::string screenshots_;
   unsigned shots_ = 0;
   bool running_ = true, closing_ = false;

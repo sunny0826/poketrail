@@ -13,5 +13,6 @@ struct Options {
   std::function<void(const std::string&)> error;
   std::function<void(unsigned)> windowEvent;
   bool isolateHostFocus = false;
+  bool presentEveryStep = true;
 };
 }
