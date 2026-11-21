@@ -84,7 +84,7 @@ The menu fits on one screen. When an encounter is waiting, the banner at the top
 
 "Records" shows your best daily steps at the top and four tiles: First captures (with the captured species count), Recent captures, Daily steps and Milestones. "Settings" contains Date and time and Language, with a reminder when the date is not set.
 
-In ordinary menus, releasing the left button moves up, and releasing the right button moves down. Tile menus move left to right, then top to bottom, and skip the banner when it cannot be selected. Holding both buttons with any overlap confirms; you can press them one after the other. After confirmation, release both buttons before continuing. Visible touch buttons activate when you lift your finger. Pressing and then swiping horizontally does not activate them. Menus with multiple pages support left/right swipes and the previous/next page buttons at the bottom. You can also swipe horizontally between record details. Tap the top to go back one level.
+In ordinary menus, releasing the left button moves up, and releasing the right button moves down. Tile menus move left to right, then top to bottom, and skip the banner when it cannot be selected. Holding both buttons with any overlap confirms; you can press them one after the other. After confirmation, release both buttons before continuing. Visible touch buttons show pressed feedback and activate when you lift your finger; sliding off the target or past the drag tolerance cancels both. Multi-page menus support left/right swipes and the bottom page buttons; partner lists past one page and record details also support hold-to-repeat on a single side button. Tap the top to go back one level.
 
 | Page | Controls |
 | --- | --- |
@@ -96,13 +96,13 @@ In ordinary menus, releasing the left button moves up, and releasing the right b
 | Partner details | Choose a carried partner or evolution target; evolution requires another confirmation |
 | Evolution animation | Press either side button or tap to skip to the new form; act again to open its details |
 | Records | Page left/right; tap the bottom to return, or select the return option and confirm |
-| Clock sync | Select a field and confirm to edit; left decreases, right increases, both buttons finish editing; save at the end |
+| Clock sync | Select a field and confirm to edit; left decreases, right increases (hold to repeat), both buttons finish editing; save at the end |
 | Pokédex | Left button / swipe right for the previous Pokémon, right button / swipe left for the next; tap the top to return |
 | Pokédex interaction | Tap the partner in the center for a small hop, a heart, and a short vibration; the animation continues |
 | Pokédex evolution preview | Tap "Preview evolution" at the bottom; press either side button or tap to skip to the new form; act again to return to the Pokédex |
 | Short press of the power key | Triggers on press: while awake, enters power saving (except during the active flows below); while asleep, wakes the screen only, without triggering a page action |
 
-The Pokédex wraps through entries 1–649. Holding a button does not advance repeatedly, and pressing both buttons in the same frame does not change entries. Short drags, vertical swipes, and releasing a long press do not count as taps.
+The Pokédex wraps through entries 1–649. Holding a single side button repeats smoothly without an extra step on release, while holding both buttons does not switch entries. Short drags, vertical swipes, and releasing a long press do not count as taps.
 
 After 30 seconds of inactivity, the device automatically enters power saving. You can also briefly press the power key. While the screen is off, the device continues counting steps, reading the clock, and saving. Encounters still trigger a vibration. When no vibration is active, saving is idle, and no USB host is connected, the main controller briefly enters light sleep until the next sample. With a USB host connected, the screen can still turn off, but the controller does not enter light sleep, to keep the serial connection active. Only a short press of the power key wakes the screen. Touches, swipes, and side buttons neither light the screen nor trigger page actions while it is off. The wake action only lights the screen; release all buttons and lift your finger before continuing. Steps are not counted while the device is fully shut down. Double-pressing the power key triggers hardware shutdown through the M5PM1; see the [hardware notes](../README.en.md#hardware).
 

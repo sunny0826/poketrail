@@ -17,20 +17,21 @@ menu_layout::Rect Screens::spriteBounds(uint16_t id, int cx, int cy, uint8_t max
 void Screens::updateListRows(const ScreenState& s, const adventure::Engine& e, int top, bool pagerOn,
                              unsigned count, RowDrawer drawer, bool hasScene,
                              adventure::Route sceneRoute, bool dim) {
-  if (s.selected == snap_.selected) return;
+  if (s.selected == snap_.selected && s.pressedIndex == snap_.pressedIndex) return;
   const unsigned oldFirst = menu_layout::first(snap_.selected);
   const unsigned newFirst = menu_layout::first(s.selected);
   WriteScope scope;
   if (oldFirst == newFirst) {
-    if (snap_.selected < count) {
-      const auto b = menu_layout::rowBounds(snap_.selected - oldFirst, top);
-      restoreBackdrop(b.x, b.y, b.width, b.height, sceneRoute, dim, hasScene);
-      (this->*drawer)(s, e, snap_.selected, top);
-    }
-    if (s.selected < count) {
-      const auto b = menu_layout::rowBounds(s.selected - newFirst, top);
-      restoreBackdrop(b.x, b.y, b.width, b.height, sceneRoute, dim, hasScene);
-      (this->*drawer)(s, e, s.selected, top);
+    for (unsigned i = newFirst; i < count && i < newFirst + menu_layout::kPageSize; ++i) {
+      const bool activeChanged = (i == snap_.selected) != (i == s.selected);
+      const bool pressChanged =
+          (snap_.pressedIndex >= 0 && i == unsigned(snap_.pressedIndex)) !=
+          (s.pressedIndex >= 0 && i == unsigned(s.pressedIndex));
+      if (activeChanged || pressChanged) {
+        const auto b = menu_layout::rowBounds(i - newFirst, top);
+        restoreBackdrop(b.x, b.y, b.width, b.height, sceneRoute, dim, hasScene);
+        (this->*drawer)(s, e, i, top);
+      }
     }
     return;
   }
@@ -38,7 +39,7 @@ void Screens::updateListRows(const ScreenState& s, const adventure::Engine& e, i
   for (unsigned i = newFirst; i < count && i < newFirst + menu_layout::kPageSize; ++i)
     (this->*drawer)(s, e, i, top);
   if (pagerOn && count > menu_layout::kPageSize) {
-    clearRegion(150, menu_layout::kPagerY - 10, 166, 22, theme::kBackground);
+    clearRegion(150, menu_layout::kPagerY - 12, 166, 24, theme::kBackground);
     pager(s, count);
   }
 }
@@ -47,7 +48,7 @@ void Screens::drawTitleCleared(const ScreenState& s, const char* heading, const 
   clearRegion(100, 36, 268, 30, theme::kBackground);
   if (clearSubtitle) clearRegion(70, 68, 328, 22, theme::kBackground);
   title(heading, subtitle, accent);
-  if (touchBackEnabled(s.page)) glyph(theme::Icon::Back, 112, 52, theme::kMuted);
+  if (touchBackEnabled(s.page)) backButton(s);
 }
 void Screens::clock(const ScreenState& s) {
   char text[90];
