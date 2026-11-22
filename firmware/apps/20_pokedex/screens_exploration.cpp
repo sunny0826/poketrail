@@ -9,7 +9,18 @@
 namespace pokedex { namespace ui {
 using namespace adventure;
 using i18n::Text;
+using menu_layout::Rect;
 namespace {
+uint8_t homePartnerScale(uint16_t id) {
+  if (!id) return 2;
+  const auto& p = data::kSprites[id - 1];
+  return displayScale(p) == 3 && p.height * 3 > 190 ? 2 : 3;
+}
+bool homeTodayKnown(const Save& s) {
+  const auto& c = s.clock;
+  return c.trusted && c.anchor.trusted && !c.pending.active && !c.anomaly &&
+         s.today.dayKey && s.today.dayKey == c.anchor.dayKey && s.today.epoch == c.calibrationEpoch;
+}
 void formatSteps(uint64_t value, char* output, size_t size) {
   char digits[24]; snprintf(digits, sizeof(digits), "%llu", static_cast<unsigned long long>(value));
   const int length = strlen(digits);
@@ -47,7 +58,7 @@ void todayNumber(i18n::Language language, const char* text, bool partial) {
   M5.Display.drawString(text, partial ? 250 : 237, 393);
   smallLabel(i18n::text(language, Text::Steps), partial ? 329 : 316, 397, theme::kMuted, middle_center);
 }
-menu_layout::Rect unionRect(const menu_layout::Rect& a, const menu_layout::Rect& b) {
+Rect unionRect(const Rect& a, const Rect& b) {
   if (a.width <= 0 || a.height <= 0) return b;
   if (b.width <= 0 || b.height <= 0) return a;
   const int x0 = std::min(a.x, b.x), y0 = std::min(a.y, b.y);
@@ -63,52 +74,86 @@ uint8_t computeHomeFooter(const Engine& engine) {
   if (save.phase == Phase::ThrowReady) return 4;
   return 0;
 }
+void drawHomeToday(i18n::Language lang, const Save& save, bool todayKnown) {
+  if (!todayKnown) {
+    M5.Display.setTextDatum(middle_center);
+    M5.Display.setFont(&fonts::efontCN_24);
+    M5.Display.setTextColor(theme::kText);
+    M5.Display.drawString(i18n::text(lang, Text::TodayUnknown), 233, 393);
+    return;
+  }
+  char text[96];
+  formatSteps(save.today.steps, text, sizeof(text));
+  todayNumber(lang, text, !save.today.complete);
+}
+void drawHomeFooter(i18n::Language lang, uint8_t kind) {
+  const Text texts[] = {Text::SideKeysMenu, Text::StepsIncomplete, Text::BackupRestored,
+                        Text::EncounterMenuHint, Text::CaptureMenuHint};
+  const uint16_t colors[] = {theme::kMuted, theme::kRed, theme::kGold, theme::kGold, theme::kGold};
+  smallLabel(i18n::text(lang, texts[kind]), 233, 428, colors[kind], middle_center);
+}
+}
+Rect homeEncounterRect(i18n::Language language, const Save& save) {
+  const unsigned count = pendingEncounterCount(save);
+  if (!count) return {0, 0, 0, 0};
+  char text[32];
+  snprintf(text, sizeof(text), i18n::text(language, Text::EncounterCount), count);
+  const int w = M5.Display.textWidth(text, &fonts::efontCN_16) + 16;
+  return {374 - w, 98, w, 24};
+}
+Rect homeEncounterTouchArea(i18n::Language language, const Save& save) {
+  if (!encounterWaiting(save)) return {0, 0, 0, 0};
+  const Rect b = homeEncounterRect(language, save);
+  if (b.width <= 0 || b.height <= 0) return {0, 0, 0, 0};
+  const int left = b.x - kHomeEvolveTouchPad;
+  const int right = b.x + b.width + kHomeEvolveTouchPad;
+  const int top = left < kHomeEvolveTouchArea.x + kHomeEvolveTouchArea.width
+      ? kHomeEvolveTouchArea.y + kHomeEvolveTouchArea.height
+      : std::max(97, b.y - kHomeEvolveTouchPad);
+  const int bottom = std::max(b.y + b.height + kHomeEvolveTouchPad, top + 27);
+  return {left, top, right - left, bottom - top};
+}
+TouchHit homeTouchHit(const ScreenState& s, const Engine& e, int x, int y) {
+  if (homeEvolutionReady(e) && kHomeEvolveTouchArea.contains(x, y)) return {-1, PressedAux::HomeEvolve};
+  if (homeRegionTouchArea(s.language).contains(x, y)) return {-1, PressedAux::HomeRegion};
+  if (homeEncounterTouchArea(s.language, e.view()).contains(x, y)) return {-1, PressedAux::HomeEncounter};
+  return {-1, PressedAux::None};
+}
+void Screens::homePill(const Rect& b, int radius, bool active, bool pressed, uint16_t accent, uint16_t bg) {
+  if (pressed) {
+    panelFrame(b, radius, active, true, accent);
+  } else {
+    M5.Display.fillRoundRect(b.x, b.y, b.width, b.height, radius, bg);
+    M5.Display.drawRoundRect(b.x, b.y, b.width, b.height, radius, accent);
+  }
 }
 void Screens::homeEvolveButton(bool pressed) {
-  const auto& b = kHomeEvolveButton;
-  if (pressed) {
-    panelFrame(b, 12, true, true, theme::kGold);
-  } else {
-    M5.Display.fillRoundRect(b.x, b.y, b.width, b.height, 12, theme::kPanelActive);
-    M5.Display.drawRoundRect(b.x, b.y, b.width, b.height, 12, theme::kGold);
-  }
+  const Rect& b = kHomeEvolveButton;
+  homePill(b, 12, true, pressed, theme::kGold, theme::kPanelActive);
   smallLabel(tr(Text::Evolve), b.x + b.width / 2, b.y + b.height / 2, theme::kGold, middle_center);
+}
+void Screens::homeRegionPill(Route route, bool pressed) {
+  const Rect b = homeRegionRect(language_);
+  const uint16_t color = theme::routeColor(route);
+  homePill(b, 7, false, pressed, color, theme::kPanel);
+  glyph(theme::Icon::Route, b.x + 15, b.y + b.height / 2, color);
+  smallLabel(routeName(route), b.x + 31, b.y + b.height / 2, color, middle_left);
 }
 bool Screens::exploration(const ScreenState& s, const Engine& engine, uint32_t now) {
   const auto& save = engine.view();
   scene(save.route, false, 0, sceneSteps_);
   actorShadow(233, 238);
-  uint8_t maxScale = 2;
-  if (save.partner) {
-    const auto& partner = data::kSprites[save.partner - 1];
-    maxScale = displayScale(partner) == 3 && partner.height * 3 > 190 ? 2 : 3;
-  }
+  const uint8_t maxScale = homePartnerScale(save.partner);
   const bool rendered = save.partner && sprite(save.partner, now, homePlayback_, 248, 233, 0, maxScale);
   if (!rendered) line(tr(Text::PartnerImageFailed), 233, theme::kRed);
-  const bool evolvable = homeEvolutionReady(engine);
   title(speciesName(save.partner), "", theme::routeColor(save.route));
-  if (evolvable) homeEvolveButton(s.pressedAux == PressedAux::HomeEvolve);
-  M5.Display.fillRoundRect(76, 68, language_ == i18n::Language::English ? 88 : 69, 26, 7, theme::kPanel);
-  glyph(theme::Icon::Route, 91, 81, theme::routeColor(save.route));
-  smallLabel(routeName(save.route), 107, 81, theme::routeColor(save.route), middle_left);
+  if (homeEvolutionReady(engine)) homeEvolveButton(s.pressedAux == PressedAux::HomeEvolve);
+  homeRegionPill(save.route, s.pressedAux == PressedAux::HomeRegion);
   captureBadge(save, 318, 81);
-  encounterBadge(save, 366, 110);
+  encounterBadge(save, 366, 110, encounterWaiting(save) && s.pressedAux == PressedAux::HomeEncounter);
   progress(save.explorationCredit, save.encounterTarget, 361, theme::routeColor(save.route));
-  const auto& clock = save.clock;
-  const bool todayKnown = clock.trusted && clock.anchor.trusted && !clock.pending.active && !clock.anomaly &&
-    save.today.dayKey && save.today.dayKey == clock.anchor.dayKey && save.today.epoch == clock.calibrationEpoch;
-  char text[96];
-  if (todayKnown) {
-    formatSteps(save.today.steps, text, sizeof(text));
-    todayNumber(language_, text, !save.today.complete);
-  } else {
-    line(tr(Text::TodayUnknown), 393, theme::kText, true);
-  }
-  if (engine.stepsIncomplete()) line(tr(Text::StepsIncomplete), 428, theme::kRed);
-  else if (engine.loadResult().degraded) line(tr(Text::BackupRestored), 428, theme::kGold);
-  else if (save.phase == Phase::EncounterReady) line(tr(Text::EncounterMenuHint), 428, theme::kGold);
-  else if (save.phase == Phase::ThrowReady) line(tr(Text::CaptureMenuHint), 428, theme::kGold);
-  else line(tr(Text::SideKeysMenu), 428, theme::kMuted);
+  drawHomeToday(language_, save, homeTodayKnown(save));
+  drawHomeFooter(language_, computeHomeFooter(engine));
   return rendered;
 }
 bool Screens::drawHome(const ScreenState& s, const Engine& engine, uint32_t now, bool full) {
@@ -117,18 +162,21 @@ bool Screens::drawHome(const ScreenState& s, const Engine& engine, uint32_t now,
   const bool evolvePressed = evolvable && s.pressedAux == PressedAux::HomeEvolve;
   const bool prevEvolvePressed = snap_.homeEvolvable && snap_.pressedAux == PressedAux::HomeEvolve;
   const bool evolveChanged = evolvable != snap_.homeEvolvable || evolvePressed != prevEvolvePressed;
+  const bool regionPressed = s.pressedAux == PressedAux::HomeRegion;
+  const bool regionPressedChanged = regionPressed != (snap_.pressedAux == PressedAux::HomeRegion);
   const uint16_t capturedCount = capturedSpeciesCount(save);
   const uint16_t pending = pendingEncounterCount(save);
-  const auto& clock = save.clock;
-  const bool todayKnown = clock.trusted && clock.anchor.trusted && !clock.pending.active && !clock.anomaly &&
-    save.today.dayKey && save.today.dayKey == clock.anchor.dayKey && save.today.epoch == clock.calibrationEpoch;
+  const bool waiting = encounterWaiting(save);
+  const bool encounterPressed = pending > 0 && waiting && s.pressedAux == PressedAux::HomeEncounter;
+  const bool prevEncounterPressed =
+      snap_.pendingEncounters > 0 && snap_.encounterWaiting && snap_.pressedAux == PressedAux::HomeEncounter;
+  const bool encounterChanged =
+      pending != snap_.pendingEncounters || waiting != snap_.encounterWaiting ||
+      encounterPressed != prevEncounterPressed;
+  const bool todayKnown = homeTodayKnown(save);
   const uint8_t footerKind = computeHomeFooter(engine);
-  uint8_t maxScale = 2;
-  if (save.partner) {
-    const auto& partner = data::kSprites[save.partner - 1];
-    maxScale = displayScale(partner) == 3 && partner.height * 3 > 190 ? 2 : 3;
-  }
-  const menu_layout::Rect spriteBox = spriteBounds(save.partner, 233, 248, maxScale, kMaxDisplayHeight);
+  const uint8_t maxScale = homePartnerScale(save.partner);
+  const Rect spriteBox = spriteBounds(save.partner, 233, 248, maxScale, kMaxDisplayHeight);
 
   auto restoreHomeScene = [&](int rx, int ry, int rw, int rh) {
     if (!sceneSteps_) { restoreSceneRegion(rx, ry, rw, rh, save.route, false); return; }
@@ -174,28 +222,6 @@ bool Screens::drawHome(const ScreenState& s, const Engine& engine, uint32_t now,
       }
     }
   };
-  auto drawEvolve = [&]() { homeEvolveButton(evolvePressed); };
-  auto drawRoutePill = [&]() {
-    M5.Display.fillRoundRect(76, 68, language_ == i18n::Language::English ? 88 : 69, 26, 7, theme::kPanel);
-    glyph(theme::Icon::Route, 91, 81, theme::routeColor(save.route));
-    smallLabel(routeName(save.route), 107, 81, theme::routeColor(save.route), middle_left);
-  };
-  auto drawToday = [&]() {
-    char text[96];
-    if (todayKnown) {
-      formatSteps(save.today.steps, text, sizeof(text));
-      todayNumber(language_, text, !save.today.complete);
-    } else {
-      line(tr(Text::TodayUnknown), 393, theme::kText, true);
-    }
-  };
-  auto drawFooter = [&]() {
-    const Text texts[] = {Text::SideKeysMenu, Text::StepsIncomplete, Text::BackupRestored,
-                          Text::EncounterMenuHint, Text::CaptureMenuHint};
-    const uint16_t colors[] = {theme::kMuted, theme::kRed, theme::kGold, theme::kGold, theme::kGold};
-    line(tr(texts[footerKind]), 428, colors[footerKind]);
-  };
-
   bool rendered = snap_.homePartnerRendered;
   if (full) {
     rendered = exploration(s, engine, now);
@@ -205,9 +231,8 @@ bool Screens::drawHome(const ScreenState& s, const Engine& engine, uint32_t now,
     const bool sceneChanged = save.route != snap_.route || sceneSteps_ != snap_.sceneSteps;
     const bool partnerChanged = save.partner != snap_.partner;
     const bool spriteChanged = partnerChanged || curFrame != snap_.animFrame || !snap_.homePartnerRendered;
-    const bool headerChanged = save.route != snap_.route || evolveChanged ||
+    const bool headerChanged = save.route != snap_.route || evolveChanged || regionPressedChanged ||
                                capturedCount != snap_.capturedCount;
-    const bool pendingChanged = pending != snap_.pendingEncounters;
     const bool progressChanged = save.explorationCredit != snap_.explorationCredit ||
                                  save.encounterTarget != snap_.encounterTarget ||
                                  save.route != snap_.route;
@@ -227,30 +252,36 @@ bool Screens::drawHome(const ScreenState& s, const Engine& engine, uint32_t now,
       actorShadow(233, 238);
       rendered = save.partner && sprite(save.partner, now, homePlayback_, 248, 233, 0, maxScale);
       if (!rendered) line(tr(Text::PartnerImageFailed), 233, theme::kRed);
-      encounterBadge(save, 366, 110);
+      encounterBadge(save, 366, 110, encounterPressed);
       if (headerChanged) {
         clearRegion(74, 66, 320, 26, theme::kBackground);
-        if (evolvable) drawEvolve();
-        drawRoutePill();
+        if (evolvable) homeEvolveButton(evolvePressed);
+        homeRegionPill(save.route, regionPressed);
         captureBadge(save, 318, 81);
       } else {
         M5.Display.setClipRect(74, 92, 320, 5);
-        if (evolvable) drawEvolve();
-        drawRoutePill();
+        if (evolvable) homeEvolveButton(evolvePressed);
+        homeRegionPill(save.route, regionPressed);
         captureBadge(save, 318, 81);
         M5.Display.clearClipRect();
       }
       clearRegion(133, 362, 212, 4, theme::kBackground);
       progress(save.explorationCredit, save.encounterTarget, 361, theme::routeColor(save.route));
-      if (todayChanged) { clearRegion(40, 370, 388, 48, theme::kBackground); drawToday(); }
-      if (footerChanged) { clearRegion(40, 418, 388, 20, theme::kBackground); drawFooter(); }
+      if (todayChanged) { clearRegion(40, 370, 388, 48, theme::kBackground); drawHomeToday(language_, save, todayKnown); }
+      if (footerChanged) { clearRegion(40, 418, 388, 20, theme::kBackground); drawHomeFooter(language_, footerKind); }
     } else {
       if (headerChanged) {
         WriteScope sc;
         if (evolveChanged) {
           clearRegion(173, 67, 120, 25, theme::kBackground);
           restoreHomeScene(173, 92, 120, 5);
-          if (evolvable) drawEvolve();
+          if (evolvable) homeEvolveButton(evolvePressed);
+        }
+        if (regionPressedChanged) {
+          const Rect rb = homeRegionRect(language_);
+          clearRegion(rb.x, rb.y, rb.width, 92 - rb.y, theme::kBackground);
+          restoreHomeScene(rb.x, 92, rb.width, rb.y + rb.height - 92);
+          homeRegionPill(save.route, regionPressed);
         }
         if (capturedCount != snap_.capturedCount) {
           clearRegion(302, 66, 92, 26, theme::kBackground);
@@ -258,25 +289,28 @@ bool Screens::drawHome(const ScreenState& s, const Engine& engine, uint32_t now,
           captureBadge(save, 318, 81);
         }
       }
-      if (pendingChanged || spriteChanged) {
+      if (encounterChanged || spriteChanged) {
         WriteScope sc;
-        if (pendingChanged) {
-          restoreHomeScene(200, 96, 178, 28);
-          encounterBadge(save, 366, 110);
-        }
-        if (spriteChanged) {
-          menu_layout::Rect dirty = unionRect(snap_.spriteRect, spriteBox);
-          if (!snap_.homePartnerRendered || !save.partner)
-            dirty = unionRect(dirty, {60, 220, 346, 28});
-          if (dirty.y + dirty.height > 299 && dirty.y < 312)
-            dirty = unionRect(dirty, {193, 299, 81, 13});
-          restoreHomeScene(dirty.x, dirty.y, dirty.width, dirty.height);
+        const bool badgeSpriteOverlap = spriteBox.y < 124 && spriteBox.x < 378 && spriteBox.x + spriteBox.width > 240;
+        if (encounterChanged) restoreHomeScene(240, 98, 138, 26);
+        if (spriteChanged || (encounterChanged && badgeSpriteOverlap)) {
+          Rect dirty = spriteChanged ? unionRect(snap_.spriteRect, spriteBox)
+                                     : Rect{240, 98, 138, 26};
+          if (spriteChanged) {
+            if (!snap_.homePartnerRendered || !save.partner)
+              dirty = unionRect(dirty, {60, 220, 346, 28});
+            if (dirty.y + dirty.height > 299 && dirty.y < 312)
+              dirty = unionRect(dirty, {193, 299, 81, 13});
+            restoreHomeScene(dirty.x, dirty.y, dirty.width, dirty.height);
+          }
           if (dirty.y + dirty.height > 299 && dirty.y < 312) actorShadow(233, 238);
           rendered = save.partner && sprite(save.partner, now, homePlayback_, 248, 233, 0, maxScale);
           if (!rendered) {
             line(tr(Text::PartnerImageFailed), 233, theme::kRed);
           }
         }
+        if (encounterChanged || (spriteChanged && badgeSpriteOverlap))
+          encounterBadge(save, 366, 110, encounterPressed);
       }
       if (progressChanged || todayChanged || footerChanged) {
         WriteScope sc;
@@ -285,8 +319,8 @@ bool Screens::drawHome(const ScreenState& s, const Engine& engine, uint32_t now,
           clearRegion(133, 362, 212, 4, theme::kBackground);
           progress(save.explorationCredit, save.encounterTarget, 361, theme::routeColor(save.route));
         }
-        if (todayChanged) { clearRegion(40, 370, 388, 48, theme::kBackground); drawToday(); }
-        if (footerChanged) { clearRegion(40, 418, 388, 20, theme::kBackground); drawFooter(); }
+        if (todayChanged) { clearRegion(40, 370, 388, 48, theme::kBackground); drawHomeToday(language_, save, todayKnown); }
+        if (footerChanged) { clearRegion(40, 418, 388, 20, theme::kBackground); drawHomeFooter(language_, footerKind); }
       }
     }
   }
@@ -295,6 +329,7 @@ bool Screens::drawHome(const ScreenState& s, const Engine& engine, uint32_t now,
   snap_.homeEvolvable = evolvable;
   snap_.capturedCount = capturedCount;
   snap_.pendingEncounters = pending;
+  snap_.encounterWaiting = waiting;
   snap_.explorationCredit = save.explorationCredit;
   snap_.encounterTarget = save.encounterTarget;
   snap_.todayKnown = todayKnown;

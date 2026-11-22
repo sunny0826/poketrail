@@ -167,7 +167,15 @@ void Screens::drawMenuRow(const ScreenState& s, const Engine& e, unsigned index,
       item(s, index, tr(Text::Back), top);
       break;
     }
-    case Page::Result: item(s, 0, tr(Text::AcceptResult), top); break;
+    case Page::Result:
+      if (e.view().encounterQueueSize) {
+        char text[40];
+        snprintf(text, sizeof(text), tr(Text::NextEncounterCount), unsigned(e.view().encounterQueueSize));
+        item(s, 0, text, top);
+      } else {
+        item(s, 0, tr(Text::AcceptResult), top);
+      }
+      break;
     default: break;
   }
 }
@@ -207,7 +215,7 @@ void Screens::drawHomeGroup(const ScreenState& s, const Engine& e, uint32_t now,
     clearRegion(0, 36, 468, 405, theme::kBackground);
     home(s, e, now);
     if (hasPager(s.page) && menuCount(s, e) > menu_layout::kPageSize) pager(s, menuCount(s, e));
-    if (touchBackEnabled(s.page)) glyph(theme::Icon::Back, 112, 52, theme::kMuted);
+    if (touchBackEnabled(s.page)) backButton(s);
   };
   if (full) {
     home(s, e, now);
@@ -307,10 +315,20 @@ void Screens::drawHomeGroup(const ScreenState& s, const Engine& e, uint32_t now,
         if (v.result != snap_.result || v.encounter.species != snap_.species ||
             v.recentSize != snap_.recentSize || legacyNoBalls != snap_.legacyNoBalls) {
           redrawBody();
-        } else if (v.result == Result::Captured && v.recentSize) {
-          WriteScope sc;
-          clearRegion(72, 100, 322, 156, theme::kBackground);
-          drawResultHero(v.encounter.species, v.captureCounts[v.encounter.species - 1] == 1, now);
+        } else {
+          if (v.result == Result::Captured && v.recentSize) {
+            WriteScope sc;
+            clearRegion(72, 100, 322, 156, theme::kBackground);
+            drawResultHero(v.encounter.species, v.captureCounts[v.encounter.species - 1] == 1, now);
+          }
+          if (v.encounterQueueSize != snap_.pendingEncounters) {
+            WriteScope sc;
+            const auto b = menu_layout::rowBounds(0, menuTop(s, e));
+            clearRegion(b.x, b.y, b.width, b.height, theme::kBackground);
+            drawMenuRow(s, e, 0, menuTop(s, e));
+          } else {
+            updateListRows(s, e, menuTop(s, e), false, 1, &Screens::drawMenuRow);
+          }
         }
         break;
       }
@@ -322,6 +340,7 @@ void Screens::drawHomeGroup(const ScreenState& s, const Engine& e, uint32_t now,
   snap_.route = s.page == Page::Routes ? (s.selected < kRegionCount ? regionAt(uint8_t(s.selected)) : v.route) :
                 s.page == Page::Encounter ? v.encounter.route : v.route;
   snap_.encounterWaiting = pendingEncounterCount(v) > 0;
+  snap_.pendingEncounters = v.encounterQueueSize;
   snap_.rosterRevision = v.rosterRevision;
   snap_.partner = v.partner;
   snap_.species = (s.page == Page::Encounter || s.page == Page::Result) ? v.encounter.species : 0;

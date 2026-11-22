@@ -60,7 +60,7 @@ void enterAndWinBattle(Driver& d, bool fixed) {
 
 void acknowledge(Driver& d) {
   const auto completed = d.save().encounter.id;
-  d.press(SDL_SCANCODE_RETURN);
+  if (d.save().encounterQueueSize > 0) d.back(); else d.press(SDL_SCANCODE_RETURN);
   d.until([&] { return d.screen().page == Page::Home; }, 4000, "result acknowledged to home");
   d.check(d.save().encounter.id != completed && d.save().result == Result::None,
           "acknowledge closes old encounter and advances any queued encounter");

@@ -112,7 +112,8 @@ void Runtime::goBack() {
     openMenu(MenuItem::Partner);
   } else if (screen_.page == Page::Partners && partnersFromCarried_) openCarriedPartner();
   else if (screen_.page == Page::Partners) openMenu(MenuItem::Partner);
-  else if (screen_.page == Page::Routes) openMenu(MenuItem::Region);
+  else if (screen_.page == Page::Routes) routesReturn_ == Page::Home ? navigate(Page::Home) : openMenu(MenuItem::Region);
+  else if (screen_.page == Page::Result) acknowledgeResult(false);
   else navigate(Page::Home);
 }
 void Runtime::handle(const Input& raw) {
@@ -129,12 +130,13 @@ void Runtime::handle(const Input& raw) {
   updateTouchPress(screen_, engine_, dirty_, input);
   if (handleTestHold(raw)) return;
   if (screen_.page == Page::Home) {
-    const bool onEvolve = homeEvolutionReady(engine_) && kHomeEvolveTouchArea.contains(input.x, input.y);
-    if (onEvolve && input.click) { clearTouchPress(screen_, dirty_); openHomeEvolution(); return; }
-    if (onEvolve && input.touch) return;
-    if (input.touch) { clearTouchPress(screen_, dirty_); openMenu(MenuItem::Encounter); return; }
-    if (input.back) { waitForRelease(); return; }
-    if (input.leftDown || input.rightDown || input.left || input.right) {
+    const PressedAux aux = touchHit(screen_, engine_, input.x, input.y).aux;
+    if (aux != PressedAux::None && (input.click || input.touch)) {
+      if (input.click) { clearTouchPress(screen_, dirty_); activateHomeShortcut(aux); }
+      return;
+    }
+    if (input.back && !input.touch) { waitForRelease(); return; }
+    if (input.touch || input.leftDown || input.rightDown || input.left || input.right) {
       clearTouchPress(screen_, dirty_);
       openMenu(MenuItem::Encounter);
     }
@@ -365,7 +367,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
           if (v.phase == Phase::EncounterReady) navigate(Page::Encounter);
           else if (v.phase == Phase::ThrowReady) navigate(Page::Throw);
           break;
-        case MenuItem::Region: navigate(Page::Routes); break;
+        case MenuItem::Region: routesReturn_ = Page::Menu; navigate(Page::Routes); break;
         case MenuItem::Partner: openCarriedPartner(); break;
         case MenuItem::Pokedex: navigate(Page::Viewer); break;
         case MenuItem::Records: navigate(Page::Records); break;
@@ -410,7 +412,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       if (item == 0) beginPractice(at); else endPractice();
       break;
     case Page::Result:
-      engine_.acknowledgeResult(v.encounter.id, platform_.randomSeed()); navigate(Page::Home); break;
+      acknowledgeResult(true); break;
     case Page::Records: {
       if (item == 4) { goBack(); break; }
       const Page pages[] = {Page::FirstCaptures, Page::Recent, Page::Days, Page::Achievements};

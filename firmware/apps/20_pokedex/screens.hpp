@@ -22,7 +22,7 @@ enum class Page : uint8_t {
   CarriedPartner
 };
 enum class LanguagePersistence : uint8_t { Saved, SessionOnly };
-enum class PressedAux : uint8_t { None, Back, PrevPage, NextPage, HomeEvolve };
+enum class PressedAux : uint8_t { None, Back, PrevPage, NextPage, HomeEvolve, HomeRegion, HomeEncounter };
 constexpr uint16_t kPanelPressed = theme::rgb(0x24, 0x4A, 0x3E);
 struct ScreenState {
   i18n::Language language = i18n::Language::Chinese;
@@ -97,10 +97,23 @@ constexpr menu_layout::Rect kHomeEvolveTouchArea = {
     kHomeEvolveButton.y + kHomeEvolveButton.height + kHomeEvolveTouchPad - kHomeEvolveTouchTop,
 };
 bool homeEvolutionReady(const adventure::Engine&);
+inline menu_layout::Rect homeRegionRect(i18n::Language language) {
+  return {76, 68, language == i18n::Language::English ? 88 : 69, 26};
+}
+inline menu_layout::Rect homeRegionTouchArea(i18n::Language language) {
+  const menu_layout::Rect b = homeRegionRect(language);
+  const int r = b.x + b.width + kHomeEvolveTouchPad;
+  return {b.x - kHomeEvolveTouchPad, kHomeEvolveTouchTop,
+          (r > kHomeEvolveTouchArea.x ? kHomeEvolveTouchArea.x : r) - (b.x - kHomeEvolveTouchPad),
+          b.y + b.height + kHomeEvolveTouchPad - kHomeEvolveTouchTop};
+}
+menu_layout::Rect homeEncounterRect(i18n::Language, const adventure::Save&);
+menu_layout::Rect homeEncounterTouchArea(i18n::Language, const adventure::Save&);
 struct TouchHit {
   int16_t index;
   PressedAux aux;
 };
+TouchHit homeTouchHit(const ScreenState&, const adventure::Engine&, int x, int y);
 TouchHit touchHit(const ScreenState&, const adventure::Engine&, int x, int y);
 constexpr int kBallSlotY = 82;
 constexpr int ballSlotX(unsigned index) { return 213 + 40 * int(index); }
@@ -141,6 +154,8 @@ class Screens {
   void drawResultHero(uint16_t species, bool first, uint32_t now);
   bool exploration(const ScreenState&, const adventure::Engine&, uint32_t now);
   void homeEvolveButton(bool pressed);
+  void homeRegionPill(adventure::Route, bool pressed);
+  void homePill(const menu_layout::Rect&, int radius, bool active, bool pressed, uint16_t accent, uint16_t bg);
   void home(const ScreenState&, const adventure::Engine&, uint32_t now);
   void progression(const ScreenState&, const adventure::Engine&);
   bool evolution(const ScreenState&, uint32_t now);
@@ -182,7 +197,7 @@ class Screens {
   void pager(const ScreenState&, unsigned count);
   void thumbnail(uint16_t species, int x, int y, unsigned scale = 1);
   void captureBadge(const adventure::Save&, int x, int y);
-  void encounterBadge(const adventure::Save&, int x, int y);
+  void encounterBadge(const adventure::Save&, int x, int y, bool pressed = false);
   void line(const char*, int y, uint16_t color = theme::kText, bool large = false);
   void fitLine(const char*, int y, int width, uint16_t color, bool large = true);
   void title(const char*, const char* subtitle, uint16_t accent);

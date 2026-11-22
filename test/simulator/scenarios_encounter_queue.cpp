@@ -31,6 +31,30 @@ void counts(Driver& d, unsigned count, bool english = false) {
     progression_support::toHome(d, "queue region hint");
   }
 }
+void tapRect(Driver& d, const menu_layout::Rect& r) {
+  d.tap(r.x + r.width / 2, r.y + r.height / 2);
+}
+void checkHomeShortcuts(Driver& d, bool english) {
+  progression_support::toHome(d, "home shortcuts"); d.frames();
+  tapRect(d, homeRegionTouchArea(d.runtime().language()));
+  d.until([&] { return d.screen().page == Page::Routes; }, 4000, "home region pill opens routes directly");
+  d.back();
+  d.until([&] { return d.screen().page == Page::Home; }, 4000, "routes from home pill returns home");
+  d.homeMenu(); d.select(MenuItem::Region);
+  d.until([&] { return d.screen().page == Page::Routes; }, 4000, "menu region tile opens routes");
+  d.back();
+  d.until([&] { return d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Region); },
+          4000, "routes from menu returns to region tile");
+  progression_support::toHome(d, "menu region return");
+  if (pendingEncounterCount(d.save())) {
+    tapRect(d, homeEncounterTouchArea(d.runtime().language(), d.save()));
+    d.until([&] { return d.screen().page == Page::Encounter; }, 4000,
+            english ? "English home encounter badge opens encounter directly"
+                    : "Chinese home encounter badge opens encounter directly");
+    d.select(3);
+    d.until([&] { return d.screen().page == Page::Home; }, 4000, "battle later returns home");
+  }
+}
 void walkToCount(Driver& d, unsigned count) {
   for (unsigned i = 0; pendingEncounterCount(d.save()) < count && i < count; ++i) {
     d.check(d.save().explorationCredit < d.save().encounterTarget, "walk begins below the next threshold");
@@ -45,10 +69,10 @@ void scenarioEncounterQueue(Driver& d, const std::string& phase) {
   if (phase == "run") {
     bootNewSave(d); counts(d, 0);
     walkToCount(d, 1); counts(d, 1);
-    walkToCount(d, 3); counts(d, 3);
+    walkToCount(d, 3); counts(d, 3); checkHomeShortcuts(d, false);
     walkToCount(d, 12); counts(d, 12);
     d.homeMenu(); d.select(MenuItem::Settings); d.select(1); d.select(1); d.select(2);
-    counts(d, 12, true);
+    counts(d, 12, true); checkHomeShortcuts(d, true);
     d.homeMenu(); d.select(MenuItem::Settings); d.select(1); d.select(0); d.select(2);
     progression_support::toHome(d, "Chinese queue");
     d.state("queue-end"); d.close();
@@ -68,8 +92,14 @@ void scenarioEncounterQueue(Driver& d, const std::string& phase) {
     d.throwBall(false); d.finishCapture();
     d.check(d.screen().page == Page::Result && d.save().result == Result::Escaped &&
             pendingEncounterCount(d.save()) == 11, "completed encounter is not counted as waiting");
-    acknowledge(d);
-    d.check(d.save().encounter.id == 2, "confirmation advances to the next FIFO encounter");
+    d.check(rendered_text::contains("下一场遭遇 (11)", theme::kGold), "result shows remaining queue CTA");
+    d.press(SDL_SCANCODE_RETURN);
+    d.until([&] { return d.screen().page == Page::Encounter; }, 4000,
+            "confirming result with queued encounters enters next encounter directly");
+    d.check(d.save().encounter.id == 2 && pendingEncounterCount(d.save()) == 11,
+            "confirmation advances to the next FIFO encounter");
+    d.select(3);
+    d.until([&] { return d.screen().page == Page::Home; }, 4000, "battle later returns home");
     counts(d, 11); d.state("queue-end"); d.close();
   } else if (phase == "consumed-reload") {
     d.state("queue-restored"); counts(d, 11);
@@ -77,12 +107,13 @@ void scenarioEncounterQueue(Driver& d, const std::string& phase) {
     walkToCount(d, 22); counts(d, 22); d.state("queue-end"); d.close();
   } else if (phase == "filled-reload") {
     d.state("queue-restored"); counts(d, 22);
-    walkToCount(d, 32); d.walk(1000); counts(d, 32);
+    walkToCount(d, 32); d.walk(1600); counts(d, 32);
     const auto credit = d.save().explorationCredit, spent = d.save().explorationSpent;
     d.check(credit > d.save().encounterTarget, "full queue retains enough steps to reproduce immediate refill");
     d.homeMenu(); d.select(MenuItem::Encounter); d.select(0);
     d.winBattle(); d.throwBall(false); d.finishCapture(); d.throwBall(false); d.finishCapture();
     d.check(d.screen().page == Page::Result, "full-queue battle reaches its result");
+    d.check(rendered_text::contains("下一场遭遇 (31)", theme::kGold), "full-queue result shows queue count");
     d.fault(Fault::BeforeWrite); d.press(SDL_SCANCODE_RETURN);
     d.check(d.screen().page == Page::Error && d.save().phase == Phase::Resolved,
             "failed result confirmation keeps the finished encounter available for retry");
@@ -93,9 +124,25 @@ void scenarioEncounterQueue(Driver& d, const std::string& phase) {
   } else if (phase == "banked-reload") {
     d.state("queue-restored"); counts(d, 31);
     const auto credit = d.save().explorationCredit;
-    d.homeMenu(); d.select(MenuItem::Encounter); d.select(0);
-    d.winBattle(); d.throwBall(false); d.finishCapture(); d.throwBall(false); d.finishCapture(); acknowledge(d);
-    counts(d, 30);
+    const auto firstId = d.save().encounter.id;
+    tapRect(d, homeEncounterTouchArea(d.runtime().language(), d.save()));
+    d.until([&] { return d.screen().page == Page::Encounter; }, 4000,
+            "home encounter badge starts encounter directly");
+    d.select(0);
+    d.winBattle(); d.throwBall(false); d.finishCapture(); d.throwBall(false); d.finishCapture();
+    d.check(d.screen().page == Page::Result && rendered_text::contains("下一场遭遇 (30)", theme::kGold),
+            "first queued result prompts next encounter 30");
+    tapRect(d, menu_layout::rowBounds(0, menuTop(d.screen(), d.runtime().engine())));
+    d.until([&] { return d.screen().page == Page::Encounter; }, 4000,
+            "tapping result CTA chains directly into next queued encounter");
+    d.check(d.save().encounter.id == firstId + 1 && pendingEncounterCount(d.save()) == 30,
+            "chained encounter advances FIFO id");
+    d.select(0);
+    d.winBattle(); d.throwBall(false); d.finishCapture(); d.throwBall(false); d.finishCapture();
+    d.check(d.screen().page == Page::Result && rendered_text::contains("下一场遭遇 (29)", theme::kGold),
+            "second queued result prompts next encounter 29");
+    acknowledge(d);
+    counts(d, 29);
     d.check(d.save().explorationCredit == credit, "stationary battles continue draining the queue after restart");
     d.walk(1); counts(d, 32);
     d.check(d.save().explorationCredit < credit &&

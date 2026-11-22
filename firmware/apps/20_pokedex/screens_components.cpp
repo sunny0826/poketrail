@@ -235,15 +235,17 @@ void Screens::captureBadge(const Save& save, int x, int y) {
   M5.Display.setTextColor(theme::kText);
   M5.Display.drawString(text, x + icon.width / 2 + 8, y);
 }
-void Screens::encounterBadge(const Save& save, int x, int y) {
+void Screens::encounterBadge(const Save& save, int x, int y, bool pressed) {
   const unsigned count = pendingEncounterCount(save);
   if (!count) return;
   char text[32];
   snprintf(text, sizeof(text), tr(Text::EncounterCount), count);
+  const int w = M5.Display.textWidth(text, &fonts::efontCN_16) + 16;
+  const menu_layout::Rect b = {x + 8 - w, y - 12, w, 24};
+  if (pressed || encounterWaiting(save)) homePill(b, 7, false, pressed, theme::kGold, theme::kPanel);
+  else M5.Display.fillRoundRect(b.x, b.y, w, 24, 7, theme::kPanel);
   M5.Display.setTextDatum(middle_right);
   M5.Display.setFont(&fonts::efontCN_16);
-  const int width = M5.Display.textWidth(text) + 16;
-  M5.Display.fillRoundRect(x + 8 - width, y - 12, width, 24, 7, theme::kPanel);
   M5.Display.setTextColor(theme::kGold);
   M5.Display.drawString(text, x, y);
 }
