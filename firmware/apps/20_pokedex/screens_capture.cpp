@@ -34,10 +34,13 @@ void Screens::aim(uint16_t species, uint32_t now, bool timing, int32_t remaining
   actorShadow(233, 233);
   sprite(species, now, battlePlayback_, 233, 233, 0, 2, 190);
   if (timing) {
-    const int radius = remaining > 1500 ? 130 : remaining > 0 ? 24 + remaining * 106 / 1500 : 24;
+    const bool overcharged = remaining < 0;
+    const int radius = overcharged
+                           ? std::max(16, 20 + int(remaining) * 4 / 180)
+                           : (remaining > 1500 ? 130 : remaining > 0 ? 24 + remaining * 106 / 1500 : 24);
     const bool perfect = remaining <= 70 && remaining >= -70;
-    const uint16_t ring = remaining < 400 ? theme::kGold : theme::kMint;
-    const uint16_t target = perfect && (now / 100) % 2 ? theme::kText : theme::kGold;
+    const uint16_t ring = overcharged ? theme::kRed : (remaining < 400 ? theme::kGold : theme::kMint);
+    const uint16_t target = overcharged ? theme::kRed : (perfect && (now / 100) % 2 ? theme::kText : theme::kGold);
     M5.Display.drawCircle(233, 233, radius, ring);
     M5.Display.drawCircle(233, 233, radius - 1, ring);
     M5.Display.drawCircle(233, 233, 24, target);
@@ -118,6 +121,14 @@ void Screens::capture(const ScreenState& s, uint16_t species, uint32_t now) {
     case CaptureStage::Done: break;
   }
 }
+void Screens::drawThrowPrompt(uint8_t promptKind) {
+  if (promptKind == 1) {
+    line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
+  } else if (promptKind == 2 || promptKind == 5 || promptKind == 7 || promptKind == 8) {
+    line(tr(Text::HoldThrow), 399, (promptKind == 7 || promptKind == 8) ? theme::kGold : theme::kMint);
+    if (promptKind == 5 || promptKind == 8) line(tr(Text::EndPracticeTop), 426, theme::kMuted);
+  }
+}
 void Screens::drawThrowStagePartial(const ScreenState& s, Route route, uint16_t species,
                                     bool timing, int32_t remaining, bool committing,
                                     uint8_t usedBalls, bool legacyNoBalls, uint32_t now,
@@ -135,7 +146,8 @@ void Screens::drawThrowStagePartial(const ScreenState& s, Route route, uint16_t 
   } else if (timing) {
     promptKind = committing ? 0 : 1;
   } else {
-    promptKind = allowExitHint ? 5 : 2;
+    const bool notice = throwCancelNotice(s, now);
+    promptKind = allowExitHint ? (notice ? 8 : 5) : (notice ? 7 : 2);
   }
   const int cy = legacyNoBalls ? 147 : 233;
   const uint16_t maxH = legacyNoBalls ? 110 : 190;
@@ -157,11 +169,7 @@ void Screens::drawThrowStagePartial(const ScreenState& s, Route route, uint16_t 
       if (s.capture.active) capture(s, species, now);
       else {
         aim(species, now, timing, remaining, committing);
-        if (promptKind == 1) line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
-        else if (promptKind == 2 || promptKind == 5) {
-          line(tr(Text::HoldThrow), 399, theme::kMint);
-          if (promptKind == 5) line(tr(Text::EndPracticeTop), 426, theme::kMuted);
-        }
+        drawThrowPrompt(promptKind);
       }
     }
   } else if (legacyNoBalls) {
@@ -223,13 +231,7 @@ void Screens::drawThrowStagePartial(const ScreenState& s, Route route, uint16_t 
         }
       } else {
         aim(species, now, timing, remaining, committing);
-        if (promptDirty) {
-          if (promptKind == 1) line(tr(Text::ReleaseThrowCost), 399, theme::kMint);
-          else if (promptKind == 2 || promptKind == 5) {
-            line(tr(Text::HoldThrow), 399, theme::kMint);
-            if (promptKind == 5) line(tr(Text::EndPracticeTop), 426, theme::kMuted);
-          }
-        }
+        if (promptDirty) drawThrowPrompt(promptKind);
       }
     }
   }

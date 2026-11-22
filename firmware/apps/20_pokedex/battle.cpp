@@ -56,13 +56,14 @@ void Battle::begin(uint32_t now, uint32_t seed, bool rare) {
   view_.targetMs = now + kOpeningMs;
   view_.settledMs = now - kBeatIntervalMs;
 }
-void Battle::settle(Action action, Timing timing, uint32_t now) {
+void Battle::settle(Action action, Timing timing, uint32_t now, uint32_t judgeMs, bool timedOut) {
   ++view_.settlements;
   view_.settledMs = now;
   view_.consumed = true;
   view_.settledAction = action;
   view_.settledCue = view_.expected;
   view_.special = false;
+  view_.missReason = MissReason::None;
   if (action == Action::Both && view_.energy >= kSpecialEnergy) {
     view_.energy = 0;
     if (view_.expected == Action::Attack && timing != Timing::Miss) {
@@ -70,10 +71,19 @@ void Battle::settle(Action action, Timing timing, uint32_t now) {
       view_.enemyHp = view_.enemyHp > kSpecialDamage ? view_.enemyHp - kSpecialDamage : 0;
     } else {
       view_.lastTiming = Timing::Miss; --view_.playerHp;
+      view_.missReason = view_.expected != Action::Attack
+                             ? MissReason::WrongKey
+                             : (timeAfter(view_.targetMs, judgeMs) ? MissReason::Early : MissReason::Late);
     }
   } else {
-    if (action != view_.expected) timing = Timing::Miss;
+    const bool wrongKey = !timedOut && action != view_.expected;
+    if (wrongKey) timing = Timing::Miss;
     view_.lastTiming = timing;
+    if (timing == Timing::Miss) {
+      view_.missReason = timedOut ? MissReason::Timeout
+                                  : wrongKey ? MissReason::WrongKey
+                                             : (timeAfter(view_.targetMs, judgeMs) ? MissReason::Early : MissReason::Late);
+    }
     if (view_.expected == Action::Attack && timing != Timing::Miss) {
       const uint8_t damage = timing == Timing::Perfect ? 2 : 1;
       view_.enemyHp = view_.enemyHp > damage ? view_.enemyHp - damage : 0;
@@ -92,7 +102,7 @@ bool Battle::upgrade(Action action, uint32_t now) {
   if (first == Action::Both || beforeEnergy_ < kSpecialEnergy || timeAfter(now, pressMs_ + kChordGraceMs) ||
       (action != Action::Both && action == first)) return false;
   view_.playerHp = beforePlayerHp_; view_.enemyHp = beforeEnemyHp_; view_.energy = beforeEnergy_;
-  settle(Action::Both, battleTiming(pressMs_, view_.targetMs, view_.frenzy), now);
+  settle(Action::Both, battleTiming(pressMs_, view_.targetMs, view_.frenzy), now, pressMs_);
   return true;
 }
 void Battle::advance() {
@@ -113,7 +123,7 @@ void Battle::advance() {
 bool Battle::tick(uint32_t now) {
   bool changed = false;
   while (view_.active && !view_.paused && timeAfter(now, view_.targetMs + normalWindow(view_.frenzy))) {
-    if (!view_.consumed) settle(view_.expected, Timing::Miss, now);
+    if (!view_.consumed) settle(view_.expected, Timing::Miss, now, now, true);
     if (view_.active) advance();
     changed = true;
   }
@@ -126,7 +136,7 @@ bool Battle::press(Action action, uint32_t now) {
   if (view_.consumed) return upgrade(action, now);
   pressMs_ = now;
   beforePlayerHp_ = view_.playerHp; beforeEnemyHp_ = view_.enemyHp; beforeEnergy_ = view_.energy;
-  settle(action, battleTiming(now, view_.targetMs, view_.frenzy), now);
+  settle(action, battleTiming(now, view_.targetMs, view_.frenzy), now, now);
   return true;
 }
 bool Battle::requestPause() {

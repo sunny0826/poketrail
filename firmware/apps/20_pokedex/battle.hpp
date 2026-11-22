@@ -22,6 +22,7 @@ constexpr uint8_t kSpecialEnergy = 3;
 constexpr uint8_t kSpecialDamage = 3;
 constexpr uint8_t kFeintPercent = 25;
 constexpr uint8_t kRareFeintPercent = 40;
+enum class MissReason : uint8_t { None, Early, Late, WrongKey, Timeout };
 struct BattleView {
   bool active = false;
   bool paused = false;
@@ -44,6 +45,7 @@ struct BattleView {
   Action settledAction = Action::Attack;
   Action settledCue = Action::Attack;
   Timing lastTiming = Timing::Miss;
+  MissReason missReason = MissReason::None;
   Result result = Result::None;
 };
 class Battle {
@@ -55,7 +57,7 @@ class Battle {
   bool resume(uint32_t nowMs);
   const BattleView& view() const { return view_; }
  private:
-  void settle(Action, Timing, uint32_t nowMs);
+  void settle(Action, Timing, uint32_t nowMs, uint32_t judgeMs, bool timedOut = false);
   bool upgrade(Action, uint32_t nowMs);
   void advance();
   void plan();

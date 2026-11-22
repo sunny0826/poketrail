@@ -3,6 +3,7 @@
 #include <stdio.h>
 #if defined(ESP32) || defined(ESP32S3)
 #include <esp_sleep.h>
+#include <esp_timer.h>
 #endif
 
 namespace {
@@ -63,6 +64,110 @@ void configureLowPowerImu() {
     }
     return;
   }
+}
+
+constexpr uint32_t kButtonDebounceMs = 10;
+constexpr uint8_t kBtnAGpio = 2;
+constexpr uint8_t kBtnBGpio = 1;
+static_assert(GPIO_NUM_2 == kBtnAGpio && GPIO_NUM_1 == kBtnBGpio, "C152 button GPIOs");
+
+struct ButtonEdgeLatch {
+  uint32_t lastEdgeMs = 0;
+  uint32_t pressMs = 0;
+  uint32_t releaseMs = 0;
+  bool hasEdge = false;
+  bool lastDown = false;
+  bool pressPending = false;
+  bool releasePending = false;
+};
+
+portMUX_TYPE button_mux = portMUX_INITIALIZER_UNLOCKED;
+ButtonEdgeLatch btn_a_latch;
+ButtonEdgeLatch btn_b_latch;
+bool button_irq_attached = false;
+
+inline uint32_t IRAM_ATTR readBoardMs() {
+  return static_cast<uint32_t>(esp_timer_get_time() / 1000ULL);
+}
+
+inline bool IRAM_ATTR readPinDown(uint8_t gpio) {
+  return ((REG_READ(GPIO_IN_REG) >> gpio) & 1u) == 0;
+}
+
+void IRAM_ATTR recordButtonEdge(ButtonEdgeLatch& latch, uint8_t gpio) {
+  const uint32_t nowMs = readBoardMs();
+  const bool down = readPinDown(gpio);
+  portENTER_CRITICAL_ISR(&button_mux);
+  if (down != latch.lastDown &&
+      (!latch.hasEdge || static_cast<uint32_t>(nowMs - latch.lastEdgeMs) >= kButtonDebounceMs)) {
+    latch.hasEdge = true;
+    latch.lastEdgeMs = nowMs;
+    latch.lastDown = down;
+    if (down) {
+      latch.pressMs = nowMs;
+      latch.pressPending = true;
+    } else {
+      latch.releaseMs = nowMs;
+      latch.releasePending = true;
+    }
+  }
+  portEXIT_CRITICAL_ISR(&button_mux);
+}
+
+void IRAM_ATTR onBtnAEdgeIsr() { recordButtonEdge(btn_a_latch, kBtnAGpio); }
+void IRAM_ATTR onBtnBEdgeIsr() { recordButtonEdge(btn_b_latch, kBtnBGpio); }
+
+void syncButtonLatches() {
+  if (!button_irq_attached) return;
+  const uint32_t nowMs = readBoardMs();
+  const bool aDown = readPinDown(kBtnAGpio);
+  const bool bDown = readPinDown(kBtnBGpio);
+  portENTER_CRITICAL(&button_mux);
+  if (btn_a_latch.hasEdge &&
+      static_cast<uint32_t>(nowMs - btn_a_latch.lastEdgeMs) >= kButtonDebounceMs) {
+    btn_a_latch.lastDown = aDown;
+  }
+  if (btn_b_latch.hasEdge &&
+      static_cast<uint32_t>(nowMs - btn_b_latch.lastEdgeMs) >= kButtonDebounceMs) {
+    btn_b_latch.lastDown = bDown;
+  }
+  portEXIT_CRITICAL(&button_mux);
+}
+
+void initButtonEdgeLatches() {
+  if (M5.getBoard() != m5::board_t::board_M5StopWatch) return;
+  if (button_irq_attached) {
+    detachInterrupt(kBtnAGpio);
+    detachInterrupt(kBtnBGpio);
+    button_irq_attached = false;
+  }
+  portENTER_CRITICAL(&button_mux);
+  btn_a_latch = ButtonEdgeLatch();
+  btn_b_latch = ButtonEdgeLatch();
+  btn_a_latch.lastDown = readPinDown(kBtnAGpio);
+  btn_b_latch.lastDown = readPinDown(kBtnBGpio);
+  portEXIT_CRITICAL(&button_mux);
+  attachInterrupt(kBtnAGpio, onBtnAEdgeIsr, CHANGE);
+  attachInterrupt(kBtnBGpio, onBtnBEdgeIsr, CHANGE);
+  button_irq_attached = true;
+}
+
+bool consumeLatchAgeMs(ButtonEdgeLatch& latch, bool release, uint32_t maxAgeMs, uint32_t& ageMs) {
+  if (!button_irq_attached) return false;
+  uint32_t elapsed = 0;
+  bool valid = false;
+  portENTER_CRITICAL(&button_mux);
+  bool& pending = release ? latch.releasePending : latch.pressPending;
+  if (pending) {
+    pending = false;
+    const uint32_t latchedMs = release ? latch.releaseMs : latch.pressMs;
+    elapsed = static_cast<uint32_t>(readBoardMs() - latchedMs);
+    valid = elapsed <= maxAgeMs;
+  }
+  portEXIT_CRITICAL(&button_mux);
+  if (!valid) return false;
+  ageMs = elapsed;
+  return true;
 }
 #endif
 
@@ -143,6 +248,7 @@ void begin(const char* title) {
 
 #if defined(ESP32) || defined(ESP32S3)
   if (M5.Imu.isEnabled()) configureLowPowerImu();
+  initButtonEdgeLatches();
 #endif
 }
 
@@ -177,7 +283,48 @@ void updateVibration() {
 
 void update() {
   M5.update();
+#if defined(ESP32) || defined(ESP32S3)
+  syncButtonLatches();
+#endif
   updateVibration();
+}
+
+uint32_t boardMs() {
+#if defined(ESP32) || defined(ESP32S3)
+  return readBoardMs();
+#else
+  return millis();
+#endif
+}
+
+bool consumeBtnAPressAgeMs(uint32_t maxAgeMs, uint32_t& ageMs) {
+#if defined(ESP32) || defined(ESP32S3)
+  return consumeLatchAgeMs(btn_a_latch, false, maxAgeMs, ageMs);
+#else
+  (void)maxAgeMs;
+  (void)ageMs;
+  return false;
+#endif
+}
+
+bool consumeBtnBPressAgeMs(uint32_t maxAgeMs, uint32_t& ageMs) {
+#if defined(ESP32) || defined(ESP32S3)
+  return consumeLatchAgeMs(btn_b_latch, false, maxAgeMs, ageMs);
+#else
+  (void)maxAgeMs;
+  (void)ageMs;
+  return false;
+#endif
+}
+
+bool consumeBtnBReleaseAgeMs(uint32_t maxAgeMs, uint32_t& ageMs) {
+#if defined(ESP32) || defined(ESP32S3)
+  return consumeLatchAgeMs(btn_b_latch, true, maxAgeMs, ageMs);
+#else
+  (void)maxAgeMs;
+  (void)ageMs;
+  return false;
+#endif
 }
 
 bool restUntilInput(uint32_t durationMs) {

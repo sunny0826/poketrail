@@ -149,7 +149,7 @@ void Screens::practiceThrow(const ScreenState& s, uint32_t now) {
     return;
   }
   aim(s.practiceSpecies, now, false, 0);
-  line(tr(Text::HoldThrow), 399, theme::kMint);
+  line(tr(Text::HoldThrow), 399, throwCancelNotice(s, now) ? theme::kGold : theme::kMint);
   line(tr(Text::EndPracticeTop), 426, theme::kMuted);
 }
 void Screens::practiceResult(const ScreenState& s, uint32_t now) {
@@ -181,7 +181,7 @@ void Screens::drawPractice(const ScreenState& s, const Engine& e, const BattleVi
     }
     practiceThrow(s, now);
     bool isBurst = false;
-    uint8_t promptKind = s.practiceThrowing ? 1 : 5;
+    uint8_t promptKind = s.practiceThrowing ? 1 : (throwCancelNotice(s, now) ? 8 : 5);
     if (s.capture.active) {
       const auto f = captureFrameAt(s.capture, now);
       isBurst = f.stage == CaptureStage::Reveal && !s.capture.captured;

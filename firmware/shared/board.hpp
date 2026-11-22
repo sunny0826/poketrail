@@ -14,6 +14,10 @@ void begin(const char* title);
 
 void update();
 void updateVibration();
+uint32_t boardMs();
+bool consumeBtnAPressAgeMs(uint32_t maxAgeMs, uint32_t& ageMs);
+bool consumeBtnBPressAgeMs(uint32_t maxAgeMs, uint32_t& ageMs);
+bool consumeBtnBReleaseAgeMs(uint32_t maxAgeMs, uint32_t& ageMs);
 
 bool restUntilInput(uint32_t durationMs);
 

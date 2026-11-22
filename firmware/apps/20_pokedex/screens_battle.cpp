@@ -9,10 +9,23 @@ namespace pokedex { namespace ui {
 using namespace adventure;
 using i18n::Text;
 namespace {
-int pulse(uint32_t age, unsigned start, unsigned peak, unsigned end, int amount) {
+enum class MotionEase : uint8_t { Attack, Dodge, Knockback };
+int easePulse(uint32_t age, unsigned start, unsigned peak, unsigned end, int amount, MotionEase mode) {
   if (age <= start || age >= end) return 0;
-  return age < peak ? amount * int(age - start) / int(peak - start) :
-                     amount * int(end - age) / int(end - peak);
+  if (age < peak) {
+    const float u = float(age - start) / float(peak - start);
+    const float inv = 1.0f - u;
+    const float k = mode == MotionEase::Attack ? (1.0f - inv * inv) : (1.0f - inv * inv * inv);
+    return int(amount * k + 0.5f);
+  }
+  const float v = float(age - peak) / float(end - peak);
+  const float inv = 1.0f - v;
+  const float k = mode == MotionEase::Attack
+                      ? (1.0f - v * v * (3.0f - 2.0f * v))
+                      : mode == MotionEase::Dodge
+                            ? (inv * inv * (1.0f + 0.45f * std::sin(v * 3.1415926f)))
+                            : (inv * inv);
+  return std::max(0, std::min(amount, int(amount * k + 0.5f)));
 }
 uint8_t actorScale(uint16_t id) {
   const auto& sprite = data::kSprites[id - 1];
@@ -94,10 +107,10 @@ void Screens::drawBattle(const ScreenState& s, const Engine& e, const BattleView
   const bool hit = b.lastTiming != Timing::Miss;
   const bool perfect = effect && (b.lastTiming == Timing::Perfect || b.special);
   const int shake = perfect && attack && age >= 100 && age < 200 ? ((age / 25) % 2 ? 2 : -2) : 0;
-  const int playerX = kPartnerX + shake + (attack ? pulse(age, 0, 100, 400, 34) :
-                                           hit ? -pulse(age, 30, 120, 370, 26) : 0);
-  const int enemyX = kEnemyX + shake + (attack ? (hit ? pulse(age, 100, 175, 330, 14) : 0) :
-                                        -pulse(age, 0, 80, 330, 30));
+  const int playerX = kPartnerX + shake + (attack ? easePulse(age, 0, 100, 400, 34, MotionEase::Attack) :
+                                           hit ? -easePulse(age, 30, 120, 370, 26, MotionEase::Dodge) : 0);
+  const int enemyX = kEnemyX + shake + (attack ? (hit ? easePulse(age, 100, 175, 330, 14, MotionEase::Knockback) : 0) :
+                                        -easePulse(age, 0, 80, 330, 30, MotionEase::Attack));
   const Route route = s.page == Page::Practice ? regionOf(enemy) : v.encounter.route;
   const uint8_t playerScale = actorScale(partner), enemyScale = actorScale(enemy);
 
@@ -130,7 +143,11 @@ void Screens::drawBattle(const ScreenState& s, const Engine& e, const BattleView
   };
 
   const uint8_t countdown = countdownDigit(b, now);
-  const char* result = attack ? (hit ? tr(Text::Hit) : tr(Text::Miss)) : (hit ? tr(Text::Dodged) : tr(Text::Hurt));
+  const char* missText = b.missReason == MissReason::Early ? tr(Text::MissEarly)
+                       : b.missReason == MissReason::Late ? tr(Text::MissLate)
+                       : b.missReason == MissReason::WrongKey ? tr(Text::MissWrong)
+                       : (attack ? tr(Text::Miss) : tr(Text::Hurt));
+  const char* result = hit ? tr(attack ? Text::Hit : Text::Dodged) : missText;
   uint8_t footerKind = 0;
   const char* footerText = nullptr;
   uint16_t footerColor = 0;
@@ -231,6 +248,8 @@ void Screens::drawThrow(const ScreenState& s, const Engine& e, uint32_t now, boo
       promptKind = f.stage == CaptureStage::Reveal ? (s.capture.captured ? 3 : 4) : 0;
     } else if (timing) {
       promptKind = s.throwCommitting ? 0 : 1;
+    } else if (throwCancelNotice(s, now)) {
+      promptKind = 7;
     }
   }
   snap_.route = v.encounter.route;
@@ -265,7 +284,7 @@ void Screens::battle(const ScreenState& s, const Engine& e, const BattleView& pr
       item(s, 0, tr(Text::EndEncounter), menu_layout::kTop);
     } else {
       aim(v.encounter.species, now, false, 0);
-      line(tr(Text::HoldThrow), 399, theme::kMint);
+      line(tr(Text::HoldThrow), 399, throwCancelNotice(s, now) ? theme::kGold : theme::kMint);
     }
     return;
   }
