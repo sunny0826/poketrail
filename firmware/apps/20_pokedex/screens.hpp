@@ -60,6 +60,8 @@ struct ScreenState {
   uint32_t chargeStartMs = 0;
   bool charging = false;
   bool throwCommitting = false;
+  bool throwCancelNoticeActive = false;
+  uint32_t throwCancelNoticeUntilMs = 0;
   uint32_t battleEffectStartMs = 0;
   bool battleEffectOverride = false;
   uint16_t practiceSpecies = 0;
@@ -78,6 +80,9 @@ int menuTop(const ScreenState&, const adventure::Engine&);
 const menu_layout::Hub* hubFor(Page);
 inline bool encounterWaiting(const adventure::Save& v) {
   return v.phase == adventure::Phase::EncounterReady || v.phase == adventure::Phase::ThrowReady;
+}
+inline bool throwCancelNotice(const ScreenState& s, uint32_t now) {
+  return s.throwCancelNoticeActive && int32_t(s.throwCancelNoticeUntilMs - now) > 0;
 }
 bool menuSelectable(const ScreenState&, const adventure::Engine&, unsigned index);
 constexpr menu_layout::Rect kHomeEvolveButton = {173, 67, 120, 30};
@@ -326,6 +331,7 @@ class Screens {
   void drawBattle(const ScreenState&, const adventure::Engine&,
                   const adventure::BattleView& practice, uint32_t now, bool full);
   void drawThrow(const ScreenState&, const adventure::Engine&, uint32_t now, bool full);
+  void drawThrowPrompt(uint8_t promptKind);
   void drawThrowStagePartial(const ScreenState&, adventure::Route route, uint16_t species,
                              bool timing, int32_t remaining, bool committing, uint8_t usedBalls,
                              bool legacyNoBalls, uint32_t now, bool allowExitHint);

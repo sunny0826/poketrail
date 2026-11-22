@@ -158,15 +158,18 @@ void Runtime::handle(const Input& raw) {
     ((screen_.page == Page::Throw && screen_.charging && engine_.throwView().active) ||
      (screen_.page == Page::PracticeThrow && screen_.charging && practiceCapture_.throwView().active));
   if (!input.any() || throwRelease) {
-    if (screen_.page == Page::Throw && screen_.charging && engine_.throwView().active &&
-        !input.touchDown && !input.rightDown) {
-      screen_.charging = false;
+    if (!throwRelease) return;
+    screen_.charging = false;
+    const bool shortHold = input.at - screen_.chargeStartMs < kThrowMinHoldMs;
+    if (shortHold) {
+      screen_.throwCancelNoticeActive = true;
+      screen_.throwCancelNoticeUntilMs = input.at + 600u;
+    } else {
+      screen_.throwCancelNoticeActive = false;
+    }
+    if (screen_.page == Page::Throw) {
       const auto key = engine_.throwView().key;
-      if (input.at - screen_.chargeStartMs < kThrowMinHoldMs) {
-        engine_.cancelThrow(key);
-        dirty_ = true;
-        return;
-      }
+      if (shortHold) { engine_.cancelThrow(key); dirty_ = true; return; }
       if (!dimmed() && graphicsReady_) {
         screen_.throwCommitting = true;
         const uint32_t renderStart = platform_.now();
@@ -193,14 +196,8 @@ void Runtime::handle(const Input& raw) {
         screen_.command = result;
       }
       dirty_ = true;
-    } else if (screen_.page == Page::PracticeThrow && screen_.charging &&
-               practiceCapture_.throwView().active && !input.touchDown && !input.rightDown) {
-      screen_.charging = false;
-      if (input.at - screen_.chargeStartMs < kThrowMinHoldMs) {
-        practiceCapture_.cancelThrow();
-        dirty_ = true;
-        return;
-      }
+    } else {
+      if (shortHold) { practiceCapture_.cancelThrow(); dirty_ = true; return; }
       const auto outcome = practiceCapture_.pressThrow(input.at);
       if (outcome.valid) startPracticeCapture(outcome);
       dirty_ = true;

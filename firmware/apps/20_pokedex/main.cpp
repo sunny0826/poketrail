@@ -40,10 +40,34 @@ class DevicePlatform : public pokedex::ui::Platform {
       input.at = millis();
       samplePowerKey(input, 20u);
       lastInput_ = input;
+      hasLastInput_ = true;
       return input;
     }
     c152::update();
-    input.at = millis();
+    const uint32_t nowMs = millis();
+    uint32_t alignedAt = nowMs;
+    uint32_t edgeAgeMs = 0;
+    bool hasEdgeAge = false;
+    uint32_t age = 0;
+    if (M5.BtnA.wasPressed() && c152::consumeBtnAPressAgeMs(80u, age)) {
+      edgeAgeMs = age;
+      hasEdgeAge = true;
+    }
+    if (M5.BtnB.wasPressed() && c152::consumeBtnBPressAgeMs(80u, age)) {
+      if (!hasEdgeAge || age > edgeAgeMs) edgeAgeMs = age;
+      hasEdgeAge = true;
+    }
+    if (M5.BtnB.wasReleased() && c152::consumeBtnBReleaseAgeMs(80u, age)) {
+      if (!hasEdgeAge || age > edgeAgeMs) edgeAgeMs = age;
+      hasEdgeAge = true;
+    }
+    if (hasEdgeAge) {
+      alignedAt = nowMs - edgeAgeMs;
+      if (hasLastInput_ && static_cast<int32_t>(alignedAt - lastInput_.at) < 0) {
+        alignedAt = lastInput_.at;
+      }
+    }
+    input.at = alignedAt;
     samplePowerKey(input, 25u);
     buttons_.sample(input, M5.BtnA, M5.BtnB);
     input.touch = c152::touchWasPressed();
@@ -59,6 +83,7 @@ class DevicePlatform : public pokedex::ui::Platform {
     input.touchDown = detail.isPressed();
     input.held = input.held || input.touchDown;
     lastInput_ = input;
+    hasLastInput_ = true;
     return input;
   }
   const pokedex::ui::Input& lastInput() const { return lastInput_; }
@@ -120,6 +145,7 @@ class DevicePlatform : public pokedex::ui::Platform {
   bool powerWasDown_ = false;
   bool displayAsleep_ = false;
   bool hasPowerPoll_ = false;
+  bool hasLastInput_ = false;
   uint32_t lastPowerPoll_ = 0;
 };
 // TestModePlatform does not forward the extended haptic/stop hooks, so bridge them directly to DevicePlatform.
