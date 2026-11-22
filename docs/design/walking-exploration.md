@@ -2,7 +2,7 @@
 
 [返回步行培养与存档契约](walking-progression.md#总步球和探索)。
 
-规则 3 的球不限量，每场最多投两次，不检查库存，也不增加 `ballsSpent`。旧存档的 `rewardBaseSteps`／`ballsSpent` 保留并可校验；仅仍保留 `ruleVersion < 3` 的在途场按旧规则检查和扣球，规则 2 的当前场会在升级 schema4 时切换为规则 3，再随同一次启动升级到 schema9。相对 `rewardBaseSteps` 每累计 1000 总步仍触发保存；在规则 3 下只用于保存节奏，不发球。
+规则 3 的球不限量，每场最多投两次，不检查库存，也不增加 `ballsSpent`。旧存档的 `rewardBaseSteps`／`ballsSpent` 保留并可校验；仅仍保留 `ruleVersion < 3` 的在途场按旧规则检查和扣球，规则 2 的当前场会在升级 schema4 时切换为规则 3，再随同一次启动升级到 schema10。相对 `rewardBaseSteps` 每累计 1000 总步仍触发保存；在规则 3 下只用于保存节奏，不发球。
 
 探索账目：新档起每场遭遇消耗一个 200–500 之间的随机目标步数，`explorationSpent + explorationCredit == totalSteps` 恒成立，下一场目标持久化在 `encounterTarget`。累计扣步校验仍兼容迁移前按 5000 步消费的历史场次，具体边界见[迁移契约](save-migration.md#schema3-迁移到-schema4)。午夜、时区变化、进化和换伙伴均不重置余额或目标。
 

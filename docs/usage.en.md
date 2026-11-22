@@ -14,7 +14,7 @@ The date setup screen has the same entry on its second page, so you can switch b
 
 If saving fails, the previous language stays visible until you retry successfully. A pending save must be retried before another language change. A failure after writing may already have stored the new language; restart follows the valid save on disk. When a save cannot be loaded and no save is pending, you can change the language for browsing the Pokédex. **Session only** means it will not persist. This does not format storage or replace the original files. Once storage recovers, the loaded save's language takes over.
 
-Language belongs to the current save. Test snapshots inherit it; changes inside test mode do not affect the official save. Blank test saves default to Chinese, and RAM-only changes last only for the current session. Saves from schema1–7 upgrade to the current schema9 with Chinese selected; schema8 keeps its saved language. Accounts and history are preserved under the existing migration rules.
+Language belongs to the current save. Test snapshots inherit it; changes inside test mode do not affect the official save. Blank test saves default to Chinese, and RAM-only changes last only for the current session. Saves from schema1–7 upgrade to the current schema10 with Chinese selected; schema8–9 keep their saved language. Accounts and history are preserved under the existing migration rules.
 
 ## Exploration and capture
 

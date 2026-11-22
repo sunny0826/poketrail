@@ -172,17 +172,20 @@ def verify_language_save(save, snapshot_path):
     import zlib
     snapshot = json.loads(snapshot_path.read_text())
     valid = []
-    # Schema9 appends its queue after the frozen schema8 language byte.
-    language_offset = (ROOT / "test/fixtures/simulator/schema8-encounter.bin").stat().st_size - 1
+    # Schema9 appends its queue after the frozen schema8 language byte;
+    # schema10 places language at the end of its fixed prefix (offset 874).
+    schema89_language_offset = (ROOT / "test/fixtures/simulator/schema8-encounter.bin").stat().st_size - 1
+    schema10_language_offset = 874
     for path in save.glob("save-*.bin"):
         data = path.read_bytes()
         if len(data) < 23 or data[:4] != b"AVD1":
             continue
         schema, sequence, length, crc = struct.unpack_from("<HQII", data, 4)
-        if schema not in (8, 9) or length != len(data) - 22 or zlib.crc32(data[:18] + data[22:]) != crc:
+        if schema not in (8, 9, 10) or length != len(data) - 22 or zlib.crc32(data[:18] + data[22:]) != crc:
             continue
-        if len(data) > language_offset and data[language_offset] in (0, 1):
-            valid.append((sequence, data[language_offset]))
+        offset = schema10_language_offset if schema == 10 else schema89_language_offset
+        if len(data) > offset and data[offset] in (0, 1):
+            valid.append((sequence, data[offset]))
     if not valid or max(valid)[1] != snapshot["savedLanguage"] or snapshot["language"] != snapshot["savedLanguage"]:
         raise RuntimeError("language snapshot does not match CRC-valid disk slot")
     write_json(snapshot_path.parent / "language-disk-check.json", {"validSlots": valid,

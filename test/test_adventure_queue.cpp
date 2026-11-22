@@ -125,25 +125,51 @@ static void retryAndRecovery() {
   Engine reboot(store); CHECK(reboot.begin() == CommandResult::Applied);
   CHECK(reboot.view().phase == Phase::EncounterReady); sameEncounter(reboot.view().encounter, next);
 }
+static void frameHeader(std::vector<uint8_t>& bytes) {
+  const uint32_t payload = uint32_t(bytes.size() - codec::kHeaderSize);
+  for (unsigned i = 0; i < 4; ++i) bytes[14 + i] = uint8_t(payload >> (8 * i));
+  checksum(bytes);
+}
 static void semanticCorruption() {
   auto save = fixture(1, 3000); MemoryStore store; store.disk = encoded(*save); Engine e(store);
   CHECK(e.begin() == CommandResult::Applied && steps(e, 1, 1) == CommandResult::Applied);
-  const auto legal = encoded(e.view());
+  Save s9 = e.view(); s9.schema = 9;
+  const auto legal9 = encoded(s9);
   constexpr size_t width = 35;
-  const size_t start = legal.size() - 1 - 31 * width;
+  const size_t start9 = legal9.size() - 1 - 31 * width;
   for (unsigned kind = 0; kind < 8; ++kind) {
-    auto bad = legal;
-    if (kind == 0) bad[start] = 32;
-    if (kind == 1) bad[start + 1] = 0;
-    if (kind == 2) { bad[start + 9] = uint8_t(e.view().encounter.species); bad[start + 10] = 0; }
-    if (kind == 3) bad[start + 11] = 0;
-    if (kind == 4) bad[start + 13] = uint8_t(Route::Unova);
-    if (kind == 5) bad[start + 20] = 1;
-    if (kind == 6) bad[start + 22] = 1;
+    auto bad = legal9;
+    if (kind == 0) bad[start9] = 32;
+    if (kind == 1) bad[start9 + 1] = 0;
+    if (kind == 2) { bad[start9 + 9] = uint8_t(e.view().encounter.species); bad[start9 + 10] = 0; }
+    if (kind == 3) bad[start9 + 11] = 0;
+    if (kind == 4) bad[start9 + 13] = uint8_t(Route::Unova);
+    if (kind == 5) bad[start9 + 20] = 1;
+    if (kind == 6) bad[start9 + 22] = 1;
     if (kind == 7) bad.back() = 1;
     checksum(bad); Save out;
     CHECK(codec::decode(bad.data(), bad.size(), out) == codec::DecodeStatus::Corrupt);
   }
+  const auto legal10 = encoded(e.view());
+  const size_t start10 = codec::kSchema10LanguageOffset + 3; // after language + historySize(0) + recentSize(0)
+  CHECK(legal10[start10] == e.view().encounterQueueSize);
+  for (unsigned kind = 0; kind < 7; ++kind) {
+    auto bad = legal10;
+    if (kind == 0) bad[start10] = 32;
+    if (kind == 1) bad[start10 + 1] = 0;
+    if (kind == 2) { bad[start10 + 9] = uint8_t(e.view().encounter.species); bad[start10 + 10] = 0; }
+    if (kind == 3) bad[start10 + 11] = 0;
+    if (kind == 4) bad[start10 + 13] = uint8_t(Route::Unova);
+    if (kind == 5) bad[start10 + 20] = 1;
+    if (kind == 6) bad[start10 + 22] = 1;
+    checksum(bad); Save out;
+    CHECK(codec::decode(bad.data(), bad.size(), out) == codec::DecodeStatus::Corrupt);
+  }
+  auto truncated = legal10; truncated.pop_back(); frameHeader(truncated);
+  Save out;
+  CHECK(codec::decode(truncated.data(), truncated.size(), out) == codec::DecodeStatus::Corrupt);
+  auto trailing = legal10; trailing.push_back(0); frameHeader(trailing);
+  CHECK(codec::decode(trailing.data(), trailing.size(), out) == codec::DecodeStatus::Corrupt);
   Save old = e.view(); old.schema = 8; CHECK(!validate(old));
   size_t written = 99; std::vector<uint8_t> bytes(codec::maxEncodedSize);
   CHECK(!codec::encode(old, bytes.data(), bytes.size(), written) && written == 0);
@@ -171,12 +197,13 @@ static void schema8Migration() {
   Save decoded;
   CHECK(codec::decode(bytes.data(), bytes.size(), decoded) == codec::DecodeStatus::Ok);
   CHECK(decoded.schema == 8 && encoded(decoded) == bytes);
-  CHECK(migrateLegacy(decoded) && decoded.schema == 9 && !decoded.encounterQueueSize);
+  CHECK(migrateLegacy(decoded) && decoded.schema == kSchemaVersion && !decoded.encounterQueueSize);
   sameEncounter(decoded.encounter, old->encounter);
   CHECK(decoded.phase == old->phase && decoded.ballsSpent == old->ballsSpent &&
         decoded.explorationCredit == old->explorationCredit && decoded.nextEncounterId == old->nextEncounterId);
   Save invalid = *old; invalid.encounter.partner = 2; setRegistered(invalid, 2);
   CHECK(!validate(invalid)); invalid.schema = 9; CHECK(validate(invalid));
+  invalid.schema = kSchemaVersion; CHECK(validate(invalid));
 }
 static void exhaustedPool() {
   auto save = fixture(1, 3000);

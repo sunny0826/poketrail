@@ -185,5 +185,53 @@ static void schema6Upgrade() {
     CHECK(s.firstCapture[3].route==Route::Forest&&s.recent[0].route==Route::Forest&&s.captureCounts[3]==1);
   }
 }
+static void schema9Upgrade() {
+  uint16_t hoenn[3] = {}, hn = 0;
+  for (uint16_t id = 252; id <= 386 && hn < 3; ++id) if (ordinaryEncounter(id)) hoenn[hn++] = id;
+  auto old = fixture(1, 10500);
+  Save& o = *old;
+  o.schema = 9; o.sequence = 12; o.bootGeneration = 4; o.language = pokedex::i18n::Language::English;
+  o.route = Route::Hoenn; o.partner = 2; o.rosterRevision = 3;
+  o.owned.fill(0); setRegistered(o, 2); setOwned(o, 2);
+  o.progress[0].walked = 9000; o.progress[0].spent = 7500; o.progress[1].walked = 1500;
+  o.lastEvolution.request.from = 1; o.lastEvolution.request.to = 2; o.lastEvolution.request.rosterRevision = 2;
+  o.lastEvolution.cost = 7500; o.lastEvolution.at.bootGeneration = 2; o.lastEvolution.at.totalSteps = 8000;
+  setRegistered(o, 4); setOwned(o, 4); o.captureCounts[3] = 1;
+  o.firstCapture[3].species = 4; o.firstCapture[3].route = Route::Cave;
+  o.firstCapture[3].at.bootGeneration = 1; o.firstCapture[3].at.totalSteps = 500;
+  o.recent[0] = o.firstCapture[3]; o.recentSize = 1;
+  o.today.dayKey = 20261101; o.history[0].dayKey = 20261031; o.historySize = 1;
+  o.clock.calibrated = true; o.clock.dayHighWater = 20261101;
+  o.clock.pending.active = true; o.clock.pending.transactionId = 5;
+  o.clock.pending.targetUtcSeconds = 1793491200LL; o.clock.pending.targetDayKey = 20261101;
+  o.explorationSpent = 1800; o.explorationCredit = 8700; o.nextEncounterId = 7; o.phase = Phase::Battle;
+  o.encounter.id = 4; o.encounter.species = hoenn[0]; o.encounter.partner = 1; o.encounter.route = Route::Hoenn;
+  o.encounterQueueSize = 2;
+  for (size_t i = 0; i < 2; ++i) {
+    o.encounterQueue[i].id = 5 + i; o.encounterQueue[i].species = hoenn[i + 1];
+    o.encounterQueue[i].partner = 2; o.encounterQueue[i].route = Route::Hoenn;
+  }
+  const auto s9 = encoded(o); CHECK(s9.size() > 49000);
+  for (unsigned mode = 0; mode < 3; ++mode) {
+    Slots slots; slots.files[0] = s9; slots.before = mode == 1; slots.after = mode == 2;
+    {
+      FileStore store(slots); Engine e(store);
+      CHECK(e.begin() == (mode ? CommandResult::StorageError : CommandResult::Applied));
+      if (mode) {
+        const auto frozen = slots.attempt; slots.before = slots.after = false;
+        CHECK(e.retrySave() == CommandResult::Applied && slots.files[1] == frozen);
+      }
+      const Save& s = e.view();
+      CHECK(e.ready() && slots.files[0] == s9 && slots.files[1].size() < 2500);
+      CHECK(s.schema == kSchemaVersion && s.language == pokedex::i18n::Language::English && s.route == Route::Hoenn &&
+            s.phase == Phase::EncounterReady && s.encounter.id == 4 && s.encounter.partner == 1 &&
+            s.encounterQueueSize == 2 && s.encounterQueue[1].species == hoenn[2] &&
+            s.firstCapture[3].route == Route::Cave && s.progress[0].spent == 7500 && s.clock.pending.transactionId == 5);
+    }
+    FileStore second(slots); Engine reboot(second);
+    CHECK(reboot.begin() == CommandResult::Applied && reboot.view().schema == kSchemaVersion &&
+          reboot.view().language == pokedex::i18n::Language::English && reboot.view().encounterQueueSize == 2);
+  }
+}
 int main(){phases();failures();oldThrowsAndBase();creditAndBoundary();schema2Upgrade();mixedSlots();activityTail();
-  routeUpgrade();schema6Upgrade();std::printf("migration: %u checks passed\n",checks);}
+  routeUpgrade();schema6Upgrade();schema9Upgrade();std::printf("migration: %u checks passed\n",checks);}

@@ -2,7 +2,7 @@
 
 当前玩法见[玩法契约](walking-progression.md)，状态归属和验证矩阵见[状态与验收](walking-state.md)。
 
-下文按版本保留 schema3 起的迁移规则；schema1→2、schema2→3 的双槽选择、500／5000 步账式和发球规则见[早期存档迁移](save-migration-early.md)，只适用于那些历史版本。当前启动会在同一事务中继续升级到 schema9：目录扩容见 [schema5→6](#schema5-迁移到-schema6)，地区切换见 [schema6→7](#schema6-迁移到-schema7)，语言字段见 [schema7→8](#schema7-迁移到-schema8)，遭遇队列见 [schema8→9](#schema8-迁移到-schema9)，不会把中间版本单独写入存档。
+下文按版本保留 schema3 起的迁移规则；schema1→2、schema2→3 的双槽选择、500／5000 步账式和发球规则见[早期存档迁移](save-migration-early.md)，只适用于那些历史版本。当前启动会在同一事务中继续升级到 schema10：目录扩容见 [schema5→6](#schema5-迁移到-schema6)，地区切换见 [schema6→7](#schema6-迁移到-schema7)，语言字段见 [schema7→8](#schema7-迁移到-schema8)，遭遇队列见 [schema8→9](#schema8-迁移到-schema9)，稀疏编码见 [schema9→10](#schema9-迁移到-schema10)，不会把中间版本单独写入存档。
 
 ## schema3 迁移到 schema4
 
@@ -72,8 +72,14 @@ schema9 校验队列上限、场次 ID 顺序与有效范围、普通物种与�
 
 新增场与队列推进均经过原有 candidate 提交；写前、部分写或回读失败时冻结同一候选和顺序，提交前不发布新增数量。双槽 CRC、sequence 选择和冲突检测保持；未知的后续版本继续拒绝。旧固件不能读取 schema9，不得通过忽略新版槽降级覆盖。
 
+## schema9 迁移到 schema10
+
+schema10 保留内存结构、ruleVersion 3 与语义校验（`maxEncodedSize = 51,200`），将线格式改为**875B 固定前缀**（偏移 `874` 为 `language`）+ **变长数组**（`historySize` ≤14、`recentSize` ≤32、`encounterQueueSize` ≤31）+ **按物种稀疏表**（`entryCount` ≤649，严格递增 `speciesId` + `fieldMask`：`0x01` `captureCount`、`0x02` `firstCapture` 省 `species` 由解码回填、`0x04` `progress`）；schema1–9 原格式不变。
+
+校验 schema9 后迁移仅将 `schema` 升至 10，原样保留账户、语言、地区、历史、当前场、队列、旧库存及校时事务。解码拒绝越界计数、非递增 ID、零/非法掩码、置位零载荷、截断与尾冗余（空档 880B、中盘 1,070B、649 全捕 49,325B、617 捕+32 队列 48,810B）。`FileStore` 新增槽位缓存（#78 阶段一）：`load()`／成功 `commit()` 记录 `synced`/`currentSlot`/`currentSequence`，仅未 pending 且序列合法时跳过预读，仍做 `prepare()`、交替写及回读/解码校验，出错或 `reset()` 即清 `synced` 回退 `scan()`；阶段三待实机测 `commit=`/`maxgap=` 后评估。
+
 ## 活动分支固件存档的兼容读取
 
-未合并的活动分支固件（legendary-ruins、dragon-trial）在 schema3 payload 末尾追加了 22 字节活动块，并可能持有超出普通池的当前遭遇：这些活动遭遇消耗遭遇 ID 但不消耗探索步，schema3 的固定扣步账式对它们不成立。解码器识别「schema3 + 恰好 22 字节尾部」的帧时跳过活动块；若当前遭遇不在普通池，就清空该遭遇、回到 Walking 并清空结果，然后由解码器就地升级 schema4、schema5，启动时再由 Engine 升级到 schema9。总步、培养账户、捕获历史与伙伴保留，活动进度（遗迹线索、试炼阶段）随尾部块一起丢弃。
+未合并的活动分支固件（legendary-ruins、dragon-trial）在 schema3 payload 末尾追加了 22 字节活动块，并可能持有超出普通池的当前遭遇：这些活动遭遇消耗遭遇 ID 但不消耗探索步，schema3 的固定扣步账式对它们不成立。解码器识别「schema3 + 恰好 22 字节尾部」的帧时跳过活动块；若当前遭遇不在普通池，就清空该遭遇、回到 Walking 并清空结果，然后由解码器就地升级 schema4、schema5，启动时再由 Engine 升级到 schema10。总步、培养账户、捕获历史与伙伴保留，活动进度（遗迹线索、试炼阶段）随尾部块一起丢弃。
 
 升级到 schema4 后仍须通过 v4 语义校验，再按上文进入 4 到 5 并通过 v5 校验。令 `modern = nextEncounterId - 1 - legacyChargedCount - voidedLegacyCount`、`modernSpent = explorationSpent - 500 × legacyChargedCount`，当前校验要求 `200 × modern <= modernSpent <= 5000 × modern`；这是累计账目区间，并非允许每场零消耗。已纳入测试的[活动固件字节样本](../../test/fixtures/progression/schema3-activity.bin)满足该区间，[迁移测试](../../test/test_migration.cpp)验证其 6293 总步、1293 探索余额、培养与伙伴保留。不能据此承诺任意活动分支存档都能迁移；未来活动格式需另订迁移契约。
