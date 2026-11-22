@@ -133,7 +133,7 @@ static void commits() {
   CHECK(store.commit(skip) == CommitStatus::Committed);
   CHECK(store.load(out).status == LoadStatus::Loaded && out.sequence == 3);
   io.failAfterWrite = false;
-  skip.sequence = 4; io.failReadCall = io.reads + 3;
+  skip.sequence = 4; io.failReadCall = io.reads + 1;
   CHECK(store.commit(skip) == CommitStatus::IoError);
   CHECK(store.commit(skip) == CommitStatus::Committed);
   CHECK(store.load(out).status == LoadStatus::Loaded && out.sequence == 4);
@@ -202,7 +202,121 @@ static void truncations() {
     CHECK(store.load(out).status == LoadStatus::Loaded && out.sequence == 1);
   }
 }
+static void slotCacheBehavior() {
+  Save s1; s1.sequence = 1; s1.bootGeneration = 1; s1.encounterTarget = 300;
+  Save s2 = s1; s2.sequence = 2; s2.totalSteps = s2.undatedSteps = s2.explorationCredit = 10;
+  Save s3 = s2; s3.sequence = 3; s3.totalSteps = s3.undatedSteps = s3.explorationCredit = 20;
+  Save s4 = s3; s4.sequence = 4; s4.totalSteps = s4.undatedSteps = s4.explorationCredit = 30;
+  Save s5 = s4; s5.sequence = 5; s5.totalSteps = s5.undatedSteps = s5.explorationCredit = 40;
+  Save out;
+
+  // Empty load keeps cache un-synced so initial commit verifies both slots before writing.
+  {
+    MemoryIO io; FileStore store(io);
+    CHECK(store.load(out).status == LoadStatus::Empty && io.reads == 2);
+    const int beforeReads = io.reads;
+    CHECK(store.commit(s1) == CommitStatus::Committed);
+    CHECK(io.reads - beforeReads == 3 && io.writes == 1);
+
+    // Consecutive commits hit cache: 1 read (post-write readback only), alternating slots.
+    int readsBefore = io.reads;
+    CHECK(store.commit(s2) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 1 && io.writes == 2);
+
+    readsBefore = io.reads;
+    CHECK(store.commit(s3) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 1 && io.writes == 3);
+
+    // Idempotent retry on cached store requires zero disk reads/writes when bytes match.
+    readsBefore = io.reads;
+    CHECK(store.commit(s3) == CommitStatus::Committed);
+    CHECK(io.reads == readsBefore && io.writes == 3);
+
+    // Idempotent mismatch clears cache and returns Conflict; next valid commit falls back to scan.
+    Save badSame = s3; badSame.stepsIncomplete = true;
+    CHECK(store.commit(badSame) == CommitStatus::Conflict && io.writes == 3);
+    readsBefore = io.reads;
+    CHECK(store.commit(s4) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 3 && io.writes == 4);
+
+    // Sequence gap on cached store clears cache and returns Conflict.
+    Save gap = s5; gap.sequence = 6;
+    CHECK(store.commit(gap) == CommitStatus::Conflict && io.writes == 4);
+    readsBefore = io.reads;
+    CHECK(store.commit(s5) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 3 && io.writes == 5);
+  }
+
+  // Cached prepare error, readback failure, failAfterWrite, and corrupt readback all invalidate cache and recover via scan.
+  {
+    MemoryIO io; io.put(0, s1);
+    FileStore store(io);
+    CHECK(store.load(out).status == LoadStatus::Loaded && out.sequence == 1);
+
+    // Prepare failure on cached commit clears cache and does not write.
+    io.ready = LoadStatus::IoError;
+    CHECK(store.commit(s2) == CommitStatus::IoError && io.writes == 0);
+    io.ready = LoadStatus::Loaded;
+    int readsBefore = io.reads;
+    CHECK(store.commit(s2) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 3 && io.writes == 1);
+
+    // Cached readback failure (1st read after write): write reached slot 0, retry scans and commits idempotently.
+    io.failReadCall = io.reads + 1;
+    CHECK(store.commit(s3) == CommitStatus::IoError && io.writes == 2);
+    io.failReadCall = -1;
+    readsBefore = io.reads;
+    CHECK(store.commit(s3) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 2 && io.writes == 2); // scan(2) found s3 already on disk, no extra write!
+
+    // Cache is re-synced after scan-recovered idempotent commit: next commit uses fast path again.
+    readsBefore = io.reads;
+    CHECK(store.commit(s4) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 1 && io.writes == 3);
+
+    // failAfterWrite on cached commit clears cache; retry scans and completes without rewriting.
+    io.failAfterWrite = true;
+    CHECK(store.commit(s5) == CommitStatus::IoError && io.writes == 4);
+    io.failAfterWrite = false;
+    readsBefore = io.reads;
+    CHECK(store.commit(s5) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 2 && io.writes == 4);
+
+    // Cached write mutation is caught by mandatory post-write readback + decode.
+    Save s6 = s5; s6.sequence = 6;
+    io.mutateWrite = true;
+    CHECK(store.commit(s6) == CommitStatus::IoError && io.writes == 5);
+    io.mutateWrite = false;
+    readsBefore = io.reads;
+    CHECK(store.commit(s6) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 3 && io.writes == 6);
+
+    // reset() drops cached state; next commit scans.
+    store.reset();
+    Save s7 = s6; s7.sequence = 7;
+    readsBefore = io.reads;
+    CHECK(store.commit(s7) == CommitStatus::Committed);
+    CHECK(io.reads - readsBefore == 3 && io.writes == 7);
+    CHECK(store.load(out).status == LoadStatus::Loaded && out.sequence == 7);
+  }
+
+  // Cached readback failure in language transaction: write reaches disk before readback fails, retry finishes cleanly.
+  {
+    using pokedex::i18n::Language;
+    Save old; old.sequence = 1; old.encounterTarget = 300;
+    Save english = old; english.sequence = 2; english.language = Language::English;
+    MemoryIO io; io.put(0, old);
+    FileStore store(io);
+    CHECK(store.load(out).status == LoadStatus::Loaded && out.language == Language::Chinese);
+    io.failReadCall = io.reads + 1;
+    CHECK(store.commit(english) == CommitStatus::IoError);
+    io.failReadCall = -1;
+    FileStore restarted(io);
+    CHECK(restarted.load(out).status == LoadStatus::Loaded && out.language == Language::English);
+    CHECK(store.commit(english) == CommitStatus::Committed && io.writes == 1);
+  }
+}
 int main() {
-  selection(); unsupportedVersions(); commits(); truncations(); languageTransactions();
+  selection(); unsupportedVersions(); commits(); truncations(); languageTransactions(); slotCacheBehavior();
   std::printf("PASS file_store: %d checks\n", checks);
 }

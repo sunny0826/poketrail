@@ -26,7 +26,7 @@ bool migrateLegacy(Save& s) {
     }
     if (!validate(s)) return false;
   }
-  if (s.schema < 2 || s.schema > 8 || !validate(s)) return false;
+  if (s.schema < 2 || s.schema > 9 || !validate(s)) return false;
   if (s.schema == 2) {
     for (size_t i = 151; i < speciesCapacity(3).count; ++i) {
       s.progress[i] = SpeciesProgress();
@@ -56,6 +56,10 @@ bool migrateLegacy(Save& s) {
   if (s.schema == 8) {
     if (!validate(s)) return false;
     s.schema = 9;
+  }
+  if (s.schema == 9) {
+    if (!validate(s)) return false;
+    s.schema = 10;
   }
   return validate(s);
 }
