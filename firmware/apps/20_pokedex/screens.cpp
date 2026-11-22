@@ -105,7 +105,8 @@ bool touchBackEnabled(Page page) {
     case Page::Menu: case Page::Settings: case Page::Routes: case Page::Partners:
     case Page::CarriedPartner: case Page::PartnerDetail: case Page::EvolutionConfirm:
     case Page::Records: case Page::FirstCaptures: case Page::Recent: case Page::Days:
-    case Page::Achievements: case Page::Clock: case Page::EvolutionPreviewTargets:
+    case Page::Achievements: case Page::Clock: case Page::Result:
+    case Page::EvolutionPreviewTargets:
     case Page::TestEntry: case Page::TestHub: case Page::TestSteps: case Page::TestScenarios:
     case Page::TestFaults: case Page::TestDiagnostics: case Page::TestExit:
     case Page::Language: return true;
@@ -119,9 +120,7 @@ bool isTestPage(Page page) {
 }
 TouchHit touchHit(const ScreenState& s, const Engine& e, int x, int y) {
   const TouchHit none = {-1, PressedAux::None};
-  if (s.page == Page::Home)
-    return homeEvolutionReady(e) && kHomeEvolveTouchArea.contains(x, y)
-               ? TouchHit{-1, PressedAux::HomeEvolve} : none;
+  if (s.page == Page::Home) return homeTouchHit(s, e, x, y);
   if (touchBackEnabled(s.page) && y < 80) return {-1, PressedAux::Back};
   if (s.page == Page::Throw || s.page == Page::FirstCaptures || s.page == Page::Recent ||
       s.page == Page::Days || s.page == Page::Achievements ||

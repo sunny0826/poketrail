@@ -148,6 +148,19 @@ class Runtime {
   void openCarriedPartner();
   void openHomeEvolution();
   void leaveEvolutionConfirm();
+  void acknowledgeResult(bool chainNext) {
+    if (engine_.acknowledgeResult(engine_.view().encounter.id, platform_.randomSeed()) ==
+            adventure::CommandResult::Applied &&
+        !engine_.savePending()) {
+      navigate(chainNext && engine_.view().phase == adventure::Phase::EncounterReady
+                   ? Page::Encounter : Page::Home);
+    }
+  }
+  void activateHomeShortcut(PressedAux aux) {
+    if (aux == PressedAux::HomeEvolve) openHomeEvolution();
+    else if (aux == PressedAux::HomeRegion) { routesReturn_ = Page::Home; navigate(Page::Routes); }
+    else navigate(engine_.view().phase == adventure::Phase::ThrowReady ? Page::Throw : Page::Encounter);
+  }
   void resumeSavedProgression();
   static const char* collectionLabel(uint16_t species, void* context);
   void goBack();
@@ -201,6 +214,7 @@ class Runtime {
   enum class PendingRoster : uint8_t { None, Select, Evolve };
   PendingRoster pendingRoster_ = PendingRoster::None;
   Page evolutionReturn_ = Page::PartnerDetail;
+  Page routesReturn_ = Page::Menu;
   bool partnersFromCarried_ = false;
   bool hasSample_ = false, gapReported_ = false, wasVibrating_ = false, battleEffectChecked_ = false;
   enum class DisplayState : uint8_t { Awake, Asleep, Waking };
