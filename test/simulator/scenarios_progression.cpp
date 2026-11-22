@@ -10,6 +10,19 @@ namespace {
 using namespace progression_support;
 using namespace progression_conflicts;
 #define REQUIRE(d, cond, msg) do { if (!expect((d), (cond), (msg))) return false; } while (0)
+#define REQ_PAGE(d, p, msg) do { if (!page((d), (p), (msg))) return false; } while (0)
+
+bool walkCredited(Driver& d, const Save& before, uint16_t id, const char* msg) {
+  const uint64_t base = before.totalSteps;
+  d.walk(10);
+  REQUIRE(d, wait(d, [&] {
+            return d.save().totalSteps >= base + 10 && !d.runtime().engine().savePending();
+          }, 30000, msg), msg);
+  const Save& s = d.save();
+  const uint64_t total = s.totalSteps - base;
+  REQUIRE(d, total >= 10 && onlyProgress(before, s, id, total), msg);
+  return true;
+}
 
 bool progressionRun(Driver& d) {
   const Save start = d.save();
@@ -18,17 +31,7 @@ bool progressionRun(Driver& d) {
   REQUIRE(d, start.progress[0].walked == 7600 && start.progress[1].walked == 200, "evolution fixture carries the 7600/200 progress split");
   d.state("progression-start");
 
-  const uint64_t baseTotal = start.totalSteps;
-  d.walk(10);
-  REQUIRE(d, wait(d, [&] {
-            return d.save().totalSteps >= baseTotal + 10 && !d.runtime().engine().savePending();
-          }, 30000, "first ten steps reach the engine"), "first ten steps reach the engine");
-  {
-    const Save& s = d.save();
-    const uint64_t total = s.totalSteps - baseTotal;
-    REQUIRE(d, total >= 10, "first walk really produced steps");
-    REQUIRE(d, onlyProgress(start, s, 1, total), "first walk credits only carried species 1");
-  }
+  if (!walkCredited(d, start, 1, "first walk credits only carried species 1")) return false;
 
   if (!homeEvolution(d, 1, 2, "home evolution entry")) return false;
   d.select(1);
@@ -36,7 +39,7 @@ bool progressionRun(Driver& d) {
                 d.save().progress[0].spent == 0, "home evolution cancellation leaves steps intact");
   if (!toHome(d, "carried partner")) return false;
   d.homeMenu(); d.select(MenuItem::Partner);
-  REQUIRE(d, page(d, Page::CarriedPartner, "menu opens carried partner"), "menu opens carried partner");
+  REQ_PAGE(d, Page::CarriedPartner, "menu opens carried partner");
   REQUIRE(d, d.screen().species == 1, "carried page reads the current partner");
   d.frames();
   const std::string steps = "陪伴 " + std::to_string(d.save().progress[0].walked) + " · 可用 " +
@@ -48,11 +51,11 @@ bool progressionRun(Driver& d) {
           "carried page renders species, account, evolution cost and switch action");
   d.shot("carried-ready");
   d.select(1);
-  REQUIRE(d, page(d, Page::EvolutionConfirm, "carried target opens confirmation"), "carried target opens confirmation");
+  REQ_PAGE(d, Page::EvolutionConfirm, "carried target opens confirmation");
   d.select(1);
-  REQUIRE(d, page(d, Page::CarriedPartner, "later returns to carrier"), "later returns to carrier");
+  REQ_PAGE(d, Page::CarriedPartner, "later returns to carrier");
   d.select(0);
-  REQUIRE(d, page(d, Page::Partners, "switch opens existing list"), "switch opens existing list");
+  REQ_PAGE(d, Page::Partners, "switch opens existing list");
   d.select(1); d.fault(Fault::BeforeWrite); d.select(0);
   REQUIRE(d, page(d, Page::Error, "switch failure opens retry") && d.save().partner == 1,
           "failed switch retains the published carrier");
@@ -67,23 +70,12 @@ bool progressionRun(Driver& d) {
   REQUIRE(d, d.screen().page == Page::Menu && d.screen().selected == unsigned(MenuItem::Partner), "carried top back restores menu selection");
   if (!toHome(d, "switch to partner 4")) return false;
   const Save afterSwitch = d.save();
-  const uint64_t baseTotal4 = afterSwitch.totalSteps;
-  d.walk(10);
-  REQUIRE(d, wait(d, [&] {
-            return d.save().totalSteps >= baseTotal4 + 10 && !d.runtime().engine().savePending();
-          }, 30000, "ten steps with partner 4 reach the engine"),
-          "ten steps with partner 4 reach the engine");
-  {
-    const Save& s = d.save();
-    const uint64_t total = s.totalSteps - baseTotal4;
-    REQUIRE(d, onlyProgress(afterSwitch, s, 4, total), "second walk credits only carried species 4");
-  }
+  if (!walkCredited(d, afterSwitch, 4, "second walk credits only carried species 4")) return false;
 
   if (!carry(d, 0, 1, "switch back to partner 1")) return false;
   if (!toHome(d, "carried evolution")) return false;
   d.homeMenu(); d.select(MenuItem::Partner); d.select(1);
-  REQUIRE(d, page(d, Page::EvolutionConfirm, "carried evolution opens confirmation"),
-          "carried evolution opens confirmation");
+  REQ_PAGE(d, Page::EvolutionConfirm, "carried evolution opens confirmation");
   const Save confirm = d.save();
   d.fault(Fault::BeforeWrite); d.select(0);
   REQUIRE(d, page(d, Page::Error, "carried evolution failure opens retry") &&
@@ -125,19 +117,9 @@ bool progressionRun(Driver& d) {
 
   checkCaptureBadge(d, 0, "evolution-no-capture");
   const Save afterEvolution = d.save();
-  const uint64_t baseTotal2 = afterEvolution.totalSteps;
-  d.walk(10);
-  REQUIRE(d, wait(d, [&] {
-            return d.save().totalSteps >= baseTotal2 + 10 && !d.runtime().engine().savePending();
-          }, 30000, "ten steps with evolved partner 2 reach the engine"),
-          "ten steps with evolved partner 2 reach the engine");
-  {
-    const Save& s = d.save();
-    const uint64_t total = s.totalSteps - baseTotal2;
-    REQUIRE(d, onlyProgress(afterEvolution, s, 2, total), "post-evolution walk credits only species 2");
-    REQUIRE(d, s.progress[0].spent == afterEvolution.progress[0].spent,
-            "post-evolution walk leaves the source debit untouched");
-  }
+  if (!walkCredited(d, afterEvolution, 2, "post-evolution walk credits only species 2")) return false;
+  REQUIRE(d, d.save().progress[0].spent == afterEvolution.progress[0].spent,
+          "post-evolution walk leaves the source debit untouched");
   d.homeMenu(); d.select(MenuItem::Partner);
   REQUIRE(d, page(d, Page::CarriedPartner, "evolved carrier can be reopened") && d.screen().species == 2,
           "evolved carrier can be reopened");
@@ -148,7 +130,7 @@ bool progressionRun(Driver& d) {
 
 bool progressionReload(Driver& d) {
   d.frames(6);
-  REQUIRE(d, page(d, Page::Home, "reloaded progression opens home"), "reloaded progression opens home");
+  REQ_PAGE(d, Page::Home, "reloaded progression opens home");
   const Save& s = d.save();
   REQUIRE(d, s.starter == 1 && s.partner == 2, "reload keeps starter 1 and carried species 2");
   REQUIRE(d, owns(s, 2) && !owns(s, 1) && registered(s, 1) && registered(s, 2), "reload keeps the evolved ownership state");
@@ -174,7 +156,7 @@ bool isolationRun(Driver& d) {
   if (!openViewer(d, "isolated preview 1")) return false;
   REQUIRE(d, pokedex::viewer_screen::species() == 1, "viewer starts on species 1");
   d.tap(233, 423);
-  REQUIRE(d, page(d, Page::EvolutionPreview, "species 1 preview starts"), "species 1 preview starts");
+  REQ_PAGE(d, Page::EvolutionPreview, "species 1 preview starts");
   REQUIRE(d, d.screen().evolutionAnim.from == 1 && d.screen().evolutionAnim.to == 2, "species 1 preview names 1 to 2");
   if (!skipPreviewToViewer(d, "species 1")) return false;
   REQUIRE(d, pokedex::viewer_screen::species() == 1, "preview returns to the same viewer species");
@@ -186,7 +168,7 @@ bool isolationRun(Driver& d) {
   REQUIRE(d, d.screen().evolutionAnim.from == 133, "Eevee preview names species 133");
   REQUIRE(d, menuCount(d.screen(), d.runtime().engine()) == 8, "Eevee preview offers seven branches plus return");
   d.select(0);
-  REQUIRE(d, page(d, Page::EvolutionPreview, "Eevee first branch preview starts"), "Eevee first branch preview starts");
+  REQ_PAGE(d, Page::EvolutionPreview, "Eevee first branch preview starts");
   REQUIRE(d, d.screen().evolutionAnim.to == 134, "Eevee first branch previews 134");
   if (!skipPreviewToViewer(d, "Eevee 133")) return false;
   REQUIRE(d, pokedex::viewer_screen::species() == 133, "Eevee preview returns to species 133");
@@ -215,10 +197,21 @@ bool edgesRun(Driver& d) {
   REQUIRE(d, page(d, Page::PartnerDetail, "third row edge opens its partner") && d.screen().species == 133,
           "touching the third row edge opens the correct partner");
   d.back();
+  REQUIRE(d, page(d, Page::Partners, "back from 133") && d.screen().selected == 2,
+          "back from 133 restores row 2");
   d.tap(330, 425);
   REQUIRE(d, d.screen().selected == 3, "enlarged next-page zone reaches the last partner page");
   d.frames();
   d.shot("edges-partners-last");
+  for (const auto& step : {std::pair<int, uint16_t>{238, 439}, {306, 649}}) {
+    const uint16_t row = step.first == 238 ? 3 : 4;
+    d.tap(233, step.first);
+    REQUIRE(d, page(d, Page::PartnerDetail, "page 2 detail") && d.screen().species == step.second,
+            "page 2 opens expected partner");
+    if (row == 3) d.back(); else d.select(1);
+    REQUIRE(d, page(d, Page::Partners, "page 2 return") && d.screen().selected == row,
+            "page 2 detail return restores page and row");
+  }
   d.select(5);
   REQUIRE(d, page(d, Page::CarriedPartner, "last partner page returns to carried partner"),
           "last partner page returns to carried partner");
@@ -243,7 +236,18 @@ bool edgesRun(Driver& d) {
   REQUIRE(d, page(d, Page::Home, "exit pill returns to exploration"), "exit pill returns to exploration");
 
   if (!openViewer(d, "edges viewer")) return false;
-  REQUIRE(d, pokedex::viewer_screen::species() == 1, "viewer touch navigation starts on species 1");
+  auto backIconOk = [&] {
+    return M5.Display.readPixel(105, 52) == theme::kMuted &&
+           M5.Display.readPixel(119, 52) == theme::kMuted &&
+           M5.Display.readPixel(111, 46) == theme::kMuted;
+  };
+  REQUIRE(d, pokedex::viewer_screen::species() == 1 && backIconOk(), "viewer starts on 1 with back icon");
+  for (uint16_t sp : {152, 252, 387, 494, 1}) {
+    d.tap(233, 353);
+    d.frames(2);
+    REQUIRE(d, d.screen().page == Page::Viewer && pokedex::viewer_screen::species() == sp,
+            "type pill cycles generation starts");
+  }
   d.swipe(340, 120);
   REQUIRE(d, d.screen().page == Page::Viewer && pokedex::viewer_screen::species() == 2,
           "left swipe advances the viewer to species 2");
@@ -254,93 +258,73 @@ bool edgesRun(Driver& d) {
   REQUIRE(d, d.screen().page == Page::Viewer && pokedex::viewer_screen::species() == 1,
           "short drag keeps the current viewer species");
   viewerKeys(d, SDL_SCANCODE_LEFT, 211, "viewer to 439 via the list end");
-  REQUIRE(d, pokedex::viewer_screen::species() == 439, "viewer reaches long-name species 439");
+  REQUIRE(d, pokedex::viewer_screen::species() == 439 && backIconOk(), "viewer reaches 439 with back icon");
   d.shot("edges-viewer-439");
   viewerKeys(d, SDL_SCANCODE_LEFT, 306, "viewer to 133");
   REQUIRE(d, pokedex::viewer_screen::species() == 133, "viewer reaches Eevee 133");
 
   if (!openPreviewTargets(d, "edges Eevee")) return false;
-  d.swipe(350, 100);
-  d.swipe(350, 100);
+  d.swipe(350, 100); d.swipe(350, 100);
   REQUIRE(d, d.screen().selected == 6, "Eevee preview reaches its last page");
   d.shot("edges-eevee-last");
   d.select(6);
-  REQUIRE(d, page(d, Page::EvolutionPreview, "last Eevee branch preview starts"), "last Eevee branch preview starts");
+  REQ_PAGE(d, Page::EvolutionPreview, "last Eevee branch preview starts");
   REQUIRE(d, d.screen().evolutionAnim.from == 133 && d.screen().evolutionAnim.to == 471, "last Eevee branch previews 471");
   if (!skipPreviewToViewer(d, "edges Eevee branch")) return false;
   REQUIRE(d, pokedex::viewer_screen::species() == 133, "Eevee branch preview returns to 133");
 
   if (!openPreviewTargets(d, "edges Eevee return")) return false;
-  d.swipe(350, 100);
-  d.swipe(350, 100);
+  d.swipe(350, 100); d.swipe(350, 100);
   d.select(7);
-  REQUIRE(d, page(d, Page::Viewer, "Eevee target list return goes back to viewer"), "Eevee target list return goes back to viewer");
+  REQ_PAGE(d, Page::Viewer, "Eevee target list return goes back to viewer");
   REQUIRE(d, pokedex::viewer_screen::species() == 133, "Eevee target list return keeps the viewer species");
   d.shot("edges-preview-return");
+  d.tap(112, 52);
+  REQUIRE(d, page(d, Page::Menu, "viewer back icon") && d.screen().selected == unsigned(MenuItem::Pokedex),
+          "viewer back icon restores Pokedex focus");
+  d.select(MenuItem::Records); d.select(0);
+  REQ_PAGE(d, Page::FirstCaptures, "edges opens first captures");
+  for (uint16_t sel : {151, 251, 386, 493, 0, 151}) {
+    d.tap(233, 88);
+    REQUIRE(d, d.screen().selected == sel, "first captures #NNN cycles generations");
+  }
+  d.back();
+  REQ_PAGE(d, Page::Records, "first captures back returns to records");
+  d.select(0);
+  REQUIRE(d, page(d, Page::FirstCaptures, "reopen first captures") && d.screen().selected == 151,
+          "first captures keeps session position");
   if (!toHome(d, "edges")) return false;
   d.state("edges-end");
   return true;
+}
+
+void runSingle(Driver& d, const std::string& phase, const char* expected,
+               const char* failState, bool (*fn)(Driver&)) {
+  d.frames(4);
+  if (phase != expected) { d.check(false, "unknown phase: " + phase); return; }
+  if (!fn(d)) { d.state(failState); return; }
+  d.close();
 }
 
 }
 
 void scenarioProgression(Driver& d, const std::string& phase) {
   d.frames(4);
-  bool ok = false;
-  if (phase == "run") ok = progressionRun(d);
-  else if (phase == "reload") ok = progressionReload(d);
-  else {
-    d.check(false, "unknown progression phase: " + phase);
-    return;
-  }
-  if (!ok) {
-    d.state("progression-failed");
-    return;
-  }
+  if (phase != "run" && phase != "reload") { d.check(false, "unknown progression phase: " + phase); return; }
+  if (!(phase == "run" ? progressionRun(d) : progressionReload(d))) { d.state("progression-failed"); return; }
   d.close();
 }
-
 void scenarioConflict(Driver& d, const std::string& phase) {
-  d.frames(4);
-  bool ok = false;
-  if (phase == "owned") ok = conflictOwned(d);
-  else {
-    d.check(false, "unknown conflict phase: " + phase);
-    return;
-  }
-  if (!ok) {
-    d.state("conflict-failed");
-    return;
-  }
-  d.close();
+  runSingle(d, phase, "owned", "conflict-failed", conflictOwned);
 }
-
 void scenarioIsolation(Driver& d, const std::string& phase) {
-  d.frames(4);
-  if (phase != "run") {
-    d.check(false, "unknown isolation phase: " + phase);
-    return;
-  }
-  if (!isolationRun(d)) {
-    d.state("isolation-failed");
-    return;
-  }
-  d.close();
+  runSingle(d, phase, "run", "isolation-failed", isolationRun);
 }
-
 void scenarioEdges(Driver& d, const std::string& phase) {
-  d.frames(4);
-  if (phase != "run") {
-    d.check(false, "unknown edges phase: " + phase);
-    return;
-  }
-  if (!edgesRun(d)) {
-    d.state("edges-failed");
-    return;
-  }
-  d.close();
+  runSingle(d, phase, "run", "edges-failed", edgesRun);
 }
 
+#undef REQ_PAGE
 #undef REQUIRE
 }
 }

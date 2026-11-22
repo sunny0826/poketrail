@@ -37,5 +37,7 @@ struct Sprite {
 uint16_t displayScale(const Sprite& sprite);
 bool decodeFrame(const Sprite& sprite, uint16_t frame, uint16_t scale,
                  uint16_t* pixels, size_t capacity);
+bool prefetchSprite(const Sprite& sprite);
+bool isSpriteCached(const Sprite& sprite);
 
 }

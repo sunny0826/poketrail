@@ -17,21 +17,38 @@ struct DecodedSprite {
   uint32_t capacity = 0;
   const uint8_t* source = nullptr;
   uint32_t compressedSize = 0, rawSize = 0;
+  uint64_t lastUsed = 0;
 };
-DecodedSprite slots[2];
-unsigned recent = 0;
-const uint8_t* cache(const Sprite& sprite) {
-  if (!sprite.data || !sprite.raw_size) return nullptr;
-  for (unsigned i = 0; i < 2; ++i) {
+constexpr unsigned kCacheSlots = 4;
+DecodedSprite slots[kCacheSlots];
+uint64_t useClock = 0;
+int findSlot(const Sprite& sprite) {
+  if (!sprite.data || !sprite.data_size || !sprite.raw_size) return -1;
+  for (unsigned i = 0; i < kCacheSlots; ++i) {
     const auto& slot = slots[i];
     if (slot.source == sprite.data && slot.compressedSize == sprite.data_size &&
         slot.rawSize == sprite.raw_size) {
-      recent = i;
-      return slot.raw;
+      return int(i);
     }
   }
-  const unsigned next = recent ^ 1;
-  auto& slot = slots[next];
+  return -1;
+}
+const uint8_t* cache(const Sprite& sprite) {
+  if (!sprite.data || !sprite.data_size || !sprite.raw_size) return nullptr;
+  const int hit = findSlot(sprite);
+  if (hit >= 0) {
+    slots[hit].lastUsed = ++useClock;
+    return slots[hit].raw;
+  }
+  unsigned target = 0;
+  for (unsigned i = 0; i < kCacheSlots; ++i) {
+    if (!slots[i].source) {
+      target = i;
+      break;
+    }
+    if (slots[i].lastUsed < slots[target].lastUsed) target = i;
+  }
+  auto& slot = slots[target];
   if (slot.capacity < sprite.raw_size) {
 #if defined(ARDUINO_ARCH_ESP32)
     uint8_t* resized = static_cast<uint8_t*>(
@@ -44,6 +61,9 @@ const uint8_t* cache(const Sprite& sprite) {
     slot.capacity = sprite.raw_size;
   }
   slot.source = nullptr;
+  slot.compressedSize = 0;
+  slot.rawSize = 0;
+  slot.lastUsed = 0;
 #if defined(ARDUINO_ARCH_ESP32)
   // tinfl_decompressor is about 11 KB. The ROM helper keeps it on the caller
   // stack, which overflows the 8 KB Arduino loop task.
@@ -75,10 +95,14 @@ const uint8_t* cache(const Sprite& sprite) {
   slot.source = sprite.data;
   slot.compressedSize = sprite.data_size;
   slot.rawSize = sprite.raw_size;
-  recent = next;
+  slot.lastUsed = ++useClock;
   return slot.raw;
 }
 }
+
+bool prefetchSprite(const Sprite& sprite) { return cache(sprite) != nullptr; }
+
+bool isSpriteCached(const Sprite& sprite) { return findSlot(sprite) >= 0; }
 
 uint16_t displayScale(const Sprite& sprite) {
   if (!sprite.width || !sprite.height ||

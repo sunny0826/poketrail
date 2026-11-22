@@ -145,7 +145,11 @@ class Runtime {
   void tickEvolution(uint32_t now, bool inputHeld);
   static bool hasEvolutionPreview(uint16_t species, void* context);
   void openPartner(uint16_t species);
+  void returnToPartners();
   void openCarriedPartner();
+  void openFirstCaptures();
+  void jumpFirstCapturesGeneration();
+  void recordFirstCapturesSelection();
   void openHomeEvolution();
   void leaveEvolutionConfirm();
   void acknowledgeResult(bool chainNext) {
@@ -216,6 +220,8 @@ class Runtime {
   Page evolutionReturn_ = Page::PartnerDetail;
   Page routesReturn_ = Page::Menu;
   bool partnersFromCarried_ = false;
+  uint16_t partnersSelectedSpecies_ = 0;
+  uint16_t firstCapturesSelected_ = UINT16_MAX;
   bool hasSample_ = false, gapReported_ = false, wasVibrating_ = false, battleEffectChecked_ = false;
   enum class DisplayState : uint8_t { Awake, Asleep, Waking };
   DisplayState display_ = DisplayState::Awake;

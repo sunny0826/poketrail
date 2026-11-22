@@ -100,13 +100,14 @@ void Runtime::goBack() {
   } else if (screen_.page == Page::Settings) openMenu(MenuItem::Settings);
   else if (screen_.page == Page::Records) openMenu(MenuItem::Records);
   else if (recordPage(screen_.page)) {
+    recordFirstCapturesSelection();
     const unsigned tile = recordTile(screen_.page);
     navigate(Page::Records); screen_.selected = tile;
   } else if (screen_.page == Page::Clock)
     navigate(engine_.view().starter ? Page::Settings : Page::DateWelcome);
   else if (screen_.page == Page::EvolutionPreviewTargets) navigate(Page::Viewer);
   else if (screen_.page == Page::EvolutionConfirm) leaveEvolutionConfirm();
-  else if (screen_.page == Page::PartnerDetail) navigate(Page::Partners);
+  else if (screen_.page == Page::PartnerDetail) returnToPartners();
   else if (screen_.page == Page::CarriedPartner) {
     partnersFromCarried_ = false;
     openMenu(MenuItem::Partner);
@@ -249,12 +250,20 @@ void Runtime::handle(const Input& raw) {
   const bool record = recordPage(screen_.page);
   if (record && input.swipe) {
     screen_.selected = (screen_.selected + count + input.swipe) % count;
+    recordFirstCapturesSelection();
     return;
   }
   if (record && input.click) {
     if (input.y >= 340) { goBack(); return; }
-    if (input.y >= 80)
+    if (screen_.page == Page::FirstCaptures && input.y >= 80 && input.y <= 104 &&
+        input.x >= 120 && input.x <= 346) {
+      jumpFirstCapturesGeneration();
+      return;
+    }
+    if (input.y >= 80) {
       screen_.selected = (screen_.selected + (input.x < 233 ? count - 1 : 1)) % count;
+      recordFirstCapturesSelection();
+    }
     return;
   }
   const menu_layout::Hub* hub = hubFor(screen_.page);
@@ -281,6 +290,7 @@ void Runtime::handle(const Input& raw) {
       screen_.selected = (screen_.selected + (input.left ? count - 1 : 1)) % count;
       if (menuSelectable(screen_, engine_, screen_.selected)) break;
     }
+    recordFirstCapturesSelection();
   }
   if (confirm && menuSelectable(screen_, engine_, screen_.selected)) activate(screen_.selected, input.at);
 }
@@ -415,6 +425,7 @@ void Runtime::activate(unsigned item, uint32_t at) {
       acknowledgeResult(true); break;
     case Page::Records: {
       if (item == 4) { goBack(); break; }
+      if (item == 0) { openFirstCaptures(); break; }
       const Page pages[] = {Page::FirstCaptures, Page::Recent, Page::Days, Page::Achievements};
       navigate(pages[item]); break;
     }
