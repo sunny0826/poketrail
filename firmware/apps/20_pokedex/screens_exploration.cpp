@@ -64,7 +64,17 @@ uint8_t computeHomeFooter(const Engine& engine) {
   return 0;
 }
 }
-bool Screens::exploration(const Engine& engine, uint32_t now) {
+void Screens::homeEvolveButton(bool pressed) {
+  const auto& b = kHomeEvolveButton;
+  if (pressed) {
+    panelFrame(b, 12, true, true, theme::kGold);
+  } else {
+    M5.Display.fillRoundRect(b.x, b.y, b.width, b.height, 12, theme::kPanelActive);
+    M5.Display.drawRoundRect(b.x, b.y, b.width, b.height, 12, theme::kGold);
+  }
+  smallLabel(tr(Text::Evolve), b.x + b.width / 2, b.y + b.height / 2, theme::kGold, middle_center);
+}
+bool Screens::exploration(const ScreenState& s, const Engine& engine, uint32_t now) {
   const auto& save = engine.view();
   scene(save.route, false, 0, sceneSteps_);
   actorShadow(233, 238);
@@ -77,12 +87,7 @@ bool Screens::exploration(const Engine& engine, uint32_t now) {
   if (!rendered) line(tr(Text::PartnerImageFailed), 233, theme::kRed);
   const bool evolvable = homeEvolutionReady(engine);
   title(speciesName(save.partner), "", theme::routeColor(save.route));
-  if (evolvable) {
-    const auto& b = kHomeEvolveButton;
-    M5.Display.fillRoundRect(b.x, b.y, b.width, b.height, 12, theme::kPanelActive);
-    M5.Display.drawRoundRect(b.x, b.y, b.width, b.height, 12, theme::kGold);
-    smallLabel(tr(Text::Evolve), b.x + b.width / 2, b.y + b.height / 2, theme::kGold, middle_center);
-  }
+  if (evolvable) homeEvolveButton(s.pressedAux == PressedAux::HomeEvolve);
   M5.Display.fillRoundRect(76, 68, language_ == i18n::Language::English ? 88 : 69, 26, 7, theme::kPanel);
   glyph(theme::Icon::Route, 91, 81, theme::routeColor(save.route));
   smallLabel(routeName(save.route), 107, 81, theme::routeColor(save.route), middle_left);
@@ -106,9 +111,12 @@ bool Screens::exploration(const Engine& engine, uint32_t now) {
   else line(tr(Text::SideKeysMenu), 428, theme::kMuted);
   return rendered;
 }
-bool Screens::drawHome(const ScreenState&, const Engine& engine, uint32_t now, bool full) {
+bool Screens::drawHome(const ScreenState& s, const Engine& engine, uint32_t now, bool full) {
   const auto& save = engine.view();
   const bool evolvable = homeEvolutionReady(engine);
+  const bool evolvePressed = evolvable && s.pressedAux == PressedAux::HomeEvolve;
+  const bool prevEvolvePressed = snap_.homeEvolvable && snap_.pressedAux == PressedAux::HomeEvolve;
+  const bool evolveChanged = evolvable != snap_.homeEvolvable || evolvePressed != prevEvolvePressed;
   const uint16_t capturedCount = capturedSpeciesCount(save);
   const uint16_t pending = pendingEncounterCount(save);
   const auto& clock = save.clock;
@@ -166,12 +174,7 @@ bool Screens::drawHome(const ScreenState&, const Engine& engine, uint32_t now, b
       }
     }
   };
-  auto drawEvolve = [&]() {
-    const auto& b = kHomeEvolveButton;
-    M5.Display.fillRoundRect(b.x, b.y, b.width, b.height, 12, theme::kPanelActive);
-    M5.Display.drawRoundRect(b.x, b.y, b.width, b.height, 12, theme::kGold);
-    smallLabel(tr(Text::Evolve), b.x + b.width / 2, b.y + b.height / 2, theme::kGold, middle_center);
-  };
+  auto drawEvolve = [&]() { homeEvolveButton(evolvePressed); };
   auto drawRoutePill = [&]() {
     M5.Display.fillRoundRect(76, 68, language_ == i18n::Language::English ? 88 : 69, 26, 7, theme::kPanel);
     glyph(theme::Icon::Route, 91, 81, theme::routeColor(save.route));
@@ -195,14 +198,14 @@ bool Screens::drawHome(const ScreenState&, const Engine& engine, uint32_t now, b
 
   bool rendered = snap_.homePartnerRendered;
   if (full) {
-    rendered = exploration(engine, now);
+    rendered = exploration(s, engine, now);
   } else {
     if (save.partner) advance(homePlayback_, save.partner, now);
     const uint16_t curFrame = save.partner ? homePlayback_.state.frame_index : UINT16_MAX;
     const bool sceneChanged = save.route != snap_.route || sceneSteps_ != snap_.sceneSteps;
     const bool partnerChanged = save.partner != snap_.partner;
     const bool spriteChanged = partnerChanged || curFrame != snap_.animFrame || !snap_.homePartnerRendered;
-    const bool headerChanged = save.route != snap_.route || evolvable != snap_.homeEvolvable ||
+    const bool headerChanged = save.route != snap_.route || evolveChanged ||
                                capturedCount != snap_.capturedCount;
     const bool pendingChanged = pending != snap_.pendingEncounters;
     const bool progressChanged = save.explorationCredit != snap_.explorationCredit ||
@@ -244,7 +247,7 @@ bool Screens::drawHome(const ScreenState&, const Engine& engine, uint32_t now, b
     } else {
       if (headerChanged) {
         WriteScope sc;
-        if (evolvable != snap_.homeEvolvable) {
+        if (evolveChanged) {
           clearRegion(173, 67, 120, 25, theme::kBackground);
           restoreHomeScene(173, 92, 120, 5);
           if (evolvable) drawEvolve();

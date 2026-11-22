@@ -22,12 +22,24 @@ enum class Page : uint8_t {
   CarriedPartner
 };
 enum class LanguagePersistence : uint8_t { Saved, SessionOnly };
+enum class PressedAux : uint8_t { None, Back, PrevPage, NextPage, HomeEvolve };
+constexpr uint16_t kPanelPressed = theme::rgb(0x24, 0x4A, 0x3E);
 struct ScreenState {
   i18n::Language language = i18n::Language::Chinese;
   LanguagePersistence languagePersistence = LanguagePersistence::Saved;
   Page page = Page::Home;
   c152::BatteryStatus battery;
   uint16_t selected = 0;
+  int16_t pressedIndex = -1;
+  PressedAux pressedAux = PressedAux::None;
+  struct TouchPress {
+    bool active = false;
+    bool invalidated = false;
+    Page page = Page::Home;
+    int16_t startX = 0, startY = 0;
+    int16_t startIndex = -1;
+    PressedAux startAux = PressedAux::None;
+  } touchPress;
   bool editing = false;
   bool clockError = false;
   bool clockNeedsSync = false;
@@ -69,7 +81,22 @@ inline bool encounterWaiting(const adventure::Save& v) {
 }
 bool menuSelectable(const ScreenState&, const adventure::Engine&, unsigned index);
 constexpr menu_layout::Rect kHomeEvolveButton = {173, 67, 120, 30};
+constexpr int kHomeEvolveTouchPad = 8;
+constexpr int kHomeEvolveTouchTop = kHomeEvolveButton.y - kHomeEvolveTouchPad < 60
+                                        ? 60
+                                        : kHomeEvolveButton.y - kHomeEvolveTouchPad;
+constexpr menu_layout::Rect kHomeEvolveTouchArea = {
+    kHomeEvolveButton.x - kHomeEvolveTouchPad,
+    kHomeEvolveTouchTop,
+    kHomeEvolveButton.width + kHomeEvolveTouchPad * 2,
+    kHomeEvolveButton.y + kHomeEvolveButton.height + kHomeEvolveTouchPad - kHomeEvolveTouchTop,
+};
 bool homeEvolutionReady(const adventure::Engine&);
+struct TouchHit {
+  int16_t index;
+  PressedAux aux;
+};
+TouchHit touchHit(const ScreenState&, const adventure::Engine&, int x, int y);
 constexpr int kBallSlotY = 82;
 constexpr int ballSlotX(unsigned index) { return 213 + 40 * int(index); }
 inline bool sceneEdgeVisible(unsigned sourceX, unsigned sourceY) {
@@ -97,6 +124,7 @@ class Screens {
   bool advanceResult(uint16_t species, uint32_t now);
   bool advancePreview(uint16_t species, uint32_t now);
   bool advanceScene(adventure::Route, uint32_t now, bool active);
+  static bool hasPager(Page page);
   bool draw(const ScreenState&, const adventure::Engine&,
             const adventure::BattleView& practice, uint32_t now);
  private:
@@ -106,7 +134,8 @@ class Screens {
   const char* progressionMessage(adventure::CommandResult result) const { return ui::progressionMessage(language_, result); }
   struct Playback { viewer::State state; uint16_t species = 0; };
   void drawResultHero(uint16_t species, bool first, uint32_t now);
-  bool exploration(const adventure::Engine&, uint32_t now);
+  bool exploration(const ScreenState&, const adventure::Engine&, uint32_t now);
+  void homeEvolveButton(bool pressed);
   void home(const ScreenState&, const adventure::Engine&, uint32_t now);
   void progression(const ScreenState&, const adventure::Engine&);
   bool evolution(const ScreenState&, uint32_t now);
@@ -142,6 +171,9 @@ class Screens {
   void hubIcon(theme::HubIcon, int x, int y, uint16_t color, uint16_t background, const adventure::Save&);
   void item(const ScreenState&, unsigned index, const char*, int top = menu_layout::kTop,
             uint16_t species = 0, bool carried = false, const char* note = nullptr, bool disabled = false);
+  void panelFrame(const menu_layout::Rect&, int radius, bool active, bool pressed, uint16_t accent);
+  void backButton(const ScreenState&);
+  void pagerArrow(const ScreenState&, bool next);
   void pager(const ScreenState&, unsigned count);
   void thumbnail(uint16_t species, int x, int y, unsigned scale = 1);
   void captureBadge(const adventure::Save&, int x, int y);
@@ -192,6 +224,8 @@ class Screens {
     bool testMode = false;
     c152::BatteryStatus battery;
     uint16_t selected = 0;
+    int16_t pressedIndex = -1;
+    PressedAux pressedAux = PressedAux::None;
     bool editing = false;
     bool clockError = false;
     bool clockNeedsSync = false;
@@ -275,7 +309,6 @@ class Screens {
     WriteScope();
     ~WriteScope();
   };
-  static bool hasPager(Page page);
   bool dispatchPage(const ScreenState&, const adventure::Engine&,
                     const adventure::BattleView& practice, uint32_t now, bool full);
   void clearRegion(int x, int y, int w, int h, uint16_t bg = theme::kBackground);

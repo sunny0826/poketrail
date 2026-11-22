@@ -12,12 +12,6 @@ using theme::HubIcon;
 namespace {
 using menu_layout::Rect;
 uint16_t hubAccent(Page page) { return page == Page::Records ? theme::kGold : theme::kMint; }
-void frame(const Rect& b, int radius, bool active, uint16_t accent) {
-  M5.Display.fillRoundRect(b.x, b.y, b.width, b.height, radius, active ? theme::kPanelActive : theme::kPanel);
-  if (!active) return;
-  M5.Display.drawRoundRect(b.x, b.y, b.width, b.height, radius, accent);
-  M5.Display.drawRoundRect(b.x + 1, b.y + 1, b.width - 2, b.height - 2, radius - 1, accent);
-}
 void label(const char* text, int x, int y, int width, uint16_t color, lgfx::textdatum_t datum = middle_center) {
   M5.Display.setFont(&fonts::efontCN_24);
   if (M5.Display.textWidth(text) > width) M5.Display.setFont(&fonts::efontCN_16);
@@ -106,23 +100,28 @@ void Screens::hubTile(const ScreenState& s, const menu_layout::Hub& hub, unsigne
                       int labelWidth, HubIcon icon, const Save& save) {
   const Rect b = menu_layout::hubBounds(hub, index);
   const bool active = s.selected == index;
+  const bool pressed = s.pressedIndex >= 0 && index == unsigned(s.pressedIndex);
   const uint16_t accent = hubAccent(s.page);
-  frame(b, 18, active, accent);
+  const uint16_t bg = pressed ? kPanelPressed : active ? theme::kPanelActive : theme::kPanel;
+  panelFrame(b, 18, active, pressed, accent);
   const int cx = b.x + b.width / 2;
   const uint16_t color = icon == HubIcon::Region ? theme::routeColor(save.route) : active ? accent : theme::kMuted;
-  hubIcon(icon, cx, b.y + b.height * 9 / 25, color, active ? theme::kPanelActive : theme::kPanel, save);
+  hubIcon(icon, cx, b.y + b.height * 9 / 25, color, bg, save);
   label(text, cx, b.y + b.height - 22, labelWidth, active ? accent : theme::kText);
 }
 void Screens::hubExit(const ScreenState& s, const menu_layout::Hub& hub, const char* text, HubIcon icon,
                       const Save& save) {
   const Rect& b = menu_layout::kHubExit;
-  const bool active = s.selected == menu_layout::hubCount(hub) - 1;
+  const unsigned exitIndex = menu_layout::hubCount(hub) - 1;
+  const bool active = s.selected == exitIndex;
+  const bool pressed = s.pressedIndex >= 0 && unsigned(s.pressedIndex) == exitIndex;
   const uint16_t color = active ? hubAccent(s.page) : theme::kText;
-  frame(b, b.height / 2, active, hubAccent(s.page));
+  const uint16_t bg = pressed ? kPanelPressed : active ? theme::kPanelActive : theme::kPanel;
+  panelFrame(b, b.height / 2, active, pressed, hubAccent(s.page));
   M5.Display.setFont(&fonts::efontCN_24);
   if (M5.Display.textWidth(text) > b.width - 64) M5.Display.setFont(&fonts::efontCN_16);
   const int left = b.x + b.width / 2 - (M5.Display.textWidth(text) + 30) / 2;
-  hubIcon(icon, left + 11, b.y + b.height / 2, color, active ? theme::kPanelActive : theme::kPanel, save);
+  hubIcon(icon, left + 11, b.y + b.height / 2, color, bg, save);
   label(text, left + 30, b.y + b.height / 2, b.width - 64, color, middle_left);
 }
 void Screens::encounterBanner(const ScreenState& s, const Save& v) {
@@ -142,7 +141,8 @@ void Screens::encounterBanner(const ScreenState& s, const Save& v) {
     progress(v.explorationCredit, v.encounterTarget, cy + 10, theme::routeColor(v.route));
     return;
   }
-  frame(b, b.height / 2, s.selected == unsigned(MenuItem::Encounter), theme::kGold);
+  panelFrame(b, b.height / 2, s.selected == unsigned(MenuItem::Encounter),
+             s.pressedIndex == int16_t(MenuItem::Encounter), theme::kGold);
   const auto& ball = data::kPokeBallIcon;
   M5.Display.pushImage(b.x + 34 - ball.width / 2, cy - ball.height / 2, ball.width, ball.height,
                        ball.pixels, kTransparentKey);
@@ -199,13 +199,21 @@ void Screens::drawMainMenu(const ScreenState& s, const Engine& e, bool full) {
                     v.encounterTarget != snap_.encounterTarget ||
                     v.route != snap_.route || routeEx != snap_.routeExhausted ||
                     allEx != snap_.allExhausted));
-    if (bannerChanged || (waiting && (s.selected == 0) != (snap_.selected == 0))) dirty[0] = true;
+    if (bannerChanged || (waiting && ((s.selected == 0) != (snap_.selected == 0) ||
+                                      (s.pressedIndex == 0) != (snap_.pressedIndex == 0))))
+      dirty[0] = true;
     if (v.route != snap_.route) dirty[unsigned(MenuItem::Region)] = true;
     if (v.partner != snap_.partner || evolvable != snap_.homeEvolvable)
       dirty[unsigned(MenuItem::Partner)] = true;
     if (s.selected != snap_.selected) {
       if (snap_.selected < kMenuItemCount) dirty[snap_.selected] = true;
       if (s.selected < kMenuItemCount) dirty[s.selected] = true;
+    }
+    if (s.pressedIndex != snap_.pressedIndex) {
+      if (snap_.pressedIndex > 0 && unsigned(snap_.pressedIndex) < kMenuItemCount)
+        dirty[snap_.pressedIndex] = true;
+      if (s.pressedIndex > 0 && unsigned(s.pressedIndex) < kMenuItemCount)
+        dirty[s.pressedIndex] = true;
     }
     static const Text kLabels[] = {Text::MenuRegion, Text::MenuPartner, Text::MenuPokedex,
                                    Text::MenuRecords, Text::MenuPractice, Text::Settings};
@@ -263,10 +271,12 @@ void Screens::drawRecordsHub(const ScreenState& s, const Engine& e, bool full) {
       snprintf(text, sizeof(text), tr(Text::BestDaySteps), static_cast<unsigned long long>(v.bestDaySteps));
       line(text, 102, theme::kGold);
     }
-    if (s.selected != snap_.selected) {
+    if (s.selected != snap_.selected || s.pressedIndex != snap_.pressedIndex) {
       bool dirty[5] = {};
       if (snap_.selected < 5) dirty[snap_.selected] = true;
       if (s.selected < 5) dirty[s.selected] = true;
+      if (snap_.pressedIndex >= 0 && snap_.pressedIndex < 5) dirty[snap_.pressedIndex] = true;
+      if (s.pressedIndex >= 0 && s.pressedIndex < 5) dirty[s.pressedIndex] = true;
       static const Text kLabels[] = {Text::FirstCaptureCards, Text::RecentCaptures, Text::DailySteps, Text::Milestones};
       static const HubIcon kIcons[] = {HubIcon::FirstCaptures, HubIcon::Recent, HubIcon::Days, HubIcon::Milestones};
       const char* texts[4];

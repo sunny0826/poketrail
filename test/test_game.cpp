@@ -3,9 +3,12 @@
 #include <zlib.h>
 
 #include "../firmware/apps/20_pokedex/game.hpp"
+#include "../firmware/apps/20_pokedex/menu_buttons.hpp"
 
 using namespace pokedex;
 using namespace pokedex::viewer;
+using pokedex::ui::MenuAction;
+using pokedex::ui::MenuButtons;
 
 namespace {
 int checks = 0, failures = 0;
@@ -127,12 +130,59 @@ void testDecode() {
   check(!decodeFrame(badSprite, 0, 2, pixels.data(), pixels.size()),
         "palette index out of range fails");
 }
+
+void testMenuButtons() {
+  MenuButtons b;
+  // Short press moves once on release; staggered <350ms chord confirms.
+  check(b.update(false, true, 100, true) == MenuAction::None, "press waits for release");
+  check(b.update(false, true, 449, true) == MenuAction::None, "no repeat before 350ms");
+  check(b.update(false, false, 449, true) == MenuAction::Next, "short release steps once");
+
+  check(b.update(true, false, 1000, true) == MenuAction::None, "left press waits");
+  check(b.update(true, false, 1349, true) == MenuAction::None, "still before repeat threshold");
+  check(b.update(true, true, 1349, true) == MenuAction::Confirm, "overlap before 350ms confirms");
+  check(b.update(true, false, 1360, true) == MenuAction::None, "consumed after confirm");
+  check(b.update(false, false, 1380, true) == MenuAction::None, "full release resets consumed");
+
+  // Repeat at 350ms, 120ms cadence, then 65ms past 1200ms; release does not add an extra step.
+  uint32_t t = 2000;
+  check(b.update(false, true, t, true) == MenuAction::None, "start repeat hold");
+  check(b.update(false, true, t + 349, true) == MenuAction::None, "349ms does not repeat");
+  check(b.update(false, true, t + 350, true) == MenuAction::Next, "350ms triggers 1st repeat");
+  check(b.update(false, true, t + 469, true) == MenuAction::None, "119ms after repeat waits");
+  check(b.update(false, true, t + 470, true) == MenuAction::Next, "120ms triggers 2nd repeat");
+  for (uint32_t stepAt : {590u, 710u, 830u, 950u, 1070u, 1190u}) {
+    check(b.update(false, true, t + stepAt, true) == MenuAction::Next, "120ms repeat cadence");
+  }
+  check(b.update(false, true, t + 1254, true) == MenuAction::None, "64ms after 1190ms waits");
+  check(b.update(false, true, t + 1255, true) == MenuAction::Next, "past 1200ms accelerates to 65ms");
+  check(b.update(false, true, t + 1320, true) == MenuAction::Next, "65ms cadence continues");
+  check(b.update(false, false, t + 1330, true) == MenuAction::None, "release after repeat adds no extra step");
+  check(b.update(true, false, t + 1340, true) == MenuAction::None &&
+        b.update(false, false, t + 1360, true) == MenuAction::Previous,
+        "fresh press works immediately after repeat release");
+
+  // Pressing the other key during repeat aborts safely into Consumed without Confirm or release step.
+  t = UINT32_MAX - 500;
+  check(b.update(true, false, t, true) == MenuAction::None, "wraparound press");
+  check(b.update(true, false, t + 350, true) == MenuAction::Previous, "wraparound triggers repeat");
+  check(b.update(true, true, t + 400, true) == MenuAction::None, "other key during repeat cancels without confirm");
+  check(b.update(false, true, t + 420, true) == MenuAction::None, "partial release stays consumed");
+  check(b.update(false, false, t + 440, true) == MenuAction::None, "final release stays silent");
+
+  // repeatAllowed == false keeps 30s hold silent and allows slow overlapping confirm.
+  check(b.update(true, false, 10000, false) == MenuAction::None, "non-repeat press");
+  check(b.update(true, false, 40100, false) == MenuAction::None, "30s hold never repeats when disabled");
+  check(b.update(true, true, 40120, false) == MenuAction::Confirm, "slow overlap still confirms when disabled");
+  check(b.update(false, false, 40140, false) == MenuAction::None, "release after slow confirm");
+}
 }
 
 int main() {
   testInputs();
   testTimeline();
   testDecode();
+  testMenuButtons();
   std::printf("%d viewer checks, %d failures\n", checks, failures);
   return failures ? 1 : 0;
 }

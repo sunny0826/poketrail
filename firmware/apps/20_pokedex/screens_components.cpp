@@ -247,6 +247,16 @@ void Screens::encounterBadge(const Save& save, int x, int y) {
   M5.Display.setTextColor(theme::kGold);
   M5.Display.drawString(text, x, y);
 }
+void Screens::panelFrame(const menu_layout::Rect& b, int radius, bool active, bool pressed, uint16_t accent) {
+  const int in = pressed ? 2 : 0;
+  const int r = std::max(2, radius - in);
+  const int x = b.x + in, y = b.y + in, w = b.width - in * 2, h = b.height - in * 2;
+  const uint16_t bg = pressed ? kPanelPressed : active ? theme::kPanelActive : theme::kPanel;
+  M5.Display.fillRoundRect(x, y, w, h, r, bg);
+  if (!active && !pressed) return;
+  M5.Display.drawRoundRect(x, y, w, h, r, pressed && active ? theme::kText : accent);
+  M5.Display.drawRoundRect(x + 1, y + 1, w - 2, h - 2, std::max(1, r - 1), accent);
+}
 void Screens::item(const ScreenState& s, unsigned index, const char* label, int top,
                    uint16_t species, bool carried, const char* note, bool disabled) {
   const unsigned first = menu_layout::first(s.selected);
@@ -254,17 +264,12 @@ void Screens::item(const ScreenState& s, unsigned index, const char* label, int 
   const auto bounds = menu_layout::rowBounds(index - first, top);
   const int y = menu_layout::center(index - first, top);
   const bool active = index == s.selected;
+  const bool pressed = s.pressedIndex >= 0 && index == unsigned(s.pressedIndex);
   const uint16_t accent = s.page == Page::Routes && index < kRegionCount ? theme::routeColor(regionAt(uint8_t(index)))
                                                                            : accentFor(s.page);
-  const uint16_t background = active ? theme::kPanelActive : theme::kPanel;
   const uint16_t color = disabled ? theme::kMuted : active ? accent : theme::kText;
-  const int radius = bounds.height / 2;
-  M5.Display.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, radius, background);
-  if (active) {
-    M5.Display.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, radius, accent);
-    M5.Display.drawRoundRect(bounds.x + 1, bounds.y + 1, bounds.width - 2, bounds.height - 2, radius - 1, accent);
-    M5.Display.fillRoundRect(bounds.x + 12, y - 10, 4, 20, 2, accent);
-  }
+  panelFrame(bounds, bounds.height / 2, active, pressed, accent);
+  if (active) M5.Display.fillRoundRect(bounds.x + 12, y - 10, 4, 20, 2, accent);
   if (species) thumbnail(species, bounds.x + menu_layout::kIconInset, y);
   const char* trailing = note ? note : carried ? tr(Text::CarryNote) : nullptr;
   M5.Display.setFont(&fonts::efontCN_24);
@@ -294,11 +299,31 @@ void Screens::item(const ScreenState& s, unsigned index, const char* label, int 
   M5.Display.drawString(label, left, y);
   M5.Display.clearClipRect();
 }
+void Screens::backButton(const ScreenState& s) {
+  const bool pressed = s.pressedAux == PressedAux::Back;
+  const uint16_t color = pressed ? accentFor(s.page) : theme::kMuted;
+  if (pressed) {
+    M5.Display.fillRoundRect(103, 44, 19, 17, 7, kPanelPressed);
+    M5.Display.drawRoundRect(103, 44, 19, 17, 7, color);
+  }
+  glyph(theme::Icon::Back, 112, 52, color);
+}
+void Screens::pagerArrow(const ScreenState& s, bool next) {
+  const int y = menu_layout::kPagerY;
+  const bool pressed = s.pressedAux == (next ? PressedAux::NextPage : PressedAux::PrevPage);
+  const uint16_t color = pressed ? accentFor(s.page) : theme::kMuted;
+  if (pressed) {
+    const int rx = next ? 280 : 150;
+    M5.Display.fillRoundRect(rx, y - 12, 36, 24, 12, kPanelPressed);
+    M5.Display.drawRoundRect(rx, y - 12, 36, 24, 12, color);
+  }
+  glyph(next ? theme::Icon::Next : theme::Icon::Back, next ? 298 : 168, y, color);
+}
 void Screens::pager(const ScreenState& s, unsigned count) {
   const int y = menu_layout::kPagerY;
   const unsigned pages = menu_layout::pageCount(count), page = s.selected / menu_layout::kPageSize;
-  glyph(theme::Icon::Back, 168, y, theme::kMuted);
-  glyph(theme::Icon::Next, 298, y, theme::kMuted);
+  pagerArrow(s, false);
+  pagerArrow(s, true);
   if (pages <= menu_layout::kPagerDots) {
     const int first = 233 - int(pages - 1) * 7;
     for (unsigned i = 0; i < pages; ++i)

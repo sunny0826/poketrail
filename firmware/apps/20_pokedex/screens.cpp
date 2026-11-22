@@ -117,6 +117,36 @@ bool isTestPage(Page page) {
          page == Page::TestScenarios || page == Page::TestFaults ||
          page == Page::TestDiagnostics || page == Page::TestExit;
 }
+TouchHit touchHit(const ScreenState& s, const Engine& e, int x, int y) {
+  const TouchHit none = {-1, PressedAux::None};
+  if (s.page == Page::Home)
+    return homeEvolutionReady(e) && kHomeEvolveTouchArea.contains(x, y)
+               ? TouchHit{-1, PressedAux::HomeEvolve} : none;
+  if (touchBackEnabled(s.page) && y < 80) return {-1, PressedAux::Back};
+  if (s.page == Page::Throw || s.page == Page::FirstCaptures || s.page == Page::Recent ||
+      s.page == Page::Days || s.page == Page::Achievements ||
+      (s.page == Page::Clock && s.editing)) {
+    return none;
+  }
+  const unsigned count = menuCount(s, e);
+  if (!count) return none;
+  if (const menu_layout::Hub* hub = hubFor(s.page)) {
+    const int row = menu_layout::hubAt(*hub, x, y);
+    return row >= 0 && unsigned(row) < count && menuSelectable(s, e, unsigned(row))
+               ? TouchHit{int16_t(row), PressedAux::None} : none;
+  }
+  const int row = menu_layout::rowAt(x, y, menuTop(s, e));
+  if (row >= 0) {
+    const unsigned first = s.selected < count ? menu_layout::first(s.selected) : 0;
+    const unsigned sel = first + unsigned(row);
+    if (sel < count && menuSelectable(s, e, sel)) return {int16_t(sel), PressedAux::None};
+  }
+  if (Screens::hasPager(s.page) && count > menu_layout::kPageSize) {
+    if (menu_layout::kPreviousPage.contains(x, y)) return {-1, PressedAux::PrevPage};
+    if (menu_layout::kNextPage.contains(x, y)) return {-1, PressedAux::NextPage};
+  }
+  return none;
+}
 void drawGraphicsError(const c152::BatteryStatus& battery, i18n::Language language) {
   M5.Display.startWrite();
   M5.Display.fillScreen(TFT_BLACK);
@@ -332,7 +362,7 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
     M5.Display.fillCircle(233, 233, 227, theme::kBackground);
     rendered = dispatchPage(s, e, practice, now, true);
     if (hasPager(s.page) && menuCount(s, e) > menu_layout::kPageSize) pager(s, menuCount(s, e));
-    if (touchBackEnabled(s.page)) glyph(theme::Icon::Back, 112, 52, theme::kMuted);
+    if (touchBackEnabled(s.page)) backButton(s);
     drawBattery(s.battery);
     if (s.testMode) {
       M5.Display.setTextDatum(middle_center);
@@ -347,6 +377,27 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
       snap_.battery = s.battery;
     }
     rendered = dispatchPage(s, e, practice, now, false);
+    if (hasPager(s.page) && menuCount(s, e) > menu_layout::kPageSize &&
+        menu_layout::first(s.selected) == menu_layout::first(snap_.selected)) {
+      const bool ch[2] = {
+          (s.pressedAux == PressedAux::PrevPage) != (snap_.pressedAux == PressedAux::PrevPage),
+          (s.pressedAux == PressedAux::NextPage) != (snap_.pressedAux == PressedAux::NextPage),
+      };
+      if (ch[0] || ch[1]) {
+        WriteScope scope;
+        for (int i = 0; i < 2; ++i) {
+          if (!ch[i]) continue;
+          clearRegion(i ? 280 : 150, menu_layout::kPagerY - 12, 36, 24, theme::kBackground);
+          pagerArrow(s, i == 1);
+        }
+      }
+    }
+    if (touchBackEnabled(s.page) &&
+        (s.pressedAux == PressedAux::Back) != (snap_.pressedAux == PressedAux::Back)) {
+      WriteScope scope;
+      clearRegion(103, 44, 19, 17, theme::kBackground);
+      backButton(s);
+    }
   }
   snap_.valid = rendered;
   snap_.page = s.page;
@@ -354,6 +405,8 @@ bool Screens::draw(const ScreenState& s, const Engine& e, const BattleView& prac
   snap_.testMode = s.testMode;
   snap_.battery = s.battery;
   snap_.selected = s.selected;
+  snap_.pressedIndex = s.pressedIndex;
+  snap_.pressedAux = s.pressedAux;
   snap_.editing = s.editing;
   return rendered;
 }

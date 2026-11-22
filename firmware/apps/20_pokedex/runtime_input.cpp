@@ -1,6 +1,7 @@
 #include "runtime.hpp"
 #include "menu_layout.hpp"
 #include "viewer_screen.hpp"
+#include <cstdlib>
 namespace pokedex { namespace ui {
 using namespace adventure;
 namespace {
@@ -9,6 +10,60 @@ bool recordPage(Page page) {
 }
 unsigned recordTile(Page page) {
   return page == Page::FirstCaptures ? 0 : page == Page::Recent ? 1 : page == Page::Days ? 2 : 3;
+}
+bool allowMenuRepeat(const ScreenState& s, const Engine& e) {
+  return (s.page == Page::Clock && s.editing) ||
+         (s.page == Page::Partners && menuCount(s, e) > menu_layout::kPageSize) ||
+         recordPage(s.page);
+}
+void setPressed(ScreenState& screen, bool& dirty, int16_t index, PressedAux aux) {
+  if (screen.pressedIndex == index && screen.pressedAux == aux) return;
+  screen.pressedIndex = index;
+  screen.pressedAux = aux;
+  dirty = true;
+}
+void clearTouchPress(ScreenState& screen, bool& dirty) {
+  screen.touchPress = ScreenState::TouchPress();
+  screen.touchPress.page = screen.page;
+  setPressed(screen, dirty, -1, PressedAux::None);
+}
+void updateTouchPress(ScreenState& screen, const Engine& engine, bool& dirty, Input& input) {
+  auto& tp = screen.touchPress;
+  if (tp.page != screen.page) clearTouchPress(screen, dirty);
+  if (screen.page == Page::Battle || screen.page == Page::Practice ||
+      screen.page == Page::Throw || screen.page == Page::PracticeThrow) {
+    clearTouchPress(screen, dirty);
+    return;
+  }
+  const TouchHit hit = screen.page == Page::Viewer
+      ? (input.y < 80 ? TouchHit{-2, PressedAux::None}
+                      : viewer_screen::kEvolutionPreviewButton.contains(input.x, input.y)
+                            ? TouchHit{1, PressedAux::None}
+                            : TouchHit{-1, PressedAux::None})
+      : touchHit(screen, engine, input.x, input.y);
+  if (input.touch && input.touchDown) {
+    tp.active = true;
+    tp.invalidated = false;
+    tp.page = screen.page;
+    tp.startX = int16_t(input.x);
+    tp.startY = int16_t(input.y);
+    tp.startIndex = hit.index;
+    tp.startAux = hit.aux;
+  }
+  const bool valid = tp.active && !tp.invalidated &&
+                     std::abs(input.x - tp.startX) <= viewer::kTouchClickTolerancePx &&
+                     std::abs(input.y - tp.startY) <= viewer::kTouchClickTolerancePx &&
+                     hit.index == tp.startIndex && hit.aux == tp.startAux;
+  if (input.touchDown) {
+    if (tp.active && !valid) tp.invalidated = true;
+    const bool show = valid && !input.leftDown && !input.rightDown && screen.page != Page::Viewer;
+    setPressed(screen, dirty, show ? tp.startIndex : int16_t(-1),
+               show ? tp.startAux : PressedAux::None);
+    return;
+  }
+  const bool suppress = tp.active && !valid;
+  clearTouchPress(screen, dirty);
+  if (suppress) input.click = input.back = false;
 }
 }
 bool Runtime::handleTestHold(const Input& input) {
@@ -25,6 +80,7 @@ bool Runtime::handleTestHold(const Input& input) {
   const bool longEnough = input.at - testHoldStarted_ >= 2000;
   testHoldActive_ = false;
   if (longEnough) {
+    clearTouchPress(screen_, dirty_);
     testEntryReturn_ = screen_.page;
     navigate(screen_.testMode ? Page::TestHub : Page::TestEntry);
     return true;
@@ -60,7 +116,7 @@ void Runtime::goBack() {
   else navigate(Page::Home);
 }
 void Runtime::handle(const Input& raw) {
-  if (handleTestHold(raw)) return;
+  if (screen_.touchPress.page != screen_.page) clearTouchPress(screen_, dirty_);
   if (screen_.page == Page::Evolution || screen_.page == Page::EvolutionPreview) {
     if (raw.left || raw.right || raw.click) {
       skipEvolution(screen_.evolutionAnim, raw.at);
@@ -69,26 +125,21 @@ void Runtime::handle(const Input& raw) {
     }
     return;
   }
+  Input input = raw;
+  updateTouchPress(screen_, engine_, dirty_, input);
+  if (handleTestHold(raw)) return;
   if (screen_.page == Page::Home) {
-    constexpr int kHomeEvolveTouchPad = 8;
-    constexpr int kHomeEvolveTop = kHomeEvolveButton.y - kHomeEvolveTouchPad < 60
-                                       ? 60
-                                       : kHomeEvolveButton.y - kHomeEvolveTouchPad;
-    constexpr menu_layout::Rect kHomeEvolveTouchArea = {
-        kHomeEvolveButton.x - kHomeEvolveTouchPad,
-        kHomeEvolveTop,
-        kHomeEvolveButton.width + kHomeEvolveTouchPad * 2,
-        kHomeEvolveButton.y + kHomeEvolveButton.height + kHomeEvolveTouchPad - kHomeEvolveTop,
-    };
-    const bool onEvolve = homeEvolutionReady(engine_) && kHomeEvolveTouchArea.contains(raw.x, raw.y);
-    if (onEvolve && raw.click) { openHomeEvolution(); return; }
-    if (onEvolve && raw.touch) return;
-    if (raw.touch) { openMenu(MenuItem::Encounter); return; }
-    if (raw.back) { waitForRelease(); return; }
-    if (raw.leftDown || raw.rightDown || raw.left || raw.right) openMenu(MenuItem::Encounter);
+    const bool onEvolve = homeEvolutionReady(engine_) && kHomeEvolveTouchArea.contains(input.x, input.y);
+    if (onEvolve && input.click) { clearTouchPress(screen_, dirty_); openHomeEvolution(); return; }
+    if (onEvolve && input.touch) return;
+    if (input.touch) { clearTouchPress(screen_, dirty_); openMenu(MenuItem::Encounter); return; }
+    if (input.back) { waitForRelease(); return; }
+    if (input.leftDown || input.rightDown || input.left || input.right) {
+      clearTouchPress(screen_, dirty_);
+      openMenu(MenuItem::Encounter);
+    }
     return;
   }
-  Input input = raw;
   const bool immediate = screen_.page == Page::Viewer || screen_.page == Page::Battle ||
                          screen_.page == Page::Practice || screen_.page == Page::Throw ||
                          screen_.page == Page::PracticeThrow;
@@ -97,7 +148,8 @@ void Runtime::handle(const Input& raw) {
       menuButtons_.consume();
       input.left = input.right = false;
     } else {
-      const auto action = menuButtons_.update(input.leftDown, input.rightDown);
+      const auto action = menuButtons_.update(input.leftDown, input.rightDown,
+                                              input.at, allowMenuRepeat(screen_, engine_));
       input.left = action == MenuAction::Previous || action == MenuAction::Confirm;
       input.right = action == MenuAction::Next || action == MenuAction::Confirm;
     }

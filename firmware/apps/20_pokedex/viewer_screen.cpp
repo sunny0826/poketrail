@@ -8,12 +8,14 @@
 #include "board.hpp"
 #include "viewer_screen.hpp"
 #include "game.hpp"
+#include "menu_buttons.hpp"
 #include "sprite.hpp"
 #include "sprites_generated.hpp"
 #include "battery_screen.hpp"
 #include "screen_theme.hpp"
 #include "i18n.hpp"
 #include "pokedex_text.hpp"
+#include <cstdlib>
 
 namespace pokedex { namespace viewer_screen {
 
@@ -42,6 +44,11 @@ const char* (*collectionCallback)(uint16_t, void*) = nullptr;
 void* collectionContext = nullptr;
 bool (*evolutionPreviewCallback)(uint16_t, void*) = nullptr;
 void* evolutionPreviewContext = nullptr;
+ui::MenuButtons g_buttons;
+bool g_preview_pressed = false;
+bool g_preview_tracking = false;
+bool g_preview_invalid = false;
+constexpr uint16_t kPreviewPressedBg = theme::rgb(0x24, 0x4A, 0x3D);
 
 namespace {
 void diagnostic(const char* format, ...) {
@@ -72,6 +79,23 @@ void text(const char* value, int32_t y, uint16_t color, const lgfx::IFont* font)
   M5.Display.drawString(value, c152::kScreenCenter, y);
 }
 
+bool previewAvailable(uint16_t id) {
+  return evolutionPreviewCallback && evolutionPreviewCallback(id, evolutionPreviewContext);
+}
+
+void drawPreviewButton(bool pressed) {
+  const auto& b = kEvolutionPreviewButton;
+  if (pressed) {
+    M5.Display.fillRoundRect(b.x + 2, b.y + 2, b.width - 4, b.height - 4, 10, kPreviewPressedBg);
+    M5.Display.drawRoundRect(b.x + 2, b.y + 2, b.width - 4, b.height - 4, 10, theme::kText);
+    M5.Display.drawRoundRect(b.x + 3, b.y + 3, b.width - 6, b.height - 6, 9, theme::kGold);
+  } else {
+    M5.Display.fillRoundRect(b.x, b.y, b.width, b.height, 12, theme::kPanelActive);
+    M5.Display.drawRoundRect(b.x, b.y, b.width, b.height, 12, theme::kGold);
+  }
+  text(tr(Text::PreviewEvolution), 423, theme::kGold, &fonts::efontCN_16);
+}
+
 void drawLabels(const pokedex::Sprite& sprite) {
   char label[24];
   snprintf(label, sizeof(label), "#%03u / %03u", unsigned(sprite.id),
@@ -82,11 +106,8 @@ void drawLabels(const pokedex::Sprite& sprite) {
     const char* status = collectionCallback(sprite.id, collectionContext);
     text(status, 390, theme::kMint, &fonts::efontCN_16);
   }
-  if (evolutionPreviewCallback && evolutionPreviewCallback(sprite.id, evolutionPreviewContext)) {
-    const auto& button = kEvolutionPreviewButton;
-    M5.Display.fillRoundRect(button.x, button.y, button.width, button.height, 12, theme::kPanelActive);
-    M5.Display.drawRoundRect(button.x, button.y, button.width, button.height, 12, theme::kGold);
-    text(tr(Text::PreviewEvolution), 423, theme::kGold, &fonts::efontCN_16);
+  if (previewAvailable(sprite.id)) {
+    drawPreviewButton(g_preview_pressed);
   } else if (g_language == i18n::Language::English) {
     text(tr(Text::ViewerControls), 412, theme::kMuted, &fonts::efontCN_16);
     text(tr(Text::ViewerBack), 434, theme::kMuted, &fonts::efontCN_16);
@@ -159,6 +180,8 @@ bool render() {
 }
 
 void begin() {
+  g_buttons.reset();
+  g_preview_pressed = g_preview_tracking = g_preview_invalid = false;
   if (!g_pixels) {
     g_pixels = static_cast<uint16_t*>(malloc(kPixelCapacity * sizeof(uint16_t)));
   }
@@ -186,11 +209,16 @@ void update(uint32_t now) {
   Input input = Input::None;
   const char* source = "swipe";
   const auto& detail = M5.Touch.getDetail();
-  if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed()) {
-    if (M5.BtnA.isPressed() != M5.BtnB.isPressed()) {
-      input = M5.BtnA.wasPressed() ? Input::Previous : Input::Next;
-      source = M5.BtnA.wasPressed() ? "left-button" : "right-button";
-    }
+  const bool leftDown = M5.BtnA.isPressed();
+  const bool rightDown = M5.BtnB.isPressed();
+  if (detail.isPressed() || detail.wasReleased()) g_buttons.consume();
+  const auto action = g_buttons.update(leftDown, rightDown, now, true);
+  if (action == ui::MenuAction::Previous) {
+    input = Input::Previous;
+    source = "left-button";
+  } else if (action == ui::MenuAction::Next) {
+    input = Input::Next;
+    source = "right-button";
   } else if (detail.wasReleased()) {
     input = pokedex::viewer::releaseInput(
         detail.base_x, detail.base_y, detail.x, detail.y, detail.wasClicked());
@@ -202,10 +230,37 @@ void update(uint32_t now) {
     diagnostic("input=%s id=%d\n", source, pokedex::data::kSprites[g_state.sprite_index].id);
   }
   dirty = pokedex::viewer::update(g_state, pokedex::data::kSprites[g_state.sprite_index], now) || dirty;
+  const bool hasPreview = previewAvailable(pokedex::data::kSprites[g_state.sprite_index].id);
+  bool nextPressed = false;
+  if (detail.isPressed() && !leftDown && !rightDown && hasPreview) {
+    if (!g_preview_tracking) {
+      g_preview_tracking = true;
+      g_preview_invalid = !kEvolutionPreviewButton.contains(detail.base_x, detail.base_y);
+    }
+    const int dx = detail.x - detail.base_x;
+    const int dy = detail.y - detail.base_y;
+    if (!kEvolutionPreviewButton.contains(detail.x, detail.y) ||
+        std::abs(dx) > pokedex::viewer::kTouchClickTolerancePx ||
+        std::abs(dy) > pokedex::viewer::kTouchClickTolerancePx) {
+      g_preview_invalid = true;
+    }
+    nextPressed = !g_preview_invalid;
+  } else {
+    g_preview_tracking = false;
+    g_preview_invalid = false;
+  }
+  const bool previewDirty = nextPressed != g_preview_pressed;
+  g_preview_pressed = nextPressed;
   static uint32_t frames = 0;
   if (dirty || g_battery_dirty || !g_screen_drawn) {
     g_ready = render();
     ++frames;
+  } else if (previewDirty && hasPreview) {
+    M5.Display.startWrite();
+    const auto& b = kEvolutionPreviewButton;
+    M5.Display.fillRect(b.x, b.y, b.width, b.height, theme::kViewerBackground);
+    drawPreviewButton(g_preview_pressed);
+    M5.Display.endWrite();
   }
   static uint32_t report_ms = 0;
   if (now - report_ms >= 2000) {
@@ -216,7 +271,12 @@ void update(uint32_t now) {
   }
 }
 
-void invalidate() { g_screen_drawn = false; g_label_sprite = UINT16_MAX; }
+void invalidate() {
+  g_screen_drawn = false;
+  g_label_sprite = UINT16_MAX;
+  g_buttons.reset();
+  g_preview_pressed = g_preview_tracking = g_preview_invalid = false;
+}
 bool redraw(uint32_t now) {
   if (!g_ready) return false;
   pokedex::viewer::update(g_state, pokedex::data::kSprites[g_state.sprite_index], now);
