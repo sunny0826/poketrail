@@ -48,6 +48,8 @@ ui::MenuButtons g_buttons;
 bool g_preview_pressed = false;
 bool g_preview_tracking = false;
 bool g_preview_invalid = false;
+int8_t g_last_dir = 1;
+uint8_t g_prefetch_step = 0;
 constexpr uint16_t kPreviewPressedBg = theme::rgb(0x24, 0x4A, 0x3D);
 
 namespace {
@@ -96,7 +98,26 @@ void drawPreviewButton(bool pressed) {
   text(tr(Text::PreviewEvolution), 423, theme::kGold, &fonts::efontCN_16);
 }
 
+void drawBackIcon() {
+  constexpr int32_t x = 112;
+  constexpr int32_t y = 52;
+  M5.Display.drawLine(x - 7, y, x + 7, y, theme::kMuted);
+  M5.Display.drawLine(x - 7, y, x - 1, y - 6, theme::kMuted);
+  M5.Display.drawLine(x - 7, y, x - 1, y + 6, theme::kMuted);
+}
+
+ui::menu_layout::Rect typePillRect(uint16_t id) {
+  const int width = M5.Display.textWidth(i18n::speciesTypes(g_language, id), &fonts::efontCN_16) + 24;
+  return {c152::kScreenCenter - width / 2, 340, width, 26};
+}
+
+ui::menu_layout::Rect typePillTouchRect(uint16_t id) {
+  const auto pill = typePillRect(id);
+  return {pill.x, 332, pill.width, 43};
+}
+
 void drawLabels(const pokedex::Sprite& sprite) {
+  drawBackIcon();
   char label[24];
   snprintf(label, sizeof(label), "#%03u / %03u", unsigned(sprite.id),
            unsigned(pokedex::data::kSpriteCount));
@@ -154,19 +175,20 @@ bool render() {
     clearBackground();
     drawLabels(sprite);
     g_label_sprite = g_state.sprite_index;
+    g_prefetch_step = 0;
   }
   M5.Display.setClipRect(0, kFieldTop, c152::kScreenSize, kFieldBottom - kFieldTop);
   M5.Display.fillRect(0, kFieldTop, c152::kScreenSize, kFieldBottom - kFieldTop, TFT_BLACK);
   M5.Display.fillCircle(233, 233, 227, theme::kViewerBackground);
   M5.Display.clearClipRect();
-  M5.Display.setFont(&fonts::efontCN_16);
-  const int typeWidth = M5.Display.textWidth(i18n::speciesTypes(g_language, sprite.id)) + 24;
-  M5.Display.fillRoundRect(233 - typeWidth / 2, 340, typeWidth, 26, 7, theme::kPanelActive);
-  text(i18n::speciesTypes(g_language, sprite.id), 353, theme::kBlue, &fonts::efontCN_16);
   M5.Display.drawEllipse(233, 223, 120, 120, theme::kViewerRing);
   M5.Display.drawEllipse(233, 223, 90, 90, theme::kViewerRingInner);
   for (const auto& point : {std::pair<int,int>{125,147}, {335,159}, {131,294}, {329,283}})
     M5.Display.fillRect(point.first, point.second, 3, 3, theme::kDisabled);
+  const auto pill = typePillRect(sprite.id);
+  M5.Display.fillRoundRect(pill.x, pill.y, pill.width, pill.height, 7, theme::kPanelActive);
+  M5.Display.drawRoundRect(pill.x, pill.y, pill.width, pill.height, 7, theme::kBlue);
+  text(i18n::speciesTypes(g_language, sprite.id), 353, theme::kBlue, &fonts::efontCN_16);
   const int32_t width = sprite.width * scale;
   const int32_t height = sprite.height * scale;
   M5.Display.pushImage(c152::kScreenCenter - width / 2,
@@ -182,6 +204,8 @@ bool render() {
 void begin() {
   g_buttons.reset();
   g_preview_pressed = g_preview_tracking = g_preview_invalid = false;
+  g_last_dir = 1;
+  g_prefetch_step = 0;
   if (!g_pixels) {
     g_pixels = static_cast<uint16_t*>(malloc(kPixelCapacity * sizeof(uint16_t)));
   }
@@ -213,6 +237,7 @@ void update(uint32_t now) {
   const bool rightDown = M5.BtnB.isPressed();
   if (detail.isPressed() || detail.wasReleased()) g_buttons.consume();
   const auto action = g_buttons.update(leftDown, rightDown, now, true);
+  bool dirty = false;
   if (action == ui::MenuAction::Previous) {
     input = Input::Previous;
     source = "left-button";
@@ -220,11 +245,37 @@ void update(uint32_t now) {
     input = Input::Next;
     source = "right-button";
   } else if (detail.wasReleased()) {
-    input = pokedex::viewer::releaseInput(
-        detail.base_x, detail.base_y, detail.x, detail.y, detail.wasClicked());
-    if (input == Input::React) source = "react";
+    const auto pillTouch = typePillTouchRect(pokedex::data::kSprites[g_state.sprite_index].id);
+    const int32_t dx = detail.x - detail.base_x;
+    const int32_t dy = detail.y - detail.base_y;
+    if (detail.wasClicked() &&
+        std::abs(dx) <= pokedex::viewer::kTouchClickTolerancePx &&
+        std::abs(dy) <= pokedex::viewer::kTouchClickTolerancePx &&
+        pillTouch.contains(detail.base_x, detail.base_y) &&
+        pillTouch.contains(detail.x, detail.y)) {
+      const uint16_t next = nextGenerationStart(g_state.sprite_index);
+      if (next < pokedex::data::kSpriteCount) g_state.sprite_index = next;
+      g_state.frame_index = 0;
+      g_state.animation_started_ms = now;
+      g_state.reacting = false;
+      g_state.jump = 0;
+      g_last_dir = 1;
+      g_prefetch_step = 0;
+      dirty = true;
+      source = "generation-pill";
+    } else {
+      input = pokedex::viewer::releaseInput(
+          detail.base_x, detail.base_y, detail.x, detail.y, detail.wasClicked());
+      if (input == Input::React) source = "react";
+    }
   }
-  bool dirty = pokedex::viewer::applyInput(g_state, input, pokedex::data::kSpriteCount, now);
+  const uint16_t prevSprite = g_state.sprite_index;
+  if (pokedex::viewer::applyInput(g_state, input, pokedex::data::kSpriteCount, now)) {
+    if (input == Input::Next) g_last_dir = 1;
+    else if (input == Input::Previous) g_last_dir = -1;
+    if (g_state.sprite_index != prevSprite) g_prefetch_step = 0;
+    dirty = true;
+  }
   if (dirty) {
     if (feedbackCallback) feedbackCallback(input == Input::React ? 55 : 25, callbackContext);
     diagnostic("input=%s id=%d\n", source, pokedex::data::kSprites[g_state.sprite_index].id);
@@ -261,6 +312,13 @@ void update(uint32_t now) {
     M5.Display.fillRect(b.x, b.y, b.width, b.height, theme::kViewerBackground);
     drawPreviewButton(g_preview_pressed);
     M5.Display.endWrite();
+  } else if (g_ready && !detail.isPressed() && g_prefetch_step < 2) {
+    const size_t count = pokedex::data::kSpriteCount;
+    const size_t idx = g_state.sprite_index;
+    const int8_t dir = g_prefetch_step == 0 ? g_last_dir : int8_t(-g_last_dir);
+    const size_t target = dir > 0 ? (idx + 1) % count : (idx + count - 1) % count;
+    pokedex::prefetchSprite(pokedex::data::kSprites[target]);
+    ++g_prefetch_step;
   }
   static uint32_t report_ms = 0;
   if (now - report_ms >= 2000) {
@@ -274,6 +332,7 @@ void update(uint32_t now) {
 void invalidate() {
   g_screen_drawn = false;
   g_label_sprite = UINT16_MAX;
+  g_prefetch_step = 0;
   g_buttons.reset();
   g_preview_pressed = g_preview_tracking = g_preview_invalid = false;
 }

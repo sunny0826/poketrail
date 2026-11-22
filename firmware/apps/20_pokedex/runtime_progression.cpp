@@ -1,7 +1,9 @@
 #include "runtime.hpp"
 #include "menu_layout.hpp"
+#include "viewer_screen.hpp"
 #include "battle_presentation.hpp"
 #include "i18n.hpp"
+#include <algorithm>
 namespace pokedex { namespace ui {
 using namespace adventure;
 const char* Runtime::collectionLabel(uint16_t species, void* context) {
@@ -18,8 +20,59 @@ void Runtime::openCarriedPartner() {
   navigate(Page::CarriedPartner);
 }
 void Runtime::openPartner(uint16_t species) {
+  partnersSelectedSpecies_ = species;
   screen_.species = species; screen_.evolved = false;
   navigate(Page::PartnerDetail);
+}
+void Runtime::returnToPartners() {
+  const auto& v = engine_.view();
+  uint16_t target = partnersSelectedSpecies_;
+  if (target && !owns(v, target) && v.lastEvolution.request.from == target &&
+      owns(v, v.lastEvolution.request.to)) {
+    target = v.lastEvolution.request.to;
+  }
+  unsigned row = 0, matched = 0, nearest = 0;
+  bool found = false;
+  for (unsigned id = 1; id <= kSpeciesCount; ++id) {
+    if (!owns(v, id)) continue;
+    if (target && id == target) { matched = row; found = true; break; }
+    if (target && id < target) nearest = row;
+    ++row;
+  }
+  navigate(Page::Partners);
+  if (found) screen_.selected = matched;
+  else if (target && row > 0) screen_.selected = std::min(nearest, row - 1);
+}
+void Runtime::recordFirstCapturesSelection() {
+  if (screen_.page == Page::FirstCaptures && screen_.selected < kSpeciesCount) {
+    firstCapturesSelected_ = screen_.selected;
+  }
+}
+void Runtime::openFirstCaptures() {
+  navigate(Page::FirstCaptures);
+  if (firstCapturesSelected_ < kSpeciesCount) {
+    screen_.selected = firstCapturesSelected_;
+    return;
+  }
+  const auto& v = engine_.view();
+  if (v.recentSize > 0) {
+    const uint16_t sp = v.recent[v.recentSize - 1].species;
+    if (sp >= 1 && sp <= kSpeciesCount) {
+      screen_.selected = sp - 1;
+      return;
+    }
+  }
+  for (uint16_t i = 0; i < kSpeciesCount; ++i) {
+    if (v.firstCapture[i].species) {
+      screen_.selected = i;
+      return;
+    }
+  }
+}
+void Runtime::jumpFirstCapturesGeneration() {
+  if (screen_.page != Page::FirstCaptures) return;
+  screen_.selected = viewer_screen::nextGenerationStart(screen_.selected);
+  recordFirstCapturesSelection();
 }
 void Runtime::openHomeEvolution() {
   partnersFromCarried_ = false;
@@ -112,7 +165,7 @@ void Runtime::activateProgression(unsigned item, uint32_t at) {
   if (carried) screen_.species = engine_.view().partner;
   const EvolutionView view = engine_.evolutionView(screen_.species);
   if (carried && (!screen_.species || item == view.count + 1)) { goBack(); return; }
-  if (item == view.count + 1) { navigate(Page::Partners); return; }
+  if (item == view.count + 1) { returnToPartners(); return; }
   if (item == 0) {
     if (carried) { navigate(Page::Partners); return; }
     const CommandResult result = engine_.selectPartner(screen_.species);

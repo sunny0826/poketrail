@@ -38,6 +38,10 @@ void pages(Driver& d) {
   d.select(2); text(d, "Kangaskhan"); d.shot("english-long-partner"); d.back();
   d.select(6); d.check(d.screen().species == 649, "last owned partner remains reachable");
   text(d, "Genesect"); d.shot("english-last-partner"); d.back();
+  d.check(d.screen().page == Page::Partners && d.screen().selected == 6,
+          "last owned partner back keeps final page selection");
+  d.swipe(320, 140);
+  d.check(d.screen().selected == 0, "final partner page wraps to first page by touch");
   d.swipe(320, 140); d.swipe(320, 140);
   d.check(d.screen().selected == 6, "partner list reaches final page by touch");
   d.shot("english-partners-last-page");
